@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sistema Operacional ENAC</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <div class="brand">
+          <strong>ENAC</strong>
+          <span>Operações de Obras</span>
+        </div>
+        <nav id="nav"></nav>
+        <div class="phase-box">
+          <small>Próxima fase</small>
+          <span>Medições, contratos, ocorrências e mão de obra</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">MVP compras, cotações e financeiro</p>
+            <h1 id="page-title">Dashboard inicial</h1>
+          </div>
+          <div class="profile-card">
+            <label for="profile">Perfil</label>
+            <select id="profile"></select>
+          </div>
+        </header>
+
+        <section id="view" class="view"></section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

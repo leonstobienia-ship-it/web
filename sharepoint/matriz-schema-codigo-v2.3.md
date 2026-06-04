@@ -1,0 +1,39 @@
+# Matriz Schema versus Código V2.3
+
+| Lista | Nome exibido | Nome interno esperado | Tipo esperado | Uso no código | Status |
+| --- | --- | --- | --- | --- | --- |
+| ENAC Usuarios Perfis | Conta Microsoft 365 | ContaMicrosoft365 | Pessoa ou Grupo, uma pessoa | `obterUsuarioPorContaMicrosoft365`, `mapUsuarioPerfil` | Compatível no contrato; validar nome interno no tenant |
+| ENAC Usuarios Perfis | Usuário Interno ID | UsuarioInternoId | Texto, obrigatório, único, indexado | `mapUsuarioPerfil`, `resolverAprovadorEfetivo` | Compatível; criar índice/uniqueness |
+| ENAC Usuarios Perfis | Usuário Ativo | UsuarioAtivo | Sim/Não | `listarUsuariosPerfis({ somenteAtivos })`, resolução de aprovador | Compatível |
+| ENAC Usuarios Perfis | Substituto Temporário | SubstitutoTemporario | Pessoa ou lookup para usuário interno | `mapUsuarioPerfil`, `resolverAprovadorEfetivo` | Compatível; decidir tipo final no tenant |
+| ENAC Usuarios Perfis | Início Substituição | InicioSubstituicao | Data/hora | `resolverAprovadorEfetivo` | Compatível |
+| ENAC Usuarios Perfis | Fim Substituição | FimSubstituicao | Data/hora | `resolverAprovadorEfetivo` | Compatível |
+| ENAC Alcadas | Regra Interna ID | RegraInternaId | Texto, obrigatório, único, indexado | `mapAlcada`, `criarSnapshotAprovacaoCompra` | Compatível; criar índice/uniqueness |
+| ENAC Alcadas | Processo | Processo | Escolha | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
+| ENAC Alcadas | Tipo Solicitação | TipoSolicitacao | Escolha | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
+| ENAC Alcadas | Obra | Obra | Lookup ou texto “Todas” | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível; validar tipo real |
+| ENAC Alcadas | Valor Mínimo | ValorMinimo | Moeda/número | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
+| ENAC Alcadas | Valor Máximo | ValorMaximo | Moeda/número opcional | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
+| ENAC Alcadas | Ilimitado | Ilimitado | Sim/Não | `mapAlcada`, `selecionarRegraAlcadaCompra` | Compatível |
+| ENAC Alcadas | Vigência Inicial | VigenciaInicial | Data/hora | `regraVigenteNaData` | Compatível |
+| ENAC Alcadas | Vigência Final | VigenciaFinal | Data/hora opcional | `regraVigenteNaData` | Compatível |
+| ENAC Alcadas | Aprovador Principal | AprovadorPrincipal | Pessoa ou Grupo, uma pessoa | `mapAlcada`, `resolverAprovadorEfetivo` | Compatível |
+| ENAC Alcadas | Aprovador Adicional | AprovadorAdicional | Pessoa ou Grupo, uma pessoa opcional | `mapAlcada` | Compatível; sem fluxo adicional nesta rodada |
+| ENAC Snapshots Regras | Regra Alçada Utilizada | RegraAlcadaUtilizada | Texto | `persistirSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Valor Analisado | ValorAnalisado | Moeda/número | `persistirSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Aprovador Base ID | AprovadorBaseId | Texto | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Aprovador Base Nome | AprovadorBaseNome | Texto | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Aprovador Base E-mail | AprovadorBaseEmail | Texto | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Aprovador Efetivo ID | AprovadorEfetivoId | Texto | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Aprovador Efetivo Nome | AprovadorEfetivoNome | Texto | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Aprovador Efetivo E-mail | AprovadorEfetivoEmail | Texto | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Substituição Aplicada | SubstituicaoAplicada | Sim/Não | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Motivo Resolução Aprovador | MotivoResolucaoAprovador | Múltiplas linhas de texto | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Snapshots Regras | Motivo Exceção | MotivoExcecao | Múltiplas linhas de texto opcional | `criarSnapshotAprovacaoCompra` | Compatível |
+| ENAC Solicitacoes | Snapshot Aprovação Compra | SnapshotAprovacaoCompra | Lookup para ENAC Snapshots Regras | `listarSolicitacoes`, `persistirSnapshotAprovacaoCompra` | Compatível |
+
+## Observações
+
+- `AprovadorSubstituto` não deve ser criado em `ENAC Alcadas` nesta rodada.
+- `SnapshotRegraAtual` não deve ser usado em `ENAC Solicitacoes`.
+- Campos já existentes com nomes internos diferentes devem ser mapeados antes de alterar o repositório.

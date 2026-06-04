@@ -1,0 +1,113 @@
+.enacSistema {
+  display: grid;
+  grid-template-columns: 272px 1fr;
+  min-height: 680px;
+  background: #f4f5f7;
+  color: #17202a;
+
+  aside {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    padding: 20px;
+    background: #17212f;
+    color: #fff;
+  }
+
+  main {
+    display: grid;
+    align-content: start;
+    gap: 18px;
+    padding: 24px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  button {
+    border: 1px solid #0f5d7a;
+    border-radius: 6px;
+    background: #0f5d7a;
+    color: #fff;
+    padding: 9px 12px;
+    cursor: pointer;
+  }
+
+  aside button {
+    border-color: transparent;
+    background: transparent;
+    text-align: left;
+  }
+
+  aside button:hover {
+    background: #253244;
+  }
+
+  aside button:nth-last-child(-n + 2) {
+    border-left: 3px solid #93c5fd;
+  }
+
+  input,
+  select,
+  textarea {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid #d7dde5;
+    border-radius: 6px;
+    padding: 9px;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid #d7dde5;
+    padding: 10px;
+    text-align: left;
+  }
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+
+  div {
+    display: grid;
+    gap: 8px;
+    border: 1px solid #d7dde5;
+    border-radius: 8px;
+    background: #fff;
+    padding: 16px;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  strong {
+    font-size: 26px;
+  }
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+}

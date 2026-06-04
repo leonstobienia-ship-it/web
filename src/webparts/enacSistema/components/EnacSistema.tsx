@@ -1,0 +1,438 @@
+import * as React from 'react';
+import {
+  IAlcadaEnac,
+  IHistoricoConfiguracaoEnac,
+  IObraEnac,
+  ISolicitacaoEnac,
+  IUsuarioPerfilEnac,
+  PerfilEnac,
+  StatusProcesso
+} from '../models';
+import styles from './EnacSistema.module.scss';
+
+export interface IEnacSistemaProps {
+  currentUserName: string;
+  currentUserPerfil: PerfilEnac;
+}
+
+const obras: IObraEnac[] = [
+  { id: '1', nome: 'Obra Alpha', codigoObra: 'OBR-001', cliente: 'Cliente Alpha', centroCusto: 'CC-1101', enderecoEntrega: 'Canteiro Alpha - Portaria 2' },
+  { id: '2', nome: 'Retrofit Galpao Sul', codigoObra: 'OBR-014', cliente: 'Industria Sul', centroCusto: 'CC-2214', enderecoEntrega: 'Galpao Sul - Docas' }
+];
+
+const formatCurrency = (value: number | undefined): string =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
+
+const alcadasIniciais: IAlcadaEnac[] = [
+  { id: '1', regraInternaId: 'ALC-COMPRA-GUSTAVO-0001', processo: 'Compra', tipoSolicitacao: 'Todos', obra: 'Todas', valorMinimo: 0, valorMaximo: 20000, ilimitado: false, aprovadorPrincipalId: 'usr-gustavo', aprovadorPrincipalNome: 'Gustavo', aprovadorPrincipalEmail: 'gustavo@enac.com.br', exigeAprovacaoAdicional: false, vigenciaInicial: '2026-06-02', ativa: true, observacoes: 'Parametro inicial editavel.' },
+  { id: '2', regraInternaId: 'ALC-COMPRA-LEON-0001', processo: 'Compra', tipoSolicitacao: 'Todos', obra: 'Todas', valorMinimo: 20000.01, ilimitado: true, aprovadorPrincipalId: 'usr-leon', aprovadorPrincipalNome: 'Leon', aprovadorPrincipalEmail: 'leon@enac.com.br', exigeAprovacaoAdicional: false, vigenciaInicial: '2026-06-02', ativa: true, observacoes: 'Parametro inicial editavel.' },
+  { id: '3', regraInternaId: 'ALC-LIB-BANCARIA-LEON-0001', processo: 'LiberacaoBancaria', tipoSolicitacao: 'Todos', obra: 'Todas', valorMinimo: 0, ilimitado: true, aprovadorPrincipalId: 'usr-leon', aprovadorPrincipalNome: 'Leon', aprovadorPrincipalEmail: 'leon@enac.com.br', exigeAprovacaoAdicional: false, vigenciaInicial: '2026-06-02', ativa: true, observacoes: 'Liberacao bancaria exclusiva de Leon.' }
+];
+
+const usuarios: IUsuarioPerfilEnac[] = [
+  { id: 'usr-leon', usuarioInternoId: 'USR-LEON-0001', nome: 'Leon', emailCorporativo: 'leon@enac.com.br', contaMicrosoft365Id: 1, contaMicrosoft365Nome: 'Leon', contaMicrosoft365Email: 'leon@enac.com.br', cargoFuncao: 'Diretor', perfilPrincipal: 'Diretoria', perfisAdicionais: ['AdministradorSistema'], podeCriarSolicitacao: false, podeRegistrarCotacoes: false, podeAprovarCompras: true, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: true, podeAtualizarStatusFinal: true, podeAdministrarConfiguracoes: true, usuarioAtivo: true },
+  { id: 'usr-gustavo', usuarioInternoId: 'USR-GUSTAVO-0001', nome: 'Gustavo', emailCorporativo: 'gustavo@enac.com.br', contaMicrosoft365Id: 2, contaMicrosoft365Nome: 'Gustavo', contaMicrosoft365Email: 'gustavo@enac.com.br', cargoFuncao: 'Planejamento', perfilPrincipal: 'Planejamento', perfisAdicionais: [], podeCriarSolicitacao: false, podeRegistrarCotacoes: false, podeAprovarCompras: true, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true },
+  { id: 'usr-matheus', usuarioInternoId: 'USR-MATHEUS-0001', nome: 'Matheus', emailCorporativo: 'matheus@enac.com.br', contaMicrosoft365Id: 3, contaMicrosoft365Nome: 'Matheus', contaMicrosoft365Email: 'matheus@enac.com.br', cargoFuncao: 'Compras e financeiro operacional', perfilPrincipal: 'ComprasFinanceiroOperacional', perfisAdicionais: [], podeCriarSolicitacao: false, podeRegistrarCotacoes: false, podeAprovarCompras: false, podeEmitirPedido: true, podeVincularNf: true, podeProgramarPagamento: true, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true },
+  { id: 'usr-kemilly', usuarioInternoId: 'USR-KEMILLY-0001', nome: 'Kemilly', emailCorporativo: 'kemilly@enac.com.br', contaMicrosoft365Id: 4, contaMicrosoft365Nome: 'Kemilly', contaMicrosoft365Email: 'kemilly@enac.com.br', cargoFuncao: 'Cotacoes e contratos', perfilPrincipal: 'CotacoesContratos', perfisAdicionais: [], podeCriarSolicitacao: false, podeRegistrarCotacoes: true, podeAprovarCompras: false, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true },
+  { id: 'usr-campo', usuarioInternoId: 'USR-CAMPO-0001', nome: 'Engenheiro Teste', emailCorporativo: 'campo@enac.com.br', contaMicrosoft365Id: 5, contaMicrosoft365Nome: 'Engenheiro Teste', contaMicrosoft365Email: 'campo@enac.com.br', cargoFuncao: 'Engenheiro de campo', perfilPrincipal: 'Campo', perfisAdicionais: [], podeCriarSolicitacao: true, podeRegistrarCotacoes: false, podeAprovarCompras: false, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true }
+];
+
+const historicoConfiguracoes: IHistoricoConfiguracaoEnac[] = [
+  { tipoConfiguracao: 'Alcada', valorAnterior: 'Configuracao inicial', valorNovo: 'Compra ate R$ 20.000,00 com Gustavo; acima com Leon', usuarioAlteracao: 'Leon', dataHora: new Date().toISOString(), justificativa: 'Parametro beta editavel do MVP' }
+];
+
+const initialSolicitacoes: ISolicitacaoEnac[] = [
+  {
+    id: 'REQ-1001',
+    titulo: 'Concreto usinado para bloco A',
+    obra: obras[0],
+    tipo: 'Material',
+    descricao: 'Volume complementar para concretagem da fundacao.',
+    especificacaoTecnica: 'FCK 30 MPa, slump 12 +/- 2, bombeavel.',
+    quantidade: 18,
+    unidade: 'm3',
+    frenteServico: 'Fundacao bloco A',
+    dataNecessaria: '2026-06-07',
+    prioridade: 'Alta',
+    justificativaUrgencia: 'Janela de concretagem confirmada.',
+    solicitante: 'Engenheiro de Campo',
+    dataHoraSolicitacao: new Date().toISOString(),
+    status: 'AguardandoAprovacao',
+    cotacao: {
+      propostas: [
+        { fornecedor: 'Fornecedor Concreto Base', valor: 12400, prazoEntrega: '2026-06-06', frete: 'CIF incluso', condicaoPagamento: '28 dias boleto', anexoProposta: 'proposta-base.pdf' },
+        { fornecedor: 'Concreto Rapido', valor: 13100, prazoEntrega: '2026-06-07', frete: 'CIF incluso', condicaoPagamento: '21 dias boleto', anexoProposta: 'proposta-rapido.pdf' },
+        { fornecedor: 'Mix Forte', valor: 12850, prazoEntrega: '2026-06-06', frete: 'R$ 450,00', condicaoPagamento: '30 dias boleto', anexoProposta: 'proposta-mix.pdf' }
+      ],
+      fornecedorRecomendado: 'Fornecedor Concreto Base',
+      valorRecomendado: 12400,
+      prazoRecomendado: '2026-06-06',
+      condicaoPagamentoRecomendada: '28 dias boleto',
+      justificativaRecomendacao: 'Menor valor total com prazo compativel.'
+    },
+    aprovadorExigido: 'Gustavo',
+    divergencias: [],
+    historico: [
+      { data: new Date().toISOString(), autor: 'Engenheiro de Campo', perfil: 'Campo', descricao: 'Solicitacao criada', statusNovo: 'SolicitacaoCriada' },
+      { data: new Date().toISOString(), autor: 'Kemilly', perfil: 'CotacoesContratos', descricao: 'Cotacoes registradas e fornecedor recomendado', statusNovo: 'AguardandoAprovacao' }
+    ]
+  }
+];
+
+export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
+  const [perfil, setPerfil] = React.useState<PerfilEnac>(props.currentUserPerfil || 'Campo');
+  const [view, setView] = React.useState('dashboard');
+  const [solicitacoes, setSolicitacoes] = React.useState<ISolicitacaoEnac[]>(initialSolicitacoes);
+  const [alcadas] = React.useState<IAlcadaEnac[]>(alcadasIniciais);
+  const [selectedId, setSelectedId] = React.useState(initialSolicitacoes[0].id);
+
+  const selected = solicitacoes.find((item) => item.id === selectedId) || solicitacoes[0];
+
+  function criarSolicitacao(form: FormData): void {
+    const obra = obras.find((item) => item.id === String(form.get('obra'))) || obras[0];
+    const next: ISolicitacaoEnac = {
+      id: `REQ-${1001 + solicitacoes.length}`,
+      titulo: String(form.get('titulo')),
+      obra,
+      tipo: String(form.get('tipo')) as ISolicitacaoEnac['tipo'],
+      descricao: String(form.get('descricao')),
+      especificacaoTecnica: String(form.get('especificacaoTecnica')),
+      quantidade: Number(form.get('quantidade') || 0),
+      unidade: String(form.get('unidade') || ''),
+      frenteServico: String(form.get('frenteServico')),
+      dataNecessaria: String(form.get('dataNecessaria')),
+      prioridade: String(form.get('prioridade')) as ISolicitacaoEnac['prioridade'],
+      justificativaUrgencia: String(form.get('justificativaUrgencia') || ''),
+      anexoReferencia: String(form.get('anexoReferencia') || ''),
+      observacoes: String(form.get('observacoes') || ''),
+      solicitante: props.currentUserName,
+      dataHoraSolicitacao: new Date().toISOString(),
+      status: 'AguardandoCotacao',
+      divergencias: [],
+      historico: [
+        { data: new Date().toISOString(), autor: props.currentUserName, perfil: 'Campo', descricao: 'Solicitacao criada', statusNovo: 'SolicitacaoCriada' },
+        { data: new Date().toISOString(), autor: 'Sistema', perfil: 'Sistema', descricao: `Enviada para cotacao com obra ${obra.codigoObra} / ${obra.centroCusto}`, statusNovo: 'AguardandoCotacao' }
+      ]
+    };
+
+    setSolicitacoes([next, ...solicitacoes]);
+    setSelectedId(next.id);
+    setView('minhas');
+  }
+
+  function registrarCotacao(id: string, valor: number, fornecedor: string): void {
+    const regra = calcularRegra(alcadas, valor);
+    const aprovador = usuarios.find((usuario) => usuario.id === regra.aprovadorPrincipalId);
+    setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
+      ...item,
+      status: 'AguardandoAprovacao',
+      aprovadorExigido: aprovador?.nome || regra.aprovadorPrincipalNome,
+      cotacao: {
+        propostas: [{ fornecedor, valor, prazoEntrega: item.dataNecessaria, frete: 'A confirmar', condicaoPagamento: 'A confirmar' }],
+        fornecedorRecomendado: fornecedor,
+        valorRecomendado: valor,
+        prazoRecomendado: item.dataNecessaria,
+        condicaoPagamentoRecomendada: 'A confirmar',
+        justificativaRecomendacao: 'Recomendacao inicial registrada no MVP.'
+      },
+      snapshotAprovacaoCompra: {
+        regraAlcadaUtilizada: regra.regraInternaId,
+        processo: regra.processo,
+        faixaValorVigente: `${regra.valorMinimo} ate ${regra.ilimitado ? 'ilimitado' : regra.valorMaximo}`,
+        valorAnalisado: valor,
+        aprovadorBaseId: regra.aprovadorPrincipalId,
+        aprovadorBaseNome: aprovador?.nome || regra.aprovadorPrincipalNome || '',
+        aprovadorBaseEmail: aprovador?.emailCorporativo || regra.aprovadorPrincipalEmail || '',
+        aprovadorEfetivoId: regra.aprovadorPrincipalId,
+        aprovadorEfetivoNome: aprovador?.nome || regra.aprovadorPrincipalNome || '',
+        aprovadorEfetivoEmail: aprovador?.emailCorporativo || regra.aprovadorPrincipalEmail || '',
+        substituicaoAplicada: false,
+        motivoResolucaoAprovador: 'Sem substituicao temporaria vigente.',
+        dataHoraAplicacao: new Date().toISOString()
+      },
+      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Kemilly', perfil: 'CotacoesContratos', descricao: 'Cotacao registrada e enviada para aprovacao', statusNovo: 'AguardandoAprovacao' }]
+    } : item));
+  }
+
+  function aprovar(id: string): void {
+    setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
+      ...item,
+      status: 'AprovadaParaCompra',
+      aprovadoPor: perfil === 'Planejamento' ? 'Gustavo' : 'Leon',
+      historico: [...item.historico, { data: new Date().toISOString(), autor: perfil === 'Planejamento' ? 'Gustavo' : 'Leon', perfil, descricao: 'Compra aprovada conforme alcada parametrizada', statusNovo: 'AprovadaParaCompra' }]
+    } : item));
+  }
+
+  function emitirPedido(id: string, numeroPedido: string): void {
+    setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
+      ...item,
+      status: 'PedidoEmitido',
+      pedidoCompra: { numeroPedido, prazoEntregaConfirmado: item.cotacao?.prazoRecomendado || item.dataNecessaria, enderecoEntrega: item.obra.enderecoEntrega || '', observacoes: 'Pedido emitido no MVP.' },
+      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Matheus', perfil: 'ComprasFinanceiroOperacional', descricao: 'Pedido de compra emitido', statusNovo: 'PedidoEmitido' }]
+    } : item));
+  }
+
+  function programarPagamento(id: string): void {
+    setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
+      ...item,
+      status: 'AguardandoLiberacaoBancaria',
+      notaFiscal: { numero: 'NF-0001', dataEmissao: new Date().toISOString().slice(0, 10), dataVencimento: item.dataNecessaria, valorBruto: item.cotacao?.valorRecomendado || 0, retencoesDescontos: 0, valorLiquido: item.cotacao?.valorRecomendado || 0 },
+      programacaoBancaria: { bancoContaPagamento: 'Banco principal', formaPagamento: 'Boleto', dataProgramada: item.dataNecessaria, valorProgramado: item.cotacao?.valorRecomendado || 0 },
+      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Matheus', perfil: 'ComprasFinanceiroOperacional', descricao: 'NF vinculada e pagamento programado no banco', statusNovo: 'AguardandoLiberacaoBancaria' }]
+    } : item));
+  }
+
+  function concluirPagamento(id: string): void {
+    setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
+      ...item,
+      status: 'PagoConcluido',
+      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Leon', perfil: 'Diretoria', descricao: 'Pagamento liberado, confirmado e status final atualizado', statusNovo: 'PagoConcluido' }]
+    } : item));
+  }
+
+  return (
+    <section className={styles.enacSistema}>
+      <aside>
+        <strong>ENAC</strong>
+        {['dashboard', 'nova', 'minhas', 'cotacoes', 'aprovacoes', 'pedido', 'financeiro', 'liberacao', 'historico', 'adminUsuarios', 'adminAlcadas', 'adminHistorico'].map((key) => (
+          <button key={key} className={view === key ? styles.active : ''} onClick={() => setView(key)}>{key}</button>
+        ))}
+      </aside>
+      <main>
+        <header>
+          <h1>Sistema Operacional ENAC</h1>
+          <select value={perfil} onChange={(event) => setPerfil(event.target.value as PerfilEnac)}>
+            <option value="Campo">Campo / Engenheiro</option>
+            <option value="CotacoesContratos">Cotacoes e Contratos / Kemilly</option>
+            <option value="ComprasFinanceiroOperacional">Compras e Financeiro Operacional / Matheus</option>
+            <option value="Planejamento">Planejamento / Gustavo</option>
+            <option value="Diretoria">Diretoria / Leon</option>
+            <option value="AdministradorSistema">Administrador do Sistema / Leon</option>
+          </select>
+        </header>
+
+        {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} />}
+        {view === 'nova' && <NovaSolicitacao onSubmit={criarSolicitacao} />}
+        {view === 'minhas' && <Tabela solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
+        {view === 'cotacoes' && <Cotacoes solicitacoes={solicitacoes} onSelect={setSelectedId} selected={selected} onRegistrarCotacao={registrarCotacao} />}
+        {view === 'aprovacoes' && <Aprovacoes solicitacoes={solicitacoes} perfil={perfil} onApprove={aprovar} />}
+        {view === 'pedido' && <Pedido selected={selected} onEmitirPedido={emitirPedido} />}
+        {view === 'financeiro' && <Financeiro selected={selected} onProgramarPagamento={programarPagamento} />}
+        {view === 'liberacao' && <Liberacao solicitacoes={solicitacoes} onConcluir={concluirPagamento} />}
+        {view === 'historico' && <Historico selected={selected} />}
+        {view === 'adminUsuarios' && <AdminUsuarios />}
+        {view === 'adminAlcadas' && <Alcadas alcadas={alcadas} />}
+        {view === 'adminHistorico' && <AdminHistorico />}
+      </main>
+    </section>
+  );
+}
+
+function Dashboard({ perfil, solicitacoes }: { perfil: PerfilEnac; solicitacoes: ISolicitacaoEnac[] }): JSX.Element {
+  const cards = cardsDashboard(perfil, solicitacoes);
+  return <div className={styles.metrics}>{cards.map((card) => <div key={card.label}><span>{card.label}</span><strong>{card.value}</strong></div>)}</div>;
+}
+
+function cardsDashboard(perfil: PerfilEnac, solicitacoes: ISolicitacaoEnac[]): { label: string; value: string | number }[] {
+  if (perfil === 'CotacoesContratos') return [
+    { label: 'Aguardando cotacao', value: countStatus(solicitacoes, 'AguardandoCotacao') },
+    { label: 'Em cotacao', value: countStatus(solicitacoes, 'EmCotacao') },
+    { label: 'Pendentes de justificativa', value: solicitacoes.filter((item) => (item.cotacao?.propostas.length || 0) < 3).length }
+  ];
+  if (perfil === 'ComprasFinanceiroOperacional') return [
+    { label: 'Aguardando pedido', value: countStatus(solicitacoes, 'AprovadaParaCompra') },
+    { label: 'Pedidos aguardando NF', value: countStatus(solicitacoes, 'PedidoEmitido') },
+    { label: 'Aguardando liberacao', value: countStatus(solicitacoes, 'AguardandoLiberacaoBancaria') }
+  ];
+  if (perfil === 'Diretoria') return [
+    { label: 'Aprovacoes Leon', value: solicitacoes.filter((item) => item.aprovadorExigido === 'Leon').length },
+    { label: 'Divergencias', value: countStatus(solicitacoes, 'DivergenciaIdentificada') },
+    { label: 'Liberacao bancaria', value: countStatus(solicitacoes, 'AguardandoLiberacaoBancaria') }
+  ];
+  return [
+    { label: 'Solicitacoes ativas', value: solicitacoes.length },
+    { label: 'Aguardando cotacao', value: countStatus(solicitacoes, 'AguardandoCotacao') },
+    { label: 'Aguardando aprovacao', value: countStatus(solicitacoes, 'AguardandoAprovacao') }
+  ];
+}
+
+function countStatus(solicitacoes: ISolicitacaoEnac[], status: StatusProcesso): number {
+  return solicitacoes.filter((item) => item.status === status).length;
+}
+
+function NovaSolicitacao({ onSubmit }: { onSubmit: (form: FormData) => void }): JSX.Element {
+  return (
+    <form onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); }}>
+      <label>Obra<select name="obra">{obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.nome}</option>)}</select></label>
+      <label>Tipo<select name="tipo"><option value="Material">Material</option><option value="Servico">Servico</option><option value="Locacao">Locacao</option><option value="Equipamento">Equipamento</option></select></label>
+      <label>Descricao do item/servico<input name="titulo" required /></label>
+      <label>Descricao complementar<textarea name="descricao" required /></label>
+      <label>Especificacao tecnica<textarea name="especificacaoTecnica" required /></label>
+      <label>Quantidade<input name="quantidade" type="number" step="0.01" /></label>
+      <label>Unidade<input name="unidade" /></label>
+      <label>Frente de servico/local<input name="frenteServico" required /></label>
+      <label>Data necessaria<input name="dataNecessaria" type="date" required /></label>
+      <label>Prioridade<select name="prioridade"><option>Normal</option><option>Alta</option><option>Emergencial</option></select></label>
+      <label>Justificativa de urgencia<textarea name="justificativaUrgencia" /></label>
+      <label>Anexo/foto/projeto/referencia<input name="anexoReferencia" /></label>
+      <label>Observacoes<textarea name="observacoes" /></label>
+      <button type="submit">Enviar para cotacao</button>
+    </form>
+  );
+}
+
+function Cotacoes({ solicitacoes, selected, onSelect, onRegistrarCotacao }: { solicitacoes: ISolicitacaoEnac[]; selected: ISolicitacaoEnac; onSelect: (id: string) => void; onRegistrarCotacao: (id: string, valor: number, fornecedor: string) => void }): JSX.Element {
+  return (
+    <div className={styles.split}>
+      <Tabela solicitacoes={solicitacoes.filter((item) => item.status === 'AguardandoCotacao' || item.status === 'EmCotacao')} onSelect={onSelect} />
+      <form onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); onRegistrarCotacao(selected.id, Number(form.get('valor')), String(form.get('fornecedor'))); }}>
+        <h2>Cotacao por Kemilly</h2>
+        <p>{selected.id} - {selected.titulo}</p>
+        <label>Fornecedor recomendado<input name="fornecedor" defaultValue={selected.cotacao?.fornecedorRecomendado} required /></label>
+        <label>Valor recomendado<input name="valor" type="number" step="0.01" defaultValue={selected.cotacao?.valorRecomendado || 0} required /></label>
+        <label>Justificativa<textarea name="justificativa" defaultValue={selected.cotacao?.justificativaRecomendacao} /></label>
+        <button type="submit">Enviar para aprovacao</button>
+      </form>
+    </div>
+  );
+}
+
+function Aprovacoes({ solicitacoes, perfil, onApprove }: { solicitacoes: ISolicitacaoEnac[]; perfil: PerfilEnac; onApprove: (id: string) => void }): JSX.Element {
+  const aprovador = perfil === 'Planejamento' ? 'Gustavo' : perfil === 'Diretoria' ? 'Leon' : '';
+  return (
+    <>
+      <h2>Aprovacoes Pendentes</h2>
+      {solicitacoes.filter((item) => item.status === 'AguardandoAprovacao' && (!aprovador || item.aprovadorExigido === aprovador)).map((item) => (
+        <div className={styles.row} key={item.id}>
+          <span>{item.id} - {item.titulo}<br />{item.snapshotAprovacaoCompra?.faixaValorVigente}</span>
+          <strong>{formatCurrency(item.cotacao?.valorRecomendado)}</strong>
+          <button onClick={() => onApprove(item.id)}>Aprovar</button>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function Pedido({ selected, onEmitirPedido }: { selected: ISolicitacaoEnac; onEmitirPedido: (id: string, numeroPedido: string) => void }): JSX.Element {
+  return (
+    <form onSubmit={(event) => { event.preventDefault(); onEmitirPedido(selected.id, String(new FormData(event.currentTarget).get('numeroPedido'))); }}>
+      <h2>Pedido de Compra por Matheus</h2>
+      <p>{selected.id} - {selected.titulo}</p>
+      <p>Fornecedor aprovado: {selected.cotacao?.fornecedorRecomendado || '-'}</p>
+        <p>Valor aprovado: {formatCurrency(selected.cotacao?.valorRecomendado)}</p>
+      <label>Numero do pedido<input name="numeroPedido" defaultValue={selected.pedidoCompra?.numeroPedido} required /></label>
+      <button type="submit">Emitir pedido</button>
+    </form>
+  );
+}
+
+function Financeiro({ selected, onProgramarPagamento }: { selected: ISolicitacaoEnac; onProgramarPagamento: (id: string) => void }): JSX.Element {
+  return (
+    <form onSubmit={(event) => { event.preventDefault(); onProgramarPagamento(selected.id); }}>
+      <h2>NF e Programacao Bancaria por Matheus</h2>
+      <p>{selected.id} - {selected.titulo}</p>
+      <label>Numero da NF<input /></label>
+      <label>Boleto ou dados de pagamento<input /></label>
+      <label>Data programada<input type="date" /></label>
+      <button type="submit">Programar pagamento no banco</button>
+    </form>
+  );
+}
+
+function Liberacao({ solicitacoes, onConcluir }: { solicitacoes: ISolicitacaoEnac[]; onConcluir: (id: string) => void }): JSX.Element {
+  return (
+    <>
+      <h2>Liberacao Bancaria por Leon</h2>
+      {solicitacoes.filter((item) => item.status === 'AguardandoLiberacaoBancaria').map((item) => (
+        <div className={styles.row} key={item.id}>
+          <span>{item.id} - {item.titulo}<br />{item.programacaoBancaria?.dataProgramada}</span>
+          <strong>{formatCurrency(item.programacaoBancaria?.valorProgramado)}</strong>
+          <button onClick={() => onConcluir(item.id)}>Liberar e concluir</button>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function AdminUsuarios(): JSX.Element {
+  return (
+    <table>
+      <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Perfil adicional</th><th>Permissoes</th></tr></thead>
+      <tbody>
+        {usuarios.map((usuario) => (
+          <tr key={usuario.emailCorporativo}>
+            <td>{usuario.nome}<br />{usuario.usuarioInternoId}</td>
+            <td>{usuario.emailCorporativo}</td>
+            <td>{usuario.perfilPrincipal}</td>
+            <td>{usuario.perfisAdicionais.join(', ') || '-'}</td>
+            <td>{usuario.podeAdministrarConfiguracoes ? 'Administra configuracoes' : usuario.podeRegistrarCotacoes ? 'Cotacoes' : usuario.podeEmitirPedido ? 'Pedido/NF/Pagamento' : usuario.podeAprovarCompras ? 'Aprovacao' : 'Solicitacao'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function AdminHistorico(): JSX.Element {
+  return (
+    <table>
+      <thead><tr><th>Configuracao</th><th>Anterior</th><th>Novo</th><th>Usuario</th><th>Justificativa</th></tr></thead>
+      <tbody>
+        {historicoConfiguracoes.map((item, index) => (
+          <tr key={index}><td>{item.tipoConfiguracao}</td><td>{item.valorAnterior}</td><td>{item.valorNovo}</td><td>{item.usuarioAlteracao}</td><td>{item.justificativa}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function Alcadas({ alcadas }: { alcadas: IAlcadaEnac[] }): JSX.Element {
+  return (
+    <table>
+      <thead><tr><th>Processo</th><th>Valor minimo</th><th>Valor maximo</th><th>Aprovador</th><th>Observacoes</th></tr></thead>
+      <tbody>
+        {alcadas.map((item) => (
+          <tr key={item.id}><td>{item.processo}<br />{item.regraInternaId}</td><td>{item.valorMinimo}</td><td>{item.ilimitado ? 'Ilimitado' : item.valorMaximo}</td><td>{item.aprovadorPrincipalNome}</td><td>{item.observacoes}</td></tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function Historico({ selected }: { selected: ISolicitacaoEnac }): JSX.Element {
+  return (
+    <>
+      <h2>Historico do Processo</h2>
+      <p>{selected.id} - {selected.titulo}</p>
+      {selected.historico.map((evento, index) => (
+        <div className={styles.row} key={index}>
+          <strong>{evento.descricao}</strong>
+          <span>{evento.autor} - {evento.statusNovo}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function Tabela({ solicitacoes, onSelect }: { solicitacoes: ISolicitacaoEnac[]; onSelect: (id: string) => void }): JSX.Element {
+  return (
+    <table>
+      <thead><tr><th>Processo</th><th>Obra</th><th>Status</th><th>Valor</th><th /></tr></thead>
+      <tbody>
+        {solicitacoes.map((item) => (
+          <tr key={item.id}>
+            <td>{item.id}<br />{item.titulo}</td>
+            <td>{item.obra.nome}<br />{item.obra.centroCusto}</td>
+            <td>{item.status}</td>
+            <td>{formatCurrency(item.cotacao?.valorRecomendado)}</td>
+            <td><button onClick={() => onSelect(item.id)}>Abrir</button></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function calcularRegra(alcadas: IAlcadaEnac[], valor: number): IAlcadaEnac {
+  return alcadas.find((item) => item.processo === 'Compra' && item.ativa && valor >= item.valorMinimo && (item.ilimitado || !item.valorMaximo || valor <= item.valorMaximo)) || alcadas[0];
+}

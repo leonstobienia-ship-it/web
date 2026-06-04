@@ -1,0 +1,16 @@
+node_modules/
+dist/
+lib/
+temp/
+release/
+*.sppkg
+*.log
+.env
+.env.*
+!.env.example
+*.pfx
+*.pem
+*.key
+*.cer
+.DS_Store
+Thumbs.db

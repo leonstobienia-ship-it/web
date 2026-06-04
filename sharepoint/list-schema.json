@@ -1,0 +1,83 @@
+{
+  "lists": [
+    {
+      "title": "ENAC Obras",
+      "purpose": "Cadastro de obras, clientes e centros de custo.",
+      "fields": ["Title", "CodigoObra", "Cliente", "CentroCusto", "Status", "ResponsavelTecnico"]
+    },
+    {
+      "title": "ENAC Solicitacoes",
+      "purpose": "Solicitacoes de material, servico, locacao ou equipamento criadas pelos usuarios de campo.",
+      "fields": ["Title", "Obra", "CodigoObra", "Cliente", "CentroCusto", "TipoSolicitacao", "Descricao", "EspecificacaoTecnica", "Quantidade", "Unidade", "FrenteServico", "DataNecessaria", "Prioridade", "JustificativaUrgencia", "AnexoReferencia", "Observacoes", "Solicitante", "DataHoraSolicitacao", "StatusProcesso", "SnapshotAprovacaoCompra"]
+    },
+    {
+      "title": "ENAC Cotacoes",
+      "purpose": "Cotacoes registradas por Kemilly com propostas, recomendacao e justificativas.",
+      "fields": ["Title", "Solicitacao", "Fornecedor1", "Valor1", "Prazo1", "Frete1", "CondicaoPagamento1", "AnexoProposta1", "Fornecedor2", "Valor2", "Prazo2", "Frete2", "CondicaoPagamento2", "AnexoProposta2", "Fornecedor3", "Valor3", "Prazo3", "Frete3", "CondicaoPagamento3", "AnexoProposta3", "FornecedorRecomendado", "ValorRecomendado", "PrazoRecomendado", "CondicaoPagamentoRecomendada", "JustificativaRecomendacao", "JustificativaCotacaoIncompleta", "StatusCotacao"]
+    },
+    {
+      "title": "ENAC Pedidos Compra",
+      "purpose": "Pedidos emitidos pela area de compras e financeiro operacional.",
+      "fields": ["Title", "Solicitacao", "Cotacao", "FornecedorAprovado", "CnpjFornecedor", "ValorAprovado", "CondicaoPagamentoAprovada", "NumeroPedido", "PrazoEntregaConfirmado", "EnderecoEntrega", "ContatoFornecedor", "AnexoPedidoEnviado", "ObservacoesPedido", "StatusPedido"]
+    },
+    {
+      "title": "ENAC Aprovacoes",
+      "purpose": "Eventos e decisoes de aprovacao.",
+      "fields": ["Title", "Solicitacao", "Cotacao", "PedidoCompra", "Alcada", "Aprovador", "Decisao", "DataDecisao", "Justificativa", "Observacao"]
+    },
+    {
+      "title": "ENAC Notas Fiscais",
+      "purpose": "Notas fiscais recebidas, boletos, dados de pagamento e divergencias.",
+      "fields": ["Title", "Solicitacao", "PedidoCompra", "Fornecedor", "NumeroNF", "SerieNF", "ValorBruto", "RetencoesDescontos", "ValorLiquido", "DataEmissao", "DataVencimento", "ArquivoNf", "ArquivoBoletoOuDadosPagamento", "ObservacaoDivergencia", "Divergencia"]
+    },
+    {
+      "title": "ENAC Programacoes Bancarias",
+      "purpose": "Programacao de pagamento no banco feita por Matheus.",
+      "fields": ["Title", "Solicitacao", "NotaFiscal", "BancoContaPagamento", "FormaPagamento", "DataProgramada", "ValorProgramado", "ComprovanteAgendamento", "Observacoes", "StatusProgramacao"]
+    },
+    {
+      "title": "ENAC Liberacoes Bancarias",
+      "purpose": "Liberacao, bloqueio, correcao e confirmacao de pagamento por Leon.",
+      "fields": ["Title", "Solicitacao", "ProgramacaoBancaria", "ResponsavelLiberacao", "Decisao", "DataDecisao", "MotivoBloqueioOuCorrecao", "ConfirmacaoPagamento", "DataPagamento", "StatusFinal"]
+    },
+    {
+      "title": "ENAC Historico Processo",
+      "purpose": "Historico rastreavel do fluxo.",
+      "fields": ["Title", "Solicitacao", "DataEvento", "Autor", "Perfil", "TipoEvento", "Descricao", "Observacao", "StatusAnterior", "StatusNovo"]
+    },
+    {
+      "title": "ENAC Alcadas",
+      "purpose": "Configuracao provisoria de regras de aprovacao.",
+      "fields": ["Title", "RegraInternaId", "Processo", "TipoSolicitacao", "Obra", "ValorMinimo", "ValorMaximo", "Ilimitado", "AprovadorPrincipal", "ExigeAprovacaoAdicional", "AprovadorAdicional", "VigenciaInicial", "VigenciaFinal", "Ativo", "Observacoes"],
+      "constraints": ["RegraInternaId obrigatorio, unico e indexado", "ValorMaximo nao pode ser inferior a ValorMinimo salvo Ilimitado=true", "Nao pode haver sobreposicao de regras ativas/vigentes para mesmo Processo, TipoSolicitacao e Obra", "Regra especifica de Obra prevalece sobre regra geral"]
+    },
+    {
+      "title": "ENAC Usuarios Perfis",
+      "purpose": "Configuracao administrativa de usuarios, perfis, permissoes e substitutos.",
+      "fields": ["Title", "UsuarioInternoId", "ContaMicrosoft365", "EmailCorporativo", "CargoFuncao", "PerfilPrincipal", "PerfilAdicional", "PodeCriarSolicitacao", "PodeRegistrarCotacoes", "PodeAprovarCompras", "PodeEmitirPedido", "PodeVincularNF", "PodeProgramarPagamento", "PodeLiberarPagamento", "PodeAtualizarStatusFinal", "PodeAdministrarConfiguracoes", "UsuarioAtivo", "SubstitutoTemporario", "InicioSubstituicao", "FimSubstituicao", "Observacoes"],
+      "constraints": ["UsuarioInternoId obrigatorio, unico e indexado", "ContaMicrosoft365 e Pessoa ou Grupo, uma pessoa", "ContaMicrosoft365 e a referencia oficial para identificar usuario autenticado", "Usuarios inativos nao podem ser selecionados em novas alcadas/aprovacoes", "Usar Created, Modified, Author e Editor nativos para auditoria"]
+    },
+    {
+      "title": "ENAC Regras Especiais",
+      "purpose": "Parametros de cotacoes, emergencias, divergencias, NF e liberacao bancaria.",
+      "fields": ["Title", "ChaveRegra", "ValorRegra", "JustificativaObrigatoria", "EncaminharPara", "BloquearFluxo", "Ativo", "AlteradoPor", "DataHoraAlteracao"]
+    },
+    {
+      "title": "ENAC Parametros Gerais",
+      "purpose": "Tipos, prioridades, status ativos e regras de anexos obrigatorios.",
+      "fields": ["Title", "GrupoParametro", "ValorParametro", "Ativo", "AlteradoPor", "DataHoraAlteracao"]
+    },
+    {
+      "title": "ENAC Historico Configuracoes",
+      "purpose": "Auditoria administrativa de alteracoes de regras e parametros.",
+      "fields": ["Title", "TipoConfiguracao", "ValorAnterior", "ValorNovo", "Justificativa"],
+      "constraints": ["Historico de inclusao controlada", "Sem edicao comum", "Usar Created e Author nativos para data/hora e usuario"]
+    },
+    {
+      "title": "ENAC Snapshots Regras",
+      "purpose": "Snapshot da regra aplicada no momento da submissao para aprovacao.",
+      "fields": ["Title", "Solicitacao", "Cotacao", "PedidoCompra", "RegraAlcadaUtilizada", "Processo", "FaixaValorVigente", "ValorAnalisado", "AprovadorBaseId", "AprovadorBaseNome", "AprovadorBaseEmail", "AprovadorEfetivoId", "AprovadorEfetivoNome", "AprovadorEfetivoEmail", "SubstituicaoAplicada", "MotivoResolucaoAprovador", "MotivoExcecao", "DataHoraAplicacao"],
+      "constraints": ["Registro imutavel apos criacao", "Mudancas futuras em usuarios ou alcadas nao alteram snapshots ja gravados", "Aprovador base vem da alcada; aprovador efetivo considera substituicao temporaria vigente"]
+    }
+  ]
+}
