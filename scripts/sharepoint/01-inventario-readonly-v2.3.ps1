@@ -6,6 +6,13 @@ param(
     [string]$ClientId,
 
     [Parameter(Mandatory = $false)]
+    [string]$Tenant = "enaccombr.onmicrosoft.com",
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("Interactive", "DeviceLogin")]
+    [string]$AuthMode = "DeviceLogin",
+
+    [Parameter(Mandatory = $false)]
     [string]$OutputDirectory = ".\sharepoint",
 
     [Parameter(Mandatory = $false)]
@@ -25,7 +32,11 @@ function Assert-Prerequisites {
     }
 
     if ([string]::IsNullOrWhiteSpace($ClientId)) {
-        throw "Informe o ClientId de um aplicativo Entra ID apto para login interativo PnP."
+        throw "Informe o ClientId de um aplicativo Entra ID apto para login PnP."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Tenant)) {
+        throw "Informe o dominio tecnico do tenant no formato tenant.onmicrosoft.com."
     }
 }
 
@@ -382,8 +393,25 @@ $jsonPath = Join-Path $outputPath "inventario-listas-reais-v2.3.json"
 $csvPath = Join-Path $outputPath "inventario-listas-reais-v2.3.csv"
 $mdPath = Join-Path $outputPath "inventario-listas-reais-v2.3.md"
 
-Write-Host "Conectando em modo interativo somente leitura: $SiteUrl"
-$connection = Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId $ClientId -ReturnConnection
+if ($AuthMode -eq "DeviceLogin") {
+    Write-Host "Iniciando autenticacao por codigo de dispositivo em modo somente leitura: $SiteUrl" -ForegroundColor Cyan
+
+    $connection = Connect-PnPOnline `
+        -Url $SiteUrl `
+        -DeviceLogin `
+        -Tenant $Tenant `
+        -ClientId $ClientId `
+        -ReturnConnection
+}
+else {
+    Write-Host "Iniciando autenticacao interativa em modo somente leitura: $SiteUrl" -ForegroundColor Cyan
+
+    $connection = Connect-PnPOnline `
+        -Url $SiteUrl `
+        -Interactive `
+        -ClientId $ClientId `
+        -ReturnConnection
+}
 
 $authenticatedUser = ""
 try {

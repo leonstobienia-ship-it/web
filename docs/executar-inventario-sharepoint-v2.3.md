@@ -33,7 +33,8 @@ Requisitos:
 
 - PowerShell 7.4 ou superior.
 - Modulo `PnP.PowerShell` instalado.
-- `ClientId` de aplicativo Entra ID ja autorizado para login interativo com PnP.
+- `ClientId` de aplicativo Entra ID ja autorizado para login PnP.
+- Dominio tecnico do tenant no formato `tenant.onmicrosoft.com`.
 - Usuario com permissao de leitura no site SharePoint.
 
 Se `PnP.PowerShell` nao estiver instalado, o comando sugerido e:
@@ -44,11 +45,17 @@ Install-Module PnP.PowerShell -Scope CurrentUser
 
 Nao execute criacao de aplicativo Entra ID ou `Register-PnPEntraIDAppForInteractiveLogin` sem autorizacao expressa.
 
-## ClientId
+## ClientId e autenticacao
 
-O parametro `ClientId` deve ser o ID de um aplicativo Entra ID previamente configurado para autenticacao interativa PnP no tenant.
+O parametro `ClientId` deve ser o ID de um aplicativo Entra ID previamente configurado para autenticacao PnP no tenant.
 
 O script nao armazena senha, segredo, certificado ou token em arquivo.
+
+A tentativa anterior com `-Interactive` nao concluiu adequadamente no ambiente de execucao do Codex. Para a V2.3A, a autenticacao recomendada e `DeviceLogin`, executada diretamente pelo usuario em uma janela propria do PowerShell 7.
+
+No modo `DeviceLogin`, o terminal exibira um codigo de dispositivo e a URL de login. O usuario devera concluir o acesso no navegador usando esse codigo. O aplicativo validado para esta rodada permanece limitado a permissao delegada SharePoint `AllSites.Read` (`Ler itens em todos os conjuntos de sites`).
+
+O script nao realiza alteracao no tenant; ele apenas conecta e consulta estrutura de listas e campos.
 
 ## Comando de execucao
 
@@ -57,7 +64,9 @@ Executar a partir da raiz do projeto:
 ```powershell
 pwsh -File ".\scripts\sharepoint\01-inventario-readonly-v2.3.ps1" `
   -SiteUrl "https://enaccombr.sharepoint.com/sites/Equipe.Obras" `
-  -ClientId "<CLIENT-ID-DO-APLICATIVO-ENTRA-ID>"
+  -Tenant "enaccombr.onmicrosoft.com" `
+  -ClientId "<CLIENT-ID-DO-APLICATIVO-ENTRA-ID>" `
+  -AuthMode "DeviceLogin"
 ```
 
 Para incluir listas ocultas/sistema no inventario:
@@ -65,8 +74,20 @@ Para incluir listas ocultas/sistema no inventario:
 ```powershell
 pwsh -File ".\scripts\sharepoint\01-inventario-readonly-v2.3.ps1" `
   -SiteUrl "https://enaccombr.sharepoint.com/sites/Equipe.Obras" `
+  -Tenant "enaccombr.onmicrosoft.com" `
   -ClientId "<CLIENT-ID-DO-APLICATIVO-ENTRA-ID>" `
+  -AuthMode "DeviceLogin" `
   -IncluirListasSistema
+```
+
+O modo `Interactive` continua disponivel apenas como alternativa tecnica explicita:
+
+```powershell
+pwsh -File ".\scripts\sharepoint\01-inventario-readonly-v2.3.ps1" `
+  -SiteUrl "https://enaccombr.sharepoint.com/sites/Equipe.Obras" `
+  -Tenant "enaccombr.onmicrosoft.com" `
+  -ClientId "<CLIENT-ID-DO-APLICATIVO-ENTRA-ID>" `
+  -AuthMode "Interactive"
 ```
 
 ## Garantia de somente leitura
@@ -122,7 +143,7 @@ Install-Module PnP.PowerShell -Scope CurrentUser
 
 Mensagem esperada:
 
-`Informe o ClientId de um aplicativo Entra ID apto para login interativo PnP.`
+`Informe o ClientId de um aplicativo Entra ID apto para login PnP.`
 
 Solicitar ao administrador o ClientId correto antes de tentar novamente.
 
@@ -132,7 +153,7 @@ Possiveis causas:
 
 - aplicativo Entra ID sem permissao adequada;
 - usuario sem permissao de leitura no site;
-- tenant bloqueando login interativo;
+- tenant bloqueando o modo de autenticacao usado;
 - URL do site incorreta.
 
 Nao criar novo aplicativo Entra ID sem autorizacao expressa.
