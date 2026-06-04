@@ -11,7 +11,7 @@
 | ENAC Usuarios Perfis | Fim Substituição | FimSubstituicao | `Type=DateTime`, `Format=DateOnly` | `resolverAprovadorEfetivo` | Compatível |
 | ENAC Alcadas | Regra Interna ID | RegraInternaId | Texto, obrigatório, `Indexed=TRUE`, `EnforceUniqueValues=TRUE` | `mapAlcada`, `criarSnapshotAprovacaoCompra` | Compatível |
 | ENAC Alcadas | Processo | Processo | Escolha | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
-| ENAC Alcadas | Tipo Solicitação | TipoSolicitacao | Escolha: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Choices reais da Lista 02 |
+| ENAC Alcadas | Tipo Solicitação | TipoSolicitacao | Escolha: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento/Taxa, Outro | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Choices reais da Lista 02 |
 | ENAC Alcadas | Obra | Obra | Lookup para `Lista 01 - Controle de Obras ENAC` / `NomedaObra`, com regra geral controlada | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Planejado; lista administrativa ausente |
 | ENAC Alcadas | Valor Mínimo | ValorMinimo | `Type=Currency`, `LCID=1046`, `Decimals=2` | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
 | ENAC Alcadas | Valor Máximo | ValorMaximo | `Type=Currency`, `LCID=1046`, `Decimals=2`, opcional | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |

@@ -87,7 +87,7 @@ Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` 
 | `Title` | Regra | Text | Sim | Campo padrão |
 | `RegraInternaId` | ID Interno da Regra | Text | Sim | Único e indexado |
 | `Processo` | Processo | Choice | Sim | Compra, Liberação Bancária, Medição, Pagamento, Outro |
-| `TipoSolicitacao` | Tipo de Solicitação | Choice | Não | Choices reais: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro |
+| `TipoSolicitacao` | Tipo de Solicitação | Choice | Não | Choices reais: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento/Taxa, Outro |
 | `Obra` | Obra | Lookup | Não | Lista 01 / `NomedaObra`; vazio significa regra geral |
 | `ValorMinimo` | Valor Mínimo | Currency | Sim | `LCID=1046`; `Decimals=2` |
 | `ValorMaximo` | Valor Máximo | Currency | Não | `LCID=1046`; `Decimals=2`; vazio quando ilimitado |

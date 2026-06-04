@@ -205,7 +205,7 @@ $plannedAdminLists = @(
             New-FieldPlan "Title" "Regra" "Text" $true $null @() "" "" "Campo padrao"
             New-FieldPlan "RegraInternaId" "ID Interno da Regra" "Text" $true $null @() "" "" "Unico e indexado" "" 0 -1 $true $true
             New-FieldPlan "Processo" "Processo" "Choice" $true $null @("Compra", "Liberação Bancária", "Medição", "Pagamento", "Outro")
-            New-FieldPlan "TipoSolicitacao" "Tipo de Solicitação" "Choice" $false $null @("Material", "Serviço", "Equipamento", "Ferramenta", "Locação", "Terceiro/Prestador", "EPI", "Documento?Taxa", "Outro") "" "" "Choices reais da Lista 02"
+            New-FieldPlan "TipoSolicitacao" "Tipo de Solicitação" "Choice" $false $null @("Material", "Serviço", "Equipamento", "Ferramenta", "Locação", "Terceiro/Prestador", "EPI", "Documento/Taxa", "Outro") "" "" "Choices reais da Lista 02"
             New-FieldPlan "Obra" "Obra" "Lookup" $false $null @() "Lista 01 - Controle de Obras ENAC" "NomedaObra" "Vazio significa regra geral"
             New-FieldPlan "ValorMinimo" "Valor Mínimo" "Currency" $true $null @() "" "" "Moeda brasileira" "" 1046 2
             New-FieldPlan "ValorMaximo" "Valor Máximo" "Currency" $false $null @() "" "" "Vazio quando ilimitado" "" 1046 2

@@ -1,7 +1,7 @@
 {
   "Version": "V2.3A",
   "Mode": "Readonly",
-  "ExecutedAt": "2026-06-04T17:20:02",
+  "ExecutedAt": "2026-06-04T19:08:22",
   "SiteUrl": "https://enaccombr.sharepoint.com/sites/Equipe.Obras",
   "IncludeSystemLists": false,
   "Lists": [
@@ -10822,7 +10822,7 @@
       "ItemCount": 6,
       "EnableVersioning": true,
       "Created": "05/14/2026 19:57:23",
-      "LastItemModifiedDate": "06/01/2026 23:17:33",
+      "LastItemModifiedDate": "06/04/2026 22:05:23",
       "KnownOperationalName": "Lista 02 - Requisicoes de Compra",
       "IsAdministrativeV23": false,
       "Fields": [
@@ -11059,7 +11059,7 @@
           "EnforceUniqueValues": false,
           "LookupField": "",
           "LookupList": "",
-          "Choices": "Material | Serviço | Equipamento | Ferramenta | Locação | Terceiro/Prestador | EPI | Documento?Taxa | Outro",
+          "Choices": "Material | Serviço | Equipamento | Ferramenta | Locação | Terceiro/Prestador | EPI | Documento/Taxa | Outro",
           "DefaultValue": "",
           "CurrencyLocaleId": "",
           "CampoPrioritario": true
@@ -40783,4 +40783,3 @@
     "Lista administrativa V2.3 ausente: ENAC Snapshots Regras"
   ]
 }
-

@@ -75,7 +75,7 @@ Lookups planejados:
 
 Na rodada inicial, `ENAC Snapshots Regras` nao planeja campos `Cotacao` nem `PedidoCompra`, e tambem nao planeja lookups de aprovador base/efetivo. Os aprovadores ficam congelados em campos texto.
 
-`ENAC Alcadas.TipoSolicitacao` deve ser `Choice` com as choices reais da Lista 02: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro.
+`ENAC Alcadas.TipoSolicitacao` deve ser `Choice` com as choices reais da Lista 02: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento/Taxa, Outro.
 
 ## Configuracoes planejadas
 

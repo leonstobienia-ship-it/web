@@ -53,7 +53,7 @@ Criar futuramente apenas:
 
 ## Propriedades tecnicas
 
-- `TipoSolicitacao`: `Choice` com choices reais da Lista 02: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro.
+- `TipoSolicitacao`: `Choice` com choices reais da Lista 02: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento/Taxa, Outro.
 - `ValorMinimo`, `ValorMaximo`, `ValorAnalisado`: `Type=Currency`, `LCID=1046`, `Decimals=2`.
 - `UsuarioInternoId`, `RegraInternaId`: `Indexed=TRUE`, `EnforceUniqueValues=TRUE`.
 - `InicioSubstituicao`, `FimSubstituicao`, `VigenciaInicial`, `VigenciaFinal`: `Type=DateTime`, `Format=DateOnly`.

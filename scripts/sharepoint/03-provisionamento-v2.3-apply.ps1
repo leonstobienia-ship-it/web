@@ -102,7 +102,7 @@ function Invoke-DryRunPlan {
     Write-PlanLine "criar lista ENAC Historico Configuracoes em Lists/ENACHistoricoConfiguracoes"
     Write-PlanLine "criar lista ENAC Snapshots Regras em Lists/ENACSnapshotsRegras"
     Write-PlanLine "criar campo Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra -> ENAC Snapshots Regras / Title"
-    Write-PlanLine "usar TipoSolicitacao como Choice: Material | Serviço | Equipamento | Ferramenta | Locação | Terceiro/Prestador | EPI | Documento?Taxa | Outro"
+    Write-PlanLine "usar TipoSolicitacao como Choice: Material | Serviço | Equipamento | Ferramenta | Locação | Terceiro/Prestador | EPI | Documento/Taxa | Outro"
     Write-PlanLine "usar moedas com Type=Currency, LCID=1046, Decimals=2"
     Write-PlanLine "usar UsuarioInternoId e RegraInternaId com Indexed=TRUE e EnforceUniqueValues=TRUE"
     Write-PlanLine "usar datas sem horario com Type=DateTime e Format=DateOnly"

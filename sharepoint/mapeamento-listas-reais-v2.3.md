@@ -63,7 +63,7 @@ Nao criar `CodigoObra` na Lista 01 nesta rodada.
 
 `SnapshotAprovacaoCompra` devera futuramente ser adicionado a `Lista 02 — Requisições de Compra` como lookup para a futura lista `ENAC Snapshots Regras`.
 
-Choices reais de `Tipo da Solicitação` / `TipodaSolicita_x00e7__x00e3_o`: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro.
+Choices reais de `Tipo da Solicitação` / `TipodaSolicita_x00e7__x00e3_o`: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento/Taxa, Outro.
 
 ## Decisoes de provisionamento
 
