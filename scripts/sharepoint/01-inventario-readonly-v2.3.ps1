@@ -298,7 +298,6 @@ function Write-InventoryMarkdown {
     $lines += ""
     $lines += "- Data/hora: $($Inventory.ExecutedAt)"
     $lines += "- Site: $($Inventory.SiteUrl)"
-    $lines += "- Usuario autenticado: $($Inventory.AuthenticatedUser)"
     $lines += "- Listas inventariadas: $($Inventory.Lists.Count)"
     $lines += ""
 
@@ -413,12 +412,10 @@ else {
         -ReturnConnection
 }
 
-$authenticatedUser = ""
 try {
-    $web = Get-PnPWeb -Connection $connection -Includes CurrentUser
-    $authenticatedUser = $web.CurrentUser.Title
+    Get-PnPWeb -Connection $connection | Out-Null
 } catch {
-    $authenticatedUser = "Nao disponivel pelo inventario sem consulta adicional"
+    Write-Warning "Conexao autenticada, mas nao foi possivel validar o web atual sem consulta adicional."
 }
 
 $lists = Get-PnPList -Connection $connection -Includes RootFolder,BaseTemplate,BaseType,Hidden,ItemCount,EnableVersioning,Created,LastItemModifiedDate
@@ -486,7 +483,6 @@ $inventory = [pscustomobject]@{
     Mode                    = "Readonly"
     ExecutedAt              = (Get-Date).ToString("s")
     SiteUrl                 = $SiteUrl
-    AuthenticatedUser       = $authenticatedUser
     IncludeSystemLists      = [bool]$IncluirListasSistema
     Lists                   = $listInventory
     ObrasList               = $obrasList
@@ -514,7 +510,7 @@ $csvRows = foreach ($list in $listInventory) {
         }
     }
 }
-$csvRows | Export-Csv -LiteralPath $csvPath -Delimiter ";" -NoTypeInformation -Encoding utf8
+$csvRows | Export-Csv -LiteralPath $csvPath -Delimiter ";" -Encoding utf8
 
 Write-InventoryMarkdown -Path $mdPath -Inventory $inventory
 

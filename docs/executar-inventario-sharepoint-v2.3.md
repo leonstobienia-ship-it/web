@@ -57,6 +57,8 @@ No modo `DeviceLogin`, o terminal exibira um codigo de dispositivo e a URL de lo
 
 O script nao realiza alteracao no tenant; ele apenas conecta e consulta estrutura de listas e campos.
 
+O inventario nao exporta o nome, e-mail ou identificador do usuario autenticado. A validacao de conexao e feita tecnicamente, sem registrar identidade pessoal nos relatorios.
+
 ## Comando de execucao
 
 Executar a partir da raiz do projeto:
@@ -116,6 +118,8 @@ Conteudo esperado:
 - JSON completo com listas e campos.
 - CSV com uma linha por campo.
 - Relatorio Markdown com listas operacionais, campos prioritarios e divergencias para provisionamento futuro.
+
+O CSV e gerado sem o parametro obsoleto `NoTypeInformation`, evitando o warning emitido por versoes recentes do PowerShell.
 
 ## Falhas comuns
 
