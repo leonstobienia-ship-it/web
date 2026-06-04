@@ -45,6 +45,7 @@ A V2.3 só pode avançar para homologação após:
 Antes de qualquer criação real no tenant:
 
 - Revisar o dry-run de `scripts/sharepoint/02-provisionamento-v2.3-dryrun.ps1`.
+- Considerar concluida a validacao residual readonly de `TipoSolicitacao`: 6 itens lidos, `Documento?Taxa=0`, `Documento/Taxa=0`, outros valores=6 e vazio/nulo=0. Nenhuma migracao de item legado e necessaria.
 - Confirmar que não serão criadas listas `ENACObras` ou `ENACSolicitacoes`.
 - Confirmar criação planejada apenas das listas administrativas ausentes: `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`.
 - Confirmar que `ENAC Alcadas.Obra` aponta para Lista 01 por GUID `a9afadc1-f843-45c0-a628-4f49a8716832` / `NomedaObra`.

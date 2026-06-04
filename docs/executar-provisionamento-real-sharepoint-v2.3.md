@@ -31,6 +31,29 @@ O script recusa explicitamente `-Apply` quando o `ClientId` informado for o apli
 
 O aplicativo readonly `ENAC-PnP-Inventario-SharePoint-Readonly-V2.3A` permanece restrito a inventario e dry-run de leitura.
 
+## Aplicativo separado de provisionamento
+
+O aplicativo readonly nao deve ser reutilizado nem ampliado. A avaliacao de provisionamento deve usar um aplicativo separado:
+
+- Nome recomendado: `ENAC-PnP-Provisionamento-SharePoint-V2.3A`.
+- Cmdlet local verificado: `Register-PnPEntraIDAppForInteractiveLogin`.
+- Parametro de permissao SharePoint delegado: `-SharePointDelegatePermissions <string[]>`.
+- Permissoes delegadas SharePoint aceitas pelo PnP local incluem `AllSites.Read`, `AllSites.Write`, `AllSites.Manage`, `AllSites.FullControl` e `Sites.Selected`.
+- Candidata para avaliacao de criacao de listas/campos sem FullControl: `AllSites.Manage`.
+
+Nao solicitar `AllSites.FullControl` sem autorizacao expressa. Se o consentimento exibir permissao inesperada de escrita ampla, controle total, Graph ou TermStore nao prevista, cancelar e revisar antes de continuar.
+
+Comando preparado para execucao supervisionada, ainda nao executado pelo Codex:
+
+```powershell
+Register-PnPEntraIDAppForInteractiveLogin `
+  -ApplicationName "ENAC-PnP-Provisionamento-SharePoint-V2.3A" `
+  -Tenant "enaccombr.onmicrosoft.com" `
+  -SharePointDelegatePermissions @("AllSites.Manage")
+```
+
+Apos o aplicativo separado ser criado e validado visualmente, executar no maximo o script `03` em dry-run, sem `-Apply` e sem `-ConfirmProvisionamento`, usando o novo ClientId.
+
 ## Estruturas planejadas
 
 Nao criar:

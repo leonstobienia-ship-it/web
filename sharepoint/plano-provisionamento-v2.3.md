@@ -155,6 +155,20 @@ Não planejar nesta rodada `Cotacao`, `PedidoCompra` nem lookups de aprovador ba
 
 - `SnapshotAprovacaoCompra`: lookup para `ENAC Snapshots Regras`, criado na Lista 02 resolvida por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
 
+## Validacao residual da choice TipoSolicitacao
+
+Leon executou manualmente a validacao readonly residual da Lista 02. O script leu somente o campo interno `TipodaSolicita_x00e7__x00e3_o` e exibiu contagens agregadas:
+
+| Metrica | Resultado |
+| --- | --- |
+| Total de itens lidos | 6 |
+| Valor legado `Documento?Taxa` | 0 |
+| Valor correto `Documento/Taxa` | 0 |
+| Outros valores | 6 |
+| Vazio/nulo | 0 |
+
+Nao ha migracao de itens legados a executar antes do provisionamento. `Documento/Taxa` permanece como choice funcional vigente para `ENAC Alcadas.TipoSolicitacao`.
+
 ## Configurações das listas novas
 
 | Lista | Versionamento | Anexos | Edição em grade |

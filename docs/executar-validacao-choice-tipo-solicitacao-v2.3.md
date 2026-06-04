@@ -39,3 +39,17 @@ O retorno deve conter apenas:
 - quantidade com vazio/nulo.
 
 Se a quantidade com `Documento?Taxa` for maior que zero, nao executar provisionamento real antes de decidir se esses itens antigos devem ser corrigidos, preservados como historico ou tratados por regra de compatibilidade.
+
+## Resultado manual registrado
+
+Leon executou manualmente o script readonly e confirmou:
+
+- lista validada por GUID: `Lista 02 — Requisições de Compra` / `0a204b87-b9a1-4d16-8654-55567a62ed01`;
+- campo interno lido: `TipodaSolicita_x00e7__x00e3_o`;
+- total de itens lidos: 6;
+- quantidade com valor legado `Documento?Taxa`: 0;
+- quantidade com valor atual `Documento/Taxa`: 0;
+- quantidade com outros valores: 6;
+- quantidade com vazio/nulo: 0.
+
+Conclusao: nao existem registros residuais com `Documento?Taxa`. Nao ha migracao de itens legados a executar antes do provisionamento, e `Documento/Taxa` permanece como choice funcional vigente para `TipoSolicitacao`.
