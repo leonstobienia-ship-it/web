@@ -6,6 +6,8 @@ Solicitação de compra no valor de `R$ 6.720,00`.
 
 ## Testes após provisionamento
 
+Pré-condição técnica: scripts de SharePoint devem resolver listas operacionais existentes por GUID: Lista 01 `a9afadc1-f843-45c0-a628-4f49a8716832` e Lista 02 `0a204b87-b9a1-4d16-8654-55567a62ed01`. Titulos visiveis servem apenas para conferencia humana.
+
 1. Abrir a webpart no contexto Microsoft 365.
 2. Resolver o usuário autenticado por `ContaMicrosoft365`.
 3. Confirmar que usuário inativo é bloqueado para novas alçadas e novas aprovações.
@@ -14,7 +16,7 @@ Solicitação de compra no valor de `R$ 6.720,00`.
 6. Criar solicitação de R$ 6.720,00 e confirmar Gustavo como aprovador base.
 7. Criar snapshot de compra.
 8. Confirmar que aprovador base e efetivo são iguais quando não há substituição.
-9. Vincular snapshot em `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`.
+9. Vincular snapshot em `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`, com Lista 02 resolvida por GUID.
 10. Alterar alçada para que R$ 6.720,00 passe a exigir Leon.
 11. Confirmar que processo antigo mantém snapshot com Gustavo.
 12. Criar nova solicitação de R$ 6.720,00 e confirmar Leon como aprovador base.
@@ -32,7 +34,7 @@ A V2.3 só pode avançar para homologação após:
 
 - build SPFx real concluído;
 - listas/campos provisionados ou mapeados;
-- `Lista 01 - Controle de Obras ENAC` e `Lista 02 — Requisições de Compra` usadas como listas físicas reais;
+- `Lista 01 - Controle de Obras ENAC` e `Lista 02 — Requisições de Compra` usadas como listas físicas reais, resolvidas por GUID nos scripts;
 - leitura e gravação SharePoint testadas;
 - snapshot criado e vinculado;
 - permissões mínimas validadas;
@@ -45,8 +47,8 @@ Antes de qualquer criação real no tenant:
 - Revisar o dry-run de `scripts/sharepoint/02-provisionamento-v2.3-dryrun.ps1`.
 - Confirmar que não serão criadas listas `ENACObras` ou `ENACSolicitacoes`.
 - Confirmar criação planejada apenas das listas administrativas ausentes: `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`.
-- Confirmar que `ENAC Alcadas.Obra` aponta para `Lista 01 - Controle de Obras ENAC` / `NomedaObra`.
-- Confirmar que `SnapshotAprovacaoCompra` será adicionado à `Lista 02 — Requisições de Compra`.
+- Confirmar que `ENAC Alcadas.Obra` aponta para Lista 01 por GUID `a9afadc1-f843-45c0-a628-4f49a8716832` / `NomedaObra`.
+- Confirmar que `SnapshotAprovacaoCompra` será adicionado à Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
 - Confirmar que as URLs técnicas planejadas são `Lists/ENACUsuariosPerfis`, `Lists/ENACAlcadas`, `Lists/ENACHistoricoConfiguracoes` e `Lists/ENACSnapshotsRegras`.
 - Confirmar que `ENAC Usuarios Perfis` usa `PerfisAdicionais` e não o campo singular do desenho anterior.
 - Confirmar que `ENAC Historico Configuracoes` inclui `AcaoRealizada` e `ItemConfiguracaoId`, usando `Author` e `Created` nativos.
@@ -56,5 +58,5 @@ Antes de qualquer criação real no tenant:
 - Confirmar `TipoSolicitacao` como Choice com choices reais da Lista 02.
 - Confirmar moedas com `LCID=1046` e `Decimals=2`.
 - Confirmar `UsuarioInternoId` e `RegraInternaId` com `Indexed=TRUE` e `EnforceUniqueValues=TRUE`.
-- Confirmar `ENAC Snapshots Regras.Solicitacao` apontando para Lista 02 / `ID`.
+- Confirmar `ENAC Snapshots Regras.Solicitacao` apontando para Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01` / `ID`.
 - Confirmar que snapshots e histórico só serão considerados protegidos após permissões específicas.

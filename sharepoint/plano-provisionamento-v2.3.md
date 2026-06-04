@@ -23,6 +23,13 @@
 11. `ENAC Historico Configuracoes`
 12. `ENAC Snapshots Regras`
 
+Diretriz operacional: scripts devem localizar listas fisicas existentes pelos GUIDs confirmados no inventario, nao pelo titulo visivel. Titulos sao usados apenas para exibicao e conferencia humana.
+
+| Entidade lógica | GUID operacional |
+| --- | --- |
+| Obras / Lista 01 | `a9afadc1-f843-45c0-a628-4f49a8716832` |
+| Solicitações / Lista 02 | `0a204b87-b9a1-4d16-8654-55567a62ed01` |
+
 ## Listas novas prováveis
 
 - `ENAC Usuarios Perfis`.
@@ -43,13 +50,13 @@ Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` 
 
 ## Ordem de criação
 
-1. Validar `Lista 01 - Controle de Obras ENAC`.
-2. Validar `Lista 02 — Requisições de Compra`.
+1. Validar `Lista 01 - Controle de Obras ENAC` por GUID `a9afadc1-f843-45c0-a628-4f49a8716832`.
+2. Validar `Lista 02 — Requisições de Compra` por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
 3. Criar/validar `ENAC Usuarios Perfis`.
-4. Criar/validar `ENAC Alcadas`, com lookup de obra para a Lista 01.
+4. Criar/validar `ENAC Alcadas`, com lookup de obra para a Lista 01 resolvida por GUID.
 5. Criar/validar `ENAC Historico Configuracoes`.
 6. Criar/validar `ENAC Snapshots Regras`.
-7. Criar lookup `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra` para `ENAC Snapshots Regras`.
+7. Criar lookup `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra` para `ENAC Snapshots Regras`, usando a Lista 02 resolvida por GUID.
 8. Configurar permissões SharePoint somente em rodada futura autorizada.
 
 ## Colunas críticas a criar ou ajustar
@@ -88,7 +95,7 @@ Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` 
 | `RegraInternaId` | ID Interno da Regra | Text | Sim | Único e indexado |
 | `Processo` | Processo | Choice | Sim | Compra, Liberação Bancária, Medição, Pagamento, Outro |
 | `TipoSolicitacao` | Tipo de Solicitação | Choice | Não | Choices reais: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento/Taxa, Outro |
-| `Obra` | Obra | Lookup | Não | Lista 01 / `NomedaObra`; vazio significa regra geral |
+| `Obra` | Obra | Lookup | Não | Lista 01 por GUID `a9afadc1-f843-45c0-a628-4f49a8716832` / `NomedaObra`; vazio significa regra geral |
 | `ValorMinimo` | Valor Mínimo | Currency | Sim | `LCID=1046`; `Decimals=2` |
 | `ValorMaximo` | Valor Máximo | Currency | Não | `LCID=1046`; `Decimals=2`; vazio quando ilimitado |
 | `Ilimitado` | Sem Limite Máximo | Boolean | Sim | Padrão `false` |
@@ -124,7 +131,7 @@ Não criar campos customizados para autor e data/hora; usar `Author` e `Created`
 | Nome interno | Nome exibido | Tipo | Obrigatório | Regra |
 | --- | --- | --- | --- | --- |
 | `Title` | Código do Snapshot | Text | Sim | Campo padrão |
-| `Solicitacao` | Solicitação | Lookup | Sim | Lista 02 — Requisições de Compra / `ID` |
+| `Solicitacao` | Solicitação | Lookup | Sim | Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01` / `ID` |
 | `RegraAlcadaUtilizada` | Regra de Alçada Utilizada | Lookup | Sim | `ENAC Alcadas` |
 | `RegraInternaId` | ID Interno da Regra Aplicada | Text | Sim | Congelado |
 | `ResumoRegraAplicada` | Resumo da Regra Aplicada | Note | Sim | Congelado |
@@ -146,7 +153,7 @@ Não planejar nesta rodada `Cotacao`, `PedidoCompra` nem lookups de aprovador ba
 
 ### Lista 02 — Requisições de Compra
 
-- `SnapshotAprovacaoCompra`: lookup para `ENAC Snapshots Regras`.
+- `SnapshotAprovacaoCompra`: lookup para `ENAC Snapshots Regras`, criado na Lista 02 resolvida por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
 
 ## Configurações das listas novas
 

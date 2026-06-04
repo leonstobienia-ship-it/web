@@ -6,6 +6,7 @@ O script e estritamente de leitura:
 
 - usa o aplicativo readonly aprovado;
 - conecta por `DeviceLogin` ou `Interactive`;
+- resolve a lista operacional pelo GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`;
 - consulta somente a `Lista 02 — Requisições de Compra`;
 - solicita apenas o campo interno `TipodaSolicita_x00e7__x00e3_o`;
 - exibe somente contagens agregadas;
@@ -34,6 +35,7 @@ O retorno deve conter apenas:
 - total de itens lidos;
 - quantidade com valor legado `Documento?Taxa`;
 - quantidade com valor atual `Documento/Taxa`;
-- quantidade com outros valores ou vazio.
+- quantidade com outros valores;
+- quantidade com vazio/nulo.
 
 Se a quantidade com `Documento?Taxa` for maior que zero, nao executar provisionamento real antes de decidir se esses itens antigos devem ser corrigidos, preservados como historico ou tratados por regra de compatibilidade.

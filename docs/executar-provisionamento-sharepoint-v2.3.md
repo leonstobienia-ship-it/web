@@ -61,15 +61,17 @@ Listas administrativas previstas:
 
 Campo adicional planejado em lista existente:
 
-- `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`
+- `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`, usando a Lista 02 resolvida pelo GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
+
+Diretriz operacional: listas fisicas existentes devem ser referenciadas nos scripts pelos GUIDs confirmados no inventario. Os titulos amigaveis sao usados apenas para exibicao e conferencia humana, evitando falhas por travessao, acentuacao ou diferencas invisiveis no titulo.
 
 Lookups planejados:
 
-- `ENAC Alcadas.Obra` -> `Lista 01 - Controle de Obras ENAC` / `NomedaObra`
+- `ENAC Alcadas.Obra` -> `Lista 01 - Controle de Obras ENAC` / GUID `a9afadc1-f843-45c0-a628-4f49a8716832` / `NomedaObra`
 - `ENAC Alcadas.AprovadorPrincipal` -> `ENAC Usuarios Perfis`
 - `ENAC Alcadas.AprovadorAdicional` -> `ENAC Usuarios Perfis`
 - `ENAC Usuarios Perfis.SubstitutoTemporario` -> `ENAC Usuarios Perfis`
-- `ENAC Snapshots Regras.Solicitacao` -> `Lista 02 — Requisições de Compra` / `ID`
+- `ENAC Snapshots Regras.Solicitacao` -> `Lista 02 — Requisições de Compra` / GUID `0a204b87-b9a1-4d16-8654-55567a62ed01` / `ID`
 - `ENAC Snapshots Regras.RegraAlcadaUtilizada` -> `ENAC Alcadas`, se mantido como lookup
 - `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra` -> `ENAC Snapshots Regras`
 

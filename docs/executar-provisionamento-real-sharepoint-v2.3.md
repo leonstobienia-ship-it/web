@@ -43,6 +43,8 @@ Validar listas operacionais existentes:
 - Obras: `Lista 01 - Controle de Obras ENAC` / `a9afadc1-f843-45c0-a628-4f49a8716832`;
 - Requisicoes: `Lista 02 — Requisições de Compra` / `0a204b87-b9a1-4d16-8654-55567a62ed01`.
 
+Nos scripts, essas listas operacionais devem ser localizadas pelos GUIDs acima. Os titulos visiveis continuam apenas como informacao de log/conferencia, pois podem conter travessao, acentuacao ou caracteres invisiveis diferentes do texto digitado.
+
 Criar futuramente apenas:
 
 - `ENAC Usuarios Perfis` / `Lists/ENACUsuariosPerfis`;

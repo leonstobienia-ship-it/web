@@ -18,6 +18,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$obrasListId = [Guid]"a9afadc1-f843-45c0-a628-4f49a8716832"
+$solicitacoesListId = [Guid]"0a204b87-b9a1-4d16-8654-55567a62ed01"
+
 if ($Apply) {
     throw "Modo Apply nao esta habilitado nesta rodada. Revise o dry-run e use um aplicativo separado com permissao de escrita somente apos autorizacao expressa."
 }
@@ -58,6 +61,15 @@ function Find-List {
     )
 
     return $Lists | Where-Object { $_.Title -eq $Title } | Select-Object -First 1
+}
+
+function Find-ListByGuid {
+    param(
+        [array]$Lists,
+        [Guid]$Id
+    )
+
+    return $Lists | Where-Object { $_.Id -eq $Id } | Select-Object -First 1
 }
 
 function Test-FieldExists {
@@ -206,7 +218,7 @@ $plannedAdminLists = @(
             New-FieldPlan "RegraInternaId" "ID Interno da Regra" "Text" $true $null @() "" "" "Unico e indexado" "" 0 -1 $true $true
             New-FieldPlan "Processo" "Processo" "Choice" $true $null @("Compra", "Liberação Bancária", "Medição", "Pagamento", "Outro")
             New-FieldPlan "TipoSolicitacao" "Tipo de Solicitação" "Choice" $false $null @("Material", "Serviço", "Equipamento", "Ferramenta", "Locação", "Terceiro/Prestador", "EPI", "Documento/Taxa", "Outro") "" "" "Choices reais da Lista 02"
-            New-FieldPlan "Obra" "Obra" "Lookup" $false $null @() "Lista 01 - Controle de Obras ENAC" "NomedaObra" "Vazio significa regra geral"
+            New-FieldPlan "Obra" "Obra" "Lookup" $false $null @() "Lista 01 - Controle de Obras ENAC [$obrasListId]" "NomedaObra" "Vazio significa regra geral"
             New-FieldPlan "ValorMinimo" "Valor Mínimo" "Currency" $true $null @() "" "" "Moeda brasileira" "" 1046 2
             New-FieldPlan "ValorMaximo" "Valor Máximo" "Currency" $false $null @() "" "" "Vazio quando ilimitado" "" 1046 2
             New-FieldPlan "Ilimitado" "Sem Limite Máximo" "Boolean" $true $false
@@ -265,31 +277,31 @@ $plannedAdminLists = @(
 )
 
 $plannedLookups = @(
-    "ENAC Alcadas.Obra -> Lista 01 - Controle de Obras ENAC / NomedaObra",
+    "ENAC Alcadas.Obra -> Lista 01 - Controle de Obras ENAC [$obrasListId] / NomedaObra",
     "ENAC Alcadas.AprovadorPrincipal -> ENAC Usuarios Perfis / Title",
     "ENAC Alcadas.AprovadorAdicional -> ENAC Usuarios Perfis / Title",
     "ENAC Usuarios Perfis.SubstitutoTemporario -> ENAC Usuarios Perfis / Title",
-    "ENAC Snapshots Regras.Solicitacao -> Lista 02 — Requisições de Compra / ID",
+    "ENAC Snapshots Regras.Solicitacao -> Lista 02 — Requisições de Compra [$solicitacoesListId] / ID",
     "ENAC Snapshots Regras.RegraAlcadaUtilizada -> ENAC Alcadas / Title",
-    "Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra -> ENAC Snapshots Regras / Title"
+    "Lista 02 — Requisições de Compra [$solicitacoesListId].SnapshotAprovacaoCompra -> ENAC Snapshots Regras / Title"
 )
 
 $provisioningOrder = @(
-    "1. Validar Lista 01 - Controle de Obras ENAC",
-    "2. Validar Lista 02 — Requisições de Compra",
+    "1. Validar Lista 01 - Controle de Obras ENAC por GUID $obrasListId",
+    "2. Validar Lista 02 — Requisições de Compra por GUID $solicitacoesListId",
     "3. Criar ENAC Usuarios Perfis",
     "4. Criar ENAC Alcadas",
     "5. Criar ENAC Historico Configuracoes",
     "6. Criar ENAC Snapshots Regras",
-    "7. Criar Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra",
+    "7. Criar Lista 02 — Requisições de Compra [$solicitacoesListId].SnapshotAprovacaoCompra",
     "8. Revisar permissoes especificas de snapshots e historico em rodada futura"
 )
 
 $connection = Connect-Readonly
 $lists = Get-PnPList -Connection $connection -Includes RootFolder,Hidden,ItemCount
 
-$obrasList = Find-List -Lists $lists -Title "Lista 01 - Controle de Obras ENAC"
-$solicitacoesList = Find-List -Lists $lists -Title "Lista 02 — Requisições de Compra"
+$obrasList = Find-ListByGuid -Lists $lists -Id $obrasListId
+$solicitacoesList = Find-ListByGuid -Lists $lists -Id $solicitacoesListId
 
 Write-Host ""
 Write-Host "Dry-run V2.3A - nenhuma alteracao sera aplicada." -ForegroundColor Green
@@ -298,13 +310,13 @@ Write-Host ""
 
 Write-Host "Listas operacionais obrigatorias:"
 foreach ($entry in @(
-    @{ Logical = "Obras"; Title = "Lista 01 - Controle de Obras ENAC"; List = $obrasList },
-    @{ Logical = "Solicitacoes"; Title = "Lista 02 — Requisições de Compra"; List = $solicitacoesList }
+    @{ Logical = "Obras"; Title = "Lista 01 - Controle de Obras ENAC"; Id = $obrasListId; List = $obrasList },
+    @{ Logical = "Solicitacoes"; Title = "Lista 02 — Requisições de Compra"; Id = $solicitacoesListId; List = $solicitacoesList }
 )) {
     if ($entry.List) {
-        Write-Host "OK   $($entry.Logical): $($entry.Title) [$($entry.List.Id)]"
+        Write-Host "OK   $($entry.Logical): $($entry.Title) validada por GUID [$($entry.List.Id)]"
     } else {
-        Write-Host "FALTA $($entry.Logical): $($entry.Title)" -ForegroundColor Yellow
+        Write-Host "FALTA $($entry.Logical): $($entry.Title) [$($entry.Id)]" -ForegroundColor Yellow
     }
 }
 
@@ -327,10 +339,10 @@ if ($solicitacoesList) {
     if ($snapshotFieldExists) {
         Write-Host "OK   Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra ja existe"
     } else {
-        Write-Host "CRIAR campo=SnapshotAprovacaoCompra; titulo=Snapshot da Aprovação de Compra; tipo=Lookup; obrigatorio=False; lookup=ENAC Snapshots Regras / Title"
+        Write-Host "CRIAR campo=SnapshotAprovacaoCompra; lista=Lista 02 — Requisições de Compra [$solicitacoesListId]; titulo=Snapshot da Aprovação de Compra; tipo=Lookup; obrigatorio=False; lookup=ENAC Snapshots Regras / Title"
     }
 } else {
-    Write-Host "PENDENTE: Lista 02 — Requisições de Compra nao encontrada; nao e possivel planejar o campo SnapshotAprovacaoCompra com seguranca." -ForegroundColor Yellow
+    Write-Host "PENDENTE: Lista 02 — Requisições de Compra [$solicitacoesListId] nao encontrada por GUID; nao e possivel planejar o campo SnapshotAprovacaoCompra com seguranca." -ForegroundColor Yellow
 }
 
 Write-Host ""

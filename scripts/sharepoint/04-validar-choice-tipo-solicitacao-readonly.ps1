@@ -16,10 +16,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 $readonlyClientId = "0dab19b3-8e48-4f89-ad94-1446b08d3781"
-$listTitle = "Lista 02 — Requisições de Compra"
-$fieldInternalName = "TipodaSolicita_x00e7__x00e3_o"
-$legacyValue = "Documento?Taxa"
-$currentValue = "Documento/Taxa"
+$list02Id = [Guid]"0a204b87-b9a1-4d16-8654-55567a62ed01"
+$list02DisplayName = "Lista 02 — Requisições de Compra"
+$tipoSolicitacaoField = "TipodaSolicita_x00e7__x00e3_o"
+$valorLegado = "Documento?Taxa"
+$valorCorreto = "Documento/Taxa"
 
 function Assert-Prerequisites {
     if ($PSVersionTable.PSVersion -lt [version]"7.4") {
@@ -47,37 +48,49 @@ function Connect-PnPReadonly {
 Assert-Prerequisites
 $connection = Connect-PnPReadonly
 
+$list02 = Get-PnPList `
+    -Identity $list02Id `
+    -ThrowExceptionIfListNotFound `
+    -Connection $connection
+
+Write-Host ("Lista validada por GUID: {0} [{1}]" -f $list02.Title, $list02.Id)
+
 $items = Get-PnPListItem `
     -Connection $connection `
-    -List $listTitle `
-    -Fields $fieldInternalName `
+    -List $list02 `
+    -Fields $tipoSolicitacaoField `
     -PageSize 500
 
 $total = 0
 $legacyCount = 0
 $currentCount = 0
-$otherOrBlankCount = 0
+$otherCount = 0
+$blankCount = 0
 
 foreach ($item in $items) {
     $total++
-    $value = [string]$item.FieldValues[$fieldInternalName]
+    $value = $item.FieldValues[$tipoSolicitacaoField]
 
-    if ($value -eq $legacyValue) {
+    if ($null -eq $value -or [string]::IsNullOrWhiteSpace([string]$value)) {
+        $blankCount++
+    }
+    elseif ([string]$value -eq $valorLegado) {
         $legacyCount++
     }
-    elseif ($value -eq $currentValue) {
+    elseif ([string]$value -eq $valorCorreto) {
         $currentCount++
     }
     else {
-        $otherOrBlankCount++
+        $otherCount++
     }
 }
 
 Write-Host "Validacao readonly de Tipo da Solicitação concluida."
-Write-Host "Lista: $listTitle"
-Write-Host "Campo interno lido: $fieldInternalName"
+Write-Host "Lista esperada: $list02DisplayName [$list02Id]"
+Write-Host "Campo interno lido: $tipoSolicitacaoField"
 Write-Host "Total de itens lidos: $total"
-Write-Host "Quantidade com valor legado '$legacyValue': $legacyCount"
-Write-Host "Quantidade com valor atual '$currentValue': $currentCount"
-Write-Host "Quantidade com outros valores ou vazio: $otherOrBlankCount"
+Write-Host "Quantidade com valor legado '$valorLegado': $legacyCount"
+Write-Host "Quantidade com valor atual '$valorCorreto': $currentCount"
+Write-Host "Quantidade com outros valores: $otherCount"
+Write-Host "Quantidade com vazio/nulo: $blankCount"
 Write-Host "Nenhum item, documento, anexo, valor financeiro, solicitante ou campo adicional foi exportado."
