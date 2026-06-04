@@ -118,22 +118,294 @@ function Invoke-DryRunPlan {
     Write-PlanLine "desativar edicao em grade nas quatro listas administrativas"
 }
 
+function ConvertTo-XmlAttributeValue {
+    param([string]$Value)
+
+    return [System.Security.SecurityElement]::Escape($Value)
+}
+
+function ConvertTo-XmlBool {
+    param([bool]$Value)
+
+    if ($Value) { return "TRUE" }
+    return "FALSE"
+}
+
+function Get-ListByTitleOrUrl {
+    param($Connection, [string]$Title, [string]$TechnicalUrl)
+
+    $lists = Get-PnPList -Connection $Connection -Includes RootFolder,Hidden,ItemCount
+    return $lists | Where-Object {
+        $_.Title -eq $Title -or $_.RootFolder.ServerRelativeUrl -like "*/$TechnicalUrl"
+    } | Select-Object -First 1
+}
+
+function Ensure-AdministrativeList {
+    param($Connection, [string]$Title, [string]$TechnicalUrl)
+
+    $list = Get-ListByTitleOrUrl -Connection $Connection -Title $Title -TechnicalUrl $TechnicalUrl
+    if ($list) {
+        Write-Host "OK lista administrativa existente: $Title [$($list.Id)]"
+    }
+    else {
+        Write-Host "CRIAR lista administrativa: $Title em $TechnicalUrl"
+        $list = New-PnPList -Connection $Connection -Title $Title -Template GenericList -Url $TechnicalUrl -EnableVersioning
+    }
+
+    Set-PnPList -Connection $Connection -Identity $list -EnableVersioning $true -EnableAttachments $false -DisableGridEditing $true
+    return Get-PnPList -Connection $Connection -Identity $list.Id -Includes RootFolder,Hidden,ItemCount
+}
+
+function Test-FieldExists {
+    param($Connection, $List, [string]$InternalName)
+
+    $field = Get-PnPField -Connection $Connection -List $List | Where-Object {
+        $_.InternalName -eq $InternalName -or $_.StaticName -eq $InternalName
+    } | Select-Object -First 1
+
+    return [bool]$field
+}
+
+function New-FieldXml {
+    param(
+        [hashtable]$Field,
+        [hashtable]$LookupLists
+    )
+
+    $internalName = ConvertTo-XmlAttributeValue $Field.InternalName
+    $displayName = ConvertTo-XmlAttributeValue $Field.DisplayName
+    $required = ConvertTo-XmlBool ([bool]$Field.Required)
+    $indexed = ConvertTo-XmlBool ([bool]$Field.Indexed)
+    $enforceUnique = ConvertTo-XmlBool ([bool]$Field.EnforceUniqueValues)
+    $type = $Field.Type
+
+    $attributes = @(
+        "Type=`"$type`"",
+        "Name=`"$internalName`"",
+        "StaticName=`"$internalName`"",
+        "DisplayName=`"$displayName`"",
+        "Required=`"$required`""
+    )
+
+    if ($Field.Indexed) { $attributes += "Indexed=`"$indexed`"" }
+    if ($Field.EnforceUniqueValues) { $attributes += "EnforceUniqueValues=`"$enforceUnique`"" }
+
+    if ($type -eq "Currency") {
+        $attributes += "LCID=`"$($Field.Lcid)`""
+        $attributes += "Decimals=`"$($Field.Decimals)`""
+    }
+    elseif ($type -eq "DateTime") {
+        $attributes += "Format=`"$($Field.Format)`""
+    }
+    elseif ($type -eq "Note") {
+        $attributes += "RichText=`"FALSE`""
+        $attributes += "NumLines=`"6`""
+    }
+    elseif ($type -eq "User") {
+        $attributes += "UserSelectionMode=`"PeopleOnly`""
+        $attributes += "Mult=`"FALSE`""
+    }
+    elseif ($type -eq "Lookup") {
+        $lookupList = $LookupLists[$Field.LookupList]
+        if (-not $lookupList) {
+            throw "Lookup '$($Field.InternalName)' referencia lista ainda nao resolvida: $($Field.LookupList)."
+        }
+        $attributes += "List=`"{$($lookupList.Id)}`""
+        $attributes += "ShowField=`"$($Field.LookupField)`""
+    }
+
+    $choicesXml = ""
+    if ($type -eq "Choice" -or $type -eq "MultiChoice") {
+        $choiceLines = @()
+        foreach ($choice in $Field.Choices) {
+            $choiceLines += "<CHOICE>$(ConvertTo-XmlAttributeValue $choice)</CHOICE>"
+        }
+        $choicesXml = "<CHOICES>$($choiceLines -join '')</CHOICES>"
+    }
+
+    $defaultXml = ""
+    if ($null -ne $Field.Default) {
+        $defaultValue = $Field.Default
+        if ($type -eq "Boolean") {
+            if ([bool]$Field.Default) { $defaultValue = "1" } else { $defaultValue = "0" }
+        }
+        $defaultXml = "<Default>$(ConvertTo-XmlAttributeValue ([string]$defaultValue))</Default>"
+    }
+
+    return "<Field $($attributes -join ' ')>$choicesXml$defaultXml</Field>"
+}
+
+function Ensure-Field {
+    param($Connection, $List, [hashtable]$Field, [hashtable]$LookupLists)
+
+    if ($Field.InternalName -eq "Title") {
+        Write-Host "AJUSTAR campo padrao Title em $($List.Title)"
+        Set-PnPField -Connection $Connection -List $List -Identity "Title" -Values @{ Title = $Field.DisplayName; Required = [bool]$Field.Required }
+        return
+    }
+
+    if (Test-FieldExists -Connection $Connection -List $List -InternalName $Field.InternalName) {
+        Write-Host "OK campo existente: $($List.Title).$($Field.InternalName)"
+        return
+    }
+
+    $fieldXml = New-FieldXml -Field $Field -LookupLists $LookupLists
+    Write-Host "CRIAR campo: $($List.Title).$($Field.InternalName) [$($Field.Type)]"
+    Add-PnPFieldFromXml -Connection $Connection -List $List -FieldXml $fieldXml
+}
+
+function New-FieldPlan {
+    param(
+        [string]$InternalName,
+        [string]$DisplayName,
+        [string]$Type,
+        [bool]$Required = $false,
+        $Default = $null,
+        [string[]]$Choices = @(),
+        [string]$LookupList = "",
+        [string]$LookupField = "",
+        [string]$Format = "",
+        [int]$Lcid = 0,
+        [int]$Decimals = -1,
+        [bool]$Indexed = $false,
+        [bool]$EnforceUniqueValues = $false
+    )
+
+    return @{
+        InternalName = $InternalName
+        DisplayName = $DisplayName
+        Type = $Type
+        Required = $Required
+        Default = $Default
+        Choices = $Choices
+        LookupList = $LookupList
+        LookupField = $LookupField
+        Format = $Format
+        Lcid = $Lcid
+        Decimals = $Decimals
+        Indexed = $Indexed
+        EnforceUniqueValues = $EnforceUniqueValues
+    }
+}
+
+function Get-AdministrativeListPlans {
+    $profileChoices = @("Campo / Engenheiro", "Cotações e Contratos", "Compras e Financeiro Operacional", "Planejamento", "Diretoria", "Administrador do Sistema")
+    $tipoSolicitacaoChoices = @("Material", "Serviço", "Equipamento", "Ferramenta", "Locação", "Terceiro/Prestador", "EPI", "Documento/Taxa", "Outro")
+
+    return @(
+        @{
+            Title = "ENAC Usuarios Perfis"
+            TechnicalUrl = "Lists/ENACUsuariosPerfis"
+            Fields = @(
+                New-FieldPlan "Title" "Nome Completo" "Text" $true
+                New-FieldPlan "UsuarioInternoId" "ID Interno do Usuário" "Text" $true $null @() "" "" "" 0 -1 $true $true
+                New-FieldPlan "ContaMicrosoft365" "Conta Microsoft 365" "User" $true
+                New-FieldPlan "EmailCorporativo" "E-mail Corporativo" "Text" $true
+                New-FieldPlan "CargoFuncao" "Cargo / Função" "Text"
+                New-FieldPlan "PerfilPrincipal" "Perfil Principal" "Choice" $true $null $profileChoices
+                New-FieldPlan "PerfisAdicionais" "Perfis Adicionais" "MultiChoice" $false $null $profileChoices
+                New-FieldPlan "PodeCriarSolicitacao" "Pode Criar Solicitação" "Boolean" $true $false
+                New-FieldPlan "PodeRegistrarCotacoes" "Pode Registrar Cotações" "Boolean" $true $false
+                New-FieldPlan "PodeAprovarCompras" "Pode Aprovar Compras" "Boolean" $true $false
+                New-FieldPlan "PodeEmitirPedido" "Pode Emitir Pedido" "Boolean" $true $false
+                New-FieldPlan "PodeVincularNF" "Pode Vincular NF" "Boolean" $true $false
+                New-FieldPlan "PodeProgramarPagamento" "Pode Programar Pagamento" "Boolean" $true $false
+                New-FieldPlan "PodeLiberarPagamento" "Pode Liberar Pagamento" "Boolean" $true $false
+                New-FieldPlan "PodeAtualizarStatusFinal" "Pode Atualizar Status Final" "Boolean" $true $false
+                New-FieldPlan "PodeAdministrarConfiguracoes" "Pode Administrar Configurações" "Boolean" $true $false
+                New-FieldPlan "UsuarioAtivo" "Usuário Ativo" "Boolean" $true $true
+                New-FieldPlan "SubstitutoTemporario" "Substituto Temporário" "Lookup" $false $null @() "ENAC Usuarios Perfis" "Title"
+                New-FieldPlan "InicioSubstituicao" "Início da Substituição" "DateTime" $false $null @() "" "" "DateOnly"
+                New-FieldPlan "FimSubstituicao" "Fim da Substituição" "DateTime" $false $null @() "" "" "DateOnly"
+                New-FieldPlan "Observacoes" "Observações" "Note"
+            )
+        }
+        @{
+            Title = "ENAC Alcadas"
+            TechnicalUrl = "Lists/ENACAlcadas"
+            Fields = @(
+                New-FieldPlan "Title" "Regra" "Text" $true
+                New-FieldPlan "RegraInternaId" "ID Interno da Regra" "Text" $true $null @() "" "" "" 0 -1 $true $true
+                New-FieldPlan "Processo" "Processo" "Choice" $true $null @("Compra", "Liberação Bancária", "Medição", "Pagamento", "Outro")
+                New-FieldPlan "TipoSolicitacao" "Tipo de Solicitação" "Choice" $false $null $tipoSolicitacaoChoices
+                New-FieldPlan "Obra" "Obra" "Lookup" $false $null @() "Lista 01 - Controle de Obras ENAC" "NomedaObra"
+                New-FieldPlan "ValorMinimo" "Valor Mínimo" "Currency" $true $null @() "" "" "" 1046 2
+                New-FieldPlan "ValorMaximo" "Valor Máximo" "Currency" $false $null @() "" "" "" 1046 2
+                New-FieldPlan "Ilimitado" "Sem Limite Máximo" "Boolean" $true $false
+                New-FieldPlan "AprovadorPrincipal" "Aprovador Principal" "Lookup" $true $null @() "ENAC Usuarios Perfis" "Title"
+                New-FieldPlan "ExigeAprovacaoAdicional" "Exige Aprovação Adicional" "Boolean" $true $false
+                New-FieldPlan "AprovadorAdicional" "Aprovador Adicional" "Lookup" $false $null @() "ENAC Usuarios Perfis" "Title"
+                New-FieldPlan "VigenciaInicial" "Vigência Inicial" "DateTime" $true $null @() "" "" "DateOnly"
+                New-FieldPlan "VigenciaFinal" "Vigência Final" "DateTime" $false $null @() "" "" "DateOnly"
+                New-FieldPlan "Ativo" "Regra Ativa" "Boolean" $true $true
+                New-FieldPlan "Observacoes" "Observações" "Note"
+            )
+        }
+        @{
+            Title = "ENAC Historico Configuracoes"
+            TechnicalUrl = "Lists/ENACHistoricoConfiguracoes"
+            Fields = @(
+                New-FieldPlan "Title" "Resumo do Evento" "Text" $true
+                New-FieldPlan "TipoConfiguracao" "Tipo de Configuração" "Choice" $true $null @("Usuário", "Alçada", "Regra Especial", "Parâmetro Geral")
+                New-FieldPlan "AcaoRealizada" "Ação Realizada" "Choice" $true $null @("Inclusão", "Edição", "Ativação", "Desativação", "Ajuste Vinculado")
+                New-FieldPlan "ItemConfiguracaoId" "ID do Item Configurado" "Text" $true
+                New-FieldPlan "ValorAnterior" "Valor Anterior" "Note"
+                New-FieldPlan "ValorNovo" "Valor Novo" "Note" $true
+                New-FieldPlan "Justificativa" "Justificativa" "Note"
+            )
+        }
+        @{
+            Title = "ENAC Snapshots Regras"
+            TechnicalUrl = "Lists/ENACSnapshotsRegras"
+            Fields = @(
+                New-FieldPlan "Title" "Código do Snapshot" "Text" $true
+                New-FieldPlan "Solicitacao" "Solicitação" "Lookup" $true $null @() "Lista 02 — Requisições de Compra" "ID"
+                New-FieldPlan "RegraAlcadaUtilizada" "Regra de Alçada Utilizada" "Lookup" $true $null @() "ENAC Alcadas" "Title"
+                New-FieldPlan "RegraInternaId" "ID Interno da Regra Aplicada" "Text" $true
+                New-FieldPlan "ResumoRegraAplicada" "Resumo da Regra Aplicada" "Note" $true
+                New-FieldPlan "Processo" "Processo" "Choice" $true $null @("Compra")
+                New-FieldPlan "FaixaValorVigente" "Faixa de Valor Vigente" "Text" $true
+                New-FieldPlan "ValorAnalisado" "Valor Analisado" "Currency" $true $null @() "" "" "" 1046 2
+                New-FieldPlan "AprovadorBaseId" "ID do Aprovador Base" "Text" $true
+                New-FieldPlan "AprovadorBaseNome" "Nome do Aprovador Base" "Text" $true
+                New-FieldPlan "AprovadorBaseEmail" "E-mail do Aprovador Base" "Text" $true
+                New-FieldPlan "AprovadorEfetivoId" "ID do Aprovador Efetivo" "Text" $true
+                New-FieldPlan "AprovadorEfetivoNome" "Nome do Aprovador Efetivo" "Text" $true
+                New-FieldPlan "AprovadorEfetivoEmail" "E-mail do Aprovador Efetivo" "Text" $true
+                New-FieldPlan "SubstituicaoAplicada" "Substituição Aplicada" "Boolean" $true $false
+                New-FieldPlan "MotivoResolucaoAprovador" "Motivo da Resolução do Aprovador" "Note"
+                New-FieldPlan "MotivoExcecao" "Motivo da Exceção" "Note"
+                New-FieldPlan "DataHoraAplicacao" "Data/Hora da Aplicação" "DateTime" $true $null @() "" "" "DateTime"
+            )
+        }
+    )
+}
+
 function Invoke-ApplyProvisioning {
-    param($Connection)
+    param($Connection, $OperationalLists)
 
-    throw "Aplicacao real ainda depende de revisao final do dry-run, aplicativo separado com permissao de escrita e autorizacao expressa. Nenhum comando de criacao foi executado."
+    $lookupLists = @{
+        "Lista 01 - Controle de Obras ENAC" = $OperationalLists.Obras
+        "Lista 02 — Requisições de Compra" = $OperationalLists.Solicitacoes
+    }
 
-    <#
-    Implementacao futura autorizada:
-    - New-PnPList apenas para as quatro listas administrativas ausentes.
-    - Set-PnPList para versionamento, anexos desativados e edicao em grade desativada.
-    - Add-PnPField/Add-PnPFieldFromXml somente para campos planejados.
-    - Nenhuma exclusao de lista ou campo.
-    - Nenhuma alteracao de itens existentes.
-    - ENAC Alcadas.Obra deve usar Lista 01 resolvida por GUID e exibir NomedaObra.
-    - ENAC Snapshots Regras.Solicitacao deve usar Lista 02 resolvida por GUID e exibir ID.
-    - SnapshotAprovacaoCompra apenas na Lista 02 resolvida por GUID.
-    #>
+    $adminLists = @{}
+    foreach ($plan in Get-AdministrativeListPlans) {
+        $adminLists[$plan.Title] = Ensure-AdministrativeList -Connection $Connection -Title $plan.Title -TechnicalUrl $plan.TechnicalUrl
+        $lookupLists[$plan.Title] = $adminLists[$plan.Title]
+    }
+
+    foreach ($plan in Get-AdministrativeListPlans) {
+        $list = $adminLists[$plan.Title]
+        foreach ($field in $plan.Fields) {
+            Ensure-Field -Connection $Connection -List $list -Field $field -LookupLists $lookupLists
+        }
+    }
+
+    $snapshotField = New-FieldPlan "SnapshotAprovacaoCompra" "Snapshot da Aprovação de Compra" "Lookup" $false $null @() "ENAC Snapshots Regras" "Title"
+    Ensure-Field -Connection $Connection -List $OperationalLists.Solicitacoes -Field $snapshotField -LookupLists $lookupLists
+
+    Write-Host "Provisionamento estrutural V2.3A concluido: apenas listas administrativas planejadas e SnapshotAprovacaoCompra foram criados/ajustados."
 }
 
 Assert-Prerequisites
@@ -151,4 +423,4 @@ if (-not $Apply) {
     return
 }
 
-Invoke-ApplyProvisioning -Connection $connection
+Invoke-ApplyProvisioning -Connection $connection -OperationalLists $validatedLists
