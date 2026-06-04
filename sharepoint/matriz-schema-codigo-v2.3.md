@@ -11,7 +11,7 @@
 | ENAC Alcadas | Regra Interna ID | RegraInternaId | Texto, obrigatório, único, indexado | `mapAlcada`, `criarSnapshotAprovacaoCompra` | Compatível; criar índice/uniqueness |
 | ENAC Alcadas | Processo | Processo | Escolha | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
 | ENAC Alcadas | Tipo Solicitação | TipoSolicitacao | Escolha | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
-| ENAC Alcadas | Obra | Obra | Lookup ou texto “Todas” | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível; validar tipo real |
+| ENAC Alcadas | Obra | Obra | Lookup para `Lista 01 - Controle de Obras ENAC` / `NomedaObra`, com regra geral controlada | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Planejado; lista administrativa ausente |
 | ENAC Alcadas | Valor Mínimo | ValorMinimo | Moeda/número | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
 | ENAC Alcadas | Valor Máximo | ValorMaximo | Moeda/número opcional | `selecionarRegraAlcadaCompra`, `validarAlcadas` | Compatível |
 | ENAC Alcadas | Ilimitado | Ilimitado | Sim/Não | `mapAlcada`, `selecionarRegraAlcadaCompra` | Compatível |
@@ -30,10 +30,12 @@
 | ENAC Snapshots Regras | Substituição Aplicada | SubstituicaoAplicada | Sim/Não | `criarSnapshotAprovacaoCompra` | Compatível |
 | ENAC Snapshots Regras | Motivo Resolução Aprovador | MotivoResolucaoAprovador | Múltiplas linhas de texto | `criarSnapshotAprovacaoCompra` | Compatível |
 | ENAC Snapshots Regras | Motivo Exceção | MotivoExcecao | Múltiplas linhas de texto opcional | `criarSnapshotAprovacaoCompra` | Compatível |
-| ENAC Solicitacoes | Snapshot Aprovação Compra | SnapshotAprovacaoCompra | Lookup para ENAC Snapshots Regras | `listarSolicitacoes`, `persistirSnapshotAprovacaoCompra` | Compatível |
+| Lista 02 — Requisições de Compra | Snapshot Aprovação Compra | SnapshotAprovacaoCompra | Lookup para ENAC Snapshots Regras | `listarSolicitacoes`, `persistirSnapshotAprovacaoCompra` | Campo ausente; criar após `ENAC Snapshots Regras` |
 
 ## Observações
 
 - `AprovadorSubstituto` não deve ser criado em `ENAC Alcadas` nesta rodada.
-- `SnapshotRegraAtual` não deve ser usado em `ENAC Solicitacoes`.
+- `SnapshotRegraAtual` não deve ser usado na lista real de requisições.
+- `ENAC Obras` e `ENAC Solicitacoes` são entidades lógicas; fisicamente usar `Lista 01 - Controle de Obras ENAC` e `Lista 02 — Requisições de Compra`.
+- As listas administrativas `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras` estão ausentes no tenant e devem ser criadas somente após dry-run aprovado.
 - Campos já existentes com nomes internos diferentes devem ser mapeados antes de alterar o repositório.

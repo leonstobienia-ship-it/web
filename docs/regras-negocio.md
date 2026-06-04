@@ -85,4 +85,6 @@ Ao enviar um processo para aprovação, o sistema grava a regra vigente aplicada
 
 O snapshot registra ID da regra, resumo da regra, valor submetido, aprovador base, aprovador efetivo, substituição aplicada, motivo de resolução, exceção aplicada e data/hora da submissão.
 
-`ENAC Solicitacoes` deve usar o campo específico `SnapshotAprovacaoCompra`, evitando campo genérico que conflite com futuros snapshots de pagamento, medição ou liberação bancária.
+Na estrutura real do tenant, a entidade lógica `ENAC Solicitacoes` corresponde à lista física `Lista 02 — Requisições de Compra`. Essa lista deve receber futuramente o campo específico `SnapshotAprovacaoCompra`, evitando campo genérico que conflite com futuros snapshots de pagamento, medição ou liberação bancária.
+
+`ENAC Obras` corresponde à lista física `Lista 01 - Controle de Obras ENAC`. Não criar `ENACObras`, `ENACSolicitacoes` nem `CodigoObra` na Lista 01 nesta rodada.

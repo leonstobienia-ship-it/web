@@ -13,7 +13,7 @@ A V2.3 inicia a integração real com SharePoint na webpart SPFx. O protótipo H
 - Estado de tela: componentes React consumindo repositório SharePoint na V2.3.
 - Persistência local do protótipo: `localStorage` para usuários, alçadas e histórico administrativo.
 - Serviços: repositórios isolados para integração SharePoint.
-- Backend V2.3: listas SharePoint existentes ou listas ajustadas a partir do schema documentado.
+- Backend V2.3: listas SharePoint reais inventariadas, com listas operacionais numeradas reaproveitadas e listas administrativas criadas apenas apos dry-run aprovado.
 - Documentos futuros: bibliotecas SharePoint para propostas, pedidos, notas fiscais, boletos, comprovantes, contratos e anexos.
 - Integrações futuras: Power Automate, Teams, contabilidade e eventuais APIs financeiras.
 
@@ -89,7 +89,15 @@ Alterações futuras em alçadas não podem alterar retroativamente processos j�
 7. Validar sobreposição e lacunas de regras.
 8. Resolver substituição temporária pelo cadastro do usuário, não pela alçada.
 9. Criar snapshot imutável em `ENAC Snapshots Regras`.
-10. Vincular o snapshot de compra em `ENAC Solicitacoes.SnapshotAprovacaoCompra`.
+10. Vincular o snapshot de compra em `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`.
+
+## Mapeamento SharePoint V2.3A
+
+O inventario readonly confirmou que as listas operacionais ja existem no tenant. A arquitetura deve usar `Lista 01 - Controle de Obras ENAC` para obras e `Lista 02 — Requisições de Compra` para solicitações de compra, sem criar `ENACObras` ou `ENACSolicitacoes`.
+
+O campo `ENAC Alcadas.Obra` deve ser planejado como lookup para `Lista 01 - Controle de Obras ENAC`, exibindo `NomedaObra`. O campo `SnapshotAprovacaoCompra` deve ser adicionado futuramente à `Lista 02 — Requisições de Compra` como lookup para `ENAC Snapshots Regras`.
+
+O mapa físico completo está em `sharepoint/mapeamento-listas-reais-v2.3.md`.
 
 ## Limite de segurança
 

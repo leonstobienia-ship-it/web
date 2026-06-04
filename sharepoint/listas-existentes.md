@@ -24,9 +24,25 @@ O protótipo Microsoft 365 já utiliza listas e bibliotecas para operação da E
 - Histórico de configurações.
 - Snapshots de regras aplicadas.
 
+## Inventario readonly V2.3A
+
+Os nomes internos reais de listas e campos foram inventariados em modo readonly. O mapa consolidado está em `sharepoint/mapeamento-listas-reais-v2.3.md`.
+
+As listas operacionais físicas já existem como listas numeradas de 01 a 14. A V2.3 não deve criar `ENACObras` nem `ENACSolicitacoes`; deve mapear essas entidades para:
+
+- `Lista 01 - Controle de Obras ENAC`.
+- `Lista 02 — Requisições de Compra`.
+
+As listas administrativas abaixo não foram encontradas e ficam previstas para criação futura após dry-run aprovado:
+
+- `ENAC Usuarios Perfis`.
+- `ENAC Alcadas`.
+- `ENAC Historico Configuracoes`.
+- `ENAC Snapshots Regras`.
+
 ## Ponto de atenção
 
-Os nomes internos reais de listas e campos devem ser confirmados antes de apontar a webpart para produção. O arquivo `list-schema.json` define o contrato esperado pela V2.3.
+O arquivo `list-schema.json` define o contrato esperado pela V2.3, agora distinguindo listas operacionais reais já existentes e listas administrativas novas.
 
 ## Padrão de nomes internos
 
@@ -42,4 +58,5 @@ Os nomes internos reais de listas e campos devem ser confirmados antes de aponta
 - `ENAC Usuarios Perfis.UsuarioInternoId`: obrigatório, único e indexado.
 - `ENAC Usuarios Perfis.ContaMicrosoft365`: Pessoa ou Grupo, uma pessoa, referência oficial do usuário autenticado.
 - `ENAC Alcadas.RegraInternaId`: obrigatório, único e indexado.
-- `ENAC Solicitacoes.SnapshotAprovacaoCompra`: lookup para `ENAC Snapshots Regras`.
+- `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`: lookup futuro para `ENAC Snapshots Regras`.
+- `ENAC Alcadas.Obra`: lookup futuro para `Lista 01 - Controle de Obras ENAC`, exibindo `NomedaObra`.

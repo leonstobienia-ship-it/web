@@ -14,7 +14,7 @@ Solicitação de compra no valor de `R$ 6.720,00`.
 6. Criar solicitação de R$ 6.720,00 e confirmar Gustavo como aprovador base.
 7. Criar snapshot de compra.
 8. Confirmar que aprovador base e efetivo são iguais quando não há substituição.
-9. Vincular snapshot em `ENAC Solicitacoes.SnapshotAprovacaoCompra`.
+9. Vincular snapshot em `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`.
 10. Alterar alçada para que R$ 6.720,00 passe a exigir Leon.
 11. Confirmar que processo antigo mantém snapshot com Gustavo.
 12. Criar nova solicitação de R$ 6.720,00 e confirmar Leon como aprovador base.
@@ -32,7 +32,18 @@ A V2.3 só pode avançar para homologação após:
 
 - build SPFx real concluído;
 - listas/campos provisionados ou mapeados;
+- `Lista 01 - Controle de Obras ENAC` e `Lista 02 — Requisições de Compra` usadas como listas físicas reais;
 - leitura e gravação SharePoint testadas;
 - snapshot criado e vinculado;
 - permissões mínimas validadas;
 - riscos de segurança registrados.
+
+## Pré-teste de provisionamento V2.3A
+
+Antes de qualquer criação real no tenant:
+
+- Revisar o dry-run de `scripts/sharepoint/02-provisionamento-v2.3-dryrun.ps1`.
+- Confirmar que não serão criadas listas `ENACObras` ou `ENACSolicitacoes`.
+- Confirmar criação planejada apenas das listas administrativas ausentes: `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`.
+- Confirmar que `ENAC Alcadas.Obra` aponta para `Lista 01 - Controle de Obras ENAC` / `NomedaObra`.
+- Confirmar que `SnapshotAprovacaoCompra` será adicionado à `Lista 02 — Requisições de Compra`.

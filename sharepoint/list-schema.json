@@ -2,12 +2,20 @@
   "lists": [
     {
       "title": "ENAC Obras",
+      "physicalListTitle": "Lista 01 - Controle de Obras ENAC",
+      "physicalListId": "a9afadc1-f843-45c0-a628-4f49a8716832",
+      "provisioning": "existing",
       "purpose": "Cadastro de obras, clientes e centros de custo.",
+      "note": "Entidade logica. Nao criar ENACObras/ENAC Obras; usar lista fisica existente.",
       "fields": ["Title", "CodigoObra", "Cliente", "CentroCusto", "Status", "ResponsavelTecnico"]
     },
     {
       "title": "ENAC Solicitacoes",
+      "physicalListTitle": "Lista 02 — Requisições de Compra",
+      "physicalListId": "0a204b87-b9a1-4d16-8654-55567a62ed01",
+      "provisioning": "existing",
       "purpose": "Solicitacoes de material, servico, locacao ou equipamento criadas pelos usuarios de campo.",
+      "note": "Entidade logica. Nao criar ENACSolicitacoes/ENAC Solicitacoes; adicionar SnapshotAprovacaoCompra na lista fisica existente apos aprovacao do provisionamento.",
       "fields": ["Title", "Obra", "CodigoObra", "Cliente", "CentroCusto", "TipoSolicitacao", "Descricao", "EspecificacaoTecnica", "Quantidade", "Unidade", "FrenteServico", "DataNecessaria", "Prioridade", "JustificativaUrgencia", "AnexoReferencia", "Observacoes", "Solicitante", "DataHoraSolicitacao", "StatusProcesso", "SnapshotAprovacaoCompra"]
     },
     {
@@ -47,12 +55,14 @@
     },
     {
       "title": "ENAC Alcadas",
+      "provisioning": "planned-admin",
       "purpose": "Configuracao provisoria de regras de aprovacao.",
       "fields": ["Title", "RegraInternaId", "Processo", "TipoSolicitacao", "Obra", "ValorMinimo", "ValorMaximo", "Ilimitado", "AprovadorPrincipal", "ExigeAprovacaoAdicional", "AprovadorAdicional", "VigenciaInicial", "VigenciaFinal", "Ativo", "Observacoes"],
       "constraints": ["RegraInternaId obrigatorio, unico e indexado", "ValorMaximo nao pode ser inferior a ValorMinimo salvo Ilimitado=true", "Nao pode haver sobreposicao de regras ativas/vigentes para mesmo Processo, TipoSolicitacao e Obra", "Regra especifica de Obra prevalece sobre regra geral"]
     },
     {
       "title": "ENAC Usuarios Perfis",
+      "provisioning": "planned-admin",
       "purpose": "Configuracao administrativa de usuarios, perfis, permissoes e substitutos.",
       "fields": ["Title", "UsuarioInternoId", "ContaMicrosoft365", "EmailCorporativo", "CargoFuncao", "PerfilPrincipal", "PerfilAdicional", "PodeCriarSolicitacao", "PodeRegistrarCotacoes", "PodeAprovarCompras", "PodeEmitirPedido", "PodeVincularNF", "PodeProgramarPagamento", "PodeLiberarPagamento", "PodeAtualizarStatusFinal", "PodeAdministrarConfiguracoes", "UsuarioAtivo", "SubstitutoTemporario", "InicioSubstituicao", "FimSubstituicao", "Observacoes"],
       "constraints": ["UsuarioInternoId obrigatorio, unico e indexado", "ContaMicrosoft365 e Pessoa ou Grupo, uma pessoa", "ContaMicrosoft365 e a referencia oficial para identificar usuario autenticado", "Usuarios inativos nao podem ser selecionados em novas alcadas/aprovacoes", "Usar Created, Modified, Author e Editor nativos para auditoria"]
@@ -69,12 +79,14 @@
     },
     {
       "title": "ENAC Historico Configuracoes",
+      "provisioning": "planned-admin",
       "purpose": "Auditoria administrativa de alteracoes de regras e parametros.",
       "fields": ["Title", "TipoConfiguracao", "ValorAnterior", "ValorNovo", "Justificativa"],
       "constraints": ["Historico de inclusao controlada", "Sem edicao comum", "Usar Created e Author nativos para data/hora e usuario"]
     },
     {
       "title": "ENAC Snapshots Regras",
+      "provisioning": "planned-admin",
       "purpose": "Snapshot da regra aplicada no momento da submissao para aprovacao.",
       "fields": ["Title", "Solicitacao", "Cotacao", "PedidoCompra", "RegraAlcadaUtilizada", "Processo", "FaixaValorVigente", "ValorAnalisado", "AprovadorBaseId", "AprovadorBaseNome", "AprovadorBaseEmail", "AprovadorEfetivoId", "AprovadorEfetivoNome", "AprovadorEfetivoEmail", "SubstituicaoAplicada", "MotivoResolucaoAprovador", "MotivoExcecao", "DataHoraAplicacao"],
       "constraints": ["Registro imutavel apos criacao", "Mudancas futuras em usuarios ou alcadas nao alteram snapshots ja gravados", "Aprovador base vem da alcada; aprovador efetivo considera substituicao temporaria vigente"]

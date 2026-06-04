@@ -16,6 +16,8 @@ Os valores acima são dados simulados editáveis no módulo Administração / Co
 
 As alçadas devem ser parâmetros persistidos no SharePoint pela V2.3. A aplicação consulta a configuração vigente no momento da submissão e grava um snapshot da regra aplicada no processo.
 
+Na estrutura real inventariada, `ENAC Alcadas.Obra` deve ser planejado como lookup para `Lista 01 - Controle de Obras ENAC`, exibindo o campo `NomedaObra`. Regras gerais devem continuar permitindo a opção "todas as obras" por convenção controlada pelo desenho do campo/regra, sem criar `ENACObras`.
+
 ## Campos mínimos por regra
 
 - Processo: compra, medição, pagamento, liberação bancária ou outro.

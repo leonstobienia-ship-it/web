@@ -26,11 +26,20 @@ Os demais processos validados no Microsoft 365 permanecem documentados como cont
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
 
-Congelamento solicitado:
+Controle de versão confirmado:
 
-- Tag prevista: `v2.2-interface-homologada`.
-- Branch prevista: `dev/v2.3-sharepoint-integracao`.
-- Observação: neste ambiente, o executável `git` não está disponível no PATH, então a tag/branch precisam ser criadas em uma máquina com Git disponível.
+- Baseline protegido em `master`: `d8ab5a0`.
+- Branch de trabalho: `dev/v2.3-sharepoint-integracao`.
+- Não foi criada tag retroativa da V2.2 porque não havia histórico anterior recuperável.
+
+O inventário readonly V2.3A confirmou que as listas operacionais reais já existem no tenant com títulos numerados. O mapeamento oficial está em `sharepoint/mapeamento-listas-reais-v2.3.md`.
+
+Para a V2.3, não criar `ENACObras` nem `ENACSolicitacoes`; usar:
+
+- Obras: `Lista 01 - Controle de Obras ENAC`.
+- Solicitações/Requisições: `Lista 02 — Requisições de Compra`.
+
+As listas administrativas `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras` estão ausentes e serão planejadas por dry-run antes de qualquer provisionamento real.
 
 ## Protótipo
 
@@ -74,6 +83,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.3-sharepoint-integracao.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
+- `sharepoint/mapeamento-listas-reais-v2.3.md`
 - `src/prototype/`
 - `src/webparts/enacSistema/`
 - `tests/fluxos-mvp.md`

@@ -2,44 +2,46 @@
 
 ## Premissas
 
-- Não presumir que listas ou nomes internos já existem.
+- O inventario readonly V2.3A confirmou listas operacionais numeradas já existentes.
 - Não recriar automaticamente listas/campos existentes.
 - Validar nomes internos antes de apontar a webpart para produção.
 - Não implementar Power Automate nesta rodada.
+- O aplicativo readonly atual serve apenas para inventário e dry-run de leitura.
 
 ## Listas a validar
 
-1. `ENAC Obras`
-2. `ENAC Solicitacoes`
-3. `ENAC Cotacoes`
-4. `ENAC Pedidos Compra`
-5. `ENAC Notas Fiscais`
-6. `ENAC Programacoes Bancarias`
-7. `ENAC Liberacoes Bancarias`
-8. `ENAC Historico Processo`
+1. `Lista 01 - Controle de Obras ENAC`
+2. `Lista 02 — Requisições de Compra`
+3. `Lista 03 — Pedidos de Compra`
+4. `Lista 04 - Notas Fiscais Recebidas`
+5. `05 — Contas a Pagar`
+6. `Lista 10 — Contas a Pagar / Programação Financeira`
+7. Demais listas operacionais 06 a 14 conforme `mapeamento-listas-reais-v2.3.md`
+8. Bibliotecas padrão do site, apenas se forem referenciadas por campos URL/anexo
 9. `ENAC Usuarios Perfis`
 10. `ENAC Alcadas`
-11. `ENAC Regras Especiais`
-12. `ENAC Parametros Gerais`
-13. `ENAC Historico Configuracoes`
-14. `ENAC Snapshots Regras`
+11. `ENAC Historico Configuracoes`
+12. `ENAC Snapshots Regras`
 
 ## Listas novas prováveis
 
-- `ENAC Snapshots Regras`, se ainda não existir.
-- `ENAC Usuarios Perfis`, caso o cadastro atual esteja espalhado ou exista apenas em formulário.
-- `ENAC Alcadas`, caso as regras atuais estejam fixas em Power Automate/listas antigas.
+- `ENAC Usuarios Perfis`.
+- `ENAC Alcadas`.
+- `ENAC Historico Configuracoes`.
+- `ENAC Snapshots Regras`.
+
+Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` como listas físicas nesta rodada.
 
 ## Ordem de criação
 
-1. Criar/validar `ENAC Obras`.
-2. Criar/validar `ENAC Usuarios Perfis`.
-3. Criar/validar `ENAC Alcadas`, com lookups/pessoas para aprovadores.
-4. Criar/validar listas operacionais: solicitações, cotações, pedidos, NF, programação e liberação.
-5. Criar/validar `ENAC Snapshots Regras`.
-6. Criar lookup `ENAC Solicitacoes.SnapshotAprovacaoCompra` para `ENAC Snapshots Regras`.
-7. Criar/validar históricos e parâmetros.
-8. Configurar permissões SharePoint.
+1. Validar `Lista 01 - Controle de Obras ENAC`.
+2. Validar `Lista 02 — Requisições de Compra`.
+3. Criar/validar `ENAC Usuarios Perfis`.
+4. Criar/validar `ENAC Alcadas`, com lookup de obra para a Lista 01.
+5. Criar/validar `ENAC Historico Configuracoes`.
+6. Criar/validar `ENAC Snapshots Regras`.
+7. Criar lookup `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra` para `ENAC Snapshots Regras`.
+8. Configurar permissões SharePoint somente em rodada futura autorizada.
 
 ## Colunas críticas a criar ou ajustar
 
@@ -57,7 +59,7 @@
 - `RegraInternaId`: texto, obrigatório, único, indexado.
 - `Processo`: escolha.
 - `TipoSolicitacao`: escolha.
-- `Obra`: lookup para obra ou texto controlado “Todas”.
+- `Obra`: lookup para `Lista 01 - Controle de Obras ENAC` / `NomedaObra`, com regra geral controlada.
 - `ValorMinimo`, `ValorMaximo`, `Ilimitado`.
 - `AprovadorPrincipal`: Pessoa ou Grupo, uma pessoa.
 - `AprovadorAdicional`: Pessoa ou Grupo, uma pessoa, opcional.
@@ -73,7 +75,7 @@
 - `MotivoExcecao`.
 - `DataHoraAplicacao`.
 
-### ENAC Solicitacoes
+### Lista 02 — Requisições de Compra
 
 - `SnapshotAprovacaoCompra`: lookup para `ENAC Snapshots Regras`.
 
@@ -81,10 +83,10 @@
 
 Antes de gravar dados:
 
-1. Exportar nomes internos reais das listas existentes.
+1. Usar `sharepoint/mapeamento-listas-reais-v2.3.md` como referência física.
 2. Comparar com `sharepoint/list-schema.json`.
-3. Registrar divergências.
-4. Adaptar `SharePointEnacRepository.ts` para nomes reais, se necessário.
+3. Registrar divergências no dry-run.
+4. Adaptar `SharePointEnacRepository.ts` para nomes reais somente após provisionamento aprovado.
 
 ## Permissões
 
