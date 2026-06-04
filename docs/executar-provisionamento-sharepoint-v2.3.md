@@ -69,22 +69,26 @@ Lookups planejados:
 - `ENAC Alcadas.AprovadorPrincipal` -> `ENAC Usuarios Perfis`
 - `ENAC Alcadas.AprovadorAdicional` -> `ENAC Usuarios Perfis`
 - `ENAC Usuarios Perfis.SubstitutoTemporario` -> `ENAC Usuarios Perfis`
-- `ENAC Snapshots Regras.Solicitacao` -> `Lista 02 — Requisições de Compra`
+- `ENAC Snapshots Regras.Solicitacao` -> `Lista 02 — Requisições de Compra` / `ID`
 - `ENAC Snapshots Regras.RegraAlcadaUtilizada` -> `ENAC Alcadas`, se mantido como lookup
 - `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra` -> `ENAC Snapshots Regras`
 
 Na rodada inicial, `ENAC Snapshots Regras` nao planeja campos `Cotacao` nem `PedidoCompra`, e tambem nao planeja lookups de aprovador base/efetivo. Os aprovadores ficam congelados em campos texto.
 
+`ENAC Alcadas.TipoSolicitacao` deve ser `Choice` com as choices reais da Lista 02: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro.
+
 ## Configuracoes planejadas
 
 | Lista | Versionamento | Anexos | Edicao em grade |
 | --- | --- | --- | --- |
-| `ENAC Usuarios Perfis` | Ativo | Desativados | Permitida inicialmente |
-| `ENAC Alcadas` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Usuarios Perfis` | Ativo | Desativados | Desativada |
+| `ENAC Alcadas` | Ativo | Desativados | Desativada |
 | `ENAC Historico Configuracoes` | Ativo | Desativados | Desativada |
 | `ENAC Snapshots Regras` | Ativo | Desativados | Desativada |
 
 Versionamento e bloqueio de edicao em grade reduzem risco operacional. Snapshots e historico somente serao considerados efetivamente protegidos apos definicao/aplicacao de permissoes especificas e uso controlado pelo sistema/automacao.
+
+Campos de moeda usam `LCID=1046` e `Decimals=2`. Identificadores internos unicos usam `Indexed=TRUE` e `EnforceUniqueValues=TRUE`. Campos de data sem horario usam `Format=DateOnly`; `DataHoraAplicacao` usa `Format=DateTime`. Campos `Note` devem ser texto simples, sem rich text.
 
 ## Bloqueio do Apply
 

@@ -59,8 +59,8 @@ Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` 
 | Nome interno | Nome exibido | Tipo | Obrigatório | Regra |
 | --- | --- | --- | --- | --- |
 | `Title` | Nome Completo | Text | Sim | Campo padrão |
-| `UsuarioInternoId` | ID Interno do Usuário | Text | Sim | Único e indexado |
-| `ContaMicrosoft365` | Conta Microsoft 365 | User | Sim | Uma pessoa |
+| `UsuarioInternoId` | ID Interno do Usuário | Text | Sim | `Indexed=TRUE`; `EnforceUniqueValues=TRUE` |
+| `ContaMicrosoft365` | Conta Microsoft 365 | User | Sim | Uma pessoa; `AllowMultipleValues=FALSE` |
 | `EmailCorporativo` | E-mail Corporativo | Text | Sim | Usado no snapshot |
 | `CargoFuncao` | Cargo / Função | Text | Não |  |
 | `PerfilPrincipal` | Perfil Principal | Choice | Sim | Choices conforme perfis homologados V2.2 |
@@ -87,10 +87,10 @@ Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` 
 | `Title` | Regra | Text | Sim | Campo padrão |
 | `RegraInternaId` | ID Interno da Regra | Text | Sim | Único e indexado |
 | `Processo` | Processo | Choice | Sim | Compra, Liberação Bancária, Medição, Pagamento, Outro |
-| `TipoSolicitacao` | Tipo de Solicitação | Choice ou Text | Não | Compatibilizar com choices reais da Lista 02 |
+| `TipoSolicitacao` | Tipo de Solicitação | Choice | Não | Choices reais: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro |
 | `Obra` | Obra | Lookup | Não | Lista 01 / `NomedaObra`; vazio significa regra geral |
-| `ValorMinimo` | Valor Mínimo | Currency | Sim | Moeda brasileira |
-| `ValorMaximo` | Valor Máximo | Currency | Não | Vazio quando ilimitado |
+| `ValorMinimo` | Valor Mínimo | Currency | Sim | `LCID=1046`; `Decimals=2` |
+| `ValorMaximo` | Valor Máximo | Currency | Não | `LCID=1046`; `Decimals=2`; vazio quando ilimitado |
 | `Ilimitado` | Sem Limite Máximo | Boolean | Sim | Padrão `false` |
 | `AprovadorPrincipal` | Aprovador Principal | Lookup | Sim | `ENAC Usuarios Perfis` |
 | `ExigeAprovacaoAdicional` | Exige Aprovação Adicional | Boolean | Sim | Padrão `false` |
@@ -124,13 +124,13 @@ Não criar campos customizados para autor e data/hora; usar `Author` e `Created`
 | Nome interno | Nome exibido | Tipo | Obrigatório | Regra |
 | --- | --- | --- | --- | --- |
 | `Title` | Código do Snapshot | Text | Sim | Campo padrão |
-| `Solicitacao` | Solicitação | Lookup | Sim | Lista 02 — Requisições de Compra |
+| `Solicitacao` | Solicitação | Lookup | Sim | Lista 02 — Requisições de Compra / `ID` |
 | `RegraAlcadaUtilizada` | Regra de Alçada Utilizada | Lookup | Sim | `ENAC Alcadas` |
 | `RegraInternaId` | ID Interno da Regra Aplicada | Text | Sim | Congelado |
 | `ResumoRegraAplicada` | Resumo da Regra Aplicada | Note | Sim | Congelado |
 | `Processo` | Processo | Choice | Sim | Inicialmente Compra |
 | `FaixaValorVigente` | Faixa de Valor Vigente | Text | Sim | Texto congelado |
-| `ValorAnalisado` | Valor Analisado | Currency | Sim | Moeda brasileira |
+| `ValorAnalisado` | Valor Analisado | Currency | Sim | `LCID=1046`; `Decimals=2` |
 | `AprovadorBaseId` | ID do Aprovador Base | Text | Sim | Congelado |
 | `AprovadorBaseNome` | Nome do Aprovador Base | Text | Sim | Congelado |
 | `AprovadorBaseEmail` | E-mail do Aprovador Base | Text | Sim | Congelado |
@@ -152,12 +152,14 @@ Não planejar nesta rodada `Cotacao`, `PedidoCompra` nem lookups de aprovador ba
 
 | Lista | Versionamento | Anexos | Edição em grade |
 | --- | --- | --- | --- |
-| `ENAC Usuarios Perfis` | Ativo | Desativados | Permitida inicialmente |
-| `ENAC Alcadas` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Usuarios Perfis` | Ativo | Desativados | Desativada |
+| `ENAC Alcadas` | Ativo | Desativados | Desativada |
 | `ENAC Historico Configuracoes` | Ativo | Desativados | Desativada |
 | `ENAC Snapshots Regras` | Ativo | Desativados | Desativada |
 
 Versionamento e bloqueio de edição em grade reduzem risco operacional. Snapshots e histórico somente serão considerados efetivamente protegidos após definição/aplicação de permissões específicas e uso controlado pelo sistema/automação.
+
+Campos `Note` devem ser texto simples, sem rich text. Campos de data sem horário usam `Type=DateTime` e `Format=DateOnly`; `DataHoraAplicacao` usa `Type=DateTime` e `Format=DateTime`.
 
 ## Mapeamento de nomes existentes
 

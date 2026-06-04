@@ -52,4 +52,9 @@ Antes de qualquer criação real no tenant:
 - Confirmar que `ENAC Historico Configuracoes` inclui `AcaoRealizada` e `ItemConfiguracaoId`, usando `Author` e `Created` nativos.
 - Confirmar que `ENAC Snapshots Regras` inclui `RegraInternaId` e `ResumoRegraAplicada`, sem `Cotacao` e sem `PedidoCompra` no escopo inicial.
 - Confirmar que o dry-run exibe versionamento, anexos e edição em grade planejados.
+- Confirmar que edição em grade está desativada nas quatro listas administrativas.
+- Confirmar `TipoSolicitacao` como Choice com choices reais da Lista 02.
+- Confirmar moedas com `LCID=1046` e `Decimals=2`.
+- Confirmar `UsuarioInternoId` e `RegraInternaId` com `Indexed=TRUE` e `EnforceUniqueValues=TRUE`.
+- Confirmar `ENAC Snapshots Regras.Solicitacao` apontando para Lista 02 / `ID`.
 - Confirmar que snapshots e histórico só serão considerados protegidos após permissões específicas.

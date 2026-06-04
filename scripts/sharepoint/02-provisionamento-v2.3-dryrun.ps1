@@ -87,7 +87,13 @@ function New-FieldPlan {
         [string]$LookupList = "",
         [string]$LookupField = "",
         [string]$Rule = "",
-        [string]$Format = ""
+        [string]$Format = "",
+        [int]$Lcid = 0,
+        [int]$Decimals = -1,
+        [bool]$Indexed = $false,
+        [bool]$EnforceUniqueValues = $false,
+        [bool]$RichText = $false,
+        [bool]$AllowMultipleValues = $false
     )
 
     return [pscustomobject]@{
@@ -101,6 +107,12 @@ function New-FieldPlan {
         LookupField  = $LookupField
         Rule         = $Rule
         Format       = $Format
+        Lcid         = $Lcid
+        Decimals     = $Decimals
+        Indexed      = $Indexed
+        EnforceUniqueValues = $EnforceUniqueValues
+        RichText     = $RichText
+        AllowMultipleValues = $AllowMultipleValues
     }
 }
 
@@ -118,6 +130,11 @@ function Write-FieldPlan {
     if ($Field.Choices.Count -gt 0) { $parts += "choices=$($Field.Choices -join ' | ')" }
     if ($Field.LookupList) { $parts += "lookup=$($Field.LookupList) / $($Field.LookupField)" }
     if ($Field.Format) { $parts += "formato=$($Field.Format)" }
+    if ($Field.Type -eq "Currency") { $parts += "LCID=$($Field.Lcid)"; $parts += "Decimals=$($Field.Decimals)" }
+    if ($Field.Indexed) { $parts += "Indexed=TRUE" }
+    if ($Field.EnforceUniqueValues) { $parts += "EnforceUniqueValues=TRUE" }
+    if ($Field.Type -eq "Note") { $parts += "RichText=$($Field.RichText)" }
+    if ($Field.Type -eq "User") { $parts += "AllowMultipleValues=$($Field.AllowMultipleValues)" }
     if ($Field.Rule) { $parts += "regra=$($Field.Rule)" }
 
     Write-Host "      $($parts -join '; ')"
@@ -153,11 +170,11 @@ $plannedAdminLists = @(
         TechnicalUrl = "Lists/ENACUsuariosPerfis"
         Versioning = "Ativo"
         Attachments = "Desativados"
-        GridEditing = "Permitida inicialmente"
+        GridEditing = "Desativada"
         Fields = @(
             New-FieldPlan "Title" "Nome Completo" "Text" $true $null @() "" "" "Campo padrao"
-            New-FieldPlan "UsuarioInternoId" "ID Interno do Usuário" "Text" $true $null @() "" "" "Unico e indexado"
-            New-FieldPlan "ContaMicrosoft365" "Conta Microsoft 365" "User" $true $null @() "" "" "Uma pessoa"
+            New-FieldPlan "UsuarioInternoId" "ID Interno do Usuário" "Text" $true $null @() "" "" "Unico e indexado" "" 0 -1 $true $true
+            New-FieldPlan "ContaMicrosoft365" "Conta Microsoft 365" "User" $true $null @() "" "" "Uma pessoa" "" 0 -1 $false $false $false $false
             New-FieldPlan "EmailCorporativo" "E-mail Corporativo" "Text" $true $null @() "" "" "Usado no snapshot"
             New-FieldPlan "CargoFuncao" "Cargo / Função" "Text"
             New-FieldPlan "PerfilPrincipal" "Perfil Principal" "Choice" $true $null $profileChoices "" "" "Choices conforme perfis homologados V2.2"
@@ -183,15 +200,15 @@ $plannedAdminLists = @(
         TechnicalUrl = "Lists/ENACAlcadas"
         Versioning = "Ativo"
         Attachments = "Desativados"
-        GridEditing = "Permitida inicialmente"
+        GridEditing = "Desativada"
         Fields = @(
             New-FieldPlan "Title" "Regra" "Text" $true $null @() "" "" "Campo padrao"
-            New-FieldPlan "RegraInternaId" "ID Interno da Regra" "Text" $true $null @() "" "" "Unico e indexado"
+            New-FieldPlan "RegraInternaId" "ID Interno da Regra" "Text" $true $null @() "" "" "Unico e indexado" "" 0 -1 $true $true
             New-FieldPlan "Processo" "Processo" "Choice" $true $null @("Compra", "Liberação Bancária", "Medição", "Pagamento", "Outro")
-            New-FieldPlan "TipoSolicitacao" "Tipo de Solicitação" "ChoiceOrText" $false $null @() "" "" "Compatibilizar com choices reais da Lista 02"
+            New-FieldPlan "TipoSolicitacao" "Tipo de Solicitação" "Choice" $false $null @("Material", "Serviço", "Equipamento", "Ferramenta", "Locação", "Terceiro/Prestador", "EPI", "Documento?Taxa", "Outro") "" "" "Choices reais da Lista 02"
             New-FieldPlan "Obra" "Obra" "Lookup" $false $null @() "Lista 01 - Controle de Obras ENAC" "NomedaObra" "Vazio significa regra geral"
-            New-FieldPlan "ValorMinimo" "Valor Mínimo" "Currency" $true $null @() "" "" "Moeda brasileira"
-            New-FieldPlan "ValorMaximo" "Valor Máximo" "Currency" $false $null @() "" "" "Vazio quando ilimitado"
+            New-FieldPlan "ValorMinimo" "Valor Mínimo" "Currency" $true $null @() "" "" "Moeda brasileira" "" 1046 2
+            New-FieldPlan "ValorMaximo" "Valor Máximo" "Currency" $false $null @() "" "" "Vazio quando ilimitado" "" 1046 2
             New-FieldPlan "Ilimitado" "Sem Limite Máximo" "Boolean" $true $false
             New-FieldPlan "AprovadorPrincipal" "Aprovador Principal" "Lookup" $true $null @() "ENAC Usuarios Perfis" "Title"
             New-FieldPlan "ExigeAprovacaoAdicional" "Exige Aprovação Adicional" "Boolean" $true $false
@@ -232,7 +249,7 @@ $plannedAdminLists = @(
             New-FieldPlan "ResumoRegraAplicada" "Resumo da Regra Aplicada" "Note" $true $null @() "" "" "Congelado"
             New-FieldPlan "Processo" "Processo" "Choice" $true $null @("Compra") "" "" "Inicialmente Compra"
             New-FieldPlan "FaixaValorVigente" "Faixa de Valor Vigente" "Text" $true $null @() "" "" "Texto congelado"
-            New-FieldPlan "ValorAnalisado" "Valor Analisado" "Currency" $true $null @() "" "" "Moeda brasileira"
+            New-FieldPlan "ValorAnalisado" "Valor Analisado" "Currency" $true $null @() "" "" "Moeda brasileira" "" 1046 2
             New-FieldPlan "AprovadorBaseId" "ID do Aprovador Base" "Text" $true $null @() "" "" "Congelado"
             New-FieldPlan "AprovadorBaseNome" "Nome do Aprovador Base" "Text" $true $null @() "" "" "Congelado"
             New-FieldPlan "AprovadorBaseEmail" "E-mail do Aprovador Base" "Text" $true $null @() "" "" "Congelado"
@@ -252,7 +269,7 @@ $plannedLookups = @(
     "ENAC Alcadas.AprovadorPrincipal -> ENAC Usuarios Perfis / Title",
     "ENAC Alcadas.AprovadorAdicional -> ENAC Usuarios Perfis / Title",
     "ENAC Usuarios Perfis.SubstitutoTemporario -> ENAC Usuarios Perfis / Title",
-    "ENAC Snapshots Regras.Solicitacao -> Lista 02 — Requisições de Compra / Title",
+    "ENAC Snapshots Regras.Solicitacao -> Lista 02 — Requisições de Compra / ID",
     "ENAC Snapshots Regras.RegraAlcadaUtilizada -> ENAC Alcadas / Title",
     "Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra -> ENAC Snapshots Regras / Title"
 )

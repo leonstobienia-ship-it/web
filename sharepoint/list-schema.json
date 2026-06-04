@@ -37,12 +37,12 @@
       "settings": {
         "versioning": true,
         "attachments": false,
-        "gridEditing": true
+        "gridEditing": false
       },
       "fields": [
         { "internalName": "Title", "displayName": "Nome Completo", "type": "Text", "required": true, "rule": "Campo padrao" },
-        { "internalName": "UsuarioInternoId", "displayName": "ID Interno do Usuário", "type": "Text", "required": true, "unique": true, "indexed": true },
-        { "internalName": "ContaMicrosoft365", "displayName": "Conta Microsoft 365", "type": "User", "required": true, "rule": "Uma pessoa" },
+        { "internalName": "UsuarioInternoId", "displayName": "ID Interno do Usuário", "type": "Text", "required": true, "unique": true, "indexed": true, "technical": ["Indexed=TRUE", "EnforceUniqueValues=TRUE"] },
+        { "internalName": "ContaMicrosoft365", "displayName": "Conta Microsoft 365", "type": "User", "required": true, "allowMultipleValues": false, "technical": ["AllowMultipleValues=FALSE"], "rule": "Uma pessoa" },
         { "internalName": "EmailCorporativo", "displayName": "E-mail Corporativo", "type": "Text", "required": true, "rule": "Usado no snapshot" },
         { "internalName": "CargoFuncao", "displayName": "Cargo / Função", "type": "Text", "required": false },
         {
@@ -72,9 +72,9 @@
         { "internalName": "PodeAdministrarConfiguracoes", "displayName": "Pode Administrar Configurações", "type": "Boolean", "required": true, "default": false },
         { "internalName": "UsuarioAtivo", "displayName": "Usuário Ativo", "type": "Boolean", "required": true, "default": true },
         { "internalName": "SubstitutoTemporario", "displayName": "Substituto Temporário", "type": "Lookup", "required": false, "lookupList": "ENAC Usuarios Perfis", "lookupField": "Title", "rule": "Self lookup" },
-        { "internalName": "InicioSubstituicao", "displayName": "Início da Substituição", "type": "DateTime", "format": "DateOnly", "required": false },
-        { "internalName": "FimSubstituicao", "displayName": "Fim da Substituição", "type": "DateTime", "format": "DateOnly", "required": false },
-        { "internalName": "Observacoes", "displayName": "Observações", "type": "Note", "required": false }
+        { "internalName": "InicioSubstituicao", "displayName": "Início da Substituição", "type": "DateTime", "format": "DateOnly", "required": false, "technical": ["Type=DateTime", "Format=DateOnly"] },
+        { "internalName": "FimSubstituicao", "displayName": "Fim da Substituição", "type": "DateTime", "format": "DateOnly", "required": false, "technical": ["Type=DateTime", "Format=DateOnly"] },
+        { "internalName": "Observacoes", "displayName": "Observações", "type": "Note", "required": false, "richText": false, "technical": ["RichText=FALSE"] }
       ],
       "constraints": [
         "UsuarioInternoId obrigatorio, unico e indexado.",
@@ -89,24 +89,24 @@
       "settings": {
         "versioning": true,
         "attachments": false,
-        "gridEditing": true
+        "gridEditing": false
       },
       "fields": [
         { "internalName": "Title", "displayName": "Regra", "type": "Text", "required": true, "rule": "Campo padrao" },
-        { "internalName": "RegraInternaId", "displayName": "ID Interno da Regra", "type": "Text", "required": true, "unique": true, "indexed": true },
+        { "internalName": "RegraInternaId", "displayName": "ID Interno da Regra", "type": "Text", "required": true, "unique": true, "indexed": true, "technical": ["Indexed=TRUE", "EnforceUniqueValues=TRUE"] },
         { "internalName": "Processo", "displayName": "Processo", "type": "Choice", "required": true, "choices": ["Compra", "Liberação Bancária", "Medição", "Pagamento", "Outro"] },
-        { "internalName": "TipoSolicitacao", "displayName": "Tipo de Solicitação", "type": "ChoiceOrText", "required": false, "rule": "Compatibilizar com choices reais da Lista 02" },
+        { "internalName": "TipoSolicitacao", "displayName": "Tipo de Solicitação", "type": "Choice", "required": false, "choices": ["Material", "Serviço", "Equipamento", "Ferramenta", "Locação", "Terceiro/Prestador", "EPI", "Documento?Taxa", "Outro"], "rule": "Choices reais da Lista 02" },
         { "internalName": "Obra", "displayName": "Obra", "type": "Lookup", "required": false, "lookupList": "Lista 01 - Controle de Obras ENAC", "lookupField": "NomedaObra", "rule": "Vazio significa regra geral" },
-        { "internalName": "ValorMinimo", "displayName": "Valor Mínimo", "type": "Currency", "required": true, "locale": "pt-BR" },
-        { "internalName": "ValorMaximo", "displayName": "Valor Máximo", "type": "Currency", "required": false, "locale": "pt-BR", "rule": "Vazio quando ilimitado" },
+        { "internalName": "ValorMinimo", "displayName": "Valor Mínimo", "type": "Currency", "required": true, "locale": "pt-BR", "lcid": 1046, "decimals": 2, "technical": ["Type=Currency", "LCID=1046", "Decimals=2"] },
+        { "internalName": "ValorMaximo", "displayName": "Valor Máximo", "type": "Currency", "required": false, "locale": "pt-BR", "lcid": 1046, "decimals": 2, "technical": ["Type=Currency", "LCID=1046", "Decimals=2"], "rule": "Vazio quando ilimitado" },
         { "internalName": "Ilimitado", "displayName": "Sem Limite Máximo", "type": "Boolean", "required": true, "default": false },
         { "internalName": "AprovadorPrincipal", "displayName": "Aprovador Principal", "type": "Lookup", "required": true, "lookupList": "ENAC Usuarios Perfis", "lookupField": "Title" },
         { "internalName": "ExigeAprovacaoAdicional", "displayName": "Exige Aprovação Adicional", "type": "Boolean", "required": true, "default": false },
         { "internalName": "AprovadorAdicional", "displayName": "Aprovador Adicional", "type": "Lookup", "required": false, "lookupList": "ENAC Usuarios Perfis", "lookupField": "Title" },
-        { "internalName": "VigenciaInicial", "displayName": "Vigência Inicial", "type": "DateTime", "format": "DateOnly", "required": true },
-        { "internalName": "VigenciaFinal", "displayName": "Vigência Final", "type": "DateTime", "format": "DateOnly", "required": false },
+        { "internalName": "VigenciaInicial", "displayName": "Vigência Inicial", "type": "DateTime", "format": "DateOnly", "required": true, "technical": ["Type=DateTime", "Format=DateOnly"] },
+        { "internalName": "VigenciaFinal", "displayName": "Vigência Final", "type": "DateTime", "format": "DateOnly", "required": false, "technical": ["Type=DateTime", "Format=DateOnly"] },
         { "internalName": "Ativo", "displayName": "Regra Ativa", "type": "Boolean", "required": true, "default": true },
-        { "internalName": "Observacoes", "displayName": "Observações", "type": "Note", "required": false }
+        { "internalName": "Observacoes", "displayName": "Observações", "type": "Note", "required": false, "richText": false, "technical": ["RichText=FALSE"] }
       ],
       "constraints": [
         "ValorMaximo nao pode ser inferior a ValorMinimo salvo Ilimitado=true.",
@@ -128,9 +128,9 @@
         { "internalName": "TipoConfiguracao", "displayName": "Tipo de Configuração", "type": "Choice", "required": true, "choices": ["Usuário", "Alçada", "Regra Especial", "Parâmetro Geral"] },
         { "internalName": "AcaoRealizada", "displayName": "Ação Realizada", "type": "Choice", "required": true, "choices": ["Inclusão", "Edição", "Ativação", "Desativação", "Ajuste Vinculado"] },
         { "internalName": "ItemConfiguracaoId", "displayName": "ID do Item Configurado", "type": "Text", "required": true },
-        { "internalName": "ValorAnterior", "displayName": "Valor Anterior", "type": "Note", "required": false },
-        { "internalName": "ValorNovo", "displayName": "Valor Novo", "type": "Note", "required": true },
-        { "internalName": "Justificativa", "displayName": "Justificativa", "type": "Note", "required": false }
+        { "internalName": "ValorAnterior", "displayName": "Valor Anterior", "type": "Note", "required": false, "richText": false, "technical": ["RichText=FALSE"] },
+        { "internalName": "ValorNovo", "displayName": "Valor Novo", "type": "Note", "required": true, "richText": false, "technical": ["RichText=FALSE"] },
+        { "internalName": "Justificativa", "displayName": "Justificativa", "type": "Note", "required": false, "richText": false, "technical": ["RichText=FALSE"] }
       ],
       "constraints": [
         "Nao criar campos customizados para autor e data/hora.",
@@ -149,13 +149,13 @@
       },
       "fields": [
         { "internalName": "Title", "displayName": "Código do Snapshot", "type": "Text", "required": true, "rule": "Campo padrao" },
-        { "internalName": "Solicitacao", "displayName": "Solicitação", "type": "Lookup", "required": true, "lookupList": "Lista 02 — Requisições de Compra", "lookupField": "Title" },
+        { "internalName": "Solicitacao", "displayName": "Solicitação", "type": "Lookup", "required": true, "lookupList": "Lista 02 — Requisições de Compra", "lookupField": "ID" },
         { "internalName": "RegraAlcadaUtilizada", "displayName": "Regra de Alçada Utilizada", "type": "Lookup", "required": true, "lookupList": "ENAC Alcadas", "lookupField": "Title" },
         { "internalName": "RegraInternaId", "displayName": "ID Interno da Regra Aplicada", "type": "Text", "required": true, "rule": "Congelado" },
-        { "internalName": "ResumoRegraAplicada", "displayName": "Resumo da Regra Aplicada", "type": "Note", "required": true, "rule": "Congelado" },
+        { "internalName": "ResumoRegraAplicada", "displayName": "Resumo da Regra Aplicada", "type": "Note", "required": true, "richText": false, "technical": ["RichText=FALSE"], "rule": "Congelado" },
         { "internalName": "Processo", "displayName": "Processo", "type": "Choice", "required": true, "choices": ["Compra"], "rule": "Inicialmente Compra" },
         { "internalName": "FaixaValorVigente", "displayName": "Faixa de Valor Vigente", "type": "Text", "required": true, "rule": "Texto congelado" },
-        { "internalName": "ValorAnalisado", "displayName": "Valor Analisado", "type": "Currency", "required": true, "locale": "pt-BR" },
+        { "internalName": "ValorAnalisado", "displayName": "Valor Analisado", "type": "Currency", "required": true, "locale": "pt-BR", "lcid": 1046, "decimals": 2, "technical": ["Type=Currency", "LCID=1046", "Decimals=2"] },
         { "internalName": "AprovadorBaseId", "displayName": "ID do Aprovador Base", "type": "Text", "required": true, "rule": "Congelado" },
         { "internalName": "AprovadorBaseNome", "displayName": "Nome do Aprovador Base", "type": "Text", "required": true, "rule": "Congelado" },
         { "internalName": "AprovadorBaseEmail", "displayName": "E-mail do Aprovador Base", "type": "Text", "required": true, "rule": "Congelado" },
@@ -163,9 +163,9 @@
         { "internalName": "AprovadorEfetivoNome", "displayName": "Nome do Aprovador Efetivo", "type": "Text", "required": true, "rule": "Congelado" },
         { "internalName": "AprovadorEfetivoEmail", "displayName": "E-mail do Aprovador Efetivo", "type": "Text", "required": true, "rule": "Congelado" },
         { "internalName": "SubstituicaoAplicada", "displayName": "Substituição Aplicada", "type": "Boolean", "required": true, "default": false },
-        { "internalName": "MotivoResolucaoAprovador", "displayName": "Motivo da Resolução do Aprovador", "type": "Note", "required": false },
-        { "internalName": "MotivoExcecao", "displayName": "Motivo da Exceção", "type": "Note", "required": false },
-        { "internalName": "DataHoraAplicacao", "displayName": "Data/Hora da Aplicação", "type": "DateTime", "format": "DateTime", "required": true }
+        { "internalName": "MotivoResolucaoAprovador", "displayName": "Motivo da Resolução do Aprovador", "type": "Note", "required": false, "richText": false, "technical": ["RichText=FALSE"] },
+        { "internalName": "MotivoExcecao", "displayName": "Motivo da Exceção", "type": "Note", "required": false, "richText": false, "technical": ["RichText=FALSE"] },
+        { "internalName": "DataHoraAplicacao", "displayName": "Data/Hora da Aplicação", "type": "DateTime", "format": "DateTime", "required": true, "technical": ["Type=DateTime", "Format=DateTime"] }
       ],
       "constraints": [
         "Nao planejar Cotacao nesta rodada.",

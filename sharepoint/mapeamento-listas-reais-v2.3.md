@@ -63,11 +63,14 @@ Nao criar `CodigoObra` na Lista 01 nesta rodada.
 
 `SnapshotAprovacaoCompra` devera futuramente ser adicionado a `Lista 02 — Requisições de Compra` como lookup para a futura lista `ENAC Snapshots Regras`.
 
+Choices reais de `Tipo da Solicitação` / `TipodaSolicita_x00e7__x00e3_o`: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento?Taxa, Outro.
+
 ## Decisoes de provisionamento
 
 - Nao criar `ENACObras`.
 - Nao criar `ENACSolicitacoes`.
 - `ENAC Alcadas.Obra` devera futuramente ser lookup para `Lista 01 - Controle de Obras ENAC`, exibindo `NomedaObra`.
+- `ENAC Snapshots Regras.Solicitacao` devera futuramente ser lookup para `Lista 02 — Requisições de Compra`, usando `ID`.
 - `SnapshotAprovacaoCompra` devera futuramente ser adicionado a `Lista 02 — Requisições de Compra`, como lookup para `ENAC Snapshots Regras`.
 - Nao criar `CodigoObra` na Lista 01 nesta rodada.
 
@@ -84,8 +87,8 @@ As listas abaixo nao existem no tenant e ficam previstas para criacao futura apo
 
 | Lista | Versionamento | Anexos | Edicao em grade |
 | --- | --- | --- | --- |
-| `ENAC Usuarios Perfis` | Ativo | Desativados | Permitida inicialmente |
-| `ENAC Alcadas` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Usuarios Perfis` | Ativo | Desativados | Desativada |
+| `ENAC Alcadas` | Ativo | Desativados | Desativada |
 | `ENAC Historico Configuracoes` | Ativo | Desativados | Desativada |
 | `ENAC Snapshots Regras` | Ativo | Desativados | Desativada |
 
