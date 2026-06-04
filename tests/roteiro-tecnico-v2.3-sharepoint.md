@@ -47,3 +47,9 @@ Antes de qualquer criação real no tenant:
 - Confirmar criação planejada apenas das listas administrativas ausentes: `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`.
 - Confirmar que `ENAC Alcadas.Obra` aponta para `Lista 01 - Controle de Obras ENAC` / `NomedaObra`.
 - Confirmar que `SnapshotAprovacaoCompra` será adicionado à `Lista 02 — Requisições de Compra`.
+- Confirmar que as URLs técnicas planejadas são `Lists/ENACUsuariosPerfis`, `Lists/ENACAlcadas`, `Lists/ENACHistoricoConfiguracoes` e `Lists/ENACSnapshotsRegras`.
+- Confirmar que `ENAC Usuarios Perfis` usa `PerfisAdicionais` e não o campo singular do desenho anterior.
+- Confirmar que `ENAC Historico Configuracoes` inclui `AcaoRealizada` e `ItemConfiguracaoId`, usando `Author` e `Created` nativos.
+- Confirmar que `ENAC Snapshots Regras` inclui `RegraInternaId` e `ResumoRegraAplicada`, sem `Cotacao` e sem `PedidoCompra` no escopo inicial.
+- Confirmar que o dry-run exibe versionamento, anexos e edição em grade planejados.
+- Confirmar que snapshots e histórico só serão considerados protegidos após permissões específicas.

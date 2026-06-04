@@ -32,6 +32,15 @@
 
 Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` como listas físicas nesta rodada.
 
+## URLs técnicas planejadas
+
+| Título exibido | URL técnica planejada |
+| --- | --- |
+| `ENAC Usuarios Perfis` | `Lists/ENACUsuariosPerfis` |
+| `ENAC Alcadas` | `Lists/ENACAlcadas` |
+| `ENAC Historico Configuracoes` | `Lists/ENACHistoricoConfiguracoes` |
+| `ENAC Snapshots Regras` | `Lists/ENACSnapshotsRegras` |
+
 ## Ordem de criação
 
 1. Validar `Lista 01 - Controle de Obras ENAC`.
@@ -47,37 +56,108 @@ Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` 
 
 ### ENAC Usuarios Perfis
 
-- `UsuarioInternoId`: texto, obrigatório, único, indexado.
-- `ContaMicrosoft365`: Pessoa ou Grupo, uma pessoa.
-- `UsuarioAtivo`: Sim/Não.
-- `SubstitutoTemporario`: Pessoa/lookup conforme decisão do tenant.
-- `InicioSubstituicao`: data/hora.
-- `FimSubstituicao`: data/hora.
+| Nome interno | Nome exibido | Tipo | Obrigatório | Regra |
+| --- | --- | --- | --- | --- |
+| `Title` | Nome Completo | Text | Sim | Campo padrão |
+| `UsuarioInternoId` | ID Interno do Usuário | Text | Sim | Único e indexado |
+| `ContaMicrosoft365` | Conta Microsoft 365 | User | Sim | Uma pessoa |
+| `EmailCorporativo` | E-mail Corporativo | Text | Sim | Usado no snapshot |
+| `CargoFuncao` | Cargo / Função | Text | Não |  |
+| `PerfilPrincipal` | Perfil Principal | Choice | Sim | Choices conforme perfis homologados V2.2 |
+| `PerfisAdicionais` | Perfis Adicionais | MultiChoice | Não | Corrige o campo singular anterior |
+| `PodeCriarSolicitacao` | Pode Criar Solicitação | Boolean | Sim | Padrão `false` |
+| `PodeRegistrarCotacoes` | Pode Registrar Cotações | Boolean | Sim | Padrão `false` |
+| `PodeAprovarCompras` | Pode Aprovar Compras | Boolean | Sim | Padrão `false` |
+| `PodeEmitirPedido` | Pode Emitir Pedido | Boolean | Sim | Padrão `false` |
+| `PodeVincularNF` | Pode Vincular NF | Boolean | Sim | Padrão `false` |
+| `PodeProgramarPagamento` | Pode Programar Pagamento | Boolean | Sim | Padrão `false` |
+| `PodeLiberarPagamento` | Pode Liberar Pagamento | Boolean | Sim | Padrão `false` |
+| `PodeAtualizarStatusFinal` | Pode Atualizar Status Final | Boolean | Sim | Padrão `false` |
+| `PodeAdministrarConfiguracoes` | Pode Administrar Configurações | Boolean | Sim | Padrão `false` |
+| `UsuarioAtivo` | Usuário Ativo | Boolean | Sim | Padrão `true` |
+| `SubstitutoTemporario` | Substituto Temporário | Lookup | Não | Self lookup para `ENAC Usuarios Perfis` |
+| `InicioSubstituicao` | Início da Substituição | DateTime/Data somente | Não | Sem horário |
+| `FimSubstituicao` | Fim da Substituição | DateTime/Data somente | Não | Sem horário |
+| `Observacoes` | Observações | Note | Não |  |
 
 ### ENAC Alcadas
 
-- `RegraInternaId`: texto, obrigatório, único, indexado.
-- `Processo`: escolha.
-- `TipoSolicitacao`: escolha.
-- `Obra`: lookup para `Lista 01 - Controle de Obras ENAC` / `NomedaObra`, com regra geral controlada.
-- `ValorMinimo`, `ValorMaximo`, `Ilimitado`.
-- `AprovadorPrincipal`: Pessoa ou Grupo, uma pessoa.
-- `AprovadorAdicional`: Pessoa ou Grupo, uma pessoa, opcional.
-- `VigenciaInicial`, `VigenciaFinal`, `Ativo`.
+| Nome interno | Nome exibido | Tipo | Obrigatório | Regra |
+| --- | --- | --- | --- | --- |
+| `Title` | Regra | Text | Sim | Campo padrão |
+| `RegraInternaId` | ID Interno da Regra | Text | Sim | Único e indexado |
+| `Processo` | Processo | Choice | Sim | Compra, Liberação Bancária, Medição, Pagamento, Outro |
+| `TipoSolicitacao` | Tipo de Solicitação | Choice ou Text | Não | Compatibilizar com choices reais da Lista 02 |
+| `Obra` | Obra | Lookup | Não | Lista 01 / `NomedaObra`; vazio significa regra geral |
+| `ValorMinimo` | Valor Mínimo | Currency | Sim | Moeda brasileira |
+| `ValorMaximo` | Valor Máximo | Currency | Não | Vazio quando ilimitado |
+| `Ilimitado` | Sem Limite Máximo | Boolean | Sim | Padrão `false` |
+| `AprovadorPrincipal` | Aprovador Principal | Lookup | Sim | `ENAC Usuarios Perfis` |
+| `ExigeAprovacaoAdicional` | Exige Aprovação Adicional | Boolean | Sim | Padrão `false` |
+| `AprovadorAdicional` | Aprovador Adicional | Lookup | Não | `ENAC Usuarios Perfis` |
+| `VigenciaInicial` | Vigência Inicial | DateTime/Data somente | Sim | Sem horário |
+| `VigenciaFinal` | Vigência Final | DateTime/Data somente | Não | Sem horário |
+| `Ativo` | Regra Ativa | Boolean | Sim | Padrão `true` |
+| `Observacoes` | Observações | Note | Não |  |
+
+### ENAC Historico Configuracoes
+
+| Nome interno | Nome exibido | Tipo | Obrigatório |
+| --- | --- | --- | --- |
+| `Title` | Resumo do Evento | Text | Sim |
+| `TipoConfiguracao` | Tipo de Configuração | Choice | Sim |
+| `AcaoRealizada` | Ação Realizada | Choice | Sim |
+| `ItemConfiguracaoId` | ID do Item Configurado | Text | Sim |
+| `ValorAnterior` | Valor Anterior | Note | Não |
+| `ValorNovo` | Valor Novo | Note | Sim |
+| `Justificativa` | Justificativa | Note | Não |
+
+Choices mínimos:
+
+- `TipoConfiguracao`: Usuário, Alçada, Regra Especial, Parâmetro Geral.
+- `AcaoRealizada`: Inclusão, Edição, Ativação, Desativação, Ajuste Vinculado.
+
+Não criar campos customizados para autor e data/hora; usar `Author` e `Created` nativos do SharePoint.
 
 ### ENAC Snapshots Regras
 
-- Campos de regra e valor.
-- Campos de aprovador base.
-- Campos de aprovador efetivo.
-- `SubstituicaoAplicada`.
-- `MotivoResolucaoAprovador`.
-- `MotivoExcecao`.
-- `DataHoraAplicacao`.
+| Nome interno | Nome exibido | Tipo | Obrigatório | Regra |
+| --- | --- | --- | --- | --- |
+| `Title` | Código do Snapshot | Text | Sim | Campo padrão |
+| `Solicitacao` | Solicitação | Lookup | Sim | Lista 02 — Requisições de Compra |
+| `RegraAlcadaUtilizada` | Regra de Alçada Utilizada | Lookup | Sim | `ENAC Alcadas` |
+| `RegraInternaId` | ID Interno da Regra Aplicada | Text | Sim | Congelado |
+| `ResumoRegraAplicada` | Resumo da Regra Aplicada | Note | Sim | Congelado |
+| `Processo` | Processo | Choice | Sim | Inicialmente Compra |
+| `FaixaValorVigente` | Faixa de Valor Vigente | Text | Sim | Texto congelado |
+| `ValorAnalisado` | Valor Analisado | Currency | Sim | Moeda brasileira |
+| `AprovadorBaseId` | ID do Aprovador Base | Text | Sim | Congelado |
+| `AprovadorBaseNome` | Nome do Aprovador Base | Text | Sim | Congelado |
+| `AprovadorBaseEmail` | E-mail do Aprovador Base | Text | Sim | Congelado |
+| `AprovadorEfetivoId` | ID do Aprovador Efetivo | Text | Sim | Congelado |
+| `AprovadorEfetivoNome` | Nome do Aprovador Efetivo | Text | Sim | Congelado |
+| `AprovadorEfetivoEmail` | E-mail do Aprovador Efetivo | Text | Sim | Congelado |
+| `SubstituicaoAplicada` | Substituição Aplicada | Boolean | Sim | Padrão `false` |
+| `MotivoResolucaoAprovador` | Motivo da Resolução do Aprovador | Note | Não |  |
+| `MotivoExcecao` | Motivo da Exceção | Note | Não |  |
+| `DataHoraAplicacao` | Data/Hora da Aplicação | DateTime | Sim | Data e hora |
+
+Não planejar nesta rodada `Cotacao`, `PedidoCompra` nem lookups de aprovador base/efetivo. Os aprovadores ficam congelados em texto no snapshot inicial.
 
 ### Lista 02 — Requisições de Compra
 
 - `SnapshotAprovacaoCompra`: lookup para `ENAC Snapshots Regras`.
+
+## Configurações das listas novas
+
+| Lista | Versionamento | Anexos | Edição em grade |
+| --- | --- | --- | --- |
+| `ENAC Usuarios Perfis` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Alcadas` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Historico Configuracoes` | Ativo | Desativados | Desativada |
+| `ENAC Snapshots Regras` | Ativo | Desativados | Desativada |
+
+Versionamento e bloqueio de edição em grade reduzem risco operacional. Snapshots e histórico somente serão considerados efetivamente protegidos após definição/aplicação de permissões específicas e uso controlado pelo sistema/automação.
 
 ## Mapeamento de nomes existentes
 

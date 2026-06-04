@@ -75,7 +75,18 @@ Nao criar `CodigoObra` na Lista 01 nesta rodada.
 
 As listas abaixo nao existem no tenant e ficam previstas para criacao futura apos revisao do dry-run:
 
-- `ENAC Usuarios Perfis`
-- `ENAC Alcadas`
-- `ENAC Historico Configuracoes`
-- `ENAC Snapshots Regras`
+- `ENAC Usuarios Perfis` / `Lists/ENACUsuariosPerfis`
+- `ENAC Alcadas` / `Lists/ENACAlcadas`
+- `ENAC Historico Configuracoes` / `Lists/ENACHistoricoConfiguracoes`
+- `ENAC Snapshots Regras` / `Lists/ENACSnapshotsRegras`
+
+## Configuracoes planejadas das listas novas
+
+| Lista | Versionamento | Anexos | Edicao em grade |
+| --- | --- | --- | --- |
+| `ENAC Usuarios Perfis` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Alcadas` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Historico Configuracoes` | Ativo | Desativados | Desativada |
+| `ENAC Snapshots Regras` | Ativo | Desativados | Desativada |
+
+Versionamento e bloqueio de edicao em grade reduzem risco operacional. Snapshots e historico somente serao considerados efetivamente protegidos apos definicao/aplicacao de permissoes especificas e uso controlado pelo sistema/automacao.

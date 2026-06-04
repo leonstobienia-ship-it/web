@@ -11,8 +11,11 @@ O script `scripts/sharepoint/02-provisionamento-v2.3-dryrun.ps1` foi criado para
 - conectar em modo leitura;
 - conferir a existencia das listas operacionais reais;
 - identificar se as listas administrativas planejadas ja existem;
-- listar quais listas e campos seriam criados futuramente;
+- listar quais listas e campos seriam criados futuramente, com nome interno, nome exibido, tipo, obrigatoriedade, padrao, choices e lookups;
+- exibir URLs tecnicas planejadas;
+- exibir versionamento, anexos e edicao em grade planejados;
 - listar lookups planejados;
+- exibir ordem recomendada de provisionamento;
 - apontar divergencias basicas;
 - nao criar, alterar ou excluir qualquer estrutura.
 
@@ -49,10 +52,12 @@ pwsh -File ".\scripts\sharepoint\02-provisionamento-v2.3-dryrun.ps1" `
 
 Listas administrativas previstas:
 
-1. `ENAC Usuarios Perfis`
-2. `ENAC Alcadas`
-3. `ENAC Historico Configuracoes`
-4. `ENAC Snapshots Regras`
+| Titulo exibido | URL tecnica planejada |
+| --- | --- |
+| `ENAC Usuarios Perfis` | `Lists/ENACUsuariosPerfis` |
+| `ENAC Alcadas` | `Lists/ENACAlcadas` |
+| `ENAC Historico Configuracoes` | `Lists/ENACHistoricoConfiguracoes` |
+| `ENAC Snapshots Regras` | `Lists/ENACSnapshotsRegras` |
 
 Campo adicional planejado em lista existente:
 
@@ -66,8 +71,20 @@ Lookups planejados:
 - `ENAC Usuarios Perfis.SubstitutoTemporario` -> `ENAC Usuarios Perfis`
 - `ENAC Snapshots Regras.Solicitacao` -> `Lista 02 — Requisições de Compra`
 - `ENAC Snapshots Regras.RegraAlcadaUtilizada` -> `ENAC Alcadas`, se mantido como lookup
-- `ENAC Snapshots Regras.AprovadorBase` / `AprovadorEfetivo` -> `ENAC Usuarios Perfis`, se usados como lookup
 - `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra` -> `ENAC Snapshots Regras`
+
+Na rodada inicial, `ENAC Snapshots Regras` nao planeja campos `Cotacao` nem `PedidoCompra`, e tambem nao planeja lookups de aprovador base/efetivo. Os aprovadores ficam congelados em campos texto.
+
+## Configuracoes planejadas
+
+| Lista | Versionamento | Anexos | Edicao em grade |
+| --- | --- | --- | --- |
+| `ENAC Usuarios Perfis` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Alcadas` | Ativo | Desativados | Permitida inicialmente |
+| `ENAC Historico Configuracoes` | Ativo | Desativados | Desativada |
+| `ENAC Snapshots Regras` | Ativo | Desativados | Desativada |
+
+Versionamento e bloqueio de edicao em grade reduzem risco operacional. Snapshots e historico somente serao considerados efetivamente protegidos apos definicao/aplicacao de permissoes especificas e uso controlado pelo sistema/automacao.
 
 ## Bloqueio do Apply
 
