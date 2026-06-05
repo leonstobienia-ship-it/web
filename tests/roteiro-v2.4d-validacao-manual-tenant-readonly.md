@@ -7,7 +7,7 @@ Data: 2026-06-05
 - Site/pagina de teste:
 - Usuario usado:
 - Data/hora:
-- Pacote usado: `sharepoint/solution/enac-sistema-spfx.sppkg`
+- Pacote usado: `sharepoint/solution/enac-sistema-spfx.sppkg` gerado em modo SHIP na V2.4E
 - Resultado final: aprovado / aprovado com ressalvas / nao aprovado
 
 ## Checklist antes de publicar
@@ -15,7 +15,7 @@ Data: 2026-06-05
 - [ ] Confirmar que a pagina e restrita/teste.
 - [ ] Confirmar que nao ha Power Automate envolvido.
 - [ ] Confirmar que nao serao alteradas listas, colunas, permissoes ou itens.
-- [ ] Confirmar que o pacote e o gerado na V2.4D.
+- [ ] Confirmar que o pacote e o SHIP mais recente gerado na V2.4E.
 - [ ] Confirmar plano de rollback manual.
 
 ## Execucao manual
