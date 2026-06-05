@@ -53,6 +53,8 @@ Ainda em 2026-06-05, o scaffold SPFx mínimo foi migrado para a raiz, preservand
 
 Na V2.4B, a webpart passou a receber contexto SPFx real e instanciar `SharePointEnacRepository` em modo readonly. O diagnóstico técnico de leitura SharePoint usa apenas GET e fica restrito ao console em build debug, sem substituir ainda os dados visuais simulados e sem executar escrita. O build local passou com `npx gulp clean` e `npx gulp build`.
 
+Na V2.4C, a webpart passou a carregar em estado interno os dados readonly de usuários/perfis, alçadas, requisições resumo e diagnóstico técnico, mantendo fallback local e preservando o visual homologado da V2.2. Os dados reais ainda são usados apenas para diagnóstico em console debug; não houve publicação, conexão SharePoint pelo Codex, escrita, Power Automate ou alteração em listas.
+
 ## Protótipo
 
 Abra no navegador:
@@ -96,6 +98,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.4a-plano-integracao-spfx-sharepoint.md`
 - `docs/v2.4a-build-spfx.md`
 - `docs/v2.4b-integracao-readonly-webpart-sharepoint.md`
+- `docs/v2.4c-consumo-readonly-estado-webpart.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
@@ -111,7 +114,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Preparar V2.4C para consumir dados readonly no estado da webpart, com fallback local e sem alterar a interface homologada V2.2.
+- Validar manualmente em tenant o consumo readonly V2.4C no estado da webpart, sem habilitar escrita.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.

@@ -4,6 +4,7 @@ import {
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
   IObraEnac,
+  IRequisicaoResumoEnac,
   ISolicitacaoEnac,
   IUsuarioPerfilEnac,
   OrigemDadosEnac,
@@ -93,24 +94,101 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [solicitacoes, setSolicitacoes] = React.useState<ISolicitacaoEnac[]>(initialSolicitacoes);
   const [alcadas] = React.useState<IAlcadaEnac[]>(alcadasIniciais);
   const [selectedId, setSelectedId] = React.useState(initialSolicitacoes[0].id);
+  const [usuariosPerfisReadonly, setUsuariosPerfisReadonly] = React.useState<IUsuarioPerfilEnac[]>([]);
+  const [alcadasReadonly, setAlcadasReadonly] = React.useState<IAlcadaEnac[]>([]);
+  const [requisicoesResumoReadonly, setRequisicoesResumoReadonly] = React.useState<IRequisicaoResumoEnac[]>([]);
+  const [diagnosticoReadonlyState, setDiagnosticoReadonlyState] = React.useState<IDiagnosticoReadonlyEnac | null>(null);
+  const [origemDadosEfetiva, setOrigemDadosEfetiva] = React.useState<OrigemDadosEnac>('local');
+  const [carregandoReadonly, setCarregandoReadonly] = React.useState<boolean>(false);
+  const [erroReadonly, setErroReadonly] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    if (props.origemDados !== 'sharepoint' || !props.diagnosticoReadonly || !props.repository) {
+    if (props.origemDados !== 'sharepoint' || !props.repository) {
+      setOrigemDadosEfetiva('local');
+      setCarregandoReadonly(false);
       return;
     }
 
-    props.repository.obterDiagnosticoReadonly()
-      .then((diagnostico: IDiagnosticoReadonlyEnac) => {
-        if (DEBUG) {
-          console.info('[ENAC][V2.4B] Diagnostico readonly SharePoint', diagnostico);
+    let disposed = false;
+    setCarregandoReadonly(true);
+    setErroReadonly(null);
+
+    Promise.all([
+      props.repository.listarUsuariosPerfis(),
+      props.repository.listarAlcadas(),
+      props.repository.listarRequisicoesResumo(),
+      props.repository.obterDiagnosticoReadonly()
+    ])
+      .then(([usuariosPerfis, alcadasSharePoint, requisicoesResumo, diagnostico]) => {
+        if (disposed) {
+          return;
         }
+
+        setUsuariosPerfisReadonly(usuariosPerfis);
+        setAlcadasReadonly(alcadasSharePoint);
+        setRequisicoesResumoReadonly(requisicoesResumo);
+        setDiagnosticoReadonlyState(diagnostico);
+        setOrigemDadosEfetiva('sharepoint');
+
+        if (DEBUG && props.diagnosticoReadonly) {
+          console.info('[ENAC][V2.4C] Dados readonly SharePoint carregados no estado', {
+            usuariosPerfis: usuariosPerfis.length,
+            alcadas: alcadasSharePoint.length,
+            requisicoesResumo: requisicoesResumo.length,
+            diagnostico
+          });
+        }
+
+        setCarregandoReadonly(false);
       })
       .catch((error: Error) => {
-        if (DEBUG) {
-          console.warn('[ENAC][V2.4B] Falha no diagnostico readonly SharePoint', error.message);
+        if (disposed) {
+          return;
         }
+
+        setUsuariosPerfisReadonly([]);
+        setAlcadasReadonly([]);
+        setRequisicoesResumoReadonly([]);
+        setDiagnosticoReadonlyState(null);
+        setOrigemDadosEfetiva('local');
+        setErroReadonly(error.message);
+
+        if (DEBUG && props.diagnosticoReadonly) {
+          console.warn('[ENAC][V2.4C] Falha no consumo readonly SharePoint; fallback local mantido', error.message);
+        }
+
+        setCarregandoReadonly(false);
       });
+
+    return () => {
+      disposed = true;
+    };
   }, [props.diagnosticoReadonly, props.origemDados, props.repository]);
+
+  React.useEffect(() => {
+    if (!DEBUG || !props.diagnosticoReadonly) {
+      return;
+    }
+
+    console.info('[ENAC][V2.4C] Estado readonly interno', {
+      origemDadosEfetiva,
+      carregandoReadonly,
+      erroReadonly,
+      usuariosPerfis: usuariosPerfisReadonly.length,
+      alcadas: alcadasReadonly.length,
+      requisicoesResumo: requisicoesResumoReadonly.length,
+      diagnosticoReadonly: diagnosticoReadonlyState
+    });
+  }, [
+    alcadasReadonly.length,
+    carregandoReadonly,
+    diagnosticoReadonlyState,
+    erroReadonly,
+    origemDadosEfetiva,
+    props.diagnosticoReadonly,
+    requisicoesResumoReadonly.length,
+    usuariosPerfisReadonly.length
+  ]);
 
   const selected = solicitacoes.find((item) => item.id === selectedId) || solicitacoes[0];
 
