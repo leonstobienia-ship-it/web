@@ -4,11 +4,11 @@ Data: 2026-06-05
 
 ## Identificacao da validacao
 
-- Site/pagina de teste:
-- Usuario usado:
-- Data/hora:
-- Pacote usado: `sharepoint/solution/enac-sistema-spfx.sppkg` gerado em modo SHIP na V2.4E
-- Resultado final: aprovado / aprovado com ressalvas / nao aprovado
+- Site/pagina de teste: `https://enaccombr.sharepoint.com/sites/Equipe.Obras/SitePages/Teste-Sistema-ENAC-V2.4E-Readonly.aspx`
+- Usuario usado: Leon
+- Data/hora: 2026-06-05
+- Pacote usado: pacote SHIP V2.4F gerado a partir do commit `d37a514`
+- Resultado final: aprovado com observacao nao bloqueante
 
 ## Checklist antes de publicar
 
@@ -18,6 +18,8 @@ Data: 2026-06-05
 - [ ] Confirmar que o pacote e o SHIP mais recente gerado na V2.4E.
 - [ ] Para V2.4F, confirmar que o pacote e o SHIP mais recente gerado apos a correcao dos HTTP 400.
 - [ ] Confirmar plano de rollback manual.
+
+Resultado V2.4F: checklist atendido manualmente por Leon; Power Automate nao iniciado.
 
 ## Execucao manual
 
@@ -41,6 +43,14 @@ Data: 2026-06-05
 - [ ] V2.4F: GET de `ENAC Usuarios Perfis` sem HTTP 400.
 - [ ] V2.4F: GET de `ENAC Alcadas` sem HTTP 400.
 
+Resultado V2.4F:
+
+- [x] Webpart renderizou.
+- [x] Visual basico preservado.
+- [x] GET de `ENAC Usuarios Perfis` (`99cb9bae-5589-4f8b-854b-08adce371e82`) retornou 200.
+- [x] GET de `ENAC Alcadas` (`901d4458-15b4-427b-a869-161c63cf70ef`) retornou 200.
+- [x] Erros 400 anteriores nao apareceram mais.
+
 ## Network
 
 - [ ] Confirmar ausencia de `POST`.
@@ -48,6 +58,15 @@ Data: 2026-06-05
 - [ ] Confirmar ausencia de `PATCH`.
 - [ ] Confirmar ausencia de `DELETE`.
 - [ ] Confirmar que chamadas observadas sao de leitura.
+
+Resultado V2.4F: nao houve evidencia de `POST`, `MERGE`, `PATCH` ou `DELETE` da webpart.
+
+## Warnings nao bloqueantes V2.4F
+
+- Some icons were re-registered...
+- `Uncaught ReferenceError: Cannot access 't' before initialization` em `suiteux.shell.search`.
+
+Classificacao: eventos externos do shell/search do SharePoint, registrados para rastreabilidade e nao tratados como defeito da webpart ENAC nesta rodada.
 
 ## Criterios de parada
 
