@@ -68,11 +68,11 @@ function Connect-PnPProvisioning {
 function Get-OperationalListByGuid {
     param($Connection, [Guid]$ListId, [string]$DisplayName)
 
-    return Get-PnPList `
+    return @(Get-PnPList `
         -Connection $Connection `
         -Identity $ListId `
         -Includes RootFolder,Hidden,ItemCount `
-        -ThrowExceptionIfListNotFound
+        -ThrowExceptionIfListNotFound)[0]
 }
 
 function Assert-OperationalLists {
@@ -135,9 +135,31 @@ function Get-ListByTitleOrUrl {
     param($Connection, [string]$Title, [string]$TechnicalUrl)
 
     $lists = Get-PnPList -Connection $Connection -Includes RootFolder,Hidden,ItemCount
-    return $lists | Where-Object {
+    $matches = @($lists | Where-Object {
         $_.Title -eq $Title -or $_.RootFolder.ServerRelativeUrl -like "*/$TechnicalUrl"
-    } | Select-Object -First 1
+    })
+
+    if ($matches.Count -gt 1) {
+        throw "Mais de uma lista encontrada para '$Title' / '$TechnicalUrl'. Abortando para evitar escrita ambigua."
+    }
+
+    if ($matches.Count -eq 0) { return $null }
+    return $matches[0]
+}
+
+function Get-ListIdentity {
+    param($List)
+
+    $items = @($List)
+    if ($items.Count -ne 1) {
+        throw "Lista esperada como objeto unico, recebido $($items.Count) objetos."
+    }
+
+    if (-not $items[0].Id) {
+        throw "Lista '$($items[0].Title)' nao possui Id disponivel para uso como identidade escalar."
+    }
+
+    return $items[0].Id.ToString()
 }
 
 function Ensure-AdministrativeList {
@@ -149,21 +171,68 @@ function Ensure-AdministrativeList {
     }
     else {
         Write-Host "CRIAR lista administrativa: $Title em $TechnicalUrl"
-        $list = New-PnPList -Connection $Connection -Title $Title -Template GenericList -Url $TechnicalUrl -EnableVersioning
+        $list = @(New-PnPList -Connection $Connection -Title $Title -Template GenericList -Url $TechnicalUrl -EnableVersioning)[0]
     }
 
-    Set-PnPList -Connection $Connection -Identity $list -EnableVersioning $true -EnableAttachments $false -DisableGridEditing $true
-    return Get-PnPList -Connection $Connection -Identity $list.Id -Includes RootFolder,Hidden,ItemCount
+    $listIdentity = Get-ListIdentity -List $list
+    Set-PnPList -Connection $Connection -Identity $listIdentity -EnableVersioning $true -EnableAttachments $false -DisableGridEditing $true | Out-Null
+    return @(Get-PnPList -Connection $Connection -Identity $listIdentity -Includes RootFolder,Hidden,ItemCount)[0]
 }
 
-function Test-FieldExists {
+function Get-FieldByInternalName {
     param($Connection, $List, [string]$InternalName)
 
-    $field = Get-PnPField -Connection $Connection -List $List | Where-Object {
+    $listIdentity = Get-ListIdentity -List $List
+    $matches = @(Get-PnPField -Connection $Connection -List $listIdentity | Where-Object {
         $_.InternalName -eq $InternalName -or $_.StaticName -eq $InternalName
-    } | Select-Object -First 1
+    })
 
-    return [bool]$field
+    if ($matches.Count -gt 1) {
+        throw "Mais de um campo encontrado para '$($List.Title).$InternalName'. Abortando para evitar escrita ambigua."
+    }
+
+    if ($matches.Count -eq 0) { return $null }
+    return $matches[0]
+}
+
+function Test-FieldTypeCompatible {
+    param($Field, [hashtable]$Plan)
+
+    $expected = $Plan.Type
+    $actual = [string]$Field.TypeAsString
+
+    $compatible = switch ($expected) {
+        "Text" { $actual -eq "Text" }
+        "Note" { $actual -eq "Note" }
+        "Choice" { $actual -eq "Choice" }
+        "MultiChoice" { $actual -eq "MultiChoice" }
+        "Boolean" { $actual -eq "Boolean" }
+        "Currency" { $actual -eq "Currency" }
+        "DateTime" { $actual -eq "DateTime" }
+        "User" { $actual -eq "User" }
+        "Lookup" { $actual -eq "Lookup" }
+        default { $false }
+    }
+
+    return [bool]$compatible
+}
+
+function Test-LookupFieldCompatible {
+    param($Field, [hashtable]$Plan, [hashtable]$LookupLists)
+
+    if ($Plan.Type -ne "Lookup") { return $true }
+
+    $lookupList = $LookupLists[$Plan.LookupList]
+    if (-not $lookupList) {
+        throw "Lookup '$($Plan.InternalName)' referencia lista ainda nao resolvida: $($Plan.LookupList)."
+    }
+
+    $expectedLookupList = $lookupList.Id.ToString("B").ToLowerInvariant()
+    $actualLookupList = ([string]$Field.LookupList).ToLowerInvariant()
+    $expectedLookupField = [string]$Plan.LookupField
+    $actualLookupField = [string]$Field.LookupField
+
+    return ($actualLookupList -eq $expectedLookupList -and $actualLookupField -eq $expectedLookupField)
 }
 
 function New-FieldXml {
@@ -238,20 +307,28 @@ function New-FieldXml {
 function Ensure-Field {
     param($Connection, $List, [hashtable]$Field, [hashtable]$LookupLists)
 
+    $listIdentity = Get-ListIdentity -List $List
     if ($Field.InternalName -eq "Title") {
         Write-Host "AJUSTAR campo padrao Title em $($List.Title)"
-        Set-PnPField -Connection $Connection -List $List -Identity "Title" -Values @{ Title = $Field.DisplayName; Required = [bool]$Field.Required }
+        Set-PnPField -Connection $Connection -List $listIdentity -Identity "Title" -Values @{ Title = $Field.DisplayName; Required = [bool]$Field.Required } | Out-Null
         return
     }
 
-    if (Test-FieldExists -Connection $Connection -List $List -InternalName $Field.InternalName) {
+    $existingField = Get-FieldByInternalName -Connection $Connection -List $List -InternalName $Field.InternalName
+    if ($existingField) {
+        if (-not (Test-FieldTypeCompatible -Field $existingField -Plan $Field)) {
+            throw "Campo existente com tipo incompativel: $($List.Title).$($Field.InternalName). Esperado $($Field.Type), encontrado $($existingField.TypeAsString)."
+        }
+        if (-not (Test-LookupFieldCompatible -Field $existingField -Plan $Field -LookupLists $LookupLists)) {
+            throw "Lookup existente com destino incompativel: $($List.Title).$($Field.InternalName). Esperado $($Field.LookupList) / $($Field.LookupField)."
+        }
         Write-Host "OK campo existente: $($List.Title).$($Field.InternalName)"
         return
     }
 
     $fieldXml = New-FieldXml -Field $Field -LookupLists $LookupLists
     Write-Host "CRIAR campo: $($List.Title).$($Field.InternalName) [$($Field.Type)]"
-    Add-PnPFieldFromXml -Connection $Connection -List $List -FieldXml $fieldXml
+    Add-PnPFieldFromXml -Connection $Connection -List $listIdentity -FieldXml $fieldXml | Out-Null
 }
 
 function New-FieldPlan {
