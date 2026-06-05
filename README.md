@@ -55,6 +55,8 @@ Na V2.4B, a webpart passou a receber contexto SPFx real e instanciar `SharePoint
 
 Na V2.4C, a webpart passou a carregar em estado interno os dados readonly de usuários/perfis, alçadas, requisições resumo e diagnóstico técnico, mantendo fallback local e preservando o visual homologado da V2.2. Os dados reais ainda são usados apenas para diagnóstico em console debug; não houve publicação, conexão SharePoint pelo Codex, escrita, Power Automate ou alteração em listas.
 
+Na V2.4D, foi preparado pacote SPFx local para validação manual controlada no tenant em modo readonly. O pacote não foi publicado pelo Codex, permanece ignorado no Git e depende de autorização manual de Leon para upload em App Catalog/site de teste. Power Automate ainda não foi iniciado.
+
 ## Protótipo
 
 Abra no navegador:
@@ -99,6 +101,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.4a-build-spfx.md`
 - `docs/v2.4b-integracao-readonly-webpart-sharepoint.md`
 - `docs/v2.4c-consumo-readonly-estado-webpart.md`
+- `docs/v2.4d-validacao-manual-tenant-readonly.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
@@ -114,7 +117,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Validar manualmente em tenant o consumo readonly V2.4C no estado da webpart, sem habilitar escrita.
+- Executar, se autorizado por Leon, a validação manual V2.4D em tenant/página restrita, sem habilitar escrita.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
