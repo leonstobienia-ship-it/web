@@ -88,3 +88,19 @@ Auditoria readonly gerada em `sharepoint/auditoria-teste-funcional-v2.3b.md` con
 Ressalva: o relatório local não exibe explicitamente o item da requisição de teste nem o valor gravado em `SnapshotAprovacaoCompra`.
 
 Status final: V2.3B aprovada com ressalvas. Power Automate ainda não foi iniciado. Próxima etapa: preparar integração funcional real/webpart ou automação controlada, conforme decisão de Leon.
+
+## Auditoria complementar V2.3C
+
+Antes de iniciar Power Automate ou integração funcional final, executar auditoria readonly complementar para fechar a ressalva da V2.3B:
+
+1. Ler `config/teste-funcional-v2.3b.local.json` apenas localmente para obter `requisicaoTeste.itemId` e `requisicaoTeste.valorAnalisado`.
+2. Validar Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
+3. Ler somente `ID` e `SnapshotAprovacaoCompra` da requisição de teste.
+4. Confirmar que o lookup aponta para `SNAP-V2.3B-TESTE-001`.
+5. Confirmar que o snapshot aponta de volta para a mesma requisição.
+6. Confirmar regra `alc-v23b-teste-compra-ate-20000`.
+7. Confirmar valor analisado `6720.00`.
+8. Confirmar aprovador base e efetivo `usr-gustavo`.
+9. Gerar `sharepoint/auditoria-vinculo-snapshot-v2.3c.md` sem e-mails, fornecedores, solicitantes, descrições, anexos, tokens ou segredos.
+
+Script preparado: `scripts/sharepoint/09-auditoria-vinculo-snapshot-v2.3c-readonly.ps1`.
