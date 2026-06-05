@@ -97,6 +97,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [usuariosPerfisReadonly, setUsuariosPerfisReadonly] = React.useState<IUsuarioPerfilEnac[]>([]);
   const [alcadasReadonly, setAlcadasReadonly] = React.useState<IAlcadaEnac[]>([]);
   const [requisicoesResumoReadonly, setRequisicoesResumoReadonly] = React.useState<IRequisicaoResumoEnac[]>([]);
+  const [historicoConfiguracoesReadonly, setHistoricoConfiguracoesReadonly] = React.useState<IHistoricoConfiguracaoEnac[]>([]);
   const [diagnosticoReadonlyState, setDiagnosticoReadonlyState] = React.useState<IDiagnosticoReadonlyEnac | null>(null);
   const [origemDadosEfetiva, setOrigemDadosEfetiva] = React.useState<OrigemDadosEnac>('local');
   const [carregandoReadonly, setCarregandoReadonly] = React.useState<boolean>(false);
@@ -118,6 +119,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       let usuariosPerfis: IUsuarioPerfilEnac[] = [];
       let alcadasSharePoint: IAlcadaEnac[] = [];
       let requisicoesResumo: IRequisicaoResumoEnac[] = [];
+      let historicoSharePoint: IHistoricoConfiguracaoEnac[] = [];
       let diagnostico: IDiagnosticoReadonlyEnac | null = null;
 
       try {
@@ -144,6 +146,14 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         erros.push(`diagnostico: ${error instanceof Error ? error.message : String(error)}`);
       }
 
+      try {
+        historicoSharePoint = await props.repository!.listarHistoricoConfiguracoes();
+      } catch (error) {
+        if (DEBUG && props.diagnosticoReadonly) {
+          console.warn('[ENAC][V2.5A] Historico readonly indisponivel; fallback local mantido', error instanceof Error ? error.message : String(error));
+        }
+      }
+
       if (erros.length > 0) {
         throw new Error(erros.join(' | '));
       }
@@ -159,14 +169,17 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       setUsuariosPerfisReadonly(usuariosPerfis);
       setAlcadasReadonly(alcadasSharePoint);
       setRequisicoesResumoReadonly(requisicoesResumo);
+      setHistoricoConfiguracoesReadonly(historicoSharePoint);
       setDiagnosticoReadonlyState(diagnostico);
       setOrigemDadosEfetiva('sharepoint');
 
       if (DEBUG && props.diagnosticoReadonly) {
-        console.info('[ENAC][V2.4F] Dados readonly SharePoint carregados no estado', {
+        console.info('[ENAC][V2.5A] Dados readonly SharePoint disponiveis para interface', {
+          fonteCards: 'sharepoint',
           usuariosPerfis: usuariosPerfis.length,
           alcadas: alcadasSharePoint.length,
           requisicoesResumo: requisicoesResumo.length,
+          historicoConfiguracoes: historicoSharePoint.length,
           diagnostico
         });
       }
@@ -183,6 +196,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         setUsuariosPerfisReadonly([]);
         setAlcadasReadonly([]);
         setRequisicoesResumoReadonly([]);
+        setHistoricoConfiguracoesReadonly([]);
         setDiagnosticoReadonlyState(null);
         setOrigemDadosEfetiva('local');
         setErroReadonly(error.message);
@@ -211,6 +225,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       usuariosPerfis: usuariosPerfisReadonly.length,
       alcadas: alcadasReadonly.length,
       requisicoesResumo: requisicoesResumoReadonly.length,
+      historicoConfiguracoes: historicoConfiguracoesReadonly.length,
       diagnosticoReadonly: diagnosticoReadonlyState
     });
   }, [
@@ -218,6 +233,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     carregandoReadonly,
     diagnosticoReadonlyState,
     erroReadonly,
+    historicoConfiguracoesReadonly.length,
     origemDadosEfetiva,
     props.diagnosticoReadonly,
     requisicoesResumoReadonly.length,
@@ -225,6 +241,10 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   ]);
 
   const selected = solicitacoes.find((item) => item.id === selectedId) || solicitacoes[0];
+  const usandoSharePointReadonly = origemDadosEfetiva === 'sharepoint';
+  const usuariosParaAdmin = usandoSharePointReadonly ? usuariosPerfisReadonly : usuarios;
+  const alcadasParaAdmin = usandoSharePointReadonly ? alcadasReadonly : alcadas;
+  const historicoParaAdmin = usandoSharePointReadonly && historicoConfiguracoesReadonly.length > 0 ? historicoConfiguracoesReadonly : historicoConfiguracoes;
 
   function criarSolicitacao(form: FormData): void {
     const obra = obras.find((item) => item.id === String(form.get('obra'))) || obras[0];
@@ -349,7 +369,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
           </select>
         </header>
 
-        {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} />}
+        {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} requisicoesResumo={usandoSharePointReadonly ? requisicoesResumoReadonly : []} origemDados={origemDadosEfetiva} />}
         {view === 'nova' && <NovaSolicitacao onSubmit={criarSolicitacao} />}
         {view === 'minhas' && <Tabela solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
         {view === 'cotacoes' && <Cotacoes solicitacoes={solicitacoes} onSelect={setSelectedId} selected={selected} onRegistrarCotacao={registrarCotacao} />}
@@ -358,20 +378,28 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         {view === 'financeiro' && <Financeiro selected={selected} onProgramarPagamento={programarPagamento} />}
         {view === 'liberacao' && <Liberacao solicitacoes={solicitacoes} onConcluir={concluirPagamento} />}
         {view === 'historico' && <Historico selected={selected} />}
-        {view === 'adminUsuarios' && <AdminUsuarios />}
-        {view === 'adminAlcadas' && <Alcadas alcadas={alcadas} />}
-        {view === 'adminHistorico' && <AdminHistorico />}
+        {view === 'adminUsuarios' && <AdminUsuarios usuarios={usuariosParaAdmin} origemDados={origemDadosEfetiva} />}
+        {view === 'adminAlcadas' && <Alcadas alcadas={alcadasParaAdmin} origemDados={origemDadosEfetiva} />}
+        {view === 'adminHistorico' && <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />}
       </main>
     </section>
   );
 }
 
-function Dashboard({ perfil, solicitacoes }: { perfil: PerfilEnac; solicitacoes: ISolicitacaoEnac[] }): JSX.Element {
-  const cards = cardsDashboard(perfil, solicitacoes);
+function Dashboard({ perfil, solicitacoes, requisicoesResumo, origemDados }: { perfil: PerfilEnac; solicitacoes: ISolicitacaoEnac[]; requisicoesResumo: IRequisicaoResumoEnac[]; origemDados: OrigemDadosEnac }): JSX.Element {
+  const cards = cardsDashboard(perfil, solicitacoes, requisicoesResumo, origemDados);
   return <div className={styles.metrics}>{cards.map((card) => <div key={card.label}><span>{card.label}</span><strong>{card.value}</strong></div>)}</div>;
 }
 
-function cardsDashboard(perfil: PerfilEnac, solicitacoes: ISolicitacaoEnac[]): { label: string; value: string | number }[] {
+function cardsDashboard(perfil: PerfilEnac, solicitacoes: ISolicitacaoEnac[], requisicoesResumo: IRequisicaoResumoEnac[], origemDados: OrigemDadosEnac): { label: string; value: string | number }[] {
+  if (origemDados === 'sharepoint') {
+    return [
+      { label: 'Solicitacoes ativas', value: requisicoesResumo.length },
+      { label: 'Aguardando cotacao', value: countResumoStatus(requisicoesResumo, ['AguardandoCotacao', 'Aguardando cotacao', 'Aguardando cotação']) },
+      { label: 'Aguardando aprovacao', value: countResumoStatus(requisicoesResumo, ['AguardandoAprovacao', 'Aguardando aprovacao', 'Aguardando aprovação']) }
+    ];
+  }
+
   if (perfil === 'CotacoesContratos') return [
     { label: 'Aguardando cotacao', value: countStatus(solicitacoes, 'AguardandoCotacao') },
     { label: 'Em cotacao', value: countStatus(solicitacoes, 'EmCotacao') },
@@ -396,6 +424,18 @@ function cardsDashboard(perfil: PerfilEnac, solicitacoes: ISolicitacaoEnac[]): {
 
 function countStatus(solicitacoes: ISolicitacaoEnac[], status: StatusProcesso): number {
   return solicitacoes.filter((item) => item.status === status).length;
+}
+
+function countResumoStatus(requisicoes: IRequisicaoResumoEnac[], statusAliases: string[]): number {
+  return requisicoes.filter((item) => statusAliases.some((status) => normalizarStatusReadonly(item.status) === normalizarStatusReadonly(status))).length;
+}
+
+function normalizarStatusReadonly(value: string | undefined): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+    .toLowerCase();
 }
 
 function NovaSolicitacao({ onSubmit }: { onSubmit: (form: FormData) => void }): JSX.Element {
@@ -492,48 +532,64 @@ function Liberacao({ solicitacoes, onConcluir }: { solicitacoes: ISolicitacaoEna
   );
 }
 
-function AdminUsuarios(): JSX.Element {
+function AdminUsuarios({ usuarios: usuariosExibidos, origemDados }: { usuarios: IUsuarioPerfilEnac[]; origemDados: OrigemDadosEnac }): JSX.Element {
   return (
-    <table>
-      <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Perfil adicional</th><th>Permissoes</th></tr></thead>
-      <tbody>
-        {usuarios.map((usuario) => (
-          <tr key={usuario.emailCorporativo}>
-            <td>{usuario.nome}<br />{usuario.usuarioInternoId}</td>
-            <td>{usuario.emailCorporativo}</td>
-            <td>{usuario.perfilPrincipal}</td>
-            <td>{usuario.perfisAdicionais.join(', ') || '-'}</td>
-            <td>{usuario.podeAdministrarConfiguracoes ? 'Administra configuracoes' : usuario.podeRegistrarCotacoes ? 'Cotacoes' : usuario.podeEmitirPedido ? 'Pedido/NF/Pagamento' : usuario.podeAprovarCompras ? 'Aprovacao' : 'Solicitacao'}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <>
+      <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint readonly' : 'Fallback local'}</p>
+      <table>
+        <thead><tr><th>Nome</th><th>Usuario interno</th><th>Perfil</th><th>Cargo/Função</th><th>Status</th></tr></thead>
+        <tbody>
+          {usuariosExibidos.map((usuario) => (
+            <tr key={usuario.usuarioInternoId || usuario.id}>
+              <td>{usuario.nome}</td>
+              <td>{usuario.usuarioInternoId}</td>
+              <td>{usuario.perfilPrincipal}</td>
+              <td>{usuario.cargoFuncao || '-'}</td>
+              <td>{usuario.usuarioAtivo ? 'Ativo' : 'Inativo'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 
-function AdminHistorico(): JSX.Element {
+function AdminHistorico({ historico, origemDados }: { historico: IHistoricoConfiguracaoEnac[]; origemDados: OrigemDadosEnac }): JSX.Element {
   return (
-    <table>
-      <thead><tr><th>Configuracao</th><th>Anterior</th><th>Novo</th><th>Usuario</th><th>Justificativa</th></tr></thead>
-      <tbody>
-        {historicoConfiguracoes.map((item, index) => (
-          <tr key={index}><td>{item.tipoConfiguracao}</td><td>{item.valorAnterior}</td><td>{item.valorNovo}</td><td>{item.usuarioAlteracao}</td><td>{item.justificativa}</td></tr>
-        ))}
-      </tbody>
-    </table>
+    <>
+      <p>Fonte: {origemDados === 'sharepoint' && historico.length > 0 ? 'SharePoint readonly' : 'Fallback local'}</p>
+      <table>
+        <thead><tr><th>Configuracao</th><th>Anterior</th><th>Novo</th><th>Usuario</th><th>Justificativa</th></tr></thead>
+        <tbody>
+          {historico.map((item, index) => (
+            <tr key={`${item.tipoConfiguracao}-${item.dataHora}-${index}`}><td>{item.tipoConfiguracao}</td><td>{item.valorAnterior}</td><td>{item.valorNovo}</td><td>{item.usuarioAlteracao}</td><td>{item.justificativa}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 
-function Alcadas({ alcadas }: { alcadas: IAlcadaEnac[] }): JSX.Element {
+function Alcadas({ alcadas, origemDados }: { alcadas: IAlcadaEnac[]; origemDados: OrigemDadosEnac }): JSX.Element {
   return (
-    <table>
-      <thead><tr><th>Processo</th><th>Valor minimo</th><th>Valor maximo</th><th>Aprovador</th><th>Observacoes</th></tr></thead>
-      <tbody>
-        {alcadas.map((item) => (
-          <tr key={item.id}><td>{item.processo}<br />{item.regraInternaId}</td><td>{item.valorMinimo}</td><td>{item.ilimitado ? 'Ilimitado' : item.valorMaximo}</td><td>{item.aprovadorPrincipalNome}</td><td>{item.observacoes}</td></tr>
-        ))}
-      </tbody>
-    </table>
+    <>
+      <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint readonly' : 'Fallback local'}</p>
+      <table>
+        <thead><tr><th>Regra</th><th>Processo</th><th>Tipo</th><th>Faixa</th><th>Aprovador</th><th>Status</th></tr></thead>
+        <tbody>
+          {alcadas.map((item) => (
+            <tr key={item.id}>
+              <td>{item.regraInternaId || item.id}</td>
+              <td>{item.processo}</td>
+              <td>{item.tipoSolicitacao}</td>
+              <td>{formatCurrency(item.valorMinimo)}<br />{item.ilimitado ? 'Ilimitado' : formatCurrency(item.valorMaximo)}</td>
+              <td>{item.aprovadorPrincipalNome || item.aprovadorPrincipalId || '-'}</td>
+              <td>{item.ativa ? 'Ativa' : 'Inativa'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
 

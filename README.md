@@ -61,6 +61,8 @@ Na V2.4E, foi gerado pacote SPFx `--ship` local para validação manual readonly
 
 Na V2.4F, foram corrigidas consultas readonly REST que retornavam HTTP 400 no tenant por uso de propriedades inválidas em lookups customizados. A webpart passou a consultar lookups administrativos de forma conservadora e enriquecer aprovadores/substitutos em memória. Em validação manual no tenant, Leon confirmou GET 200 para `ENAC Usuarios Perfis` e `ENAC Alcadas`, webpart renderizada, visual básico preservado e ausência de escrita observada. Resultado: V2.4F aprovada manualmente com observação não bloqueante para warnings externos do shell/search do SharePoint. Power Automate ainda não foi iniciado.
 
+Na V2.5A, a interface SPFx passou a consumir dados reais readonly em áreas existentes: cards prioritários do dashboard, Administração / Usuários, Administração / Alçadas e histórico administrativo quando disponível. O fallback local permanece ativo, não houve escrita e o fluxo visual homologado não foi redesenhado.
+
 ## Protótipo
 
 Abra no navegador:
@@ -108,6 +110,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.4d-validacao-manual-tenant-readonly.md`
 - `docs/v2.4e-pacote-ship-readonly-validacao-manual.md`
 - `docs/v2.4f-correcao-consultas-readonly-rest.md`
+- `docs/v2.5a-consumo-readonly-interface.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
@@ -123,7 +126,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Definir próxima etapa após V2.4F aprovada: consumo readonly real na interface, preparação de escrita controlada, permissões finas ou Power Automate em rodada autorizada.
+- Validar manualmente a V2.5A em tenant/página restrita, confirmando consumo readonly real na interface sem escrita.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
