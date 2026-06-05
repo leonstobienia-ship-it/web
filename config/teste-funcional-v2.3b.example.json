@@ -1,0 +1,20 @@
+{
+  "usuarios": {
+    "leon": {
+      "email": "leon@exemplo.com"
+    },
+    "gustavo": {
+      "email": "gustavo@exemplo.com"
+    },
+    "matheus": {
+      "email": "matheus@exemplo.com"
+    },
+    "kemilly": {
+      "email": "kemilly@exemplo.com"
+    }
+  },
+  "requisicaoTeste": {
+    "itemId": null,
+    "valorAnalisado": 6720.00
+  }
+}
