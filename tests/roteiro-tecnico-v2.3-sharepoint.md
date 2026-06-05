@@ -72,3 +72,19 @@ Concluido antes do teste funcional:
 4. Validar criação de snapshot.
 5. Validar vínculo em `SnapshotAprovacaoCompra`.
 6. Validar histórico de configuração.
+
+## Resultado do teste funcional controlado V2.3B
+
+Executado em 2026-06-04 após o provisionamento estrutural V2.3A, com dados marcados como `V2.3B-TESTE`.
+
+Auditoria readonly gerada em `sharepoint/auditoria-teste-funcional-v2.3b.md` confirmou:
+
+- usuários de teste Leon, Gustavo, Matheus e Kemilly: OK;
+- alçadas `V2.3B-TESTE-COMPRA-ATE-20000` e `V2.3B-TESTE-COMPRA-ACIMA-20000`: OK;
+- snapshot `SNAP-V2.3B-TESTE-001`: OK;
+- histórico `V2.3B-TESTE - Carga inicial controlada`: OK;
+- Lista 02 validada por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`: OK.
+
+Ressalva: o relatório local não exibe explicitamente o item da requisição de teste nem o valor gravado em `SnapshotAprovacaoCompra`.
+
+Status final: V2.3B aprovada com ressalvas. Power Automate ainda não foi iniciado. Próxima etapa: preparar integração funcional real/webpart ou automação controlada, conforme decisão de Leon.

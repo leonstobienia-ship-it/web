@@ -60,3 +60,21 @@ Não usar dados sensíveis, valores reais de contratos, fornecedores reais ou do
 ## Rollback lógico
 
 Não excluir automaticamente listas, colunas ou itens. Se a carga de teste precisar ser desconsiderada, desativar regras de teste e registrar a decisão no histórico. Exclusões manuais só devem ocorrer em rodada específica e autorizada.
+
+## Resultado executado
+
+Data operacional: 2026-06-04.
+
+O provisionamento estrutural V2.3A já estava concluído antes do teste. Leon executou o teste funcional controlado V2.3B com dados marcados como `V2.3B-TESTE` e, em seguida, executou a auditoria readonly `scripts/sharepoint/08-auditoria-teste-funcional-v2.3b-readonly.ps1`.
+
+Resultado da auditoria registrada em `sharepoint/auditoria-teste-funcional-v2.3b.md`:
+
+- usuários/perfis de teste: OK;
+- alçadas de teste até R$ 20.000,00 e acima de R$ 20.000,00: OK;
+- snapshot `SNAP-V2.3B-TESTE-001`: OK;
+- histórico `V2.3B-TESTE`: OK;
+- Lista 02 validada por GUID: OK.
+
+Ressalva: o relatório local não exibe explicitamente o item da requisição de teste nem o valor gravado em `SnapshotAprovacaoCompra`.
+
+Status final: V2.3B aprovada com ressalvas. Power Automate ainda não foi iniciado. A próxima etapa deve ser preparar integração funcional real/webpart ou automação controlada, conforme decisão de Leon.

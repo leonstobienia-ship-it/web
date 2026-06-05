@@ -43,6 +43,8 @@ Em 2026-06-04, o provisionamento estrutural V2.3A foi concluído no SharePoint c
 
 Nenhuma lista operacional foi recriada: `ENACObras` e `ENACSolicitacoes` não foram criadas. O aplicativo readonly permaneceu separado do aplicativo de provisionamento. Power Automate ainda não foi iniciado.
 
+Em 2026-06-04, o teste funcional controlado V2.3B foi executado com dados marcados como `V2.3B-TESTE`. A auditoria readonly confirmou usuários/perfis de teste, alçadas de compra, snapshot `SNAP-V2.3B-TESTE-001`, histórico administrativo e validação da Lista 02 por GUID. Resultado: V2.3B aprovada com ressalvas para avançar à próxima etapa técnica, pois o relatório local não expõe explicitamente o item da requisição nem o valor de `SnapshotAprovacaoCompra`. Power Automate ainda não foi iniciado e permissões finais ainda não estão concluídas.
+
 ## Protótipo
 
 Abra no navegador:
@@ -98,8 +100,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Validar alçadas beta antes da implantação.
-- Preparar teste funcional controlado com dados mínimos no SharePoint.
+- Preparar integração funcional real na webpart SPFx ou automação controlada, conforme decisão de Leon.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
