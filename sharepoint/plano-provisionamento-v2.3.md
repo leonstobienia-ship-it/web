@@ -30,7 +30,15 @@ Diretriz operacional: scripts devem localizar listas fisicas existentes pelos GU
 | Obras / Lista 01 | `a9afadc1-f843-45c0-a628-4f49a8716832` |
 | Solicitações / Lista 02 | `0a204b87-b9a1-4d16-8654-55567a62ed01` |
 
-## Listas novas prováveis
+## Provisionamento estrutural concluído
+
+Data operacional: 2026-06-04.
+
+O provisionamento estrutural V2.3A foi concluido com app separado de provisionamento. Foram criadas/reaproveitadas as quatro listas administrativas, seus campos customizados, lookups e o campo `SnapshotAprovacaoCompra` na Lista 02.
+
+Nenhuma lista operacional foi recriada. `ENACObras` e `ENACSolicitacoes` nao foram criadas. O app readonly permaneceu separado do app de provisionamento.
+
+## Listas administrativas provisionadas
 
 - `ENAC Usuarios Perfis`.
 - `ENAC Alcadas`.
@@ -39,16 +47,16 @@ Diretriz operacional: scripts devem localizar listas fisicas existentes pelos GU
 
 Não criar `ENACObras`, `ENAC Obras`, `ENACSolicitacoes` ou `ENAC Solicitacoes` como listas físicas nesta rodada.
 
-## URLs técnicas planejadas
+## URLs técnicas provisionadas
 
-| Título exibido | URL técnica planejada |
+| Título exibido | URL técnica provisionada |
 | --- | --- |
 | `ENAC Usuarios Perfis` | `Lists/ENACUsuariosPerfis` |
 | `ENAC Alcadas` | `Lists/ENACAlcadas` |
 | `ENAC Historico Configuracoes` | `Lists/ENACHistoricoConfiguracoes` |
 | `ENAC Snapshots Regras` | `Lists/ENACSnapshotsRegras` |
 
-## Ordem de criação
+## Ordem de criação executada
 
 1. Validar `Lista 01 - Controle de Obras ENAC` por GUID `a9afadc1-f843-45c0-a628-4f49a8716832`.
 2. Validar `Lista 02 — Requisições de Compra` por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
@@ -197,3 +205,5 @@ Antes de gravar dados:
 - Histórico de configurações: inclusão controlada, sem edição comum.
 - Snapshots: criação pelo sistema, sem edição comum.
 - Listas operacionais: permissões por perfil ainda pendentes de desenho final.
+- Power Automate ainda não foi iniciado.
+- Próxima etapa: teste funcional controlado com dados mínimos, não ampliação de interface.

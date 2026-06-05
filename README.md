@@ -39,7 +39,9 @@ Para a V2.3, não criar `ENACObras` nem `ENACSolicitacoes`; usar:
 - Obras: `Lista 01 - Controle de Obras ENAC`.
 - Solicitações/Requisições: `Lista 02 — Requisições de Compra`.
 
-As listas administrativas `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras` estão ausentes e serão planejadas por dry-run antes de qualquer provisionamento real.
+Em 2026-06-04, o provisionamento estrutural V2.3A foi concluído no SharePoint com app separado de provisionamento. Foram criadas/reaproveitadas as listas administrativas `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`, seus campos customizados, lookups e o campo `SnapshotAprovacaoCompra` na Lista 02.
+
+Nenhuma lista operacional foi recriada: `ENACObras` e `ENACSolicitacoes` não foram criadas. O aplicativo readonly permaneceu separado do aplicativo de provisionamento. Power Automate ainda não foi iniciado.
 
 ## Protótipo
 
@@ -97,7 +99,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 ## Decisões pendentes
 
 - Validar alçadas beta antes da implantação.
-- Confirmar nomes internos reais das listas SharePoint antes de apontar a webpart para produção.
+- Preparar teste funcional controlado com dados mínimos no SharePoint.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.

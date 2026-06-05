@@ -2,7 +2,7 @@
 
 Este documento consolida o inventario readonly executado no site `https://enaccombr.sharepoint.com/sites/Equipe.Obras`.
 
-Nenhuma lista operacional numerada deve ser recriada pela V2.3. O provisionamento futuro deve criar apenas estruturas administrativas ausentes e campos complementares aprovados.
+Nenhuma lista operacional numerada foi recriada pela V2.3A. O provisionamento estrutural criou/reaproveitou apenas estruturas administrativas aprovadas e o campo complementar `SnapshotAprovacaoCompra`.
 
 ## Listas operacionais reais
 
@@ -61,7 +61,7 @@ Nao criar `CodigoObra` na Lista 01 nesta rodada.
 | Aprovador | `Aprovador` | User |
 | Solicitante | `Solicitante` | User |
 
-`SnapshotAprovacaoCompra` devera futuramente ser adicionado a `Lista 02 — Requisições de Compra` como lookup para a futura lista `ENAC Snapshots Regras`.
+`SnapshotAprovacaoCompra` foi adicionado a `Lista 02 — Requisições de Compra` como lookup para `ENAC Snapshots Regras` / `Title`.
 
 Choices reais de `Tipo da Solicitação` / `TipodaSolicita_x00e7__x00e3_o`: Material, Serviço, Equipamento, Ferramenta, Locação, Terceiro/Prestador, EPI, Documento/Taxa, Outro.
 
@@ -69,21 +69,21 @@ Choices reais de `Tipo da Solicitação` / `TipodaSolicita_x00e7__x00e3_o`: Mate
 
 - Nao criar `ENACObras`.
 - Nao criar `ENACSolicitacoes`.
-- `ENAC Alcadas.Obra` devera futuramente ser lookup para `Lista 01 - Controle de Obras ENAC`, exibindo `NomedaObra`.
-- `ENAC Snapshots Regras.Solicitacao` devera futuramente ser lookup para `Lista 02 — Requisições de Compra`, usando `ID`.
-- `SnapshotAprovacaoCompra` devera futuramente ser adicionado a `Lista 02 — Requisições de Compra`, como lookup para `ENAC Snapshots Regras`.
+- `ENAC Alcadas.Obra` foi provisionado como lookup para `Lista 01 - Controle de Obras ENAC`, exibindo `NomedaObra`.
+- `ENAC Snapshots Regras.Solicitacao` foi provisionado como lookup para `Lista 02 — Requisições de Compra`, usando `ID`.
+- `SnapshotAprovacaoCompra` foi adicionado a `Lista 02 — Requisições de Compra`, como lookup para `ENAC Snapshots Regras`.
 - Nao criar `CodigoObra` na Lista 01 nesta rodada.
 
-## Listas administrativas ausentes
+## Listas administrativas provisionadas
 
-As listas abaixo nao existem no tenant e ficam previstas para criacao futura apos revisao do dry-run:
+As listas abaixo foram criadas/reaproveitadas no provisionamento estrutural V2.3A:
 
 - `ENAC Usuarios Perfis` / `Lists/ENACUsuariosPerfis`
 - `ENAC Alcadas` / `Lists/ENACAlcadas`
 - `ENAC Historico Configuracoes` / `Lists/ENACHistoricoConfiguracoes`
 - `ENAC Snapshots Regras` / `Lists/ENACSnapshotsRegras`
 
-## Configuracoes planejadas das listas novas
+## Configuracoes provisionadas das listas administrativas
 
 | Lista | Versionamento | Anexos | Edicao em grade |
 | --- | --- | --- | --- |

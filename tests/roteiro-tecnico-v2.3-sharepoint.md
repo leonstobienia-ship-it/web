@@ -8,6 +8,8 @@ Solicitação de compra no valor de `R$ 6.720,00`.
 
 Pré-condição técnica: scripts de SharePoint devem resolver listas operacionais existentes por GUID: Lista 01 `a9afadc1-f843-45c0-a628-4f49a8716832` e Lista 02 `0a204b87-b9a1-4d16-8654-55567a62ed01`. Titulos visiveis servem apenas para conferencia humana.
 
+Provisionamento estrutural V2.3A concluido em 2026-06-04: quatro listas administrativas, campos customizados, lookups e `SnapshotAprovacaoCompra` foram criados/ajustados. Power Automate ainda nao foi iniciado.
+
 1. Abrir a webpart no contexto Microsoft 365.
 2. Resolver o usuário autenticado por `ContaMicrosoft365`.
 3. Confirmar que usuário inativo é bloqueado para novas alçadas e novas aprovações.
@@ -42,15 +44,15 @@ A V2.3 só pode avançar para homologação após:
 
 ## Pré-teste de provisionamento V2.3A
 
-Antes de qualquer criação real no tenant:
+Concluido antes do teste funcional:
 
 - Revisar o dry-run de `scripts/sharepoint/02-provisionamento-v2.3-dryrun.ps1`.
 - Considerar concluida a validacao residual readonly de `TipoSolicitacao`: 6 itens lidos, `Documento?Taxa=0`, `Documento/Taxa=0`, outros valores=6 e vazio/nulo=0. Nenhuma migracao de item legado e necessaria.
 - Confirmar que não serão criadas listas `ENACObras` ou `ENACSolicitacoes`.
-- Confirmar criação planejada apenas das listas administrativas ausentes: `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`.
+- Confirmar criação/reaproveitamento das listas administrativas: `ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`.
 - Confirmar que `ENAC Alcadas.Obra` aponta para Lista 01 por GUID `a9afadc1-f843-45c0-a628-4f49a8716832` / `NomedaObra`.
-- Confirmar que `SnapshotAprovacaoCompra` será adicionado à Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
-- Confirmar que as URLs técnicas planejadas são `Lists/ENACUsuariosPerfis`, `Lists/ENACAlcadas`, `Lists/ENACHistoricoConfiguracoes` e `Lists/ENACSnapshotsRegras`.
+- Confirmar que `SnapshotAprovacaoCompra` foi adicionado à Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`.
+- Confirmar que as URLs técnicas provisionadas são `Lists/ENACUsuariosPerfis`, `Lists/ENACAlcadas`, `Lists/ENACHistoricoConfiguracoes` e `Lists/ENACSnapshotsRegras`.
 - Confirmar que `ENAC Usuarios Perfis` usa `PerfisAdicionais` e não o campo singular do desenho anterior.
 - Confirmar que `ENAC Historico Configuracoes` inclui `AcaoRealizada` e `ItemConfiguracaoId`, usando `Author` e `Created` nativos.
 - Confirmar que `ENAC Snapshots Regras` inclui `RegraInternaId` e `ResumoRegraAplicada`, sem `Cotacao` e sem `PedidoCompra` no escopo inicial.
@@ -61,3 +63,12 @@ Antes de qualquer criação real no tenant:
 - Confirmar `UsuarioInternoId` e `RegraInternaId` com `Indexed=TRUE` e `EnforceUniqueValues=TRUE`.
 - Confirmar `ENAC Snapshots Regras.Solicitacao` apontando para Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01` / `ID`.
 - Confirmar que snapshots e histórico só serão considerados protegidos após permissões específicas.
+
+## Próximo teste funcional controlado
+
+1. Cadastrar usuários/perfis administrativos mínimos.
+2. Cadastrar alçadas iniciais.
+3. Criar ou selecionar requisição de compra de teste.
+4. Validar criação de snapshot.
+5. Validar vínculo em `SnapshotAprovacaoCompra`.
+6. Validar histórico de configuração.

@@ -2,7 +2,7 @@
 
 Este documento descreve o script local `scripts/sharepoint/03-provisionamento-v2.3-apply.ps1`.
 
-Nenhuma execucao real de provisionamento esta autorizada nesta rodada.
+Provisionamento estrutural V2.3A concluido em 2026-06-04. Este documento fica preservado como registro do procedimento e das travas usadas.
 
 ## Modo padrao
 
@@ -19,7 +19,7 @@ Sem `-Apply`, o script opera em dry-run:
 
 ## Bloqueios obrigatorios
 
-Para aplicacao futura, o script exige:
+Para qualquer reaplicacao controlada/idempotente, o script exige:
 
 - `-Apply`;
 - `-ConfirmProvisionamento "PROVISIONAR-V2.3-ENAC"`;
@@ -54,7 +54,7 @@ Register-PnPEntraIDAppForInteractiveLogin `
 
 Apos o aplicativo separado ser criado e validado visualmente, executar no maximo o script `03` em dry-run, sem `-Apply` e sem `-ConfirmProvisionamento`, usando o novo ClientId.
 
-## Estruturas planejadas
+## Estruturas provisionadas
 
 Nao criar:
 
@@ -68,13 +68,15 @@ Validar listas operacionais existentes:
 
 Nos scripts, essas listas operacionais devem ser localizadas pelos GUIDs acima. Os titulos visiveis continuam apenas como informacao de log/conferencia, pois podem conter travessao, acentuacao ou caracteres invisiveis diferentes do texto digitado.
 
-Criar futuramente apenas:
+Estruturas administrativas provisionadas:
 
 - `ENAC Usuarios Perfis` / `Lists/ENACUsuariosPerfis`;
 - `ENAC Alcadas` / `Lists/ENACAlcadas`;
 - `ENAC Historico Configuracoes` / `Lists/ENACHistoricoConfiguracoes`;
 - `ENAC Snapshots Regras` / `Lists/ENACSnapshotsRegras`;
 - `Lista 02 — Requisições de Compra.SnapshotAprovacaoCompra`.
+
+Nenhuma lista operacional foi recriada. `ENACObras` e `ENACSolicitacoes` nao foram criadas.
 
 ## Propriedades tecnicas
 
@@ -99,9 +101,9 @@ pwsh -File ".\scripts\sharepoint\03-provisionamento-v2.3-apply.ps1" `
   -AuthMode "DeviceLogin"
 ```
 
-## Comando futuro de aplicacao
+## Comando de aplicacao controlada
 
-Somente apos autorizacao expressa e aplicativo separado:
+Usado somente com autorizacao expressa e aplicativo separado:
 
 ```powershell
 pwsh -File ".\scripts\sharepoint\03-provisionamento-v2.3-apply.ps1" `
@@ -113,4 +115,4 @@ pwsh -File ".\scripts\sharepoint\03-provisionamento-v2.3-apply.ps1" `
   -ConfirmProvisionamento "PROVISIONAR-V2.3-ENAC"
 ```
 
-Nesta versao, mesmo com `-Apply`, a rotina de aplicacao real ainda interrompe antes de executar criacao. Ela deve ser revisada e habilitada somente em rodada posterior autorizada.
+Auditoria readonly posterior confirmou campos, lookups, configuracoes das listas administrativas e `SnapshotAprovacaoCompra` criados. Power Automate ainda nao foi iniciado; a proxima etapa e teste funcional controlado com dados minimos.
