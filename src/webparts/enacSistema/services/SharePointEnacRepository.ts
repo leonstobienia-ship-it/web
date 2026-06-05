@@ -1,7 +1,9 @@
 import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import {
+  IDiagnosticoReadonlyEnac,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
+  IRequisicaoResumoEnac,
   IResolucaoAprovadorEnac,
   ISnapshotRegraEnac,
   ISolicitacaoEnac,
@@ -10,6 +12,15 @@ import {
   PerfilEnac,
   TipoSolicitacaoEnac
 } from '../models';
+
+const LISTAS_ENAC = {
+  obras: 'a9afadc1-f843-45c0-a628-4f49a8716832',
+  requisicoesCompra: '0a204b87-b9a1-4d16-8654-55567a62ed01',
+  usuariosPerfis: '99cb9bae-5589-4f8b-854b-08adce371e82',
+  alcadas: '901d4458-15b4-427b-a869-161c63cf70ef',
+  historicoConfiguracoes: 'cac67186-e478-4f15-b5a0-2db92d74b2c4',
+  snapshotsRegras: '767e1867-8a98-46be-9dcc-be53a12c51aa'
+};
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -38,27 +49,27 @@ export class SharePointEnacRepository {
   }
 
   public async listarSolicitacoes(): Promise<ISolicitacaoEnac[]> {
-    const endpoint = `${this.siteUrl}/_api/web/lists/getbytitle('ENAC Solicitacoes')/items?$select=Id,Title,TipoSolicitacao,Descricao,EspecificacaoTecnica,Quantidade,Unidade,FrenteServico,DataNecessaria,Prioridade,JustificativaUrgencia,AnexoReferencia,Observacoes,DataHoraSolicitacao,StatusProcesso,Solicitante/Title,Obra/Id,Obra/Title,Obra/CodigoObra,Obra/Cliente,Obra/CentroCusto,SnapshotAprovacaoCompra/Id&$expand=Solicitante,Obra,SnapshotAprovacaoCompra`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}?$top=20&$select=Id,Title,TipodaSolicita_x00e7__x00e3_o,Descri_x00e7__x00e3_o,StatusdaRequisi_x00e7__x00e3_o,Solicitante/Title,Obra/Id,Obra/Title,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=Solicitante,Obra,SnapshotAprovacaoCompra`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
 
     return payload.value.map((item: any) => ({
       id: `REQ-${item.Id}`,
       titulo: item.Title,
-      tipo: item.TipoSolicitacao,
-      descricao: item.Descricao,
-      especificacaoTecnica: item.EspecificacaoTecnica,
+      tipo: this.mapTipoSolicitacao(item.TipodaSolicita_x00e7__x00e3_o),
+      descricao: item.Descri_x00e7__x00e3_o || '',
+      especificacaoTecnica: '',
       quantidade: Number(item.Quantidade || 0),
       unidade: item.Unidade,
       frenteServico: item.FrenteServico,
       dataNecessaria: item.DataNecessaria,
-      prioridade: item.Prioridade,
+      prioridade: item.Prioridade || 'Normal',
       justificativaUrgencia: item.JustificativaUrgencia,
       anexoReferencia: item.AnexoReferencia,
       observacoes: item.Observacoes,
       solicitante: item.Solicitante?.Title || '',
       dataHoraSolicitacao: item.DataHoraSolicitacao,
-      status: item.StatusProcesso,
+      status: this.mapStatusProcesso(item.StatusdaRequisi_x00e7__x00e3_o),
       divergencias: [],
       snapshotAprovacaoCompra: item.SnapshotAprovacaoCompra ? { id: String(item.SnapshotAprovacaoCompra.Id) } as ISnapshotRegraEnac : undefined,
       obra: {
@@ -72,9 +83,96 @@ export class SharePointEnacRepository {
     }));
   }
 
+  public async listarRequisicoesResumo(): Promise<IRequisicaoResumoEnac[]> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}?$top=20&$select=Id,Title,TipodaSolicita_x00e7__x00e3_o,StatusdaRequisi_x00e7__x00e3_o,Obra/Id,Obra/Title,Solicitante/Title,Aprovador/Title,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=Obra,Solicitante,Aprovador,SnapshotAprovacaoCompra`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+    const payload = await this.ensureJson(response);
+
+    return payload.value.map((item: any) => ({
+      id: `REQ-${item.Id}`,
+      itemId: Number(item.Id),
+      titulo: item.Title || '',
+      tipoSolicitacao: item.TipodaSolicita_x00e7__x00e3_o || '',
+      status: item.StatusdaRequisi_x00e7__x00e3_o || '',
+      obraId: item.Obra?.Id ? Number(item.Obra.Id) : undefined,
+      obraTitulo: item.Obra?.Title,
+      solicitanteNome: item.Solicitante?.Title,
+      aprovadorNome: item.Aprovador?.Title,
+      snapshotAprovacaoCompraId: item.SnapshotAprovacaoCompra?.Id ? Number(item.SnapshotAprovacaoCompra.Id) : undefined,
+      snapshotAprovacaoCompraTitulo: item.SnapshotAprovacaoCompra?.Title
+    }));
+  }
+
+  public async obterSnapshotDaRequisicao(requisicaoId: number): Promise<ISnapshotRegraEnac | undefined> {
+    const requestEndpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${requisicaoId})?$select=Id,SnapshotAprovacaoCompra/Id&$expand=SnapshotAprovacaoCompra`;
+    const requestResponse = await this.spHttpClient.get(requestEndpoint, SPHttpClient.configurations.v1);
+    const requestPayload = await this.ensureJson(requestResponse);
+    const snapshotId = requestPayload.SnapshotAprovacaoCompra?.Id;
+
+    if (!snapshotId) {
+      return undefined;
+    }
+
+    const snapshotEndpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.snapshotsRegras)}(${snapshotId})?$select=Id,Title,RegraInternaId,Processo,FaixaValorVigente,ValorAnalisado,AprovadorBaseId,AprovadorBaseNome,AprovadorBaseEmail,AprovadorEfetivoId,AprovadorEfetivoNome,AprovadorEfetivoEmail,SubstituicaoAplicada,MotivoResolucaoAprovador,DataHoraAplicacao`;
+    const snapshotResponse = await this.spHttpClient.get(snapshotEndpoint, SPHttpClient.configurations.v1);
+    const item = await this.ensureJson(snapshotResponse);
+
+    return this.mapSnapshot(item);
+  }
+
+  public async obterDiagnosticoReadonly(): Promise<IDiagnosticoReadonlyEnac> {
+    const erros: string[] = [];
+    let usuariosPerfis = 0;
+    let alcadasAtivas = 0;
+    let requisicoesResumo = 0;
+    let snapshotTeste: IDiagnosticoReadonlyEnac['snapshotTeste'];
+
+    try {
+      usuariosPerfis = (await this.listarUsuariosPerfis()).length;
+    } catch (error) {
+      erros.push(`usuarios: ${this.getErrorMessage(error)}`);
+    }
+
+    try {
+      alcadasAtivas = (await this.listarAlcadas()).filter((alcada) => alcada.ativa).length;
+    } catch (error) {
+      erros.push(`alcadas: ${this.getErrorMessage(error)}`);
+    }
+
+    try {
+      requisicoesResumo = (await this.listarRequisicoesResumo()).length;
+    } catch (error) {
+      erros.push(`requisicoes: ${this.getErrorMessage(error)}`);
+    }
+
+    try {
+      const snapshot = await this.obterSnapshotDaRequisicao(7);
+      snapshotTeste = {
+        requisicaoId: 7,
+        snapshotEncontrado: Boolean(snapshot),
+        snapshotTitulo: snapshot?.id,
+        regraInternaId: snapshot?.regraAlcadaUtilizada,
+        valorAnalisado: snapshot?.valorAnalisado,
+        aprovadorBaseId: snapshot?.aprovadorBaseId,
+        aprovadorEfetivoId: snapshot?.aprovadorEfetivoId
+      };
+    } catch (error) {
+      erros.push(`snapshotTeste: ${this.getErrorMessage(error)}`);
+    }
+
+    return {
+      origemDados: 'sharepoint',
+      usuariosPerfis,
+      alcadasAtivas,
+      requisicoesResumo,
+      snapshotTeste,
+      erros
+    };
+  }
+
   public async obterUsuarioPorContaMicrosoft365(emailOuLogin: string): Promise<IUsuarioPerfilEnac | undefined> {
     const escaped = this.escapeOData(emailOuLogin);
-    const endpoint = `${this.siteUrl}/_api/web/lists/getbytitle('ENAC Usuarios Perfis')/items?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfilAdicional,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title,SubstitutoTemporario/EMail&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor&$filter=ContaMicrosoft365/EMail eq '${escaped}' or ContaMicrosoft365/Name eq '${escaped}'`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.usuariosPerfis)}?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfisAdicionais,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title,SubstitutoTemporario/EMail&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor&$filter=ContaMicrosoft365/EMail eq '${escaped}' or ContaMicrosoft365/Name eq '${escaped}'`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
     const item = payload.value[0];
@@ -84,7 +182,7 @@ export class SharePointEnacRepository {
 
   public async listarUsuariosPerfis(options: { somenteAtivos?: boolean } = {}): Promise<IUsuarioPerfilEnac[]> {
     const filter = options.somenteAtivos ? '&$filter=UsuarioAtivo eq 1' : '';
-    const endpoint = `${this.siteUrl}/_api/web/lists/getbytitle('ENAC Usuarios Perfis')/items?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfilAdicional,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title,SubstitutoTemporario/EMail&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor${filter}`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.usuariosPerfis)}?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfisAdicionais,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title,SubstitutoTemporario/EMail&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor${filter}`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
 
@@ -92,7 +190,7 @@ export class SharePointEnacRepository {
   }
 
   public async listarAlcadas(): Promise<IAlcadaEnac[]> {
-    const endpoint = `${this.siteUrl}/_api/web/lists/getbytitle('ENAC Alcadas')/items?$select=Id,Title,RegraInternaId,Processo,TipoSolicitacao,Obra,ValorMinimo,ValorMaximo,Ilimitado,AprovadorPrincipal/Id,AprovadorPrincipal/Title,AprovadorPrincipal/EMail,ExigeAprovacaoAdicional,AprovadorAdicional/Id,AprovadorAdicional/Title,AprovadorAdicional/EMail,VigenciaInicial,VigenciaFinal,Ativo,Observacoes&$expand=AprovadorPrincipal,AprovadorAdicional`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.alcadas)}?$select=Id,Title,RegraInternaId,Processo,TipoSolicitacao,Obra/Id,Obra/Title,ValorMinimo,ValorMaximo,Ilimitado,AprovadorPrincipal/Id,AprovadorPrincipal/Title,AprovadorPrincipal/EMail,ExigeAprovacaoAdicional,AprovadorAdicional/Id,AprovadorAdicional/Title,AprovadorAdicional/EMail,VigenciaInicial,VigenciaFinal,Ativo,Observacoes&$expand=Obra,AprovadorPrincipal,AprovadorAdicional`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
 
@@ -196,53 +294,14 @@ export class SharePointEnacRepository {
   }
 
   public async persistirSnapshotAprovacaoCompra(solicitacaoItemId: number, pedidoCompraItemId: number | undefined, snapshot: ISnapshotRegraEnac): Promise<number> {
-    const snapshotResponse = await this.spHttpClient.post(
-      `${this.siteUrl}/_api/web/lists/getbytitle('ENAC Snapshots Regras')/items`,
-      SPHttpClient.configurations.v1,
-      {
-        headers: { 'Content-Type': 'application/json;odata=nometadata' },
-        body: JSON.stringify({
-          Title: `Snapshot compra ${solicitacaoItemId}`,
-          SolicitacaoId: solicitacaoItemId,
-          PedidoCompraId: pedidoCompraItemId,
-          RegraAlcadaUtilizada: snapshot.regraAlcadaUtilizada,
-          Processo: snapshot.processo,
-          FaixaValorVigente: snapshot.faixaValorVigente,
-          ValorAnalisado: snapshot.valorAnalisado,
-          AprovadorBaseId: snapshot.aprovadorBaseId,
-          AprovadorBaseNome: snapshot.aprovadorBaseNome,
-          AprovadorBaseEmail: snapshot.aprovadorBaseEmail,
-          AprovadorEfetivoId: snapshot.aprovadorEfetivoId,
-          AprovadorEfetivoNome: snapshot.aprovadorEfetivoNome,
-          AprovadorEfetivoEmail: snapshot.aprovadorEfetivoEmail,
-          SubstituicaoAplicada: snapshot.substituicaoAplicada,
-          MotivoResolucaoAprovador: snapshot.motivoResolucaoAprovador,
-          MotivoExcecao: snapshot.motivoExcecao,
-          DataHoraAplicacao: snapshot.dataHoraAplicacao
-        })
-      }
-    );
-    const payload = await this.ensureJson(snapshotResponse);
-    const snapshotId = Number(payload.Id);
-
-    await this.spHttpClient.post(
-      `${this.siteUrl}/_api/web/lists/getbytitle('ENAC Solicitacoes')/items(${solicitacaoItemId})`,
-      SPHttpClient.configurations.v1,
-      {
-        headers: {
-          'Content-Type': 'application/json;odata=nometadata',
-          'IF-MATCH': '*',
-          'X-HTTP-Method': 'MERGE'
-        },
-        body: JSON.stringify({ SnapshotAprovacaoCompraId: snapshotId })
-      }
-    );
-
-    return snapshotId;
+    void solicitacaoItemId;
+    void pedidoCompraItemId;
+    void snapshot;
+    throw new Error('Persistencia de snapshot bloqueada na V2.4B readonly.');
   }
 
   public async listarHistoricoConfiguracoes(): Promise<IHistoricoConfiguracaoEnac[]> {
-    const endpoint = `${this.siteUrl}/_api/web/lists/getbytitle('ENAC Historico Configuracoes')/items?$select=TipoConfiguracao,ValorAnterior,ValorNovo,Justificativa,Created,Author/Title&$expand=Author`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes)}?$select=TipoConfiguracao,ValorAnterior,ValorNovo,Justificativa,Created,Author/Title&$expand=Author`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
 
@@ -268,7 +327,7 @@ export class SharePointEnacRepository {
       contaMicrosoft365Login: item.ContaMicrosoft365?.Name,
       cargoFuncao: item.CargoFuncao || '',
       perfilPrincipal: item.PerfilPrincipal,
-      perfisAdicionais: item.PerfilAdicional ? String(item.PerfilAdicional).split(';').filter(Boolean) as PerfilEnac[] : [],
+      perfisAdicionais: item.PerfisAdicionais ? String(item.PerfisAdicionais).split(';').filter(Boolean) as PerfilEnac[] : [],
       podeCriarSolicitacao: Boolean(item.PodeCriarSolicitacao),
       podeRegistrarCotacoes: Boolean(item.PodeRegistrarCotacoes),
       podeAprovarCompras: Boolean(item.PodeAprovarCompras),
@@ -298,8 +357,8 @@ export class SharePointEnacRepository {
       regraInternaId: item.RegraInternaId,
       processo: item.Processo,
       tipoSolicitacao: item.TipoSolicitacao,
-      obra: item.Obra || 'Todas',
-      obraId: item.ObraId ? String(item.ObraId) : undefined,
+      obra: item.Obra?.Title || item.Obra || 'Todas',
+      obraId: item.Obra?.Id ? String(item.Obra.Id) : item.ObraId ? String(item.ObraId) : undefined,
       valorMinimo: Number(item.ValorMinimo || 0),
       valorMaximo: item.Ilimitado ? undefined : Number(item.ValorMaximo || 0),
       ilimitado: Boolean(item.Ilimitado),
@@ -325,6 +384,66 @@ export class SharePointEnacRepository {
 
   private escapeOData(value: string): string {
     return value.replace(/'/g, "''");
+  }
+
+  private getListItemsEndpoint(listId: string): string {
+    return `${this.siteUrl}/_api/web/lists(guid'${listId}')/items`;
+  }
+
+  private mapTipoSolicitacao(value: string): TipoSolicitacaoEnac {
+    switch (value) {
+      case 'Serviço':
+      case 'Servico':
+        return 'Servico';
+      case 'Locação':
+      case 'Locacao':
+        return 'Locacao';
+      case 'Equipamento':
+        return 'Equipamento';
+      default:
+        return 'Material';
+    }
+  }
+
+  private mapStatusProcesso(value: string): ISolicitacaoEnac['status'] {
+    switch (value) {
+      case 'Aprovada para compra':
+        return 'AprovadaParaCompra';
+      case 'Pedido emitido':
+        return 'PedidoEmitido';
+      case 'Pagamento concluído':
+      case 'Pagamento concluido':
+        return 'PagoConcluido';
+      case 'Cancelada':
+        return 'Cancelada';
+      case 'Reprovada':
+        return 'Reprovada';
+      default:
+        return 'AguardandoAprovacao';
+    }
+  }
+
+  private mapSnapshot(item: any): ISnapshotRegraEnac {
+    return {
+      id: String(item.Id),
+      regraAlcadaUtilizada: item.RegraInternaId || '',
+      processo: item.Processo || '',
+      faixaValorVigente: item.FaixaValorVigente || '',
+      valorAnalisado: Number(item.ValorAnalisado || 0),
+      aprovadorBaseId: item.AprovadorBaseId || '',
+      aprovadorBaseNome: item.AprovadorBaseNome || '',
+      aprovadorBaseEmail: item.AprovadorBaseEmail || '',
+      aprovadorEfetivoId: item.AprovadorEfetivoId || '',
+      aprovadorEfetivoNome: item.AprovadorEfetivoNome || '',
+      aprovadorEfetivoEmail: item.AprovadorEfetivoEmail || '',
+      substituicaoAplicada: Boolean(item.SubstituicaoAplicada),
+      motivoResolucaoAprovador: item.MotivoResolucaoAprovador || '',
+      dataHoraAplicacao: item.DataHoraAplicacao || ''
+    };
+  }
+
+  private getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
   }
 
   private async ensureJson(response: SPHttpClientResponse): Promise<any> {

@@ -1,18 +1,26 @@
 import * as React from 'react';
 import {
+  IDiagnosticoReadonlyEnac,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
   IObraEnac,
   ISolicitacaoEnac,
   IUsuarioPerfilEnac,
+  OrigemDadosEnac,
   PerfilEnac,
   StatusProcesso
 } from '../models';
+import { SharePointEnacRepository } from '../services/SharePointEnacRepository';
 import styles from './EnacSistema.module.scss';
 
 export interface IEnacSistemaProps {
   currentUserName: string;
+  currentUserEmail?: string;
   currentUserPerfil: PerfilEnac;
+  origemDados?: OrigemDadosEnac;
+  diagnosticoReadonly?: boolean;
+  repository?: SharePointEnacRepository;
+  siteUrl?: string;
 }
 
 const obras: IObraEnac[] = [
@@ -85,6 +93,24 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [solicitacoes, setSolicitacoes] = React.useState<ISolicitacaoEnac[]>(initialSolicitacoes);
   const [alcadas] = React.useState<IAlcadaEnac[]>(alcadasIniciais);
   const [selectedId, setSelectedId] = React.useState(initialSolicitacoes[0].id);
+
+  React.useEffect(() => {
+    if (props.origemDados !== 'sharepoint' || !props.diagnosticoReadonly || !props.repository) {
+      return;
+    }
+
+    props.repository.obterDiagnosticoReadonly()
+      .then((diagnostico: IDiagnosticoReadonlyEnac) => {
+        if (DEBUG) {
+          console.info('[ENAC][V2.4B] Diagnostico readonly SharePoint', diagnostico);
+        }
+      })
+      .catch((error: Error) => {
+        if (DEBUG) {
+          console.warn('[ENAC][V2.4B] Falha no diagnostico readonly SharePoint', error.message);
+        }
+      });
+  }, [props.diagnosticoReadonly, props.origemDados, props.repository]);
 
   const selected = solicitacoes.find((item) => item.id === selectedId) || solicitacoes[0];
 

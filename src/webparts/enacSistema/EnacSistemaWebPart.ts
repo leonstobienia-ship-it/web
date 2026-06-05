@@ -10,6 +10,7 @@ import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
 import * as strings from 'EnacSistemaWebPartStrings';
 import { EnacSistema } from './components/EnacSistema';
 import { IEnacSistemaProps } from './components/EnacSistema';
+import { SharePointEnacRepository } from './services/SharePointEnacRepository';
 
 export interface IEnacSistemaWebPartProps {
   description: string;
@@ -17,11 +18,21 @@ export interface IEnacSistemaWebPartProps {
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
+    const repository = new SharePointEnacRepository({
+      siteUrl: this.context.pageContext.web.absoluteUrl,
+      spHttpClient: this.context.spHttpClient
+    });
+
     const element: React.ReactElement<IEnacSistemaProps> = React.createElement(
       EnacSistema,
       {
         currentUserName: this.context.pageContext.user.displayName || 'Usuario ENAC',
-        currentUserPerfil: 'Campo'
+        currentUserEmail: this.context.pageContext.user.email,
+        currentUserPerfil: 'Campo',
+        origemDados: 'sharepoint',
+        diagnosticoReadonly: true,
+        repository,
+        siteUrl: this.context.pageContext.web.absoluteUrl
       }
     );
 

@@ -220,3 +220,36 @@ export interface IHistoricoConfiguracaoEnac {
   dataHora: string;
   justificativa: string;
 }
+
+export type OrigemDadosEnac = 'local' | 'sharepoint';
+
+export interface IRequisicaoResumoEnac {
+  id: string;
+  itemId: number;
+  titulo: string;
+  tipoSolicitacao: string;
+  status: string;
+  obraId?: number;
+  obraTitulo?: string;
+  solicitanteNome?: string;
+  aprovadorNome?: string;
+  snapshotAprovacaoCompraId?: number;
+  snapshotAprovacaoCompraTitulo?: string;
+}
+
+export interface IDiagnosticoReadonlyEnac {
+  origemDados: OrigemDadosEnac;
+  usuariosPerfis: number;
+  alcadasAtivas: number;
+  requisicoesResumo: number;
+  snapshotTeste?: {
+    requisicaoId: number;
+    snapshotEncontrado: boolean;
+    snapshotTitulo?: string;
+    regraInternaId?: string;
+    valorAnalisado?: number;
+    aprovadorBaseId?: string;
+    aprovadorEfetivoId?: string;
+  };
+  erros: string[];
+}

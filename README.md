@@ -51,6 +51,8 @@ Em 2026-06-05, a V2.4A foi iniciada como preparação técnica da integração f
 
 Ainda em 2026-06-05, o scaffold SPFx mínimo foi migrado para a raiz, preservando o componente ENAC atual. `npm install`, `npx gulp clean` e `npx gulp build` foram executados localmente com sucesso. Não houve conexão ao SharePoint, publicação, Power Automate ou integração funcional nova. O resultado está documentado em `docs/v2.4a-build-spfx.md`.
 
+Na V2.4B, a webpart passou a receber contexto SPFx real e instanciar `SharePointEnacRepository` em modo readonly. O diagnóstico técnico de leitura SharePoint usa apenas GET e fica restrito ao console em build debug, sem substituir ainda os dados visuais simulados e sem executar escrita. O build local passou com `npx gulp clean` e `npx gulp build`.
+
 ## Protótipo
 
 Abra no navegador:
@@ -93,6 +95,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.3-sharepoint-integracao.md`
 - `docs/v2.4a-plano-integracao-spfx-sharepoint.md`
 - `docs/v2.4a-build-spfx.md`
+- `docs/v2.4b-integracao-readonly-webpart-sharepoint.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
@@ -108,7 +111,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Preparar V2.4B para ligação gradual da webpart ao repositório SharePoint, sem alterar a interface homologada V2.2.
+- Preparar V2.4C para consumir dados readonly no estado da webpart, com fallback local e sem alterar a interface homologada V2.2.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
