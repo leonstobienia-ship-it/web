@@ -65,7 +65,7 @@ function Get-FieldByInternalName {
 
     if (-not $List) { return $null }
     $listIdentity = $List.Id.ToString()
-    $matches = @(Get-PnPField -Connection $Connection -List $listIdentity -Includes TypeAsString,InternalName,StaticName,Title,Required,ReadOnlyField,Hidden,LookupList,LookupField | Where-Object {
+    $matches = @(Get-PnPField -Connection $Connection -List $listIdentity -Includes SchemaXml,InternalName,Title,TypeAsString,FieldTypeKind,Required,Hidden,Id,Indexed,EnforceUniqueValues,DefaultValue | Where-Object {
         $_.InternalName -eq $InternalName -or $_.StaticName -eq $InternalName
     })
 
@@ -75,6 +75,44 @@ function Get-FieldByInternalName {
 
     if ($matches.Count -eq 0) { return $null }
     return $matches[0]
+}
+
+function Get-FieldSchemaDetails {
+    param($Field)
+
+    $details = [ordered]@{
+        Name = ""
+        DisplayName = ""
+        Type = ""
+        List = ""
+        ShowField = ""
+        Required = ""
+        Mult = ""
+        RelationshipDeleteBehavior = ""
+        ParseStatus = "OK"
+    }
+
+    if (-not $Field -or [string]::IsNullOrWhiteSpace([string]$Field.SchemaXml)) {
+        $details.ParseStatus = "SEM_SCHEMAXML"
+        return [pscustomobject]$details
+    }
+
+    try {
+        [xml]$fieldXml = $Field.SchemaXml
+        $details.Name = [string]$fieldXml.Field.Name
+        $details.DisplayName = [string]$fieldXml.Field.DisplayName
+        $details.Type = [string]$fieldXml.Field.Type
+        $details.List = [string]$fieldXml.Field.List
+        $details.ShowField = [string]$fieldXml.Field.ShowField
+        $details.Required = [string]$fieldXml.Field.Required
+        $details.Mult = [string]$fieldXml.Field.Mult
+        $details.RelationshipDeleteBehavior = [string]$fieldXml.Field.RelationshipDeleteBehavior
+    }
+    catch {
+        $details.ParseStatus = "SCHEMAXML_INVALIDO"
+    }
+
+    return [pscustomobject]$details
 }
 
 function New-FieldPlan {
@@ -241,9 +279,13 @@ foreach ($plan in Get-AdministrativeListPlans) {
             $status = "TIPO DIVERGENTE"
         }
 
-        $detail = "Tipo atual: $($field.TypeAsString)"
+        $schema = Get-FieldSchemaDetails -Field $field
+        $detail = "Tipo atual: $($field.TypeAsString); SchemaType=$($schema.Type); Required=$($schema.Required)"
         if ($fieldPlan.Type -eq "Lookup") {
-            $detail = "$detail; LookupList=$($field.LookupList); LookupField=$($field.LookupField)"
+            if ([string]::IsNullOrWhiteSpace($schema.List) -or [string]::IsNullOrWhiteSpace($schema.ShowField)) {
+                $status = "PENDENTE/INDETERMINADO"
+            }
+            $detail = "$detail; LookupList=$($schema.List); ShowField=$($schema.ShowField); RelationshipDeleteBehavior=$($schema.RelationshipDeleteBehavior); SchemaParse=$($schema.ParseStatus)"
         }
 
         Add-Line $lines "| $($fieldPlan.InternalName) | $($fieldPlan.Type) | $status | $detail |"
@@ -259,10 +301,12 @@ Add-Line $lines "- GUID: $($lista02.Id)"
 Add-Line $lines "- URL: $($lista02.RootFolder.ServerRelativeUrl)"
 $snapshotField = Get-FieldByInternalName -Connection $connection -List $lista02 -InternalName "SnapshotAprovacaoCompra"
 if ($snapshotField) {
+    $snapshotSchema = Get-FieldSchemaDetails -Field $snapshotField
     Add-Line $lines "- SnapshotAprovacaoCompra: ENCONTRADO"
     Add-Line $lines "- Tipo: $($snapshotField.TypeAsString)"
-    Add-Line $lines "- LookupList: $($snapshotField.LookupList)"
-    Add-Line $lines "- LookupField: $($snapshotField.LookupField)"
+    Add-Line $lines "- LookupList: $($snapshotSchema.List)"
+    Add-Line $lines "- ShowField: $($snapshotSchema.ShowField)"
+    Add-Line $lines "- SchemaParse: $($snapshotSchema.ParseStatus)"
     Write-Host "OK SnapshotAprovacaoCompra encontrado [$($snapshotField.TypeAsString)]"
 }
 else {
