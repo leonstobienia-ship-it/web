@@ -65,3 +65,23 @@ pwsh -File ".\scripts\sharepoint\09-auditoria-vinculo-snapshot-v2.3c-readonly.ps
 ```
 
 Não iniciar Power Automate antes da auditoria V2.3C.
+
+## Resultado executado
+
+Data operacional: 2026-06-05.
+
+Leon executou manualmente a auditoria readonly `scripts/sharepoint/09-auditoria-vinculo-snapshot-v2.3c-readonly.ps1`. O relatório local `sharepoint/auditoria-vinculo-snapshot-v2.3c.md` foi revisado e considerado seguro para versionamento.
+
+Resultado da auditoria:
+
+- requisição de teste `ItemId=7`: OK;
+- `SnapshotAprovacaoCompra` preenchido: OK;
+- lookup apontando para `SNAP-V2.3B-TESTE-001`: OK;
+- snapshot apontando de volta para `ItemId=7`: OK;
+- regra `alc-v23b-teste-compra-ate-20000`: OK;
+- valor analisado `6720.00`: OK;
+- aprovador base `usr-gustavo`: OK;
+- aprovador efetivo `usr-gustavo`: OK;
+- regra `V2.3B-TESTE-COMPRA-ATE-20000`: OK.
+
+Status final: V2.3C aprovada. A ressalva da V2.3B sobre o vínculo requisição/snapshot/alçada foi encerrada. Power Automate ainda não foi iniciado.

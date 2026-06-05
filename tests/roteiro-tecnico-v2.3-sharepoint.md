@@ -85,9 +85,9 @@ Auditoria readonly gerada em `sharepoint/auditoria-teste-funcional-v2.3b.md` con
 - histórico `V2.3B-TESTE - Carga inicial controlada`: OK;
 - Lista 02 validada por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01`: OK.
 
-Ressalva: o relatório local não exibe explicitamente o item da requisição de teste nem o valor gravado em `SnapshotAprovacaoCompra`.
+Ressalva original: o relatório local não exibia explicitamente o item da requisição de teste nem o valor gravado em `SnapshotAprovacaoCompra`.
 
-Status final: V2.3B aprovada com ressalvas. Power Automate ainda não foi iniciado. Próxima etapa: preparar integração funcional real/webpart ou automação controlada, conforme decisão de Leon.
+Status inicial: V2.3B aprovada com ressalvas. Power Automate ainda não foi iniciado.
 
 ## Auditoria complementar V2.3C
 
@@ -104,3 +104,24 @@ Antes de iniciar Power Automate ou integração funcional final, executar audito
 9. Gerar `sharepoint/auditoria-vinculo-snapshot-v2.3c.md` sem e-mails, fornecedores, solicitantes, descrições, anexos, tokens ou segredos.
 
 Script preparado: `scripts/sharepoint/09-auditoria-vinculo-snapshot-v2.3c-readonly.ps1`.
+
+## Resultado da auditoria complementar V2.3C
+
+Executada em 2026-06-05 por Leon, em modo readonly, e registrada em `sharepoint/auditoria-vinculo-snapshot-v2.3c.md`.
+
+Resultado: V2.3C aprovada.
+
+A auditoria confirmou:
+
+- requisição de teste `ItemId=7`: OK;
+- `SnapshotAprovacaoCompra` preenchido: OK;
+- lookup para `SNAP-V2.3B-TESTE-001`: OK;
+- snapshot apontando para a mesma requisição: OK;
+- regra `alc-v23b-teste-compra-ate-20000`: OK;
+- valor analisado `6720.00`: OK;
+- aprovador base e efetivo `usr-gustavo`: OK;
+- regra `V2.3B-TESTE-COMPRA-ATE-20000`: OK.
+
+Status final atualizado: V2.3B validada funcionalmente sem ressalvas quanto ao vínculo requisição/snapshot/alçada. Power Automate ainda não foi iniciado.
+
+Próxima decisão de Leon: integração funcional real da webpart/SPFx com SharePoint, preparação controlada dos fluxos Power Automate, permissões finas das listas administrativas ou limpeza posterior dos dados de teste `V2.3B-TESTE`.

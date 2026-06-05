@@ -43,7 +43,9 @@ Em 2026-06-04, o provisionamento estrutural V2.3A foi concluído no SharePoint c
 
 Nenhuma lista operacional foi recriada: `ENACObras` e `ENACSolicitacoes` não foram criadas. O aplicativo readonly permaneceu separado do aplicativo de provisionamento. Power Automate ainda não foi iniciado.
 
-Em 2026-06-04, o teste funcional controlado V2.3B foi executado com dados marcados como `V2.3B-TESTE`. A auditoria readonly confirmou usuários/perfis de teste, alçadas de compra, snapshot `SNAP-V2.3B-TESTE-001`, histórico administrativo e validação da Lista 02 por GUID. Resultado: V2.3B aprovada com ressalvas para avançar à próxima etapa técnica, pois o relatório local não expõe explicitamente o item da requisição nem o valor de `SnapshotAprovacaoCompra`. Power Automate ainda não foi iniciado e permissões finais ainda não estão concluídas.
+Em 2026-06-04, o teste funcional controlado V2.3B foi executado com dados marcados como `V2.3B-TESTE`. A auditoria readonly confirmou usuários/perfis de teste, alçadas de compra, snapshot `SNAP-V2.3B-TESTE-001`, histórico administrativo e validação da Lista 02 por GUID.
+
+Em 2026-06-05, a auditoria complementar V2.3C fechou a ressalva da V2.3B ao confirmar explicitamente a requisição de teste `ItemId=7`, o campo `SnapshotAprovacaoCompra`, o snapshot `SNAP-V2.3B-TESTE-001`, a regra `alc-v23b-teste-compra-ate-20000`, o valor `6720.00` e Gustavo como aprovador base/efetivo. Resultado: V2.3C aprovada; V2.3B validada funcionalmente sem ressalvas quanto ao vínculo requisição/snapshot/alçada. Power Automate ainda não foi iniciado e permissões finais ainda não estão concluídas.
 
 ## Protótipo
 
@@ -100,7 +102,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Preparar integração funcional real na webpart SPFx ou automação controlada, conforme decisão de Leon.
+- Definir próxima etapa entre integração funcional real da webpart/SPFx com SharePoint, preparação controlada dos fluxos Power Automate, permissões finas das listas administrativas ou limpeza posterior dos dados de teste `V2.3B-TESTE`.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.

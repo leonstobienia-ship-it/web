@@ -75,6 +75,8 @@ Resultado da auditoria registrada em `sharepoint/auditoria-teste-funcional-v2.3b
 - histórico `V2.3B-TESTE`: OK;
 - Lista 02 validada por GUID: OK.
 
-Ressalva: o relatório local não exibe explicitamente o item da requisição de teste nem o valor gravado em `SnapshotAprovacaoCompra`.
+Ressalva original: o relatório local não exibia explicitamente o item da requisição de teste nem o valor gravado em `SnapshotAprovacaoCompra`.
 
-Status final: V2.3B aprovada com ressalvas. Power Automate ainda não foi iniciado. A próxima etapa deve ser preparar integração funcional real/webpart ou automação controlada, conforme decisão de Leon.
+Em 2026-06-05, a auditoria complementar V2.3C registrada em `sharepoint/auditoria-vinculo-snapshot-v2.3c.md` confirmou `ItemId=7`, `SnapshotAprovacaoCompra` preenchido, snapshot `SNAP-V2.3B-TESTE-001`, regra `alc-v23b-teste-compra-ate-20000`, valor `6720.00` e aprovadores base/efetivo `usr-gustavo`.
+
+Status final atualizado: V2.3B validada funcionalmente sem ressalvas quanto ao vínculo requisição/snapshot/alçada. Power Automate ainda não foi iniciado. A próxima etapa deve ser definida por Leon entre integração funcional real da webpart/SPFx com SharePoint, preparação controlada dos fluxos Power Automate, permissões finas das listas administrativas ou limpeza posterior dos dados de teste `V2.3B-TESTE`.
