@@ -22,6 +22,7 @@ Validar, com dados mínimos e marcados como `V2.3B-TESTE`, se a estrutura ShareP
 Os dados de teste usam marcador `V2.3B-TESTE`.
 
 - Usuários lógicos: Leon, Gustavo, Matheus e Kemilly.
+- Perfis reais em `PerfilPrincipal`: Leon = `Diretoria`; Gustavo = `Planejamento`; Matheus = `Compras e Financeiro Operacional`; Kemilly = `Cotações e Contratos`.
 - Alçadas de compra: até R$ 20.000,00 com Gustavo; acima de R$ 20.000,00 com Leon.
 - Requisição de teste: preferencialmente criada manualmente ou selecionada por `itemId`.
 - Snapshot: `SNAP-V2.3B-TESTE-001`.

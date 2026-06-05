@@ -127,10 +127,10 @@ Assert-Choice -Choices $processoChoices -Value "Compra" -FieldName "ENAC Alcadas
 Assert-Choice -Choices $tipoChoices -Value "Material" -FieldName "ENAC Alcadas.TipoSolicitacao"
 
 $plannedUsers = @(
-    @{ Key = "leon"; Id = "usr-leon"; Name = "Leon"; Perfil = "Diretor"; Flags = @{ PodeAprovarCompras = $true; PodeAdministrarConfiguracoes = $true } },
+    @{ Key = "leon"; Id = "usr-leon"; Name = "Leon"; Perfil = "Diretoria"; Flags = @{ PodeAprovarCompras = $true; PodeAdministrarConfiguracoes = $true } },
     @{ Key = "gustavo"; Id = "usr-gustavo"; Name = "Gustavo"; Perfil = "Planejamento"; Flags = @{ PodeCriarSolicitacao = $true; PodeAprovarCompras = $true } },
-    @{ Key = "matheus"; Id = "usr-matheus"; Name = "Matheus"; Perfil = "ComprasFinanceiro"; Flags = @{ PodeEmitirPedido = $true; PodeVincularNF = $true; PodeProgramarPagamento = $true } },
-    @{ Key = "kemilly"; Id = "usr-kemilly"; Name = "Kemilly"; Perfil = "Orcamento"; Flags = @{ PodeRegistrarCotacoes = $true } }
+    @{ Key = "matheus"; Id = "usr-matheus"; Name = "Matheus"; Perfil = "Compras e Financeiro Operacional"; Flags = @{ PodeEmitirPedido = $true; PodeVincularNF = $true; PodeProgramarPagamento = $true } },
+    @{ Key = "kemilly"; Id = "usr-kemilly"; Name = "Kemilly"; Perfil = "Cotações e Contratos"; Flags = @{ PodeRegistrarCotacoes = $true } }
 )
 
 foreach ($user in $plannedUsers) {
@@ -140,6 +140,7 @@ foreach ($user in $plannedUsers) {
 if (-not $Apply) {
     Write-Host "Dry-run teste funcional V2.3B. Nenhuma alteracao sera aplicada." -ForegroundColor Green
     Write-Host "Validado: listas administrativas, Lista 02, choices Compra/Material e perfis planejados."
+    Write-Host "Perfis: Leon=Diretoria; Gustavo=Planejamento; Matheus=Compras e Financeiro Operacional; Kemilly=Cotações e Contratos."
     Write-Host "Plano: criar/atualizar usuarios V2.3B-TESTE, alcadas, snapshot, vinculo e historico."
     Write-Host "Requisicao: preferir item manual informado em config/teste-funcional-v2.3b.local.json."
     return
