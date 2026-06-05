@@ -242,6 +242,10 @@ export interface IDiagnosticoReadonlyEnac {
   usuariosPerfis: number;
   alcadasAtivas: number;
   requisicoesResumo: number;
+  usuariosOk: boolean;
+  alcadasOk: boolean;
+  requisicoesOk: boolean;
+  snapshotsOk: boolean;
   snapshotTeste?: {
     requisicaoId: number;
     snapshotEncontrado: boolean;

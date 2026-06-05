@@ -125,22 +125,29 @@ export class SharePointEnacRepository {
     let usuariosPerfis = 0;
     let alcadasAtivas = 0;
     let requisicoesResumo = 0;
+    let usuariosOk = false;
+    let alcadasOk = false;
+    let requisicoesOk = false;
+    let snapshotsOk = false;
     let snapshotTeste: IDiagnosticoReadonlyEnac['snapshotTeste'];
 
     try {
       usuariosPerfis = (await this.listarUsuariosPerfis()).length;
+      usuariosOk = true;
     } catch (error) {
       erros.push(`usuarios: ${this.getErrorMessage(error)}`);
     }
 
     try {
       alcadasAtivas = (await this.listarAlcadas()).filter((alcada) => alcada.ativa).length;
+      alcadasOk = true;
     } catch (error) {
       erros.push(`alcadas: ${this.getErrorMessage(error)}`);
     }
 
     try {
       requisicoesResumo = (await this.listarRequisicoesResumo()).length;
+      requisicoesOk = true;
     } catch (error) {
       erros.push(`requisicoes: ${this.getErrorMessage(error)}`);
     }
@@ -156,6 +163,7 @@ export class SharePointEnacRepository {
         aprovadorBaseId: snapshot?.aprovadorBaseId,
         aprovadorEfetivoId: snapshot?.aprovadorEfetivoId
       };
+      snapshotsOk = true;
     } catch (error) {
       erros.push(`snapshotTeste: ${this.getErrorMessage(error)}`);
     }
@@ -165,6 +173,10 @@ export class SharePointEnacRepository {
       usuariosPerfis,
       alcadasAtivas,
       requisicoesResumo,
+      usuariosOk,
+      alcadasOk,
+      requisicoesOk,
+      snapshotsOk,
       snapshotTeste,
       erros
     };
@@ -172,7 +184,7 @@ export class SharePointEnacRepository {
 
   public async obterUsuarioPorContaMicrosoft365(emailOuLogin: string): Promise<IUsuarioPerfilEnac | undefined> {
     const escaped = this.escapeOData(emailOuLogin);
-    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.usuariosPerfis)}?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfisAdicionais,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title,SubstitutoTemporario/EMail&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor&$filter=ContaMicrosoft365/EMail eq '${escaped}' or ContaMicrosoft365/Name eq '${escaped}'`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.usuariosPerfis)}?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfisAdicionais,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor&$filter=ContaMicrosoft365/EMail eq '${escaped}' or ContaMicrosoft365/Name eq '${escaped}'`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
     const item = payload.value[0];
@@ -182,19 +194,29 @@ export class SharePointEnacRepository {
 
   public async listarUsuariosPerfis(options: { somenteAtivos?: boolean } = {}): Promise<IUsuarioPerfilEnac[]> {
     const filter = options.somenteAtivos ? '&$filter=UsuarioAtivo eq 1' : '';
-    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.usuariosPerfis)}?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfisAdicionais,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title,SubstitutoTemporario/EMail&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor${filter}`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.usuariosPerfis)}?$select=Id,Title,UsuarioInternoId,EmailCorporativo,CargoFuncao,PerfilPrincipal,PerfisAdicionais,PodeCriarSolicitacao,PodeRegistrarCotacoes,PodeAprovarCompras,PodeEmitirPedido,PodeVincularNF,PodeProgramarPagamento,PodeLiberarPagamento,PodeAtualizarStatusFinal,PodeAdministrarConfiguracoes,UsuarioAtivo,InicioSubstituicao,FimSubstituicao,Observacoes,Created,Modified,Author/Title,Editor/Title,ContaMicrosoft365/Id,ContaMicrosoft365/Title,ContaMicrosoft365/EMail,ContaMicrosoft365/Name,SubstitutoTemporario/Id,SubstitutoTemporario/Title&$expand=ContaMicrosoft365,SubstitutoTemporario,Author,Editor${filter}`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
+    const usuarios = payload.value.map((item: any) => this.mapUsuarioPerfil(item));
 
-    return payload.value.map((item: any) => this.mapUsuarioPerfil(item));
+    return usuarios.map((usuario: IUsuarioPerfilEnac) => this.enriquecerSubstitutoTemporario(usuario, usuarios));
   }
 
   public async listarAlcadas(): Promise<IAlcadaEnac[]> {
-    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.alcadas)}?$select=Id,Title,RegraInternaId,Processo,TipoSolicitacao,Obra/Id,Obra/Title,ValorMinimo,ValorMaximo,Ilimitado,AprovadorPrincipal/Id,AprovadorPrincipal/Title,AprovadorPrincipal/EMail,ExigeAprovacaoAdicional,AprovadorAdicional/Id,AprovadorAdicional/Title,AprovadorAdicional/EMail,VigenciaInicial,VigenciaFinal,Ativo,Observacoes&$expand=Obra,AprovadorPrincipal,AprovadorAdicional`;
+    let usuarios: IUsuarioPerfilEnac[] = [];
+
+    try {
+      usuarios = await this.listarUsuariosPerfis();
+    } catch (error) {
+      void error;
+      usuarios = [];
+    }
+
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.alcadas)}?$select=Id,Title,RegraInternaId,Processo,TipoSolicitacao,Obra/Id,ValorMinimo,ValorMaximo,Ilimitado,AprovadorPrincipal/Id,AprovadorPrincipal/Title,ExigeAprovacaoAdicional,AprovadorAdicional/Id,AprovadorAdicional/Title,VigenciaInicial,VigenciaFinal,Ativo,Observacoes&$expand=Obra,AprovadorPrincipal,AprovadorAdicional`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
 
-    return payload.value.map((item: any) => this.mapAlcada(item));
+    return payload.value.map((item: any) => this.mapAlcada(item, usuarios));
   }
 
   public validarAlcadas(alcadas: IAlcadaEnac[]): IValidacaoAlcadaEnac[] {
@@ -338,9 +360,9 @@ export class SharePointEnacRepository {
       podeAtualizarStatusFinal: Boolean(item.PodeAtualizarStatusFinal),
       podeAdministrarConfiguracoes: Boolean(item.PodeAdministrarConfiguracoes),
       usuarioAtivo: Boolean(item.UsuarioAtivo),
-      substitutoTemporarioId: item.SubstitutoTemporario?.UsuarioInternoId || String(item.SubstitutoTemporario?.Id || ''),
+      substitutoTemporarioId: String(item.SubstitutoTemporario?.Id || ''),
       substitutoTemporarioNome: item.SubstitutoTemporario?.Title,
-      substitutoTemporarioEmail: item.SubstitutoTemporario?.EMail,
+      substitutoTemporarioEmail: undefined,
       inicioSubstituicao: item.InicioSubstituicao,
       fimSubstituicao: item.FimSubstituicao,
       observacoes: item.Observacoes,
@@ -351,29 +373,61 @@ export class SharePointEnacRepository {
     };
   }
 
-  private mapAlcada(item: any): IAlcadaEnac {
+  private mapAlcada(item: any, usuarios: IUsuarioPerfilEnac[] = []): IAlcadaEnac {
+    const aprovadorPrincipalId = String(item.AprovadorPrincipal?.Id || item.AprovadorPrincipalId || '');
+    const aprovadorAdicionalId = item.AprovadorAdicional?.Id ? String(item.AprovadorAdicional.Id) : undefined;
+    const aprovadorPrincipal = this.encontrarUsuarioPorLookup(aprovadorPrincipalId, item.AprovadorPrincipal?.Title, usuarios);
+    const aprovadorAdicional = this.encontrarUsuarioPorLookup(aprovadorAdicionalId, item.AprovadorAdicional?.Title, usuarios);
+
     return {
       id: String(item.Id),
       regraInternaId: item.RegraInternaId,
       processo: item.Processo,
       tipoSolicitacao: item.TipoSolicitacao,
-      obra: item.Obra?.Title || item.Obra || 'Todas',
+      obra: item.Obra?.Id ? String(item.Obra.Id) : item.Obra || 'Todas',
       obraId: item.Obra?.Id ? String(item.Obra.Id) : item.ObraId ? String(item.ObraId) : undefined,
       valorMinimo: Number(item.ValorMinimo || 0),
       valorMaximo: item.Ilimitado ? undefined : Number(item.ValorMaximo || 0),
       ilimitado: Boolean(item.Ilimitado),
-      aprovadorPrincipalId: String(item.AprovadorPrincipal?.Id || item.AprovadorPrincipalId || ''),
-      aprovadorPrincipalNome: item.AprovadorPrincipal?.Title,
-      aprovadorPrincipalEmail: item.AprovadorPrincipal?.EMail,
+      aprovadorPrincipalId: aprovadorPrincipal?.id || aprovadorPrincipalId,
+      aprovadorPrincipalNome: aprovadorPrincipal?.nome || item.AprovadorPrincipal?.Title,
+      aprovadorPrincipalEmail: aprovadorPrincipal?.emailCorporativo,
       exigeAprovacaoAdicional: Boolean(item.ExigeAprovacaoAdicional),
-      aprovadorAdicionalId: item.AprovadorAdicional?.Id ? String(item.AprovadorAdicional.Id) : undefined,
-      aprovadorAdicionalNome: item.AprovadorAdicional?.Title,
-      aprovadorAdicionalEmail: item.AprovadorAdicional?.EMail,
+      aprovadorAdicionalId: aprovadorAdicional?.id || aprovadorAdicionalId,
+      aprovadorAdicionalNome: aprovadorAdicional?.nome || item.AprovadorAdicional?.Title,
+      aprovadorAdicionalEmail: aprovadorAdicional?.emailCorporativo,
       vigenciaInicial: item.VigenciaInicial,
       vigenciaFinal: item.VigenciaFinal,
       ativa: Boolean(item.Ativo),
       observacoes: item.Observacoes
     };
+  }
+
+  private enriquecerSubstitutoTemporario(usuario: IUsuarioPerfilEnac, usuarios: IUsuarioPerfilEnac[]): IUsuarioPerfilEnac {
+    if (!usuario.substitutoTemporarioId) {
+      return usuario;
+    }
+
+    const substituto = this.encontrarUsuarioPorLookup(usuario.substitutoTemporarioId, usuario.substitutoTemporarioNome, usuarios);
+
+    return substituto ? {
+      ...usuario,
+      substitutoTemporarioId: substituto.usuarioInternoId || substituto.id,
+      substitutoTemporarioNome: substituto.nome,
+      substitutoTemporarioEmail: substituto.emailCorporativo
+    } : usuario;
+  }
+
+  private encontrarUsuarioPorLookup(lookupId: string | undefined, lookupTitle: string | undefined, usuarios: IUsuarioPerfilEnac[]): IUsuarioPerfilEnac | undefined {
+    if (!lookupId && !lookupTitle) {
+      return undefined;
+    }
+
+    return usuarios.find((usuario) =>
+      usuario.id === lookupId ||
+      usuario.usuarioInternoId === lookupId ||
+      Boolean(lookupTitle && usuario.nome === lookupTitle)
+    );
   }
 
   private regraVigenteNaData(regra: IAlcadaEnac, data: Date): boolean {

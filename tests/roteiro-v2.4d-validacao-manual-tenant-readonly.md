@@ -16,6 +16,7 @@ Data: 2026-06-05
 - [ ] Confirmar que nao ha Power Automate envolvido.
 - [ ] Confirmar que nao serao alteradas listas, colunas, permissoes ou itens.
 - [ ] Confirmar que o pacote e o SHIP mais recente gerado na V2.4E.
+- [ ] Para V2.4F, confirmar que o pacote e o SHIP mais recente gerado apos a correcao dos HTTP 400.
 - [ ] Confirmar plano de rollback manual.
 
 ## Execucao manual
@@ -37,6 +38,8 @@ Data: 2026-06-05
 - [ ] Contagem de alcadas registrada:
 - [ ] Contagem de requisicoes resumo registrada:
 - [ ] Diagnostico readonly sem erro critico de permissao:
+- [ ] V2.4F: GET de `ENAC Usuarios Perfis` sem HTTP 400.
+- [ ] V2.4F: GET de `ENAC Alcadas` sem HTTP 400.
 
 ## Network
 

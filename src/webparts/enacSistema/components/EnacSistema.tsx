@@ -113,34 +113,68 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     setCarregandoReadonly(true);
     setErroReadonly(null);
 
-    Promise.all([
-      props.repository.listarUsuariosPerfis(),
-      props.repository.listarAlcadas(),
-      props.repository.listarRequisicoesResumo(),
-      props.repository.obterDiagnosticoReadonly()
-    ])
-      .then(([usuariosPerfis, alcadasSharePoint, requisicoesResumo, diagnostico]) => {
-        if (disposed) {
-          return;
-        }
+    const carregarReadonly = async (): Promise<void> => {
+      const erros: string[] = [];
+      let usuariosPerfis: IUsuarioPerfilEnac[] = [];
+      let alcadasSharePoint: IAlcadaEnac[] = [];
+      let requisicoesResumo: IRequisicaoResumoEnac[] = [];
+      let diagnostico: IDiagnosticoReadonlyEnac | null = null;
 
-        setUsuariosPerfisReadonly(usuariosPerfis);
-        setAlcadasReadonly(alcadasSharePoint);
-        setRequisicoesResumoReadonly(requisicoesResumo);
-        setDiagnosticoReadonlyState(diagnostico);
-        setOrigemDadosEfetiva('sharepoint');
+      try {
+        usuariosPerfis = await props.repository!.listarUsuariosPerfis();
+      } catch (error) {
+        erros.push(`usuarios: ${error instanceof Error ? error.message : String(error)}`);
+      }
 
-        if (DEBUG && props.diagnosticoReadonly) {
-          console.info('[ENAC][V2.4C] Dados readonly SharePoint carregados no estado', {
-            usuariosPerfis: usuariosPerfis.length,
-            alcadas: alcadasSharePoint.length,
-            requisicoesResumo: requisicoesResumo.length,
-            diagnostico
-          });
-        }
+      try {
+        alcadasSharePoint = await props.repository!.listarAlcadas();
+      } catch (error) {
+        erros.push(`alcadas: ${error instanceof Error ? error.message : String(error)}`);
+      }
 
-        setCarregandoReadonly(false);
-      })
+      try {
+        requisicoesResumo = await props.repository!.listarRequisicoesResumo();
+      } catch (error) {
+        erros.push(`requisicoes: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
+      try {
+        diagnostico = await props.repository!.obterDiagnosticoReadonly();
+      } catch (error) {
+        erros.push(`diagnostico: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
+      if (erros.length > 0) {
+        throw new Error(erros.join(' | '));
+      }
+
+      if (!diagnostico) {
+        throw new Error('Diagnostico readonly nao retornado.');
+      }
+
+      if (disposed) {
+        return;
+      }
+
+      setUsuariosPerfisReadonly(usuariosPerfis);
+      setAlcadasReadonly(alcadasSharePoint);
+      setRequisicoesResumoReadonly(requisicoesResumo);
+      setDiagnosticoReadonlyState(diagnostico);
+      setOrigemDadosEfetiva('sharepoint');
+
+      if (DEBUG && props.diagnosticoReadonly) {
+        console.info('[ENAC][V2.4F] Dados readonly SharePoint carregados no estado', {
+          usuariosPerfis: usuariosPerfis.length,
+          alcadas: alcadasSharePoint.length,
+          requisicoesResumo: requisicoesResumo.length,
+          diagnostico
+        });
+      }
+
+      setCarregandoReadonly(false);
+    };
+
+    carregarReadonly()
       .catch((error: Error) => {
         if (disposed) {
           return;
@@ -154,7 +188,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         setErroReadonly(error.message);
 
         if (DEBUG && props.diagnosticoReadonly) {
-          console.warn('[ENAC][V2.4C] Falha no consumo readonly SharePoint; fallback local mantido', error.message);
+          console.warn('[ENAC][V2.4F] Falha no consumo readonly SharePoint; fallback local mantido', error.message);
         }
 
         setCarregandoReadonly(false);

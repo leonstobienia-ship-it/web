@@ -59,6 +59,8 @@ Na V2.4D, foi preparado pacote SPFx local para validação manual controlada no 
 
 Na V2.4E, foi gerado pacote SPFx `--ship` local para validação manual readonly no tenant. Os e-mails mockados do fallback da webpart foram sanitizados para `example.invalid` antes do empacotamento, sem alterar o protótipo V2.2. O pacote permanece ignorado no Git e não foi publicado pelo Codex.
 
+Na V2.4F, foram corrigidas consultas readonly REST que retornavam HTTP 400 no tenant por uso de propriedades inválidas em lookups customizados. A webpart passou a consultar lookups administrativos de forma conservadora e enriquecer aprovadores/substitutos em memória. Escrita segue bloqueada e um novo pacote SHIP deve ser validado manualmente por Leon.
+
 ## Protótipo
 
 Abra no navegador:
@@ -105,6 +107,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.4c-consumo-readonly-estado-webpart.md`
 - `docs/v2.4d-validacao-manual-tenant-readonly.md`
 - `docs/v2.4e-pacote-ship-readonly-validacao-manual.md`
+- `docs/v2.4f-correcao-consultas-readonly-rest.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
@@ -120,7 +123,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Executar, se autorizado por Leon, a validação manual do pacote SHIP V2.4E em tenant/página restrita, sem habilitar escrita.
+- Substituir manualmente o pacote no App Catalog e validar a correção V2.4F dos GET readonly em página restrita, sem habilitar escrita.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
