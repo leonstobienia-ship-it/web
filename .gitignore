@@ -3,8 +3,13 @@ dist/
 lib/
 temp/
 release/
+solution/
+lib-dts/
+coverage/
+.heft/
 *.sppkg
 *.log
+*.scss.ts
 .env
 .env.*
 !.env.example

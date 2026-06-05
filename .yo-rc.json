@@ -1,0 +1,23 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "whichFolder": "subdir",
+    "solutionName": "enac-sistema-spfx",
+    "environment": "spo",
+    "packageManager": "npm",
+    "useGulp": true,
+    "componentType": "webpart",
+    "template": "react",
+    "componentName": "EnacSistema",
+    "componentDescription": "Sistema ENAC",
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.22.3",
+    "sdksVersions": {},
+    "version": "1.23.0",
+    "libraryName": "enac-sistema-spfx",
+    "libraryId": "4f9e4f62-08d9-4440-971e-025d4b54c243",
+    "solutionShortDescription": "enac-sistema-spfx description",
+    "skipFeatureDeployment": false,
+    "isDomainIsolated": false
+  }
+}
