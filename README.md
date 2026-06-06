@@ -63,6 +63,8 @@ Na V2.4F, foram corrigidas consultas readonly REST que retornavam HTTP 400 no te
 
 Na V2.5A, a interface SPFx passou a consumir dados reais readonly em áreas existentes: cards prioritários do dashboard, Administração / Usuários, Administração / Alçadas e histórico administrativo quando disponível. Em validação manual no tenant, Leon confirmou Lista 02 com GET/fetch 200, usuários/perfis reais de teste, alçadas reais de teste, histórico real de teste, visual básico preservado e sem evidência de escrita nos prints. Resultado: V2.5A aprovada manualmente com observação não bloqueante para warnings externos do SharePoint e recomendação de validação posterior em página publicada/visualização final. Power Automate ainda não foi iniciado.
 
+Na V2.5B, foi preparado o roteiro para validar a webpart em página publicada ou visualização final, ainda em modo readonly. A validação deve confirmar renderização, dashboard, telas administrativas, ausência de HTTP 400 e ausência de `POST/MERGE/PATCH/DELETE` da webpart.
+
 ## Protótipo
 
 Abra no navegador:
@@ -111,6 +113,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.4e-pacote-ship-readonly-validacao-manual.md`
 - `docs/v2.4f-correcao-consultas-readonly-rest.md`
 - `docs/v2.5a-consumo-readonly-interface.md`
+- `docs/v2.5b-validacao-pagina-publicada-readonly.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
@@ -126,7 +129,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Definir próxima etapa após V2.5A aprovada: validar página publicada readonly, preparar escrita controlada, permissões finas ou Power Automate em rodada autorizada.
+- Executar manualmente a validação V2.5B em página publicada/visualização final, mantendo readonly.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
