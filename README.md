@@ -61,7 +61,7 @@ Na V2.4E, foi gerado pacote SPFx `--ship` local para validação manual readonly
 
 Na V2.4F, foram corrigidas consultas readonly REST que retornavam HTTP 400 no tenant por uso de propriedades inválidas em lookups customizados. A webpart passou a consultar lookups administrativos de forma conservadora e enriquecer aprovadores/substitutos em memória. Em validação manual no tenant, Leon confirmou GET 200 para `ENAC Usuarios Perfis` e `ENAC Alcadas`, webpart renderizada, visual básico preservado e ausência de escrita observada. Resultado: V2.4F aprovada manualmente com observação não bloqueante para warnings externos do shell/search do SharePoint. Power Automate ainda não foi iniciado.
 
-Na V2.5A, a interface SPFx passou a consumir dados reais readonly em áreas existentes: cards prioritários do dashboard, Administração / Usuários, Administração / Alçadas e histórico administrativo quando disponível. O fallback local permanece ativo, não houve escrita e o fluxo visual homologado não foi redesenhado.
+Na V2.5A, a interface SPFx passou a consumir dados reais readonly em áreas existentes: cards prioritários do dashboard, Administração / Usuários, Administração / Alçadas e histórico administrativo quando disponível. Em validação manual no tenant, Leon confirmou Lista 02 com GET/fetch 200, usuários/perfis reais de teste, alçadas reais de teste, histórico real de teste, visual básico preservado e sem evidência de escrita nos prints. Resultado: V2.5A aprovada manualmente com observação não bloqueante para warnings externos do SharePoint e recomendação de validação posterior em página publicada/visualização final. Power Automate ainda não foi iniciado.
 
 ## Protótipo
 
@@ -126,7 +126,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Validar manualmente a V2.5A em tenant/página restrita, confirmando consumo readonly real na interface sem escrita.
+- Definir próxima etapa após V2.5A aprovada: validar página publicada readonly, preparar escrita controlada, permissões finas ou Power Automate em rodada autorizada.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
