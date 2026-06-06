@@ -11,6 +11,7 @@ import {
   IUsuarioPerfilEnac,
   IValidacaoAlcadaEnac,
   PerfilEnac,
+  PreValidacaoTesteControladoSnapshotResultado,
   ResultadoHistoricoConfiguracao,
   ResultadoVinculoSnapshot,
   SnapshotCriacaoTesteInput,
@@ -330,6 +331,102 @@ export class SharePointEnacRepository {
     throw new Error('Persistencia operacional de snapshot bloqueada. Use apenas executarTesteControladoSnapshot() em modo V2.6A-TESTE autorizado.');
   }
 
+  public async preValidarTesteControladoSnapshot(input: SnapshotCriacaoTesteInput): Promise<PreValidacaoTesteControladoSnapshotResultado> {
+    const alertas = this.validarControleEscritaTeste(input);
+    if (alertas.length > 0) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        status: 'Bloqueada',
+        mensagem: 'Pre-validacao bloqueada por configuracao de teste incompleta.',
+        requisicaoItemId: input.requisicaoItemId,
+        valorAnalisado: input.valorAnalisado,
+        criaraSnapshot: false,
+        vincularaSnapshotAprovacaoCompra: false,
+        registraraHistorico: false,
+        alertas
+      };
+    }
+
+    try {
+      const requisicao = await this.obterRequisicaoTesteParaEscrita(input.requisicaoItemId, input.marcadorTeste);
+      const marcadorEncontrado = this.detectarMarcadorTeste(String(requisicao.Title || ''));
+      const snapshotExistenteId = requisicao.SnapshotAprovacaoCompra?.Id ? Number(requisicao.SnapshotAprovacaoCompra.Id) : undefined;
+      const snapshotExistenteTitulo = requisicao.SnapshotAprovacaoCompra?.Title;
+      const usuarios = await this.listarUsuariosPerfis({ somenteAtivos: true });
+      const alcadas = await this.listarAlcadas();
+      const regra = this.selecionarRegraAlcadaCompra(alcadas, {
+        tipoSolicitacao: input.tipoSolicitacao,
+        obraId: input.obraId || (requisicao.Obra?.Id ? String(requisicao.Obra.Id) : undefined),
+        valor: input.valorAnalisado,
+        dataReferencia: new Date(),
+        motivoExcecao: input.motivoExcecao
+      });
+      const aprovadorBase = this.encontrarUsuarioPorLookup(regra.aprovadorPrincipalId, regra.aprovadorPrincipalNome, usuarios);
+
+      if (!aprovadorBase) {
+        return {
+          sucesso: false,
+          bloqueado: true,
+          status: 'Bloqueada',
+          mensagem: 'Aprovador base da alcada nao localizado entre usuarios ativos.',
+          requisicaoItemId: input.requisicaoItemId,
+          requisicaoTitulo: requisicao.Title,
+          marcadorEncontrado,
+          valorAnalisado: input.valorAnalisado,
+          regraInternaId: regra.regraInternaId,
+          regraAlcadaItemId: Number(regra.id),
+          criaraSnapshot: false,
+          vincularaSnapshotAprovacaoCompra: false,
+          registraraHistorico: false,
+          alertas: [{ codigo: 'APROVADOR_BASE_NAO_LOCALIZADO', mensagem: regra.regraInternaId }]
+        };
+      }
+
+      const resolucao = this.resolverAprovadorEfetivo(aprovadorBase, usuarios, new Date());
+      const snapshot = this.criarSnapshotAprovacaoCompra(regra, resolucao, input.valorAnalisado, input.motivoExcecao);
+
+      return {
+        sucesso: true,
+        bloqueado: Boolean(snapshotExistenteId),
+        status: snapshotExistenteId ? 'ValidacaoExistente' : 'Concluido',
+        mensagem: snapshotExistenteId
+          ? 'Pre-validacao readonly concluida: requisicao ja possui SnapshotAprovacaoCompra; escrita futura deve apenas validar idempotencia.'
+          : 'Pre-validacao readonly concluida: teste pode criar snapshot, vincular requisicao e registrar historico se autorizado.',
+        requisicaoItemId: input.requisicaoItemId,
+        requisicaoTitulo: requisicao.Title,
+        marcadorEncontrado,
+        valorAnalisado: input.valorAnalisado,
+        regraInternaId: regra.regraInternaId,
+        regraAlcadaItemId: Number(regra.id),
+        resumoRegraAplicada: `${input.marcadorTeste}; ${regra.processo}; ${snapshot.faixaValorVigente}; aprovador ${snapshot.aprovadorBaseNome}`,
+        aprovadorBaseId: snapshot.aprovadorBaseId,
+        aprovadorBaseNome: snapshot.aprovadorBaseNome,
+        aprovadorEfetivoId: snapshot.aprovadorEfetivoId,
+        aprovadorEfetivoNome: snapshot.aprovadorEfetivoNome,
+        snapshotExistenteId,
+        snapshotExistenteTitulo,
+        criaraSnapshot: !snapshotExistenteId,
+        vincularaSnapshotAprovacaoCompra: !snapshotExistenteId,
+        registraraHistorico: !snapshotExistenteId,
+        alertas: []
+      };
+    } catch (error) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        status: 'Erro',
+        mensagem: this.getErrorMessage(error),
+        requisicaoItemId: input.requisicaoItemId,
+        valorAnalisado: input.valorAnalisado,
+        criaraSnapshot: false,
+        vincularaSnapshotAprovacaoCompra: false,
+        registraraHistorico: false,
+        alertas: [{ codigo: 'ERRO_PRE_VALIDACAO', mensagem: this.getErrorMessage(error) }]
+      };
+    }
+  }
+
   public async executarTesteControladoSnapshot(input: SnapshotCriacaoTesteInput): Promise<SnapshotCriacaoTesteResultado> {
     const alertas = this.validarControleEscritaTeste(input);
     if (alertas.length > 0) {
@@ -608,6 +705,18 @@ export class SharePointEnacRepository {
     }
 
     return item;
+  }
+
+  private detectarMarcadorTeste(title: string): 'V2.3B-TESTE' | 'V2.6A-TESTE' | undefined {
+    if (title.indexOf('V2.6A-TESTE') >= 0) {
+      return 'V2.6A-TESTE';
+    }
+
+    if (title.indexOf('V2.3B-TESTE') >= 0) {
+      return 'V2.3B-TESTE';
+    }
+
+    return undefined;
   }
 
   private criarPostOptions(body: unknown): ISPHttpClientOptions {

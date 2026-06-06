@@ -20,6 +20,17 @@ Codex nao deve conectar ao SharePoint, publicar pacote, instalar app, alterar te
 - Confirmacao textual disponivel: `TESTAR-ESCRITA-V2.6A-ENAC`.
 - Power Automate nao iniciado.
 
+## Propriedades SPFx para habilitacao futura
+
+Configurar somente se Leon autorizar a rodada de teste:
+
+- `habilitarEscritaTesteV26A=true`;
+- `modoEscritaTesteV26A=true`;
+- `confirmacaoEscritaTesteV26A=TESTAR-ESCRITA-V2.6A-ENAC`;
+- `requisicaoTesteIdV26A=<ID do item de teste>`;
+- `valorAnalisadoTesteV26A=<valor de teste>`;
+- `marcadorTesteObrigatorioV26A=V2.3B-TESTE|V2.6A-TESTE`.
+
 ## Dry-run visual
 
 - [ ] Abrir pagina publicada/final readonly.
@@ -34,8 +45,11 @@ Executar somente apos revisao e autorizacao:
 1. Configurar pacote/pagina de teste para habilitar explicitamente `escritaTesteHabilitada=true`.
 2. Informar item de teste, valor, marcador e confirmacao.
 3. Abrir `Administracao / Historico`.
-4. Acionar manualmente `Teste controlado V2.6A - criar snapshot de teste`.
-5. Verificar retorno da acao.
+4. Conferir a pre-validacao readonly exibida na tela.
+5. Confirmar que o resumo mostra item, marcador, valor, regra, aprovador base/efetivo e acoes previstas.
+6. Digitar a confirmacao final `TESTAR-ESCRITA-V2.6A-ENAC`.
+7. Acionar manualmente `Teste controlado V2.6A - criar snapshot de teste`.
+8. Verificar retorno da acao.
 
 ## Validacoes esperadas
 
@@ -52,10 +66,12 @@ Executar somente apos revisao e autorizacao:
 
 - Acao aparece sem habilitacao explicita.
 - Alguma escrita ocorre ao carregar a pagina.
+- Pre-validacao readonly nao aparece ou aparece bloqueada.
 - Item alvo nao contem marcador de teste.
 - `SnapshotAprovacaoCompra` ja esta preenchido e o fluxo tenta sobrescrever.
 - Alçada nao e resolvida.
 - Aprovador base ativo nao e localizado.
+- Confirmacao final nao foi digitada.
 - Network mostra escrita fora de `ENAC Snapshots Regras`, Lista 02 `SnapshotAprovacaoCompra` ou `ENAC Historico Configuracoes`.
 - Power Automate e iniciado.
 

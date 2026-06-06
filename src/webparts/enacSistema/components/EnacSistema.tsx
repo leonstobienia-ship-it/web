@@ -10,11 +10,14 @@ import {
   MarcadorTesteEscritaEnac,
   OrigemDadosEnac,
   PerfilEnac,
+  PreValidacaoTesteControladoSnapshotResultado,
   SnapshotCriacaoTesteResultado,
   StatusProcesso
 } from '../models';
 import { SharePointEnacRepository } from '../services/SharePointEnacRepository';
 import styles from './EnacSistema.module.scss';
+
+const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
 
 export interface IEnacSistemaProps {
   currentUserName: string;
@@ -111,6 +114,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [carregandoReadonly, setCarregandoReadonly] = React.useState<boolean>(false);
   const [erroReadonly, setErroReadonly] = React.useState<string | null>(null);
   const [resultadoEscritaTeste, setResultadoEscritaTeste] = React.useState<SnapshotCriacaoTesteResultado | null>(null);
+  const [preValidacaoEscritaTeste, setPreValidacaoEscritaTeste] = React.useState<PreValidacaoTesteControladoSnapshotResultado | null>(null);
+  const [erroPreValidacaoEscritaTeste, setErroPreValidacaoEscritaTeste] = React.useState<string | null>(null);
+  const [confirmacaoFinalEscritaTeste, setConfirmacaoFinalEscritaTeste] = React.useState<string>('');
   const [executandoEscritaTeste, setExecutandoEscritaTeste] = React.useState<boolean>(false);
 
   React.useEffect(() => {
@@ -258,11 +264,56 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const escritaTesteConfigurada = Boolean(
     props.escritaTesteHabilitada &&
     props.modoEscritaTeste &&
-    props.confirmacaoEscritaTeste &&
+    props.confirmacaoEscritaTeste === CONFIRMACAO_ESCRITA_TESTE_V26A &&
     props.escritaTesteRequisicaoItemId &&
     props.escritaTesteValorAnalisado &&
     props.escritaTesteMarcador
   );
+
+  React.useEffect(() => {
+    if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !escritaTesteConfigurada) {
+      setPreValidacaoEscritaTeste(null);
+      setErroPreValidacaoEscritaTeste(null);
+      return;
+    }
+
+    let disposed = false;
+    setErroPreValidacaoEscritaTeste(null);
+
+    props.repository.preValidarTesteControladoSnapshot({
+      requisicaoItemId: props.escritaTesteRequisicaoItemId!,
+      valorAnalisado: props.escritaTesteValorAnalisado!,
+      tipoSolicitacao: 'Material',
+      marcadorTeste: props.escritaTesteMarcador!,
+      modoEscritaTeste: props.modoEscritaTeste === true,
+      confirmacao: props.confirmacaoEscritaTeste!,
+      idempotenteValidarExistente: true
+    })
+      .then((resultado) => {
+        if (!disposed) {
+          setPreValidacaoEscritaTeste(resultado);
+        }
+      })
+      .catch((error: Error) => {
+        if (!disposed) {
+          setPreValidacaoEscritaTeste(null);
+          setErroPreValidacaoEscritaTeste(error.message);
+        }
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, [
+    escritaTesteConfigurada,
+    origemDadosEfetiva,
+    props.confirmacaoEscritaTeste,
+    props.escritaTesteMarcador,
+    props.escritaTesteRequisicaoItemId,
+    props.escritaTesteValorAnalisado,
+    props.modoEscritaTeste,
+    props.repository
+  ]);
 
   async function executarEscritaTesteSnapshot(): Promise<void> {
     if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !escritaTesteConfigurada) {
@@ -273,6 +324,18 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         mensagem: 'Teste de escrita V2.6A bloqueado: configuracao, repository ou origem SharePoint ausente.',
         requisicaoItemId: props.escritaTesteRequisicaoItemId || 0,
         alertas: [{ codigo: 'CONFIGURACAO_INCOMPLETA', mensagem: 'A escrita de teste nao esta habilitada para esta pagina.' }]
+      });
+      return;
+    }
+
+    if (confirmacaoFinalEscritaTeste !== CONFIRMACAO_ESCRITA_TESTE_V26A || !preValidacaoEscritaTeste?.sucesso || preValidacaoEscritaTeste.bloqueado) {
+      setResultadoEscritaTeste({
+        sucesso: false,
+        bloqueado: true,
+        status: 'Bloqueada',
+        mensagem: 'Teste de escrita V2.6A bloqueado: pre-validacao readonly ou confirmacao final pendente.',
+        requisicaoItemId: props.escritaTesteRequisicaoItemId || 0,
+        alertas: [{ codigo: 'PRE_VALIDACAO_OU_CONFIRMACAO_PENDENTE', mensagem: 'Revise o resumo readonly e digite a confirmacao final exigida.' }]
       });
       return;
     }
@@ -442,8 +505,12 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />
             {perfil === 'AdministradorSistema' && escritaTesteConfigurada && (
               <TesteEscritaSnapshot
-                disabled={executandoEscritaTeste}
+                disabled={executandoEscritaTeste || confirmacaoFinalEscritaTeste !== CONFIRMACAO_ESCRITA_TESTE_V26A || !preValidacaoEscritaTeste?.sucesso || preValidacaoEscritaTeste.bloqueado}
+                preValidacao={preValidacaoEscritaTeste}
+                erroPreValidacao={erroPreValidacaoEscritaTeste}
+                confirmacaoFinal={confirmacaoFinalEscritaTeste}
                 resultado={resultadoEscritaTeste}
+                onConfirmacaoFinalChange={setConfirmacaoFinalEscritaTeste}
                 onExecutar={executarEscritaTesteSnapshot}
               />
             )}
@@ -638,11 +705,39 @@ function AdminHistorico({ historico, origemDados }: { historico: IHistoricoConfi
   );
 }
 
-function TesteEscritaSnapshot({ disabled, resultado, onExecutar }: { disabled: boolean; resultado: SnapshotCriacaoTesteResultado | null; onExecutar: () => void }): JSX.Element {
+function TesteEscritaSnapshot({
+  disabled,
+  preValidacao,
+  erroPreValidacao,
+  confirmacaoFinal,
+  resultado,
+  onConfirmacaoFinalChange,
+  onExecutar
+}: {
+  disabled: boolean;
+  preValidacao: PreValidacaoTesteControladoSnapshotResultado | null;
+  erroPreValidacao: string | null;
+  confirmacaoFinal: string;
+  resultado: SnapshotCriacaoTesteResultado | null;
+  onConfirmacaoFinalChange: (value: string) => void;
+  onExecutar: () => void;
+}): JSX.Element {
   return (
     <div className={styles.row}>
       <strong>Teste controlado V2.6A - criar snapshot de teste</strong>
       <span>Disponivel apenas com configuracao explicita de teste e confirmacao administrativa.</span>
+      {erroPreValidacao && <span>Pre-validacao: {erroPreValidacao}</span>}
+      {preValidacao && (
+        <span>
+          Pre-validacao: {preValidacao.status} - {preValidacao.mensagem}<br />
+          Item: {preValidacao.requisicaoItemId} / {preValidacao.marcadorEncontrado || '-'}<br />
+          Valor: {formatCurrency(preValidacao.valorAnalisado)}<br />
+          Regra: {preValidacao.regraInternaId || '-'}<br />
+          Aprovador base/efetivo: {preValidacao.aprovadorBaseNome || '-'} / {preValidacao.aprovadorEfetivoNome || '-'}<br />
+          Acoes previstas: snapshot {preValidacao.criaraSnapshot ? 'sim' : 'nao'}, vinculo {preValidacao.vincularaSnapshotAprovacaoCompra ? 'sim' : 'nao'}, historico {preValidacao.registraraHistorico ? 'sim' : 'nao'}
+        </span>
+      )}
+      <label>Confirmacao final<input value={confirmacaoFinal} onChange={(event) => onConfirmacaoFinalChange(event.currentTarget.value)} /></label>
       <button disabled={disabled} onClick={onExecutar}>Teste controlado V2.6A - criar snapshot de teste</button>
       {resultado && <span>{resultado.status}: {resultado.mensagem}</span>}
     </div>

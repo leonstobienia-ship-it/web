@@ -256,6 +256,30 @@ export interface SnapshotCriacaoTesteResultado {
   historico?: ResultadoHistoricoConfiguracao;
 }
 
+export interface PreValidacaoTesteControladoSnapshotResultado {
+  sucesso: boolean;
+  bloqueado: boolean;
+  status: EscritaControladaStatus;
+  mensagem: string;
+  requisicaoItemId: number;
+  requisicaoTitulo?: string;
+  marcadorEncontrado?: MarcadorTesteEscritaEnac;
+  valorAnalisado: number;
+  regraInternaId?: string;
+  regraAlcadaItemId?: number;
+  resumoRegraAplicada?: string;
+  aprovadorBaseId?: string;
+  aprovadorBaseNome?: string;
+  aprovadorEfetivoId?: string;
+  aprovadorEfetivoNome?: string;
+  snapshotExistenteId?: number;
+  snapshotExistenteTitulo?: string;
+  criaraSnapshot: boolean;
+  vincularaSnapshotAprovacaoCompra: boolean;
+  registraraHistorico: boolean;
+  alertas: AlertaBloqueioEscrita[];
+}
+
 export interface IValidacaoAlcadaEnac {
   tipo: 'Erro' | 'Aviso';
   regraInternaId?: string;

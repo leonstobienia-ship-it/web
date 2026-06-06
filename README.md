@@ -69,6 +69,8 @@ Na V2.6A, foi preparada localmente a escrita controlada de snapshot pela webpart
 
 Na V2.6A.1, a escrita controlada foi auditada localmente antes de qualquer teste no tenant. Não há caminho de escrita automática no carregamento; `POST/MERGE` permanecem restritos aos métodos de teste. A auditoria reforçou a trava de `vincularSnapshotARequisicaoTeste()` para bloquear sobrescrita quando `SnapshotAprovacaoCompra` já estiver preenchido. Resultado: próxima rodada pode ser apenas validação manual controlada, sem Power Automate e sem dados reais operacionais.
 
+Na V2.6A.2, foram preparadas propriedades SPFx seguras para habilitação futura do teste manual de escrita, mantendo tudo desligado por padrão. A webpart agora permite configurar `habilitarEscritaTesteV26A`, `modoEscritaTesteV26A`, confirmação, item, valor e marcador de teste sem alterar código, e executa pré-validação readonly antes de qualquer ação manual de escrita. Codex não executou teste, não publicou pacote e não alterou o tenant.
+
 ## Protótipo
 
 Abra no navegador:
@@ -120,6 +122,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.5b-validacao-pagina-publicada-readonly.md`
 - `docs/v2.6a-escrita-controlada-snapshot-webpart.md`
 - `docs/v2.6a1-auditoria-pre-teste-escrita-controlada.md`
+- `docs/v2.6a2-habilitacao-segura-teste-escrita.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
