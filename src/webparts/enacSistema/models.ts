@@ -199,6 +199,63 @@ export interface ISnapshotRegraEnac {
   dataHoraAplicacao: string;
 }
 
+export type MarcadorTesteEscritaEnac = 'V2.3B-TESTE' | 'V2.6A-TESTE';
+
+export type EscritaControladaStatus =
+  | 'Bloqueada'
+  | 'ValidacaoExistente'
+  | 'SnapshotCriado'
+  | 'Vinculado'
+  | 'HistoricoRegistrado'
+  | 'Concluido'
+  | 'Erro';
+
+export interface AlertaBloqueioEscrita {
+  codigo: string;
+  mensagem: string;
+}
+
+export interface SnapshotCriacaoTesteInput {
+  requisicaoItemId: number;
+  valorAnalisado: number;
+  tipoSolicitacao: TipoSolicitacaoEnac;
+  obraId?: string;
+  marcadorTeste: MarcadorTesteEscritaEnac;
+  modoEscritaTeste: boolean;
+  confirmacao: string;
+  motivoExcecao?: string;
+  idempotenteValidarExistente?: boolean;
+}
+
+export interface ResultadoVinculoSnapshot {
+  sucesso: boolean;
+  status: EscritaControladaStatus;
+  requisicaoItemId: number;
+  snapshotItemId: number;
+  mensagem: string;
+}
+
+export interface ResultadoHistoricoConfiguracao {
+  sucesso: boolean;
+  status: EscritaControladaStatus;
+  historicoItemId?: number;
+  mensagem: string;
+}
+
+export interface SnapshotCriacaoTesteResultado {
+  sucesso: boolean;
+  bloqueado: boolean;
+  status: EscritaControladaStatus;
+  mensagem: string;
+  requisicaoItemId: number;
+  snapshotItemId?: number;
+  snapshotTitle?: string;
+  regraInternaId?: string;
+  alertas: AlertaBloqueioEscrita[];
+  vinculo?: ResultadoVinculoSnapshot;
+  historico?: ResultadoHistoricoConfiguracao;
+}
+
 export interface IValidacaoAlcadaEnac {
   tipo: 'Erro' | 'Aviso';
   regraInternaId?: string;

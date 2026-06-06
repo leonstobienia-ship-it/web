@@ -7,8 +7,10 @@ import {
   IRequisicaoResumoEnac,
   ISolicitacaoEnac,
   IUsuarioPerfilEnac,
+  MarcadorTesteEscritaEnac,
   OrigemDadosEnac,
   PerfilEnac,
+  SnapshotCriacaoTesteResultado,
   StatusProcesso
 } from '../models';
 import { SharePointEnacRepository } from '../services/SharePointEnacRepository';
@@ -22,6 +24,12 @@ export interface IEnacSistemaProps {
   diagnosticoReadonly?: boolean;
   repository?: SharePointEnacRepository;
   siteUrl?: string;
+  escritaTesteHabilitada?: boolean;
+  modoEscritaTeste?: boolean;
+  confirmacaoEscritaTeste?: string;
+  escritaTesteRequisicaoItemId?: number;
+  escritaTesteValorAnalisado?: number;
+  escritaTesteMarcador?: MarcadorTesteEscritaEnac;
 }
 
 const obras: IObraEnac[] = [
@@ -102,6 +110,8 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [origemDadosEfetiva, setOrigemDadosEfetiva] = React.useState<OrigemDadosEnac>('local');
   const [carregandoReadonly, setCarregandoReadonly] = React.useState<boolean>(false);
   const [erroReadonly, setErroReadonly] = React.useState<string | null>(null);
+  const [resultadoEscritaTeste, setResultadoEscritaTeste] = React.useState<SnapshotCriacaoTesteResultado | null>(null);
+  const [executandoEscritaTeste, setExecutandoEscritaTeste] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     if (props.origemDados !== 'sharepoint' || !props.repository) {
@@ -245,6 +255,53 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const usuariosParaAdmin = usandoSharePointReadonly ? usuariosPerfisReadonly : usuarios;
   const alcadasParaAdmin = usandoSharePointReadonly ? alcadasReadonly : alcadas;
   const historicoParaAdmin = usandoSharePointReadonly && historicoConfiguracoesReadonly.length > 0 ? historicoConfiguracoesReadonly : historicoConfiguracoes;
+  const escritaTesteConfigurada = Boolean(
+    props.escritaTesteHabilitada &&
+    props.modoEscritaTeste &&
+    props.confirmacaoEscritaTeste &&
+    props.escritaTesteRequisicaoItemId &&
+    props.escritaTesteValorAnalisado &&
+    props.escritaTesteMarcador
+  );
+
+  async function executarEscritaTesteSnapshot(): Promise<void> {
+    if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !escritaTesteConfigurada) {
+      setResultadoEscritaTeste({
+        sucesso: false,
+        bloqueado: true,
+        status: 'Bloqueada',
+        mensagem: 'Teste de escrita V2.6A bloqueado: configuracao, repository ou origem SharePoint ausente.',
+        requisicaoItemId: props.escritaTesteRequisicaoItemId || 0,
+        alertas: [{ codigo: 'CONFIGURACAO_INCOMPLETA', mensagem: 'A escrita de teste nao esta habilitada para esta pagina.' }]
+      });
+      return;
+    }
+
+    setExecutandoEscritaTeste(true);
+    try {
+      const resultado = await props.repository.executarTesteControladoSnapshot({
+        requisicaoItemId: props.escritaTesteRequisicaoItemId!,
+        valorAnalisado: props.escritaTesteValorAnalisado!,
+        tipoSolicitacao: 'Material',
+        marcadorTeste: props.escritaTesteMarcador!,
+        modoEscritaTeste: props.modoEscritaTeste === true,
+        confirmacao: props.confirmacaoEscritaTeste!,
+        idempotenteValidarExistente: true
+      });
+      setResultadoEscritaTeste(resultado);
+    } catch (error) {
+      setResultadoEscritaTeste({
+        sucesso: false,
+        bloqueado: true,
+        status: 'Erro',
+        mensagem: error instanceof Error ? error.message : String(error),
+        requisicaoItemId: props.escritaTesteRequisicaoItemId || 0,
+        alertas: [{ codigo: 'ERRO_INTERFACE_TESTE', mensagem: error instanceof Error ? error.message : String(error) }]
+      });
+    } finally {
+      setExecutandoEscritaTeste(false);
+    }
+  }
 
   function criarSolicitacao(form: FormData): void {
     const obra = obras.find((item) => item.id === String(form.get('obra'))) || obras[0];
@@ -380,7 +437,18 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         {view === 'historico' && <Historico selected={selected} />}
         {view === 'adminUsuarios' && <AdminUsuarios usuarios={usuariosParaAdmin} origemDados={origemDadosEfetiva} />}
         {view === 'adminAlcadas' && <Alcadas alcadas={alcadasParaAdmin} origemDados={origemDadosEfetiva} />}
-        {view === 'adminHistorico' && <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />}
+        {view === 'adminHistorico' && (
+          <>
+            <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />
+            {perfil === 'AdministradorSistema' && escritaTesteConfigurada && (
+              <TesteEscritaSnapshot
+                disabled={executandoEscritaTeste}
+                resultado={resultadoEscritaTeste}
+                onExecutar={executarEscritaTesteSnapshot}
+              />
+            )}
+          </>
+        )}
       </main>
     </section>
   );
@@ -567,6 +635,17 @@ function AdminHistorico({ historico, origemDados }: { historico: IHistoricoConfi
         </tbody>
       </table>
     </>
+  );
+}
+
+function TesteEscritaSnapshot({ disabled, resultado, onExecutar }: { disabled: boolean; resultado: SnapshotCriacaoTesteResultado | null; onExecutar: () => void }): JSX.Element {
+  return (
+    <div className={styles.row}>
+      <strong>Teste controlado V2.6A - criar snapshot de teste</strong>
+      <span>Disponivel apenas com configuracao explicita de teste e confirmacao administrativa.</span>
+      <button disabled={disabled} onClick={onExecutar}>Teste controlado V2.6A - criar snapshot de teste</button>
+      {resultado && <span>{resultado.status}: {resultado.mensagem}</span>}
+    </div>
   );
 }
 

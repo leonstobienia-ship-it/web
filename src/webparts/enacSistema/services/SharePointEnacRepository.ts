@@ -1,5 +1,6 @@
-import { SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
+import { ISPHttpClientOptions, SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import {
+  AlertaBloqueioEscrita,
   IDiagnosticoReadonlyEnac,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
@@ -10,6 +11,10 @@ import {
   IUsuarioPerfilEnac,
   IValidacaoAlcadaEnac,
   PerfilEnac,
+  ResultadoHistoricoConfiguracao,
+  ResultadoVinculoSnapshot,
+  SnapshotCriacaoTesteInput,
+  SnapshotCriacaoTesteResultado,
   TipoSolicitacaoEnac
 } from '../models';
 
@@ -21,6 +26,9 @@ const LISTAS_ENAC = {
   historicoConfiguracoes: 'cac67186-e478-4f15-b5a0-2db92d74b2c4',
   snapshotsRegras: '767e1867-8a98-46be-9dcc-be53a12c51aa'
 };
+
+const CONFIRMACAO_ESCRITA_TESTE = 'TESTAR-ESCRITA-V2.6A-ENAC';
+const MARCADORES_TESTE_PERMITIDOS = ['V2.3B-TESTE', 'V2.6A-TESTE'];
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -319,7 +327,209 @@ export class SharePointEnacRepository {
     void solicitacaoItemId;
     void pedidoCompraItemId;
     void snapshot;
-    throw new Error('Persistencia de snapshot bloqueada na V2.4B readonly.');
+    throw new Error('Persistencia operacional de snapshot bloqueada. Use apenas executarTesteControladoSnapshot() em modo V2.6A-TESTE autorizado.');
+  }
+
+  public async executarTesteControladoSnapshot(input: SnapshotCriacaoTesteInput): Promise<SnapshotCriacaoTesteResultado> {
+    const alertas = this.validarControleEscritaTeste(input);
+    if (alertas.length > 0) {
+      return this.criarResultadoBloqueado(input.requisicaoItemId, 'Escrita controlada bloqueada antes de qualquer chamada de escrita.', alertas);
+    }
+
+    try {
+      const snapshotResultado = await this.criarSnapshotAprovacaoCompraTeste(input);
+      if (!snapshotResultado.sucesso || !snapshotResultado.snapshotItemId) {
+        return snapshotResultado;
+      }
+      if (snapshotResultado.status === 'ValidacaoExistente') {
+        return snapshotResultado;
+      }
+
+      const vinculo = await this.vincularSnapshotARequisicaoTeste(input.requisicaoItemId, snapshotResultado.snapshotItemId, input);
+      if (!vinculo.sucesso) {
+        return {
+          ...snapshotResultado,
+          sucesso: false,
+          bloqueado: true,
+          status: vinculo.status,
+          mensagem: vinculo.mensagem,
+          vinculo
+        };
+      }
+
+      const historico = await this.registrarHistoricoConfiguracaoTeste(input, snapshotResultado.snapshotItemId, snapshotResultado.regraInternaId || '');
+
+      return {
+        ...snapshotResultado,
+        sucesso: vinculo.sucesso && historico.sucesso,
+        bloqueado: false,
+        status: historico.sucesso ? 'Concluido' : historico.status,
+        mensagem: historico.sucesso
+          ? 'Teste controlado V2.6A concluido: snapshot criado, vinculado e historico registrado.'
+          : `Snapshot vinculado, mas historico nao foi registrado: ${historico.mensagem}`,
+        vinculo,
+        historico
+      };
+    } catch (error) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        status: 'Erro',
+        mensagem: this.getErrorMessage(error),
+        requisicaoItemId: input.requisicaoItemId,
+        alertas: [{ codigo: 'ERRO_EXECUCAO_TESTE', mensagem: this.getErrorMessage(error) }]
+      };
+    }
+  }
+
+  public async criarSnapshotAprovacaoCompraTeste(input: SnapshotCriacaoTesteInput): Promise<SnapshotCriacaoTesteResultado> {
+    const alertas = this.validarControleEscritaTeste(input);
+    if (alertas.length > 0) {
+      return this.criarResultadoBloqueado(input.requisicaoItemId, 'Criacao de snapshot de teste bloqueada.', alertas);
+    }
+
+    const requisicao = await this.obterRequisicaoTesteParaEscrita(input.requisicaoItemId, input.marcadorTeste);
+    const snapshotExistenteId = requisicao.SnapshotAprovacaoCompra?.Id ? Number(requisicao.SnapshotAprovacaoCompra.Id) : undefined;
+    if (snapshotExistenteId) {
+      const mensagem = `Requisicao de teste ja possui SnapshotAprovacaoCompra=${snapshotExistenteId}.`;
+      return {
+        sucesso: Boolean(input.idempotenteValidarExistente),
+        bloqueado: !input.idempotenteValidarExistente,
+        status: input.idempotenteValidarExistente ? 'ValidacaoExistente' : 'Bloqueada',
+        mensagem,
+        requisicaoItemId: input.requisicaoItemId,
+        snapshotItemId: snapshotExistenteId,
+        alertas: input.idempotenteValidarExistente ? [] : [{ codigo: 'SNAPSHOT_JA_EXISTE', mensagem }]
+      };
+    }
+
+    const usuarios = await this.listarUsuariosPerfis({ somenteAtivos: true });
+    const alcadas = await this.listarAlcadas();
+    const regra = this.selecionarRegraAlcadaCompra(alcadas, {
+      tipoSolicitacao: input.tipoSolicitacao,
+      obraId: input.obraId || (requisicao.Obra?.Id ? String(requisicao.Obra.Id) : undefined),
+      valor: input.valorAnalisado,
+      dataReferencia: new Date(),
+      motivoExcecao: input.motivoExcecao
+    });
+    const aprovadorBase = this.encontrarUsuarioPorLookup(regra.aprovadorPrincipalId, regra.aprovadorPrincipalNome, usuarios);
+
+    if (!aprovadorBase) {
+      return this.criarResultadoBloqueado(input.requisicaoItemId, 'Aprovador base da alcada nao localizado entre usuarios ativos.', [
+        { codigo: 'APROVADOR_BASE_NAO_LOCALIZADO', mensagem: regra.regraInternaId }
+      ]);
+    }
+
+    const resolucao = this.resolverAprovadorEfetivo(aprovadorBase, usuarios, new Date());
+    const snapshot = this.criarSnapshotAprovacaoCompra(regra, resolucao, input.valorAnalisado, input.motivoExcecao);
+    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const title = `SNAP-V2.6A-TESTE-${input.requisicaoItemId}-${timestamp}`;
+    const body = {
+      Title: title,
+      SolicitacaoId: input.requisicaoItemId,
+      RegraAlcadaUtilizadaId: Number(regra.id),
+      RegraInternaId: regra.regraInternaId,
+      ResumoRegraAplicada: `${input.marcadorTeste}; ${regra.processo}; ${snapshot.faixaValorVigente}; aprovador ${snapshot.aprovadorBaseNome}`,
+      Processo: 'Compra',
+      FaixaValorVigente: snapshot.faixaValorVigente,
+      ValorAnalisado: snapshot.valorAnalisado,
+      AprovadorBaseId: snapshot.aprovadorBaseId,
+      AprovadorBaseNome: snapshot.aprovadorBaseNome,
+      AprovadorBaseEmail: '',
+      AprovadorEfetivoId: snapshot.aprovadorEfetivoId,
+      AprovadorEfetivoNome: snapshot.aprovadorEfetivoNome,
+      AprovadorEfetivoEmail: '',
+      SubstituicaoAplicada: snapshot.substituicaoAplicada,
+      MotivoResolucaoAprovador: snapshot.motivoResolucaoAprovador,
+      MotivoExcecao: snapshot.motivoExcecao || input.marcadorTeste,
+      DataHoraAplicacao: snapshot.dataHoraAplicacao
+    };
+
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.snapshotsRegras),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions(body)
+    );
+    const payload = await this.ensureJson(response);
+    const snapshotItemId = Number(payload.Id || payload.ID);
+
+    return {
+      sucesso: true,
+      bloqueado: false,
+      status: 'SnapshotCriado',
+      mensagem: 'Snapshot de teste V2.6A criado em ENAC Snapshots Regras.',
+      requisicaoItemId: input.requisicaoItemId,
+      snapshotItemId,
+      snapshotTitle: title,
+      regraInternaId: regra.regraInternaId,
+      alertas: []
+    };
+  }
+
+  public async vincularSnapshotARequisicaoTeste(requisicaoId: number, snapshotId: number, input: SnapshotCriacaoTesteInput): Promise<ResultadoVinculoSnapshot> {
+    const alertas = this.validarControleEscritaTeste(input);
+    if (alertas.length > 0 || requisicaoId !== input.requisicaoItemId) {
+      return {
+        sucesso: false,
+        status: 'Bloqueada',
+        requisicaoItemId: requisicaoId,
+        snapshotItemId: snapshotId,
+        mensagem: 'Vinculo de snapshot bloqueado por controle de escrita de teste.'
+      };
+    }
+
+    await this.obterRequisicaoTesteParaEscrita(requisicaoId, input.marcadorTeste);
+    const response = await this.spHttpClient.post(
+      `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${requisicaoId})`,
+      SPHttpClient.configurations.v1,
+      this.criarMergeOptions({ SnapshotAprovacaoCompraId: snapshotId })
+    );
+
+    if (!response.ok) {
+      throw new Error(`SharePoint retornou ${response.status}: ${response.statusText}`);
+    }
+
+    return {
+      sucesso: true,
+      status: 'Vinculado',
+      requisicaoItemId: requisicaoId,
+      snapshotItemId: snapshotId,
+      mensagem: 'SnapshotAprovacaoCompra vinculado na requisicao de teste.'
+    };
+  }
+
+  public async registrarHistoricoConfiguracaoTeste(input: SnapshotCriacaoTesteInput, snapshotId: number, regraInternaId: string): Promise<ResultadoHistoricoConfiguracao> {
+    const alertas = this.validarControleEscritaTeste(input);
+    if (alertas.length > 0) {
+      return {
+        sucesso: false,
+        status: 'Bloqueada',
+        mensagem: 'Historico de teste bloqueado por controle de escrita.'
+      };
+    }
+
+    const body = {
+      Title: `V2.6A-TESTE snapshot ${snapshotId}`,
+      TipoConfiguracao: 'Parâmetro Geral',
+      AcaoRealizada: 'Ajuste Vinculado',
+      ItemConfiguracaoId: `REQ-${input.requisicaoItemId}`,
+      ValorAnterior: 'SnapshotAprovacaoCompra vazio antes do teste controlado.',
+      ValorNovo: `Snapshot ${snapshotId}; regra ${regraInternaId}; marcador ${input.marcadorTeste}.`,
+      Justificativa: 'Registro tecnico de teste controlado V2.6A pela webpart. Sem Power Automate.'
+    };
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions(body)
+    );
+    const payload = await this.ensureJson(response);
+
+    return {
+      sucesso: true,
+      status: 'HistoricoRegistrado',
+      historicoItemId: Number(payload.Id || payload.ID),
+      mensagem: 'Historico administrativo de teste registrado.'
+    };
   }
 
   public async listarHistoricoConfiguracoes(): Promise<IHistoricoConfiguracaoEnac[]> {
@@ -335,6 +545,78 @@ export class SharePointEnacRepository {
       dataHora: item.Created,
       justificativa: item.Justificativa
     }));
+  }
+
+  private validarControleEscritaTeste(input: SnapshotCriacaoTesteInput): AlertaBloqueioEscrita[] {
+    const alertas: AlertaBloqueioEscrita[] = [];
+
+    if (!input.modoEscritaTeste) {
+      alertas.push({ codigo: 'MODO_ESCRITA_TESTE_DESABILITADO', mensagem: 'modoEscritaTeste deve ser true.' });
+    }
+
+    if (input.confirmacao !== CONFIRMACAO_ESCRITA_TESTE) {
+      alertas.push({ codigo: 'CONFIRMACAO_INVALIDA', mensagem: `Confirmacao exigida: ${CONFIRMACAO_ESCRITA_TESTE}.` });
+    }
+
+    if (MARCADORES_TESTE_PERMITIDOS.indexOf(input.marcadorTeste) < 0) {
+      alertas.push({ codigo: 'MARCADOR_TESTE_INVALIDO', mensagem: 'Somente V2.3B-TESTE ou V2.6A-TESTE sao aceitos.' });
+    }
+
+    if (!input.requisicaoItemId || input.requisicaoItemId <= 0) {
+      alertas.push({ codigo: 'REQUISICAO_INVALIDA', mensagem: 'requisicaoItemId deve ser informado.' });
+    }
+
+    if (!input.valorAnalisado || input.valorAnalisado <= 0) {
+      alertas.push({ codigo: 'VALOR_INVALIDO', mensagem: 'valorAnalisado deve ser maior que zero.' });
+    }
+
+    return alertas;
+  }
+
+  private criarResultadoBloqueado(requisicaoItemId: number, mensagem: string, alertas: AlertaBloqueioEscrita[]): SnapshotCriacaoTesteResultado {
+    return {
+      sucesso: false,
+      bloqueado: true,
+      status: 'Bloqueada',
+      mensagem,
+      requisicaoItemId,
+      alertas
+    };
+  }
+
+  private async obterRequisicaoTesteParaEscrita(requisicaoId: number, marcadorTeste: string): Promise<any> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${requisicaoId})?$select=Id,Title,Obra/Id,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=Obra,SnapshotAprovacaoCompra`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+    const item = await this.ensureJson(response);
+    const title = String(item.Title || '');
+
+    if (title.indexOf(marcadorTeste) < 0 && title.indexOf('V2.3B-TESTE') < 0 && title.indexOf('V2.6A-TESTE') < 0) {
+      throw new Error('Requisicao alvo nao contem marcador de teste no Title. Escrita bloqueada.');
+    }
+
+    return item;
+  }
+
+  private criarPostOptions(body: unknown): ISPHttpClientOptions {
+    return {
+      headers: {
+        Accept: 'application/json;odata=nometadata',
+        'Content-Type': 'application/json;odata=nometadata'
+      },
+      body: JSON.stringify(body)
+    };
+  }
+
+  private criarMergeOptions(body: unknown): ISPHttpClientOptions {
+    return {
+      headers: {
+        Accept: 'application/json;odata=nometadata',
+        'Content-Type': 'application/json;odata=nometadata',
+        'IF-MATCH': '*',
+        'X-HTTP-Method': 'MERGE'
+      },
+      body: JSON.stringify(body)
+    };
   }
 
   private mapUsuarioPerfil(item: any): IUsuarioPerfilEnac {

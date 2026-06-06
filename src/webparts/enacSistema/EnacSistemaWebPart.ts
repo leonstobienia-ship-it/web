@@ -32,7 +32,9 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
         origemDados: 'sharepoint',
         diagnosticoReadonly: true,
         repository,
-        siteUrl: this.context.pageContext.web.absoluteUrl
+        siteUrl: this.context.pageContext.web.absoluteUrl,
+        escritaTesteHabilitada: false,
+        modoEscritaTeste: false
       }
     );
 

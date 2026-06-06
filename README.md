@@ -65,6 +65,8 @@ Na V2.5A, a interface SPFx passou a consumir dados reais readonly em áreas exis
 
 Na V2.5B, Leon validou manualmente a webpart em página publicada/visualização final readonly. A página publicada abriu fora do modo de edição, a webpart `Sistema Operacional ENAC` renderizou, o dashboard carregou com `Solicitações ativas: 7`, `Aguardando cotação: 0` e `Aguardando aprovação: 2`, o menu lateral ficou visível e o layout básico foi preservado sem sinal visual de quebra. A validação V2.5A já havia confirmado GET/fetch 200 para Lista 02, `ENAC Usuarios Perfis` e `ENAC Alcadas`, além de dados reais readonly em usuários, alçadas e histórico administrativo. Resultado: V2.5B aprovada manualmente, mantendo escrita bloqueada no código e Power Automate não iniciado.
 
+Na V2.6A, foi preparada localmente a escrita controlada de snapshot pela webpart, limitada a teste futuro com `V2.3B-TESTE` ou `V2.6A-TESTE`. A escrita segue desabilitada por padrão, exige modo de teste, confirmação `TESTAR-ESCRITA-V2.6A-ENAC`, item marcado como teste e ação manual explícita. O pacote padrão não executa escrita automática e não expõe a ação de teste sem configuração deliberada.
+
 ## Protótipo
 
 Abra no navegador:
@@ -114,6 +116,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.4f-correcao-consultas-readonly-rest.md`
 - `docs/v2.5a-consumo-readonly-interface.md`
 - `docs/v2.5b-validacao-pagina-publicada-readonly.md`
+- `docs/v2.6a-escrita-controlada-snapshot-webpart.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
@@ -129,7 +132,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Definir próxima etapa após V2.5B aprovada: escrita controlada de snapshot/requisição em teste, ajuste fino de permissões administrativas, limpeza futura dos dados `V2.3B-TESTE` ou rodada própria de Power Automate.
+- Revisar o plano V2.6A antes de subir pacote e antes de qualquer teste de escrita no tenant.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
