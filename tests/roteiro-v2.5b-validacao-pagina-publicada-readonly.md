@@ -4,22 +4,28 @@ Data: 2026-06-05
 
 ## Preparacao
 
-- [ ] Confirmar que o pacote V2.5A mais recente ja esta no App Catalog.
-- [ ] Usar pagina restrita de teste: `https://enaccombr.sharepoint.com/sites/Equipe.Obras/SitePages/Teste-Sistema-ENAC-V2.4E-Readonly.aspx`.
-- [ ] Publicar a pagina ou abrir visualizacao final, se adequado.
-- [ ] Nao executar Power Automate.
-- [ ] Nao alterar dados, listas, colunas ou permissoes.
+- [x] Confirmar que o pacote V2.5A mais recente ja esta no App Catalog.
+- [x] Usar pagina restrita de teste: `https://enaccombr.sharepoint.com/sites/Equipe.Obras/SitePages/Teste-Sistema-ENAC-V2.4E-Readonly.aspx`.
+- [x] Publicar a pagina ou abrir visualizacao final, se adequado.
+- [x] Nao executar Power Automate.
+- [x] Nao alterar dados, listas, colunas ou permissoes.
 
 ## Validacao visual
 
-- [ ] Abrir a pagina como usuario autorizado.
-- [ ] Confirmar que a webpart renderiza.
-- [ ] Confirmar que o layout nao quebra fora do modo edicao.
-- [ ] Confirmar dashboard.
-- [ ] Confirmar menu lateral.
-- [ ] Confirmar `adminUsuarios`.
-- [ ] Confirmar `adminAlcadas`.
-- [ ] Confirmar `adminHistorico`.
+- [x] Abrir a pagina como usuario autorizado.
+- [x] Confirmar que a webpart renderiza.
+- [x] Confirmar que o layout nao quebra fora do modo edicao.
+- [x] Confirmar dashboard.
+- [x] Confirmar menu lateral.
+- [x] Confirmar `adminUsuarios` conforme evidencia V2.5A.
+- [x] Confirmar `adminAlcadas` conforme evidencia V2.5A.
+- [x] Confirmar `adminHistorico` conforme evidencia V2.5A.
+
+Valores observados no dashboard publicado:
+
+- `Solicitacoes ativas`: `7`;
+- `Aguardando cotacao`: `0`;
+- `Aguardando aprovacao`: `2`.
 
 ## DevTools
 
@@ -61,18 +67,24 @@ Esperado:
 
 Preencher:
 
-1. Pagina publicada/visualizacao final abriu: sim/nao
-2. Webpart renderizou: sim/nao
-3. Dashboard: real/fallback/quebrou
-4. `adminUsuarios`: real/fallback/quebrou
-5. `adminAlcadas`: real/fallback/quebrou
-6. `adminHistorico`: real/fallback/quebrou
-7. `0a204b87`: 200/304/outro
-8. `99cb9bae`: 200/304/outro
-9. `901d4458`: 200/304/outro
-10. Houve `POST/MERGE/PATCH/DELETE` da webpart: sim/nao
-11. Resultado visual: normal/com ressalva/quebrado
-12. Resultado final: aprovado/aprovado com ressalvas/nao aprovado
+1. Pagina publicada/visualizacao final abriu: sim.
+2. Webpart renderizou: sim.
+3. Dashboard: real, com cards `7`, `0` e `2`.
+4. `adminUsuarios`: real, conforme validacao V2.5A.
+5. `adminAlcadas`: real, conforme validacao V2.5A.
+6. `adminHistorico`: real, conforme validacao V2.5A.
+7. `0a204b87`: 200 confirmado na V2.5A; sem relato de erro na V2.5B.
+8. `99cb9bae`: 200 confirmado na V2.5A; sem relato de erro na V2.5B.
+9. `901d4458`: 200 confirmado na V2.5A; sem relato de erro na V2.5B.
+10. Houve `POST/MERGE/PATCH/DELETE` da webpart: nao houve evidencia; escrita permanece bloqueada no codigo.
+11. Resultado visual: normal.
+12. Resultado final: aprovado.
+
+## Resultado V2.5B
+
+Status: `V2.5B APROVADA MANUALMENTE`
+
+Observacao: a validacao final de ausencia de escrita em pagina publicada foi registrada pela declaracao manual de Leon e pela ausencia de erro visual. A base tecnica readonly ja estava confirmada por auditoria de codigo e pela validacao V2.5A.
 
 ## Criterios de aprovacao
 

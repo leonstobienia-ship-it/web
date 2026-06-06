@@ -63,7 +63,7 @@ Na V2.4F, foram corrigidas consultas readonly REST que retornavam HTTP 400 no te
 
 Na V2.5A, a interface SPFx passou a consumir dados reais readonly em áreas existentes: cards prioritários do dashboard, Administração / Usuários, Administração / Alçadas e histórico administrativo quando disponível. Em validação manual no tenant, Leon confirmou Lista 02 com GET/fetch 200, usuários/perfis reais de teste, alçadas reais de teste, histórico real de teste, visual básico preservado e sem evidência de escrita nos prints. Resultado: V2.5A aprovada manualmente com observação não bloqueante para warnings externos do SharePoint e recomendação de validação posterior em página publicada/visualização final. Power Automate ainda não foi iniciado.
 
-Na V2.5B, foi preparado o roteiro para validar a webpart em página publicada ou visualização final, ainda em modo readonly. A validação deve confirmar renderização, dashboard, telas administrativas, ausência de HTTP 400 e ausência de `POST/MERGE/PATCH/DELETE` da webpart.
+Na V2.5B, Leon validou manualmente a webpart em página publicada/visualização final readonly. A página publicada abriu fora do modo de edição, a webpart `Sistema Operacional ENAC` renderizou, o dashboard carregou com `Solicitações ativas: 7`, `Aguardando cotação: 0` e `Aguardando aprovação: 2`, o menu lateral ficou visível e o layout básico foi preservado sem sinal visual de quebra. A validação V2.5A já havia confirmado GET/fetch 200 para Lista 02, `ENAC Usuarios Perfis` e `ENAC Alcadas`, além de dados reais readonly em usuários, alçadas e histórico administrativo. Resultado: V2.5B aprovada manualmente, mantendo escrita bloqueada no código e Power Automate não iniciado.
 
 ## Protótipo
 
@@ -129,7 +129,7 @@ A árvore antiga `src/webparts/sistemaEnac` continha lógica obsoleta e não dev
 
 ## Decisões pendentes
 
-- Executar manualmente a validação V2.5B em página publicada/visualização final, mantendo readonly.
+- Definir próxima etapa após V2.5B aprovada: escrita controlada de snapshot/requisição em teste, ajuste fino de permissões administrativas, limpeza futura dos dados `V2.3B-TESTE` ou rodada própria de Power Automate.
 - Definir se aprovações finais serão mantidas em Power Automate ou migrarão para lógica da aplicação.
 - Confirmar perfis finais por grupo Microsoft 365.
 - Definir governança formal para alteração de parâmetros administrativos.
