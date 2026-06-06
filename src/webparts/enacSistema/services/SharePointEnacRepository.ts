@@ -478,7 +478,20 @@ export class SharePointEnacRepository {
       };
     }
 
-    await this.obterRequisicaoTesteParaEscrita(requisicaoId, input.marcadorTeste);
+    const requisicao = await this.obterRequisicaoTesteParaEscrita(requisicaoId, input.marcadorTeste);
+    const snapshotExistenteId = requisicao.SnapshotAprovacaoCompra?.Id ? Number(requisicao.SnapshotAprovacaoCompra.Id) : undefined;
+    if (snapshotExistenteId) {
+      return {
+        sucesso: snapshotExistenteId === snapshotId,
+        status: snapshotExistenteId === snapshotId ? 'ValidacaoExistente' : 'Bloqueada',
+        requisicaoItemId: requisicaoId,
+        snapshotItemId: snapshotId,
+        mensagem: snapshotExistenteId === snapshotId
+          ? 'SnapshotAprovacaoCompra ja estava vinculado ao snapshot informado; nenhuma escrita executada.'
+          : `Requisicao de teste ja possui SnapshotAprovacaoCompra=${snapshotExistenteId}; MERGE bloqueado para evitar sobrescrita.`
+      };
+    }
+
     const response = await this.spHttpClient.post(
       `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${requisicaoId})`,
       SPHttpClient.configurations.v1,

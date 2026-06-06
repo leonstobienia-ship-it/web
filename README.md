@@ -67,6 +67,8 @@ Na V2.5B, Leon validou manualmente a webpart em página publicada/visualização
 
 Na V2.6A, foi preparada localmente a escrita controlada de snapshot pela webpart, limitada a teste futuro com `V2.3B-TESTE` ou `V2.6A-TESTE`. A escrita segue desabilitada por padrão, exige modo de teste, confirmação `TESTAR-ESCRITA-V2.6A-ENAC`, item marcado como teste e ação manual explícita. O pacote padrão não executa escrita automática e não expõe a ação de teste sem configuração deliberada.
 
+Na V2.6A.1, a escrita controlada foi auditada localmente antes de qualquer teste no tenant. Não há caminho de escrita automática no carregamento; `POST/MERGE` permanecem restritos aos métodos de teste. A auditoria reforçou a trava de `vincularSnapshotARequisicaoTeste()` para bloquear sobrescrita quando `SnapshotAprovacaoCompra` já estiver preenchido. Resultado: próxima rodada pode ser apenas validação manual controlada, sem Power Automate e sem dados reais operacionais.
+
 ## Protótipo
 
 Abra no navegador:
@@ -117,6 +119,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.5a-consumo-readonly-interface.md`
 - `docs/v2.5b-validacao-pagina-publicada-readonly.md`
 - `docs/v2.6a-escrita-controlada-snapshot-webpart.md`
+- `docs/v2.6a1-auditoria-pre-teste-escrita-controlada.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`

@@ -63,10 +63,15 @@ Executar somente apos revisao e autorizacao:
 
 Somente com autorizacao:
 
-- remover o valor de `SnapshotAprovacaoCompra` do item de teste;
-- excluir snapshot `SNAP-V2.6A-TESTE-*` se criado indevidamente;
-- registrar a acao no historico;
-- nunca alterar item operacional real.
+1. Identificar o item de teste da Lista 02 usado na validacao.
+2. Identificar o valor atual do lookup `SnapshotAprovacaoCompra`.
+3. Identificar o item criado em `ENAC Snapshots Regras` pelo `Title` `SNAP-V2.6A-TESTE-*`.
+4. Identificar o item criado em `ENAC Historico Configuracoes` com `Title` `V2.6A-TESTE snapshot <snapshotId>`.
+5. Remover o valor de `SnapshotAprovacaoCompra` do item de teste somente se autorizado.
+6. Excluir o snapshot `SNAP-V2.6A-TESTE-*` somente se criado indevidamente e se autorizado.
+7. Registrar a acao de rollback no historico administrativo, se autorizado.
+8. Nao mexer em item operacional real.
+9. Nao automatizar rollback nesta rodada.
 
 ## Registro para retorno ao Codex
 
