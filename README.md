@@ -99,6 +99,8 @@ Na V2.6B.4A, foi corrigida a falha de preflight em `Get-PnPGroup`. O script deix
 
 Na V2.6B.4B, foi registrada falha controlada no `Apply`: o `ConnectedPreflight` passou, mas a primeira operação real `Set-PnPList -BreakRoleInheritance` em `ENAC Usuarios Perfis` retornou `Access is denied. 0x80070005`. A expectativa técnica é que nenhuma permissão tenha sido aplicada, mas Leon deve confirmar manualmente que as quatro listas administrativas continuam herdando permissões.
 
+Na V2.6B.4C, Leon confirmou manualmente que as quatro listas administrativas estao com permissoes exclusivas. A situacao foi registrada como estado parcial: a heranca esta quebrada, mas a matriz final de grupos ENAC ainda nao esta comprovada como concluida. A finalizacao deve ser manual, uma lista por vez, sem reutilizar o script de `Apply`, sem alterar listas operacionais e sem iniciar Power Automate.
+
 ## Protótipo
 
 Abra no navegador:
@@ -166,6 +168,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
 - `docs/v2.6b4a-falha-preflight-get-pnpgroup.md`
 - `docs/v2.6b4b-falha-breakroleinheritance-access-denied.md`
+- `docs/v2.6b4c-estado-parcial-heranca-quebrada.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -177,11 +180,13 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.6b3c-auditoria-manual-grupos-permissoes.md`
 - `tests/roteiro-v2.6b4-prep-criacao-manual-grupos-enac.md`
 - `tests/roteiro-v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
+- `tests/roteiro-v2.6b4c-finalizacao-manual-permissoes-administrativas.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.md`
 - `sharepoint/auditoria-pos-aplicacao-permissoes-v2.6b4.template.md`
+- `sharepoint/auditoria-pos-aplicacao-manual-permissoes-v2.6b4c.template.md`
 - `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`
 - `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`
 - `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`

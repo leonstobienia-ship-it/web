@@ -217,3 +217,29 @@ Ao executar `Apply`, o script falhou na primeira operacao real de escrita: `Set-
 A expectativa tecnica e que nenhuma permissao tenha sido aplicada, pois a falha ocorreu antes de `Set-PnPListPermission`. Antes de nova tentativa, e necessario confirmar manualmente que as quatro listas administrativas continuam herdando permissoes.
 
 Nao repetir `Apply` com o mesmo ClientId/contexto antes de corrigir autorizacao ou escolher aplicacao manual controlada.
+
+## V2.6B.4C - Estado parcial e finalizacao manual
+
+Leon confirmou manualmente que as quatro listas administrativas estao com permissoes exclusivas:
+
+- `ENAC Usuarios Perfis`;
+- `ENAC Alcadas`;
+- `ENAC Historico Configuracoes`;
+- `ENAC Snapshots Regras`.
+
+Como a matriz final ainda nao foi comprovada, o plano passa a considerar estado parcial: heranca quebrada, grupos finais pendentes de aplicacao/conferencia manual.
+
+Diretriz:
+
+- nao repetir `Apply`;
+- nao usar o script `11-permissoes-finas-v2.6b-apply.ps1` durante a finalizacao;
+- finalizar manualmente uma lista por vez;
+- adicionar grupos ENAC antes de remover grupos padrao;
+- nunca remover `Obras em Andamento Owners`;
+- nunca clicar em `Excluir permissoes exclusivas`;
+- nao alterar listas operacionais;
+- nao iniciar Power Automate.
+
+O roteiro manual esta em `tests/roteiro-v2.6b4c-finalizacao-manual-permissoes-administrativas.md`.
+
+O template de auditoria pos-aplicacao manual esta em `sharepoint/auditoria-pos-aplicacao-manual-permissoes-v2.6b4c.template.md`.
