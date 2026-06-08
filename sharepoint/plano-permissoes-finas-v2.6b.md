@@ -186,3 +186,16 @@ Leon criou manualmente os sete grupos ENAC planejados e adicionou os membros fun
 O registro esta em `sharepoint/auditoria-grupos-enac-v2.6b4-prep.md`.
 
 Conclusao: a governanca por grupos esta pronta para receber permissoes finas nas listas administrativas. A aplicacao real ainda nao foi executada e deve ocorrer somente na V2.6B.4, com script protegido, rollback documentado e autorizacao expressa.
+
+## V2.6B.4 - Aplicacao controlada preparada
+
+Foi preparada a aplicacao real controlada das permissoes administrativas para quatro listas:
+
+- `ENAC Usuarios Perfis`;
+- `ENAC Alcadas`;
+- `ENAC Historico Configuracoes`;
+- `ENAC Snapshots Regras`.
+
+O script `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1` foi ajustado para validar grupos ja existentes, abortar se algum grupo/lista/role estiver ausente, nao criar grupos, nao alterar membros, quebrar heranca somente nas quatro listas administrativas e aplicar permissoes conforme matriz.
+
+Codex nao executou o script, nao conectou ao SharePoint e nao aplicou permissoes.

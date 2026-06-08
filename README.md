@@ -93,6 +93,8 @@ Na V2.6B.4-PREP, foi preparada a criação/revisão manual dos grupos ENAC antes
 
 Ainda na V2.6B.4-PREP, Leon criou manualmente os sete grupos ENAC planejados e adicionou os membros funcionais previstos. O registro foi feito sem e-mails em `sharepoint/auditoria-grupos-enac-v2.6b4-prep.md`. Permissões administrativas finas ainda não foram aplicadas e as listas administrativas devem permanecer herdando permissões até a V2.6B.4.
 
+Na V2.6B.4, foi preparada a aplicação real controlada das permissões administrativas nas quatro listas administrativas. O script protegido foi ajustado para validar grupos existentes, não criar grupos, não alterar membros, quebrar herança apenas das listas administrativas e aplicar permissões aos grupos ENAC. Codex não executou o script nem conectou ao SharePoint.
+
 ## Protótipo
 
 Abra no navegador:
@@ -157,6 +159,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b3d-registro-auditoria-manual-grupos-permissoes.md`
 - `docs/v2.6b4-prep-criacao-manual-grupos-enac.md`
 - `docs/v2.6b4-prep-registro-grupos-criados.md`
+- `docs/v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -167,10 +170,12 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.6b3-auditoria-readonly-permissoes-finas.md`
 - `tests/roteiro-v2.6b3c-auditoria-manual-grupos-permissoes.md`
 - `tests/roteiro-v2.6b4-prep-criacao-manual-grupos-enac.md`
+- `tests/roteiro-v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.md`
+- `sharepoint/auditoria-pos-aplicacao-permissoes-v2.6b4.template.md`
 - `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`
 - `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`
 - `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`
