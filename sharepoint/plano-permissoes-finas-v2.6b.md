@@ -99,3 +99,11 @@ Foi preparado um script local de dry-run em `scripts/sharepoint/10-permissoes-fi
 O script nao conecta ao SharePoint, nao cria grupos, nao quebra heranca, nao altera permissoes, nao altera listas, nao altera itens, nao adiciona ou remove usuarios, nao publica pacote e nao inicia Power Automate.
 
 A aplicacao real permanece bloqueada. Qualquer rodada futura para permissao real devera usar script separado, autorizacao textual explicita de Leon e, preferencialmente, registro previo das permissoes atuais para rollback.
+
+## V2.6B.2 - Script real protegido
+
+Foi preparado o script protegido `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`.
+
+Sem `-Apply`, o script funciona como dry-run local e nao conecta ao SharePoint. Com `-Apply`, exige confirmacao textual `APLICAR-PERMISSOES-V2.6B-ENAC`, app diferente do readonly, site `/sites/Equipe.Obras` e ambiente explicito.
+
+A V2.6B.2 nao executou o script em modo de aplicacao. Nenhuma permissao real foi aplicada. Membros reais dos grupos permanecem pendentes e listas operacionais continuam apenas planejadas.
