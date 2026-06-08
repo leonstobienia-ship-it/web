@@ -91,3 +91,11 @@ Somente em rodada autorizada:
 - script de rollback documentado.
 
 Nenhum script de aplicacao real foi criado nesta rodada.
+
+## V2.6B.1 - Dry-run local
+
+Foi preparado um script local de dry-run em `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`.
+
+O script nao conecta ao SharePoint, nao cria grupos, nao quebra heranca, nao altera permissoes, nao altera listas, nao altera itens, nao adiciona ou remove usuarios, nao publica pacote e nao inicia Power Automate.
+
+A aplicacao real permanece bloqueada. Qualquer rodada futura para permissao real devera usar script separado, autorizacao textual explicita de Leon e, preferencialmente, registro previo das permissoes atuais para rollback.

@@ -75,6 +75,8 @@ Em 2026-06-06, Leon executou manualmente a validação V2.6A de escrita controla
 
 Na V2.6B, foi preparada a governança documental de permissões finas para listas administrativas e controle de acesso por perfil. A rodada criou matriz de permissões, política de acesso SharePoint/webpart, plano de permissões finas e controle futuro de interface por perfil. Não houve conexão ao SharePoint pelo Codex, publicação, instalação, alteração de tenant/listas/permissões/dados, escrita pela webpart, alteração de `src/prototype/app.js` ou Power Automate.
 
+Na V2.6B.1, foi preparado um dry-run local de permissões finas. A rodada criou script PowerShell somente local, documentação e roteiro de validação para simular grupos, listas afetadas, permissões pretendidas, riscos e bloqueios de segurança. Permissões reais ainda não foram aplicadas, a escrita operacional continua não liberada e Power Automate ainda não foi iniciado.
+
 ## Protótipo
 
 Abra no navegador:
@@ -131,10 +133,13 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b-matriz-permissoes-finas.md`
 - `docs/v2.6b-politica-acesso-sharepoint-webpart.md`
 - `docs/v2.6b-controle-interface-por-perfil.md`
+- `docs/v2.6b1-dryrun-permissoes-finas.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
+- `tests/roteiro-v2.6b1-dryrun-permissoes-finas.md`
+- `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`
 - `src/prototype/`
 - `src/webparts/enacSistema/`
 - `tests/fluxos-mvp.md`
