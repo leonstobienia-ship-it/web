@@ -85,3 +85,17 @@ Apos a execucao manual, informar:
 ## Resultado esperado
 
 Os grupos ENAC ficam prontos para a V2.6B.4, ou as pendencias ficam claras antes de qualquer aplicacao real.
+
+## Resultado registrado
+
+Leon criou manualmente os sete grupos ENAC planejados e adicionou os membros funcionais previstos.
+
+O relatorio preenchido esta em `sharepoint/auditoria-grupos-enac-v2.6b4-prep.md`.
+
+Confirmacoes registradas:
+
+- permissoes das listas administrativas nao foram alteradas;
+- heranca das listas administrativas foi preservada;
+- script 11 nao foi executado;
+- `-Apply` nao foi usado;
+- Power Automate nao foi iniciado.

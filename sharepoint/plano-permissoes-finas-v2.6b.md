@@ -178,3 +178,11 @@ Grupos previstos:
 - `ENAC Leitura Auditoria`.
 
 Nenhuma permissao deve ser aplicada nesta etapa. As listas administrativas continuam inalteradas ate a V2.6B.4.
+
+## V2.6B.4-PREP - Grupos ENAC criados
+
+Leon criou manualmente os sete grupos ENAC planejados e adicionou os membros funcionais previstos, sem versionamento de e-mails.
+
+O registro esta em `sharepoint/auditoria-grupos-enac-v2.6b4-prep.md`.
+
+Conclusao: a governanca por grupos esta pronta para receber permissoes finas nas listas administrativas. A aplicacao real ainda nao foi executada e deve ocorrer somente na V2.6B.4, com script protegido, rollback documentado e autorizacao expressa.
