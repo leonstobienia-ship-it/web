@@ -89,19 +89,28 @@ Somente com autorizacao:
 8. Nao mexer em item operacional real.
 9. Nao automatizar rollback nesta rodada.
 
-## Registro para retorno ao Codex
+## Registro da validacao manual executada
 
-Preencher apos teste futuro:
+Data operacional: 2026-06-06
 
-1. Acao estava oculta antes da habilitacao: sim/nao
-2. Escrita automatica no carregamento: sim/nao
-3. Item de teste usado:
-4. Marcador de teste:
-5. Valor de teste:
-6. Snapshot criado:
-7. `SnapshotAprovacaoCompra` vinculado:
-8. Historico registrado:
-9. Duplicidade identificada: sim/nao
-10. Escrita fora do escopo: sim/nao
-11. Power Automate iniciado: sim/nao
-12. Resultado final:
+1. Acao estava oculta antes da habilitacao: sim, no pacote/pagina com flags desligadas.
+2. Escrita automatica no carregamento: nao evidenciada.
+3. Item de teste usado: Lista 02, Item ID 10, requisicao `V2.6A-TESTE-001`.
+4. Marcador de teste: `V2.6A-TESTE`.
+5. Valor de teste: R$ 6.720,00.
+6. Regra aplicada: `alc-v23b-teste-compra-ate-20000`.
+7. Aprovador base/efetivo: `V2.3B-TESTE - Gustavo`.
+8. Confirmacao digitada: `TESTAR-ESCRITA-V2.6A-ENAC`.
+9. Snapshot criado: `SNAP-V2.6A-TESTE-10-20260606145447`.
+10. `SnapshotAprovacaoCompra` vinculado: sim, no item 10.
+11. Historico registrado: `V2.6A-TESTE snapshot 2`.
+12. Duplicidade identificada: nao; apos o teste, a webpart passou a indicar idempotencia.
+13. Escrita fora do escopo: nao relatada.
+14. Power Automate iniciado: nao.
+15. Flags V2.6A desligadas apos o teste: sim.
+16. Pagina republicada com flags desligadas: sim.
+17. Apenas uma webpart `Sistema ENAC` permaneceu na pagina: sim.
+18. Bloco de teste V2.6A desapareceu: sim.
+19. Resultado final: `V2.6A VALIDADA MANUALMENTE COM ESCRITA CONTROLADA BEM-SUCEDIDA`.
+
+Observacao: validacao feita com item de teste controlado, nao dados operacionais reais. Escrita operacional geral continua nao liberada.
