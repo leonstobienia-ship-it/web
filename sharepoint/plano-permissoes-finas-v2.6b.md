@@ -123,3 +123,16 @@ Leon confirmou que a conexao readonly funcionou, mas `Get-PnPGroup` retornou `Ac
 O script foi ajustado para nao abortar a auditoria quando a leitura de grupos for negada. Nessa situacao, o relatorio registra grupos como `NAO_CONFIRMADO`, documenta a limitacao e continua auditando as listas administrativas individualmente.
 
 Essa correcao nao aplica permissoes, nao cria grupos, nao altera listas e nao inicia Power Automate.
+
+## V2.6B.3B - Relatorio readonly registrado
+
+Leon executou manualmente a auditoria readonly e gerou `sharepoint/auditoria-permissoes-finas-v2.6b3.md`.
+
+O relatorio foi considerado seguro para versionamento. Ele confirma a existencia das quatro listas administrativas e registra `Heranca unica False` para todas:
+
+- `ENAC Usuarios Perfis`;
+- `ENAC Alcadas`;
+- `ENAC Historico Configuracoes`;
+- `ENAC Snapshots Regras`.
+
+Conclusao: as permissoes finas ainda nao foram aplicadas. Grupos planejados e permissoes detalhadas permanecem nao confirmados por limitacao de permissao de leitura.

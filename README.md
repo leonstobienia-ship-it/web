@@ -83,6 +83,8 @@ Na V2.6B.3, foi preparado um script conectado/readonly para auditoria manual do 
 
 Na V2.6B.3A, o script readonly de auditoria de permissões foi corrigido para tolerar falta de permissão em `Get-PnPGroup`. A auditoria agora registra grupos como `NAO_CONFIRMADO` quando a enumeração for negada, continua auditando listas administrativas e gera relatório parcial sanitizado. Nenhuma aplicação, escrita, alteração de permissões ou Power Automate foi executado pelo Codex.
 
+Na V2.6B.3B, foi registrado o relatório readonly gerado manualmente por Leon em `sharepoint/auditoria-permissoes-finas-v2.6b3.md`. A auditoria confirmou as quatro listas administrativas e mostrou `Heranca unica False` em todas, indicando que permissões finas ainda não foram aplicadas. Grupos planejados e permissões detalhadas permaneceram não confirmados por limitação de permissão de leitura.
+
 ## Protótipo
 
 Abra no navegador:
@@ -142,7 +144,9 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b1-dryrun-permissoes-finas.md`
 - `docs/v2.6b2-script-real-protegido-permissoes-finas.md`
 - `docs/v2.6b3-auditoria-readonly-permissoes-finas.md`
+- `docs/v2.6b3b-registro-auditoria-readonly-permissoes-finas.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
+- `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`

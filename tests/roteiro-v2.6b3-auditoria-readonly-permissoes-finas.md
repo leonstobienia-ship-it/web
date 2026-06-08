@@ -68,3 +68,22 @@ pwsh -File ".\scripts\sharepoint\12-permissoes-finas-v2.6b-readonly-auditoria.ps
   -ClientId "8994fd01-5b9b-4e8b-bc11-41c58aa91043" `
   -AuthMode "DeviceLogin"
 ```
+
+## Registro V2.6B.3B
+
+Leon executou a auditoria e gerou `sharepoint/auditoria-permissoes-finas-v2.6b3.md`.
+
+Checklist de seguranca do relatorio:
+
+- sem e-mails de membros;
+- sem tokens ou codigos de autenticacao;
+- sem dados operacionais de itens;
+- apenas estrutura, IDs tecnicos, contagens e limitacoes de permissao.
+
+Resultado esperado apos registro:
+
+- relatorio versionado;
+- listas administrativas confirmadas;
+- heranca unica `False` registrada;
+- grupos planejados ainda `NAO_CONFIRMADO`;
+- permissões finas ainda nao aplicadas.
