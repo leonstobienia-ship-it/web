@@ -148,3 +148,17 @@ Foi preparada uma auditoria manual orientada para Leon conferir diretamente no S
 - riscos antes de qualquer quebra de heranca.
 
 Nenhuma alteracao deve ser feita nessa etapa. A meta e confirmar os grupos antes de qualquer execucao real protegida.
+
+## V2.6B.3D - Auditoria manual registrada
+
+Leon executou manualmente a conferencia de grupos e permissoes.
+
+Permissoes atuais no nivel do site:
+
+- `Obras em Andamento Owners`: Controle Total;
+- `Obras em Andamento Members`: Editar;
+- `Obras em Andamento Visitors`: Leitura.
+
+Os grupos ENAC planejados nao foram encontrados na permissao do site. As quatro listas administrativas (`ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`) herdam permissoes do site.
+
+Conclusao: a segregacao de permissoes finas administrativas ainda nao esta implementada. Antes de escrita operacional ampla ou Power Automate, recomenda-se V2.6B.4 ou V2.6B.4-prep.

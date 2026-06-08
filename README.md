@@ -87,6 +87,8 @@ Na V2.6B.3B, foi registrado o relatório readonly gerado manualmente por Leon em
 
 Na V2.6B.3C, foi preparada a auditoria manual orientada de grupos e permissões no SharePoint. A etapa existe para Leon confirmar manualmente grupos planejados, permissões do site, herança das listas administrativas e usuários individuais com acesso direto antes de qualquer `Apply`. Nenhuma alteração no tenant será feita nesta etapa.
 
+Na V2.6B.3D, foi registrado o resultado da auditoria manual de grupos e permissões. O site usa os grupos padrão `Obras em Andamento Owners`, `Members` e `Visitors`; os grupos ENAC planejados não estão aplicados às permissões do site; e as quatro listas administrativas ainda herdam permissões do site. Permissões finas administrativas seguem não implementadas.
+
 ## Protótipo
 
 Abra no navegador:
@@ -148,6 +150,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b3-auditoria-readonly-permissoes-finas.md`
 - `docs/v2.6b3b-registro-auditoria-readonly-permissoes-finas.md`
 - `docs/v2.6b3c-auditoria-manual-grupos-permissoes.md`
+- `docs/v2.6b3d-registro-auditoria-manual-grupos-permissoes.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -158,6 +161,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.6b3-auditoria-readonly-permissoes-finas.md`
 - `tests/roteiro-v2.6b3c-auditoria-manual-grupos-permissoes.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
+- `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`
 - `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`
 - `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`

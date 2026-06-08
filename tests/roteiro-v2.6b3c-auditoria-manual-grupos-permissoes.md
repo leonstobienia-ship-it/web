@@ -108,3 +108,14 @@ A V2.6B.3C deve permitir decidir se a proxima etapa sera:
 - criacao manual de grupos;
 - ajuste do plano antes de qualquer aplicacao;
 - auditoria complementar com app/conta de maior permissao.
+
+## Resultado V2.6B.3D registrado
+
+Leon executou a auditoria manual e o resultado foi registrado em `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`.
+
+Resultado:
+
+- grupos padrao do site identificados;
+- grupos ENAC planejados nao aplicados na permissao do site;
+- quatro listas administrativas herdando permissoes do site;
+- nenhuma alteracao aplicada.
