@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {
+  ConfiguracaoTesteOperacionalV27A,
   IDiagnosticoReadonlyEnac,
   FlagsEscritaOperacionalV27A,
   IAlcadaEnac,
@@ -13,6 +14,7 @@ import {
   PerfilEnac,
   PreValidacaoOperacionalV27AResultado,
   PreValidacaoTesteControladoSnapshotResultado,
+  ResultadoOperacionalV27A,
   SnapshotCriacaoTesteResultado,
   StatusProcesso
 } from '../models';
@@ -36,6 +38,7 @@ export interface IEnacSistemaProps {
   escritaTesteValorAnalisado?: number;
   escritaTesteMarcador?: MarcadorTesteEscritaEnac;
   flagsEscritaOperacionalV27A?: FlagsEscritaOperacionalV27A;
+  configuracaoTesteOperacionalV27A?: ConfiguracaoTesteOperacionalV27A;
 }
 
 const obras: IObraEnac[] = [
@@ -123,6 +126,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [executandoEscritaTeste, setExecutandoEscritaTeste] = React.useState<boolean>(false);
   const [preValidacaoOperacionalV27A, setPreValidacaoOperacionalV27A] = React.useState<PreValidacaoOperacionalV27AResultado | null>(null);
   const [erroOperacionalV27A, setErroOperacionalV27A] = React.useState<string | null>(null);
+  const [confirmacaoFinalOperacionalV27A, setConfirmacaoFinalOperacionalV27A] = React.useState<string>('');
+  const [resultadoOperacionalV27A, setResultadoOperacionalV27A] = React.useState<ResultadoOperacionalV27A | null>(null);
+  const [executandoOperacionalV27A, setExecutandoOperacionalV27A] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     if (props.origemDados !== 'sharepoint' || !props.repository) {
@@ -321,7 +327,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   ]);
 
   React.useEffect(() => {
-    if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !props.currentUserEmail || !props.flagsEscritaOperacionalV27A?.habilitarEscritaOperacionalV27A) {
+    if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !props.currentUserEmail || !props.flagsEscritaOperacionalV27A?.habilitarEscritaOperacionalV27A || !props.configuracaoTesteOperacionalV27A) {
       setPreValidacaoOperacionalV27A(null);
       setErroOperacionalV27A(null);
       return;
@@ -330,7 +336,11 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     let disposed = false;
     setErroOperacionalV27A(null);
 
-    props.repository.preValidarEscritaOperacionalV27A(props.currentUserEmail, props.flagsEscritaOperacionalV27A)
+    props.repository.preValidarEscritaOperacionalRestritaV27A(
+      props.currentUserEmail,
+      props.flagsEscritaOperacionalV27A,
+      props.configuracaoTesteOperacionalV27A
+    )
       .then((resultado) => {
         if (!disposed) {
           setPreValidacaoOperacionalV27A(resultado);
@@ -348,6 +358,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     };
   }, [
     origemDadosEfetiva,
+    props.configuracaoTesteOperacionalV27A,
     props.currentUserEmail,
     props.flagsEscritaOperacionalV27A,
     props.repository
@@ -401,6 +412,69 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       });
     } finally {
       setExecutandoEscritaTeste(false);
+    }
+  }
+
+  async function executarOperacionalV27A(): Promise<void> {
+    const flags = props.flagsEscritaOperacionalV27A;
+    const config = props.configuracaoTesteOperacionalV27A;
+    const itemId = config?.itemTesteOperacionalIdV27A || 0;
+
+    if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !props.currentUserEmail || !flags || !config || !preValidacaoOperacionalV27A?.podeExecutar) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config?.acaoTesteOperacionalV27A || 'AtualizarStatusRequisicao',
+        mensagem: 'Escrita V2.7A bloqueada: pre-validacao especifica do item ausente ou reprovada.',
+        itemId,
+        alertas: [{ codigo: 'PRE_VALIDACAO_ESPECIFICA_OBRIGATORIA', mensagem: 'Execute e aprove a pre-validacao especifica do item antes da escrita.' }]
+      });
+      return;
+    }
+
+    if (
+      confirmacaoFinalOperacionalV27A !== flags.confirmacaoManualV27A ||
+      preValidacaoOperacionalV27A.itemTesteId !== itemId ||
+      !preValidacaoOperacionalV27A.marcadorEncontrado
+    ) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: confirmacao final, item ou marcador divergente.',
+        itemId,
+        alertas: [{ codigo: 'CONFIRMACAO_ITEM_OU_MARCADOR_DIVERGENTE', mensagem: 'A confirmacao final deve bater com a configuracao e o item validado.' }]
+      });
+      return;
+    }
+
+    setExecutandoOperacionalV27A(true);
+    try {
+      const resultado = config.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
+        ? await props.repository.criarSnapshotAprovacaoOperacional({
+          requisicaoItemId: itemId,
+          valorAnalisado: config.valorTesteOperacionalV27A || 6720,
+          tipoSolicitacao: 'Material',
+          marcadorTeste: flags.marcadorTesteOperacionalV27A
+        }, props.currentUserEmail, flags)
+        : await props.repository.atualizarRequisicaoCompraControlada(itemId, {
+          statusNovo: config.statusDestinoTesteOperacionalV27A || 'Aguardando aprovação',
+          observacao: config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - teste operacional restrito',
+          marcadorTeste: flags.marcadorTesteOperacionalV27A
+        }, config.acaoTesteOperacionalV27A, props.currentUserEmail, flags);
+
+      setResultadoOperacionalV27A(resultado);
+    } catch (error) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: error instanceof Error ? error.message : String(error),
+        itemId,
+        alertas: [{ codigo: 'ERRO_ESCRITA_OPERACIONAL_V27A', mensagem: error instanceof Error ? error.message : String(error) }]
+      });
+    } finally {
+      setExecutandoOperacionalV27A(false);
     }
   }
 
@@ -555,8 +629,14 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             {perfil === 'AdministradorSistema' && props.flagsEscritaOperacionalV27A?.habilitarEscritaOperacionalV27A && (
               <PainelOperacionalV27A
                 flags={props.flagsEscritaOperacionalV27A}
+                config={props.configuracaoTesteOperacionalV27A}
                 preValidacao={preValidacaoOperacionalV27A}
                 erro={erroOperacionalV27A}
+                confirmacaoFinal={confirmacaoFinalOperacionalV27A}
+                resultado={resultadoOperacionalV27A}
+                executando={executandoOperacionalV27A}
+                onConfirmacaoFinalChange={setConfirmacaoFinalOperacionalV27A}
+                onExecutar={executarOperacionalV27A}
               />
             )}
           </>
@@ -791,30 +871,68 @@ function TesteEscritaSnapshot({
 
 function PainelOperacionalV27A({
   flags,
+  config,
   preValidacao,
-  erro
+  erro,
+  confirmacaoFinal,
+  resultado,
+  executando,
+  onConfirmacaoFinalChange,
+  onExecutar
 }: {
   flags: FlagsEscritaOperacionalV27A;
+  config?: ConfiguracaoTesteOperacionalV27A;
   preValidacao: PreValidacaoOperacionalV27AResultado | null;
   erro: string | null;
+  confirmacaoFinal: string;
+  resultado: ResultadoOperacionalV27A | null;
+  executando: boolean;
+  onConfirmacaoFinalChange: (value: string) => void;
+  onExecutar: () => void;
 }): JSX.Element {
+  const itemConfigurado = config?.itemTesteOperacionalIdV27A || 0;
+  const podeExibirBotao = Boolean(
+    preValidacao?.podeExecutar &&
+    preValidacao.itemTesteId === itemConfigurado &&
+    preValidacao.marcadorEncontrado &&
+    confirmacaoFinal === flags.confirmacaoManualV27A
+  );
+
   return (
     <div className={styles.row}>
-      <strong>V2.7A - escrita operacional restrita</strong>
+      <strong>V2.7A - pre-validacao especifica do item</strong>
       <span>
         Status das travas: escrita {flags.habilitarEscritaOperacionalV27A ? 'habilitada' : 'desabilitada'},
         modo teste {flags.modoTesteOperacionalV27A ? 'ativo' : 'inativo'},
         somente itens {flags.marcadorTesteOperacionalV27A}.
+      </span>
+      <span>
+        Item configurado: {itemConfigurado || '-'}<br />
+        Acao pretendida: {config?.acaoTesteOperacionalV27A || '-'}<br />
+        Status destino: {config?.statusDestinoTesteOperacionalV27A || '-'}
       </span>
       {erro && <span>Pre-validacao: {erro}</span>}
       {preValidacao && (
         <span>
           Pre-validacao: {preValidacao.bloqueado ? 'bloqueada' : 'liberada'} - {preValidacao.mensagem}<br />
           Usuario: {preValidacao.usuarioAtual?.nome || '-'} / {preValidacao.usuarioAtual?.perfilPrincipal || '-'}<br />
+          Item lido: {preValidacao.itemEncontrado ? preValidacao.itemTesteId : '-'} / marcador {preValidacao.marcadorEncontrado ? 'confirmado' : 'nao confirmado'}<br />
+          Status: {preValidacao.statusAtual || '-'} {'->'} {preValidacao.statusDestino || '-'}<br />
+          Transicao: {preValidacao.transicaoPermitida ? 'permitida' : 'bloqueada'} / campos {preValidacao.camposObrigatoriosPresentes ? 'presentes' : 'pendentes'}<br />
+          Lista/campo: {preValidacao.listaAlterada || '-'} / {preValidacao.campoAlterado || '-'}<br />
+          Valor previsto: {preValidacao.valorAnteriorPrevisto || '-'} {'->'} {preValidacao.valorNovoPrevisto || '-'}<br />
+          Historico previsto: {preValidacao.historicoPrevisto || '-'}<br />
           Acoes permitidas: {preValidacao.acoesPermitidas.length > 0 ? preValidacao.acoesPermitidas.join(', ') : '-'}<br />
+          Pode executar: {preValidacao.podeExecutar ? 'sim' : 'nao'}<br />
           Alertas: {preValidacao.alertas.length > 0 ? preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') : '-'}
         </span>
       )}
+      <label>Confirmacao final<input value={confirmacaoFinal} onChange={(event) => onConfirmacaoFinalChange(event.currentTarget.value)} /></label>
+      {podeExibirBotao && (
+        <button disabled={executando} onClick={onExecutar}>Executar escrita V2.7A no item validado</button>
+      )}
+      {!podeExibirBotao && <span>Botao de escrita oculto ate a pre-validacao especifica do item aprovar e a confirmacao final bater exatamente.</span>}
+      {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
     </div>
   );
 }

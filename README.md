@@ -111,6 +111,8 @@ Na rodada `V2.7A-RECUPERAR`, a base anteriormente reportada como ausente foi rec
 
 Na V2.7A.2, foi preparado o roteiro do primeiro teste funcional controlado da escrita operacional restrita. A escrita permanece desligada por padrao e o teste manual deve ficar limitado ao item `V2.7A-TESTE-001`, com marcador `V2.7A-TESTE`, em pagina restrita. A primeira acao recomendada e atualizar status de `Aberta` ou `Recebida` para `Aguardando aprovacao`, sem executar pedido, nota fiscal, pagamento ou Power Automate. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
 
+Na V2.7A.2A, a pre-validacao operacional foi corrigida para ser especifica do item de teste. A validacao generica de flags/perfil nao libera mais escrita: o Property Pane deve informar `itemTesteOperacionalIdV27A`, acao, status destino e confirmacao; a webpart deve ler o item por GET, confirmar marcador `V2.7A-TESTE`, status atual, transicao, campo alterado, valor previsto e historico antes de exibir o botao. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -186,6 +188,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a1-validacao-build-pacote-node22.md`
 - `docs/v2.7a-recuperacao-base-ausente.md`
 - `docs/v2.7a2-teste-funcional-controlado.md`
+- `docs/v2.7a2a-prevalidacao-item-especifico.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

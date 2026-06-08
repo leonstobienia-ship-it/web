@@ -87,6 +87,31 @@ Antes de clicar em qualquer acao de escrita, confirmar:
 
 Se qualquer resultado divergir, parar.
 
+## Ajuste V2.7A.2A - Item Especifico
+
+A validacao generica de flags/perfil nao libera escrita.
+
+Para repetir o teste manual, preencher no Property Pane:
+
+- `itemTesteOperacionalIdV27A = 11`;
+- `acaoTesteOperacionalV27A = AtualizarStatusRequisicao`;
+- `statusDestinoTesteOperacionalV27A = Aguardando aprovação`;
+- `observacaoTesteOperacionalV27A = V2.7A-TESTE - teste operacional restrito`;
+- `confirmacaoManualV27A = CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC`.
+
+O painel deve mostrar explicitamente:
+
+- item lido `11`;
+- marcador `V2.7A-TESTE` confirmado;
+- status atual do item;
+- transicao para `Aguardando aprovação`;
+- campo `StatusdaRequisi_x00e7__x00e3_o`;
+- valor anterior e valor novo previstos;
+- historico previsto;
+- `pode executar = sim`.
+
+Se o botao aparecer sem esses dados, parar e nao executar.
+
 ## DevTools
 
 Abrir antes da pre-validacao:
@@ -146,4 +171,3 @@ Registrar manualmente:
 ## Resultado Esperado
 
 O teste so deve ser considerado aprovado se uma unica acao controlada for executada, restrita ao item `V2.7A-TESTE-001`, com rede coerente, sem erros, sem `PATCH/DELETE`, sem alteracao de item real e com flags desligadas ao final.
-

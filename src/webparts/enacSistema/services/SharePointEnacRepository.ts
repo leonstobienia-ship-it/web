@@ -3,6 +3,7 @@ import {
   AcaoOperacionalV27A,
   AlertaBloqueioEscrita,
   AtualizacaoRequisicaoCompraControladaPayload,
+  ConfiguracaoTesteOperacionalV27A,
   FlagsEscritaOperacionalV27A,
   HistoricoOperacionalPayload,
   IDiagnosticoReadonlyEnac,
@@ -410,6 +411,96 @@ export class SharePointEnacRepository {
         alertas: [...alertas, { codigo: 'PERFIL_NAO_RESOLVIDO', mensagem: this.getErrorMessage(error) }]
       };
     }
+  }
+
+  public async preValidarEscritaOperacionalRestritaV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A, config: ConfiguracaoTesteOperacionalV27A): Promise<PreValidacaoOperacionalV27AResultado> {
+    const alertas = this.validarFlagsOperacionaisV27A(flags);
+    const itemTesteId = Number(config.itemTesteOperacionalIdV27A || 0);
+    const acaoPretendida = config.acaoTesteOperacionalV27A || 'AtualizarStatusRequisicao';
+    const statusDestino = config.statusDestinoTesteOperacionalV27A || 'Aguardando aprovação';
+    let usuarioAtual: IUsuarioPerfilEnac | undefined;
+    let item: any | undefined;
+    let acoesPermitidas: AcaoOperacionalV27A[] = [];
+
+    if (!itemTesteId || itemTesteId <= 0) {
+      alertas.push({ codigo: 'ITEM_TESTE_ID_OBRIGATORIO', mensagem: 'itemTesteOperacionalIdV27A deve ser informado antes da escrita.' });
+    }
+
+    try {
+      usuarioAtual = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+      acoesPermitidas = this.acoesPermitidasParaPerfil(usuarioAtual);
+
+      if (!this.perfilPodeExecutarAcao(acaoPretendida, usuarioAtual)) {
+        alertas.push({ codigo: 'PERFIL_SEM_PERMISSAO', mensagem: `Perfil ${usuarioAtual.perfilPrincipal} nao pode executar ${acaoPretendida}.` });
+      }
+
+      if (itemTesteId > 0) {
+        item = await this.obterRequisicaoOperacionalParaPreValidacao(itemTesteId);
+      }
+    } catch (error) {
+      alertas.push({ codigo: itemTesteId > 0 ? 'ITEM_OU_PERFIL_NAO_RESOLVIDO' : 'PERFIL_NAO_RESOLVIDO', mensagem: this.getErrorMessage(error) });
+    }
+
+    const title = String(item?.Title || '');
+    const descricao = String(item?.Descri_x00e7__x00e3_o || '');
+    const tipoSolicitacao = String(item?.TipodaSolicita_x00e7__x00e3_o || '');
+    const statusAtual = String(item?.StatusdaRequisi_x00e7__x00e3_o || '');
+    const marcadorEncontrado = Boolean(item && (title.indexOf(flags.marcadorTesteOperacionalV27A) >= 0 || descricao.indexOf(flags.marcadorTesteOperacionalV27A) >= 0));
+    const transicaoPermitida = item ? this.transicaoPermitidaV27A(acaoPretendida, statusAtual, statusDestino) : false;
+    const camposObrigatoriosPresentes = Boolean(title && statusAtual && tipoSolicitacao);
+    const snapshotExistenteId = item?.SnapshotAprovacaoCompra?.Id ? Number(item.SnapshotAprovacaoCompra.Id) : undefined;
+    const snapshotExistenteTitulo = item?.SnapshotAprovacaoCompra?.Title;
+
+    if (itemTesteId > 0 && !item) {
+      alertas.push({ codigo: 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
+    }
+
+    if (item && !marcadorEncontrado) {
+      alertas.push({ codigo: 'ITEM_SEM_MARCADOR_TESTE_V27A', mensagem: `Item ${itemTesteId} deve conter ${flags.marcadorTesteOperacionalV27A} no titulo ou descricao.` });
+    }
+
+    if (item && !transicaoPermitida) {
+      alertas.push({ codigo: 'TRANSICAO_NAO_PERMITIDA', mensagem: `Status atual "${statusAtual}" nao permite ${acaoPretendida} para "${statusDestino}".` });
+    }
+
+    if (item && !camposObrigatoriosPresentes) {
+      alertas.push({ codigo: 'CAMPOS_OBRIGATORIOS_AUSENTES', mensagem: 'Title, tipo da solicitacao e status atual devem estar preenchidos.' });
+    }
+
+    if (acaoPretendida === 'CriarSnapshotAprovacaoOperacional' && (!config.valorTesteOperacionalV27A || config.valorTesteOperacionalV27A <= 0)) {
+      alertas.push({ codigo: 'VALOR_TESTE_OBRIGATORIO', mensagem: 'valorTesteOperacionalV27A deve ser maior que zero para criar snapshot.' });
+    }
+
+    const podeExecutar = Boolean(alertas.length === 0 && usuarioAtual && item && marcadorEncontrado && transicaoPermitida && camposObrigatoriosPresentes);
+
+    return {
+      sucesso: podeExecutar,
+      bloqueado: !podeExecutar,
+      mensagem: podeExecutar
+        ? 'Pre-validacao especifica do item concluida. Escrita manual pode ser exibida somente para este item e esta acao.'
+        : 'Pre-validacao especifica do item bloqueada. Nenhuma escrita operacional deve ser executada.',
+      flagsValidas: this.validarFlagsOperacionaisV27A(flags).length === 0,
+      usuarioAtualReconhecido: Boolean(usuarioAtual),
+      usuarioAtual,
+      acaoPretendida,
+      itemTesteId,
+      itemEncontrado: Boolean(item),
+      marcadorEncontrado,
+      statusAtual,
+      statusDestino,
+      transicaoPermitida,
+      camposObrigatoriosPresentes,
+      snapshotExistenteId,
+      snapshotExistenteTitulo,
+      historicoPrevisto: item ? `${flags.marcadorTesteOperacionalV27A} ${acaoPretendida} ${itemTesteId}` : undefined,
+      listaAlterada: 'Lista 02 — Requisições de Compra',
+      campoAlterado: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' ? 'StatusdaRequisi_x00e7__x00e3_o' : 'ENAC Snapshots Regras',
+      valorAnteriorPrevisto: statusAtual,
+      valorNovoPrevisto: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' ? statusDestino : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`,
+      podeExecutar,
+      acoesPermitidas,
+      alertas
+    };
   }
 
   public async criarRequisicaoCompraControlada(payload: RequisicaoCompraControladaPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
@@ -1082,6 +1173,7 @@ export class SharePointEnacRepository {
       case 'CriarRequisicaoCompra':
         return usuario.podeCriarSolicitacao || usuario.perfilPrincipal === 'Campo' || usuario.podeAdministrarConfiguracoes;
       case 'AtualizarRequisicaoCompra':
+      case 'AtualizarStatusRequisicao':
         return usuario.podeRegistrarCotacoes || usuario.podeEmitirPedido || usuario.podeAdministrarConfiguracoes;
       case 'CriarPedidoCompra':
         return usuario.podeEmitirPedido || usuario.podeAdministrarConfiguracoes;
@@ -1102,6 +1194,7 @@ export class SharePointEnacRepository {
   private acoesPermitidasParaPerfil(usuario: IUsuarioPerfilEnac): AcaoOperacionalV27A[] {
     const acoes: AcaoOperacionalV27A[] = [
       'CriarRequisicaoCompra',
+      'AtualizarStatusRequisicao',
       'AtualizarRequisicaoCompra',
       'CriarPedidoCompra',
       'VincularNotaFiscal',
@@ -1114,14 +1207,19 @@ export class SharePointEnacRepository {
     return acoes.filter((acao) => this.perfilPodeExecutarAcao(acao, usuario));
   }
 
-  private transicaoPermitidaV27A(acao: AcaoOperacionalV27A, statusAtual: string): boolean {
+  private transicaoPermitidaV27A(acao: AcaoOperacionalV27A, statusAtual: string, statusDestino?: string): boolean {
     const status = this.normalizarTexto(statusAtual);
+    const destino = this.normalizarTexto(statusDestino);
 
     switch (acao) {
       case 'CriarRequisicaoCompra':
       case 'RegistrarHistoricoOperacional':
         return true;
       case 'AtualizarRequisicaoCompra':
+      case 'AtualizarStatusRequisicao':
+        if (destino && destino === 'aguardandoaprovacao') {
+          return ['aberta', 'recebida', 'novarascunho', 'novasolicitacao', 'aguardandocotacao', 'emcotacao', 'cotada'].indexOf(status) >= 0;
+        }
         return ['novarascunho', 'novasolicitacao', 'aguardandocotacao', 'emcotacao', 'cotada', 'aguardandoaprovacao'].indexOf(status) >= 0;
       case 'CriarSnapshotAprovacaoOperacional':
       case 'AprovarCompra':
@@ -1180,6 +1278,13 @@ export class SharePointEnacRepository {
       title: item.Title || '',
       status: item[statusField] || ''
     };
+  }
+
+  private async obterRequisicaoOperacionalParaPreValidacao(itemId: number): Promise<any> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${itemId})?$select=Id,Title,TipodaSolicita_x00e7__x00e3_o,Descri_x00e7__x00e3_o,StatusdaRequisi_x00e7__x00e3_o,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=SnapshotAprovacaoCompra`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    return this.ensureJson(response);
   }
 
   private normalizarTexto(value: string | undefined): string {

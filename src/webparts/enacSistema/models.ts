@@ -204,6 +204,7 @@ export type MarcadorTesteOperacionalEnac = 'V2.7A-TESTE';
 
 export type AcaoOperacionalV27A =
   | 'CriarRequisicaoCompra'
+  | 'AtualizarStatusRequisicao'
   | 'AtualizarRequisicaoCompra'
   | 'CriarPedidoCompra'
   | 'VincularNotaFiscal'
@@ -221,6 +222,14 @@ export interface FlagsEscritaOperacionalV27A {
   confirmacaoManualV27A: string;
 }
 
+export interface ConfiguracaoTesteOperacionalV27A {
+  itemTesteOperacionalIdV27A?: number;
+  acaoTesteOperacionalV27A: AcaoOperacionalV27A;
+  statusDestinoTesteOperacionalV27A?: string;
+  valorTesteOperacionalV27A?: number;
+  observacaoTesteOperacionalV27A?: string;
+}
+
 export interface ResultadoOperacionalV27A {
   sucesso: boolean;
   bloqueado: boolean;
@@ -236,7 +245,25 @@ export interface PreValidacaoOperacionalV27AResultado {
   sucesso: boolean;
   bloqueado: boolean;
   mensagem: string;
+  flagsValidas?: boolean;
+  usuarioAtualReconhecido?: boolean;
   usuarioAtual?: IUsuarioPerfilEnac;
+  acaoPretendida?: AcaoOperacionalV27A;
+  itemTesteId?: number;
+  itemEncontrado?: boolean;
+  marcadorEncontrado?: boolean;
+  statusAtual?: string;
+  statusDestino?: string;
+  transicaoPermitida?: boolean;
+  camposObrigatoriosPresentes?: boolean;
+  snapshotExistenteId?: number;
+  snapshotExistenteTitulo?: string;
+  historicoPrevisto?: string;
+  listaAlterada?: string;
+  campoAlterado?: string;
+  valorAnteriorPrevisto?: string;
+  valorNovoPrevisto?: string;
+  podeExecutar?: boolean;
   acoesPermitidas: AcaoOperacionalV27A[];
   alertas: AlertaBloqueioEscrita[];
 }

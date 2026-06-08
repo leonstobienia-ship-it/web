@@ -4,6 +4,7 @@ import { Version } from '@microsoft/sp-core-library';
 import {
   type IPropertyPaneConfiguration,
   PropertyPaneCheckbox,
+  PropertyPaneDropdown,
   PropertyPaneTextField
 } from '@microsoft/sp-property-pane';
 import { BaseClientSideWebPart } from '@microsoft/sp-webpart-base';
@@ -12,7 +13,7 @@ import * as strings from 'EnacSistemaWebPartStrings';
 import { EnacSistema } from './components/EnacSistema';
 import { IEnacSistemaProps } from './components/EnacSistema';
 import { SharePointEnacRepository } from './services/SharePointEnacRepository';
-import { FlagsEscritaOperacionalV27A, MarcadorTesteEscritaEnac, MarcadorTesteOperacionalEnac } from './models';
+import { AcaoOperacionalV27A, ConfiguracaoTesteOperacionalV27A, FlagsEscritaOperacionalV27A, MarcadorTesteEscritaEnac, MarcadorTesteOperacionalEnac } from './models';
 
 export interface IEnacSistemaWebPartProps {
   description: string;
@@ -28,12 +29,20 @@ export interface IEnacSistemaWebPartProps {
   marcadorTesteOperacionalV27A: string;
   exigirConfirmacaoManualV27A: boolean;
   confirmacaoManualV27A: string;
+  itemTesteOperacionalIdV27A: string;
+  acaoTesteOperacionalV27A: string;
+  statusDestinoTesteOperacionalV27A: string;
+  valorTesteOperacionalV27A: string;
+  observacaoTesteOperacionalV27A: string;
 }
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
 const MARCADOR_TESTE_PADRAO_V26A = 'V2.3B-TESTE|V2.6A-TESTE';
 const CONFIRMACAO_OPERACIONAL_V27A = 'CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC';
 const MARCADOR_OPERACIONAL_V27A: MarcadorTesteOperacionalEnac = 'V2.7A-TESTE';
+const ACAO_OPERACIONAL_PADRAO_V27A: AcaoOperacionalV27A = 'AtualizarStatusRequisicao';
+const STATUS_DESTINO_OPERACIONAL_PADRAO_V27A = 'Aguardando aprovação';
+const OBSERVACAO_OPERACIONAL_PADRAO_V27A = 'V2.7A-TESTE - teste operacional restrito';
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
@@ -58,7 +67,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
         escritaTesteRequisicaoItemId: this.parsePositiveNumber(this.properties.requisicaoTesteIdV26A),
         escritaTesteValorAnalisado: this.parsePositiveNumber(this.properties.valorAnalisadoTesteV26A),
         escritaTesteMarcador: this.resolveMarcadorTeste(this.properties.marcadorTesteObrigatorioV26A),
-        flagsEscritaOperacionalV27A: this.getFlagsOperacionaisV27A()
+        flagsEscritaOperacionalV27A: this.getFlagsOperacionaisV27A(),
+        configuracaoTesteOperacionalV27A: this.getConfiguracaoTesteOperacionalV27A()
       }
     );
 
@@ -86,6 +96,11 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     this.properties.marcadorTesteOperacionalV27A = this.properties.marcadorTesteOperacionalV27A || MARCADOR_OPERACIONAL_V27A;
     this.properties.exigirConfirmacaoManualV27A = this.properties.exigirConfirmacaoManualV27A !== false;
     this.properties.confirmacaoManualV27A = this.properties.confirmacaoManualV27A || '';
+    this.properties.itemTesteOperacionalIdV27A = this.properties.itemTesteOperacionalIdV27A || '';
+    this.properties.acaoTesteOperacionalV27A = this.properties.acaoTesteOperacionalV27A || ACAO_OPERACIONAL_PADRAO_V27A;
+    this.properties.statusDestinoTesteOperacionalV27A = this.properties.statusDestinoTesteOperacionalV27A || STATUS_DESTINO_OPERACIONAL_PADRAO_V27A;
+    this.properties.valorTesteOperacionalV27A = this.properties.valorTesteOperacionalV27A || '';
+    this.properties.observacaoTesteOperacionalV27A = this.properties.observacaoTesteOperacionalV27A || OBSERVACAO_OPERACIONAL_PADRAO_V27A;
 
     return Promise.resolve();
   }
@@ -139,6 +154,25 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                 }),
                 PropertyPaneTextField('confirmacaoManualV27A', {
                   label: `Confirmacao V2.7A (${CONFIRMACAO_OPERACIONAL_V27A})`
+                }),
+                PropertyPaneTextField('itemTesteOperacionalIdV27A', {
+                  label: 'V2.7A - ID do item de teste'
+                }),
+                PropertyPaneDropdown('acaoTesteOperacionalV27A', {
+                  label: 'V2.7A - acao operacional de teste',
+                  options: [
+                    { key: 'AtualizarStatusRequisicao', text: 'Atualizar status da requisicao' },
+                    { key: 'CriarSnapshotAprovacaoOperacional', text: 'Criar snapshot operacional' }
+                  ]
+                }),
+                PropertyPaneTextField('statusDestinoTesteOperacionalV27A', {
+                  label: 'V2.7A - status destino'
+                }),
+                PropertyPaneTextField('valorTesteOperacionalV27A', {
+                  label: 'V2.7A - valor de teste, se aplicavel'
+                }),
+                PropertyPaneTextField('observacaoTesteOperacionalV27A', {
+                  label: 'V2.7A - observacao de teste'
                 })
               ]
             }
@@ -176,6 +210,20 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       marcadorTesteOperacionalV27A: this.properties.marcadorTesteOperacionalV27A === MARCADOR_OPERACIONAL_V27A ? MARCADOR_OPERACIONAL_V27A : MARCADOR_OPERACIONAL_V27A,
       exigirConfirmacaoManualV27A: this.properties.exigirConfirmacaoManualV27A !== false,
       confirmacaoManualV27A: this.properties.confirmacaoManualV27A || ''
+    };
+  }
+
+  private getConfiguracaoTesteOperacionalV27A(): ConfiguracaoTesteOperacionalV27A {
+    const acao = this.properties.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
+      ? 'CriarSnapshotAprovacaoOperacional'
+      : ACAO_OPERACIONAL_PADRAO_V27A;
+
+    return {
+      itemTesteOperacionalIdV27A: this.parsePositiveNumber(this.properties.itemTesteOperacionalIdV27A),
+      acaoTesteOperacionalV27A: acao,
+      statusDestinoTesteOperacionalV27A: this.properties.statusDestinoTesteOperacionalV27A || STATUS_DESTINO_OPERACIONAL_PADRAO_V27A,
+      valorTesteOperacionalV27A: this.parsePositiveNumber(this.properties.valorTesteOperacionalV27A),
+      observacaoTesteOperacionalV27A: this.properties.observacaoTesteOperacionalV27A || OBSERVACAO_OPERACIONAL_PADRAO_V27A
     };
   }
 }
