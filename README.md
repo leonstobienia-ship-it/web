@@ -107,6 +107,8 @@ Na V2.7A, foi preparada a base tecnica de escrita operacional restrita e control
 
 Na V2.7A.1, o build/pacote local da V2.7A foi validado com Node `v22.18.0` encontrado fora do PATH em instalacao local da Adobe. `tsc --noEmit`, `gulp clean`, `gulp bundle`, `gulp bundle --ship` e `gulp package-solution --ship` passaram. O pacote `sharepoint/solution/enac-sistema-spfx.sppkg` foi gerado localmente e permanece ignorado no Git. Codex nao publicou, nao instalou app, nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao iniciou Power Automate.
 
+Na rodada `V2.7A-RECUPERAR`, a base anteriormente reportada como ausente foi reconferida e estava presente no historico local: `2f39ba3 feat: preparar escrita operacional restrita v2.7a`. A validacao local foi repetida com Node `v22.22.3`, incluindo `tsc`, `npm install`, `gulp clean`, `gulp build`, `gulp bundle --ship` e `gulp package-solution --ship`, todos com sucesso. Codex removeu apenas um relatorio local obsoleto nao rastreado de base ausente, preservou `README-RoG_Leon.md`, nao conectou ao SharePoint e nao alterou tenant/listas/dados.
+
 ## Protótipo
 
 Abra no navegador:
@@ -180,6 +182,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a-matriz-acoes-por-perfil.md`
 - `docs/v2.7a-transicoes-status-fluxo-compras.md`
 - `docs/v2.7a1-validacao-build-pacote-node22.md`
+- `docs/v2.7a-recuperacao-base-ausente.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
