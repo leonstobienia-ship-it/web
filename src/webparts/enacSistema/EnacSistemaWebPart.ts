@@ -12,7 +12,7 @@ import * as strings from 'EnacSistemaWebPartStrings';
 import { EnacSistema } from './components/EnacSistema';
 import { IEnacSistemaProps } from './components/EnacSistema';
 import { SharePointEnacRepository } from './services/SharePointEnacRepository';
-import { MarcadorTesteEscritaEnac } from './models';
+import { FlagsEscritaOperacionalV27A, MarcadorTesteEscritaEnac, MarcadorTesteOperacionalEnac } from './models';
 
 export interface IEnacSistemaWebPartProps {
   description: string;
@@ -22,10 +22,18 @@ export interface IEnacSistemaWebPartProps {
   requisicaoTesteIdV26A: string;
   valorAnalisadoTesteV26A: string;
   marcadorTesteObrigatorioV26A: string;
+  habilitarEscritaOperacionalV27A: boolean;
+  modoTesteOperacionalV27A: boolean;
+  permitirSomenteItensTesteV27A: boolean;
+  marcadorTesteOperacionalV27A: string;
+  exigirConfirmacaoManualV27A: boolean;
+  confirmacaoManualV27A: string;
 }
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
 const MARCADOR_TESTE_PADRAO_V26A = 'V2.3B-TESTE|V2.6A-TESTE';
+const CONFIRMACAO_OPERACIONAL_V27A = 'CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC';
+const MARCADOR_OPERACIONAL_V27A: MarcadorTesteOperacionalEnac = 'V2.7A-TESTE';
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
@@ -49,7 +57,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
         confirmacaoEscritaTeste: this.properties.confirmacaoEscritaTesteV26A || '',
         escritaTesteRequisicaoItemId: this.parsePositiveNumber(this.properties.requisicaoTesteIdV26A),
         escritaTesteValorAnalisado: this.parsePositiveNumber(this.properties.valorAnalisadoTesteV26A),
-        escritaTesteMarcador: this.resolveMarcadorTeste(this.properties.marcadorTesteObrigatorioV26A)
+        escritaTesteMarcador: this.resolveMarcadorTeste(this.properties.marcadorTesteObrigatorioV26A),
+        flagsEscritaOperacionalV27A: this.getFlagsOperacionaisV27A()
       }
     );
 
@@ -71,6 +80,12 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     this.properties.requisicaoTesteIdV26A = this.properties.requisicaoTesteIdV26A || '';
     this.properties.valorAnalisadoTesteV26A = this.properties.valorAnalisadoTesteV26A || '';
     this.properties.marcadorTesteObrigatorioV26A = this.properties.marcadorTesteObrigatorioV26A || MARCADOR_TESTE_PADRAO_V26A;
+    this.properties.habilitarEscritaOperacionalV27A = this.properties.habilitarEscritaOperacionalV27A === true;
+    this.properties.modoTesteOperacionalV27A = this.properties.modoTesteOperacionalV27A === true;
+    this.properties.permitirSomenteItensTesteV27A = this.properties.permitirSomenteItensTesteV27A !== false;
+    this.properties.marcadorTesteOperacionalV27A = this.properties.marcadorTesteOperacionalV27A || MARCADOR_OPERACIONAL_V27A;
+    this.properties.exigirConfirmacaoManualV27A = this.properties.exigirConfirmacaoManualV27A !== false;
+    this.properties.confirmacaoManualV27A = this.properties.confirmacaoManualV27A || '';
 
     return Promise.resolve();
   }
@@ -106,6 +121,24 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                 }),
                 PropertyPaneTextField('marcadorTesteObrigatorioV26A', {
                   label: 'Marcador obrigatorio do item de teste'
+                }),
+                PropertyPaneCheckbox('habilitarEscritaOperacionalV27A', {
+                  text: 'V2.7A - habilitar escrita operacional restrita'
+                }),
+                PropertyPaneCheckbox('modoTesteOperacionalV27A', {
+                  text: 'V2.7A - manter modo teste operacional'
+                }),
+                PropertyPaneCheckbox('permitirSomenteItensTesteV27A', {
+                  text: 'V2.7A - permitir somente itens V2.7A-TESTE'
+                }),
+                PropertyPaneTextField('marcadorTesteOperacionalV27A', {
+                  label: `Marcador operacional (${MARCADOR_OPERACIONAL_V27A})`
+                }),
+                PropertyPaneCheckbox('exigirConfirmacaoManualV27A', {
+                  text: 'V2.7A - exigir confirmacao manual'
+                }),
+                PropertyPaneTextField('confirmacaoManualV27A', {
+                  label: `Confirmacao V2.7A (${CONFIRMACAO_OPERACIONAL_V27A})`
                 })
               ]
             }
@@ -133,5 +166,16 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     }
 
     return undefined;
+  }
+
+  private getFlagsOperacionaisV27A(): FlagsEscritaOperacionalV27A {
+    return {
+      habilitarEscritaOperacionalV27A: this.properties.habilitarEscritaOperacionalV27A === true,
+      modoTesteOperacionalV27A: this.properties.modoTesteOperacionalV27A === true,
+      permitirSomenteItensTesteV27A: this.properties.permitirSomenteItensTesteV27A !== false,
+      marcadorTesteOperacionalV27A: this.properties.marcadorTesteOperacionalV27A === MARCADOR_OPERACIONAL_V27A ? MARCADOR_OPERACIONAL_V27A : MARCADOR_OPERACIONAL_V27A,
+      exigirConfirmacaoManualV27A: this.properties.exigirConfirmacaoManualV27A !== false,
+      confirmacaoManualV27A: this.properties.confirmacaoManualV27A || ''
+    };
   }
 }

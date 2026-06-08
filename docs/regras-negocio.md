@@ -88,3 +88,9 @@ O snapshot registra ID da regra, resumo da regra, valor submetido, aprovador bas
 Na estrutura real do tenant, a entidade lógica `ENAC Solicitacoes` corresponde à lista física `Lista 02 — Requisições de Compra`. Essa lista deve receber futuramente o campo específico `SnapshotAprovacaoCompra`, evitando campo genérico que conflite com futuros snapshots de pagamento, medição ou liberação bancária.
 
 `ENAC Obras` corresponde à lista física `Lista 01 - Controle de Obras ENAC`. Não criar `ENACObras`, `ENACSolicitacoes` nem `CodigoObra` na Lista 01 nesta rodada.
+
+## Escrita operacional V2.7A
+
+Na V2.7A, a escrita operacional permanece restrita a itens de teste `V2.7A-TESTE` e depende de flags explicitas na webpart. Cada acao deve validar usuario ativo, perfil, transicao de status, marcador de teste, campos obrigatorios e historico.
+
+Gustavo e Leon devem aprovar conforme alcadas parametrizadas em `ENAC Alcadas`; o codigo nao deve fixar diretamente limites por pessoa. Matheus executa pedido, NF e programacao, mas nao aprova a propria compra. Kemilly atua apenas em cotacoes/contratos quando a acao estiver no escopo.

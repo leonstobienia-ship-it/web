@@ -103,6 +103,8 @@ Na V2.6B.4C, Leon confirmou manualmente que as quatro listas administrativas est
 
 Na V2.6B.4D, Leon confirmou manualmente a conclusao das permissoes administrativas nas quatro listas. Os grupos ENAC foram aplicados conforme matriz, `Obras em Andamento Owners` foi mantido, `Obras em Andamento Members` e `Obras em Andamento Visitors` foram removidos das quatro listas, nenhuma lista operacional foi alterada e Power Automate nao foi iniciado. A V2.6B.4 fica encerrada como concluida manualmente por Leon, sujeita apenas a auditorias futuras.
 
+Na V2.7A, foi preparada a base tecnica de escrita operacional restrita e controlada, ainda sem Power Automate e sem liberacao ampla. A webpart ganhou flags explicitas desligadas por padrao, pre-validacao de perfil via `ENAC Usuarios Perfis.ContaMicrosoft365`, metodos de escrita protegidos no reposititorio e matriz documental para itens `V2.7A-TESTE`. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao modificou as permissoes administrativas V2.6B.4D.
+
 ## Protótipo
 
 Abra no navegador:
@@ -172,6 +174,9 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b4b-falha-breakroleinheritance-access-denied.md`
 - `docs/v2.6b4c-estado-parcial-heranca-quebrada.md`
 - `docs/v2.6b4d-registro-final-permissoes-administrativas.md`
+- `docs/v2.7a-escrita-operacional-restrita.md`
+- `docs/v2.7a-matriz-acoes-por-perfil.md`
+- `docs/v2.7a-transicoes-status-fluxo-compras.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -184,6 +189,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.6b4-prep-criacao-manual-grupos-enac.md`
 - `tests/roteiro-v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
 - `tests/roteiro-v2.6b4c-finalizacao-manual-permissoes-administrativas.md`
+- `tests/roteiro-v2.7a-escrita-operacional-restrita.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`

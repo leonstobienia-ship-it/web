@@ -2,6 +2,7 @@
 
 ## Próximas fases
 
+- Executar V2.7A.1 com item `V2.7A-TESTE` em pagina de teste, validando escrita operacional restrita antes de producao ampla.
 - Completar persistência SharePoint de todas as telas da webpart além do repositório V2.3 inicial.
 - Manter protótipo HTML local como demonstração homologada, sem migração obrigatória.
 - Governança e aprovação formal para alteração de alçadas.
@@ -21,6 +22,7 @@
 
 - Provisionamento de listas SharePoint.
 - Execução de Power Automate.
+- Escrita operacional ampla sem flags e sem teste controlado.
 - Segurança definitiva por permissões SharePoint/Teams.
 - Migração para banco próprio.
 - Substituição total das listas SharePoint.

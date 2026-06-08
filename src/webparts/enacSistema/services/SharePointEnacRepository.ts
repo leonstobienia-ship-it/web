@@ -1,6 +1,10 @@
 import { ISPHttpClientOptions, SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import {
+  AcaoOperacionalV27A,
   AlertaBloqueioEscrita,
+  AtualizacaoRequisicaoCompraControladaPayload,
+  FlagsEscritaOperacionalV27A,
+  HistoricoOperacionalPayload,
   IDiagnosticoReadonlyEnac,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
@@ -10,10 +14,17 @@ import {
   ISolicitacaoEnac,
   IUsuarioPerfilEnac,
   IValidacaoAlcadaEnac,
+  NotaFiscalControladaPayload,
   PerfilEnac,
+  PedidoCompraControladoPayload,
   PreValidacaoTesteControladoSnapshotResultado,
+  PreValidacaoOperacionalV27AResultado,
+  ProgramacaoPagamentoControladaPayload,
+  RequisicaoCompraControladaPayload,
+  ResultadoOperacionalV27A,
   ResultadoHistoricoConfiguracao,
   ResultadoVinculoSnapshot,
+  SnapshotAprovacaoOperacionalPayload,
   SnapshotCriacaoTesteInput,
   SnapshotCriacaoTesteResultado,
   TipoSolicitacaoEnac
@@ -22,6 +33,10 @@ import {
 const LISTAS_ENAC = {
   obras: 'a9afadc1-f843-45c0-a628-4f49a8716832',
   requisicoesCompra: '0a204b87-b9a1-4d16-8654-55567a62ed01',
+  pedidosCompra: '18ca132a-c36a-42aa-9968-d87ecd547a79',
+  notasFiscaisRecebidas: '25aa4447-193d-418a-8e71-9bfd8e9995da',
+  contasPagar: '69b7469b-9cb9-4509-87dd-bba00b8142fd',
+  programacaoFinanceira: 'f0d253cc-3f42-46b8-bfd6-9dcb6fe9a680',
   usuariosPerfis: '99cb9bae-5589-4f8b-854b-08adce371e82',
   alcadas: '901d4458-15b4-427b-a869-161c63cf70ef',
   historicoConfiguracoes: 'cac67186-e478-4f15-b5a0-2db92d74b2c4',
@@ -30,6 +45,8 @@ const LISTAS_ENAC = {
 
 const CONFIRMACAO_ESCRITA_TESTE = 'TESTAR-ESCRITA-V2.6A-ENAC';
 const MARCADORES_TESTE_PERMITIDOS = ['V2.3B-TESTE', 'V2.6A-TESTE'];
+const CONFIRMACAO_OPERACIONAL_V27A = 'CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC';
+const MARCADOR_OPERACIONAL_V27A = 'V2.7A-TESTE';
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -329,6 +346,383 @@ export class SharePointEnacRepository {
     void pedidoCompraItemId;
     void snapshot;
     throw new Error('Persistencia operacional de snapshot bloqueada. Use apenas executarTesteControladoSnapshot() em modo V2.6A-TESTE autorizado.');
+  }
+
+  public async carregarPerfilUsuarioAtual(emailOuLogin: string): Promise<IUsuarioPerfilEnac> {
+    const usuario = await this.obterUsuarioPorContaMicrosoft365(emailOuLogin);
+
+    if (!usuario) {
+      throw new Error('Usuario autenticado nao encontrado em ENAC Usuarios Perfis. Escrita operacional bloqueada.');
+    }
+
+    if (!usuario.usuarioAtivo) {
+      throw new Error('Usuario autenticado esta inativo em ENAC Usuarios Perfis. Escrita operacional bloqueada.');
+    }
+
+    return usuario;
+  }
+
+  public validarPermissaoAcao(acao: AcaoOperacionalV27A, item: { status?: string; title?: string } | undefined, perfil: IUsuarioPerfilEnac, flags: FlagsEscritaOperacionalV27A): AlertaBloqueioEscrita[] {
+    const alertas = this.validarFlagsOperacionaisV27A(flags);
+
+    if (!perfil.usuarioAtivo) {
+      alertas.push({ codigo: 'USUARIO_INATIVO', mensagem: 'Usuario inativo nao pode executar escrita operacional.' });
+    }
+
+    if (!this.perfilPodeExecutarAcao(acao, perfil)) {
+      alertas.push({ codigo: 'PERFIL_SEM_PERMISSAO', mensagem: `Perfil ${perfil.perfilPrincipal} nao pode executar ${acao}.` });
+    }
+
+    if (flags.permitirSomenteItensTesteV27A && item?.title && item.title.indexOf(flags.marcadorTesteOperacionalV27A) < 0) {
+      alertas.push({ codigo: 'ITEM_SEM_MARCADOR_TESTE_V27A', mensagem: `Item deve conter ${flags.marcadorTesteOperacionalV27A}.` });
+    }
+
+    if (item?.status && !this.transicaoPermitidaV27A(acao, item.status)) {
+      alertas.push({ codigo: 'TRANSICAO_NAO_PERMITIDA', mensagem: `Status atual nao permite ${acao}: ${item.status}.` });
+    }
+
+    return alertas;
+  }
+
+  public async preValidarEscritaOperacionalV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<PreValidacaoOperacionalV27AResultado> {
+    const alertas = this.validarFlagsOperacionaisV27A(flags);
+
+    try {
+      const usuarioAtual = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+      const acoesPermitidas = this.acoesPermitidasParaPerfil(usuarioAtual);
+
+      return {
+        sucesso: alertas.length === 0,
+        bloqueado: alertas.length > 0,
+        mensagem: alertas.length > 0
+          ? 'V2.7A bloqueada por flags incompletas. Nenhuma escrita operacional deve ser executada.'
+          : 'V2.7A pre-validada: escrita operacional restrita disponivel apenas para itens V2.7A-TESTE e acoes permitidas por perfil.',
+        usuarioAtual,
+        acoesPermitidas,
+        alertas
+      };
+    } catch (error) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        mensagem: this.getErrorMessage(error),
+        acoesPermitidas: [],
+        alertas: [...alertas, { codigo: 'PERFIL_NAO_RESOLVIDO', mensagem: this.getErrorMessage(error) }]
+      };
+    }
+  }
+
+  public async criarRequisicaoCompraControlada(payload: RequisicaoCompraControladaPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const alertas = this.validarPermissaoAcao('CriarRequisicaoCompra', { title: payload.titulo }, usuario, flags);
+    alertas.push(...this.validarPayloadRequisicao(payload));
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado('CriarRequisicaoCompra', 'Criacao de requisicao bloqueada.', alertas);
+    }
+
+    const body = {
+      Title: payload.titulo,
+      ObraId: payload.obraItemId,
+      TipodaSolicita_x00e7__x00e3_o: payload.tipoSolicitacao,
+      Descri_x00e7__x00e3_odaSolicita_: payload.descricao,
+      Prioridade: payload.prioridade,
+      DataNecess_x00e1_rianaObra: payload.dataNecessaria,
+      DatadaSolicita_x00e7__x00e3_o: new Date().toISOString(),
+      StatusdaRequisi_x00e7__x00e3_o: 'Aguardando cotacao',
+      SolicitanteId: usuario.contaMicrosoft365Id || undefined
+    };
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions(body)
+    );
+    const item = await this.ensureJson(response);
+    const itemId = Number(item.Id || item.ID);
+    await this.registrarHistoricoOperacional({
+      origemLista: 'Lista 02',
+      origemItemId: itemId,
+      acao: 'CriarRequisicaoCompra',
+      descricao: 'Requisicao de compra V2.7A-TESTE criada pela webpart.',
+      statusNovo: 'Aguardando cotacao',
+      marcadorTeste: payload.marcadorTeste
+    }, emailOuLogin, flags);
+
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: 'CriarRequisicaoCompra',
+      mensagem: 'Requisicao de compra V2.7A-TESTE criada.',
+      itemId,
+      statusNovo: 'Aguardando cotacao',
+      alertas: []
+    };
+  }
+
+  public async atualizarRequisicaoCompraControlada(id: number, payload: AtualizacaoRequisicaoCompraControladaPayload, acao: AcaoOperacionalV27A, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const item = await this.obterResumoItemOperacional(LISTAS_ENAC.requisicoesCompra, id, 'StatusdaRequisi_x00e7__x00e3_o');
+    const alertas = this.validarPermissaoAcao(acao, item, usuario, flags);
+
+    if (payload.marcadorTeste !== flags.marcadorTesteOperacionalV27A) {
+      alertas.push({ codigo: 'MARCADOR_PAYLOAD_INVALIDO', mensagem: 'Payload deve usar marcador V2.7A-TESTE.' });
+    }
+
+    if (!payload.statusNovo) {
+      alertas.push({ codigo: 'STATUS_NOVO_OBRIGATORIO', mensagem: 'statusNovo deve ser informado.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado(acao, 'Atualizacao de requisicao bloqueada.', alertas, id, item.status);
+    }
+
+    const response = await this.spHttpClient.post(
+      `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${id})`,
+      SPHttpClient.configurations.v1,
+      this.criarMergeOptions({ StatusdaRequisi_x00e7__x00e3_o: payload.statusNovo })
+    );
+
+    if (!response.ok) {
+      throw new Error(`SharePoint retornou ${response.status}: ${response.statusText}`);
+    }
+
+    await this.registrarHistoricoOperacional({
+      origemLista: 'Lista 02',
+      origemItemId: id,
+      acao,
+      descricao: payload.observacao || `Status alterado por ${acao}.`,
+      statusAnterior: item.status,
+      statusNovo: payload.statusNovo,
+      marcadorTeste: payload.marcadorTeste
+    }, emailOuLogin, flags);
+
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao,
+      mensagem: 'Requisicao atualizada com controle V2.7A.',
+      itemId: id,
+      statusAnterior: item.status,
+      statusNovo: payload.statusNovo,
+      alertas: []
+    };
+  }
+
+  public async criarPedidoCompraControlado(payload: PedidoCompraControladoPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const requisicao = await this.obterResumoItemOperacional(LISTAS_ENAC.requisicoesCompra, payload.requisicaoItemId, 'StatusdaRequisi_x00e7__x00e3_o');
+    const alertas = this.validarPermissaoAcao('CriarPedidoCompra', requisicao, usuario, flags);
+
+    if (!payload.numeroPedido) {
+      alertas.push({ codigo: 'NUMERO_PEDIDO_OBRIGATORIO', mensagem: 'Numero do pedido deve ser informado.' });
+    }
+
+    if (payload.marcadorTeste !== flags.marcadorTesteOperacionalV27A) {
+      alertas.push({ codigo: 'MARCADOR_PAYLOAD_INVALIDO', mensagem: 'Pedido deve usar marcador V2.7A-TESTE.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', 'Criacao de pedido bloqueada.', alertas);
+    }
+
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.pedidosCompra),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions({
+        Title: `${payload.marcadorTeste} ${payload.numeroPedido}`,
+        SolicitacaoId: payload.requisicaoItemId,
+        Fornecedor: payload.fornecedor,
+        ValordoPedido: payload.valorPedido,
+        DatadoPedido: new Date().toISOString(),
+        StatusdoPedido: 'Pedido emitido'
+      })
+    );
+    const item = await this.ensureJson(response);
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: 'CriarPedidoCompra',
+      mensagem: 'Pedido de compra V2.7A-TESTE criado.',
+      itemId: Number(item.Id || item.ID),
+      alertas: []
+    };
+  }
+
+  public async vincularNotaFiscalControlada(id: number, payload: NotaFiscalControladaPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const alertas = this.validarPermissaoAcao('VincularNotaFiscal', { title: `${payload.marcadorTeste} ${payload.numeroNf}`, status: 'Pedido emitido' }, usuario, flags);
+
+    if (!payload.numeroNf || payload.valor <= 0) {
+      alertas.push({ codigo: 'NF_INCOMPLETA', mensagem: 'Numero e valor da NF sao obrigatorios.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', 'Vinculo de NF bloqueado.', alertas, id);
+    }
+
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.notasFiscaisRecebidas),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions({
+        Title: `${payload.marcadorTeste} ${payload.numeroNf}`,
+        N_x00ba_daNotaFiscal: payload.numeroNf,
+        ValorBrutodaNF: payload.valor,
+        DatadeEmiss_x00e3_o: payload.dataEmissao,
+        DatadeVencimento: payload.dataVencimento,
+        StatusdaConfer_x00ea_ncia: 'Recebida'
+      })
+    );
+    const item = await this.ensureJson(response);
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: 'VincularNotaFiscal',
+      mensagem: 'Nota fiscal V2.7A-TESTE vinculada.',
+      itemId: Number(item.Id || item.ID),
+      alertas: []
+    };
+  }
+
+  public async programarPagamentoControlado(id: number, payload: ProgramacaoPagamentoControladaPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const alertas = this.validarPermissaoAcao('ProgramarPagamento', { title: payload.marcadorTeste, status: 'NF vinculada' }, usuario, flags);
+
+    if (payload.valorProgramado <= 0 || !payload.dataProgramada || !payload.formaPagamento) {
+      alertas.push({ codigo: 'PROGRAMACAO_INCOMPLETA', mensagem: 'Valor, data e forma de pagamento sao obrigatorios.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', 'Programacao de pagamento bloqueada.', alertas, id);
+    }
+
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.programacaoFinanceira),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions({
+        Title: `${payload.marcadorTeste} programacao ${id}`,
+        ValorBruto: payload.valorProgramado,
+        DataProgramadaparaPagamento: payload.dataProgramada,
+        StatusdoPagamento: 'Programado'
+      })
+    );
+    const item = await this.ensureJson(response);
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: 'ProgramarPagamento',
+      mensagem: 'Programacao financeira V2.7A-TESTE criada.',
+      itemId: Number(item.Id || item.ID),
+      alertas: []
+    };
+  }
+
+  public async registrarHistoricoOperacional(payload: HistoricoOperacionalPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const alertas = this.validarPermissaoAcao('RegistrarHistoricoOperacional', { title: payload.marcadorTeste, status: payload.statusAnterior }, usuario, flags);
+
+    if (!payload.origemLista || !payload.origemItemId || !payload.descricao) {
+      alertas.push({ codigo: 'HISTORICO_INCOMPLETO', mensagem: 'Historico operacional exige origem, item e descricao.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado('RegistrarHistoricoOperacional', 'Historico operacional bloqueado.', alertas);
+    }
+
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions({
+        Title: `${payload.marcadorTeste} ${payload.acao} ${payload.origemItemId}`,
+        TipoConfiguracao: 'Historico Operacional',
+        AcaoRealizada: payload.acao,
+        ItemConfiguracaoId: `${payload.origemLista}-${payload.origemItemId}`,
+        ValorAnterior: payload.statusAnterior || '',
+        ValorNovo: payload.statusNovo || '',
+        Justificativa: payload.descricao
+      })
+    );
+    const item = await this.ensureJson(response);
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: 'RegistrarHistoricoOperacional',
+      mensagem: 'Historico operacional registrado.',
+      itemId: Number(item.Id || item.ID),
+      alertas: []
+    };
+  }
+
+  public async criarSnapshotAprovacaoOperacional(payload: SnapshotAprovacaoOperacionalPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const requisicao = await this.obterResumoItemOperacional(LISTAS_ENAC.requisicoesCompra, payload.requisicaoItemId, 'StatusdaRequisi_x00e7__x00e3_o');
+    const alertas = this.validarPermissaoAcao('CriarSnapshotAprovacaoOperacional', requisicao, usuario, flags);
+
+    if (payload.valorAnalisado <= 0) {
+      alertas.push({ codigo: 'VALOR_INVALIDO', mensagem: 'Valor analisado deve ser maior que zero.' });
+    }
+
+    if (payload.marcadorTeste !== flags.marcadorTesteOperacionalV27A) {
+      alertas.push({ codigo: 'MARCADOR_PAYLOAD_INVALIDO', mensagem: 'Snapshot operacional deve usar marcador V2.7A-TESTE.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', 'Snapshot operacional bloqueado.', alertas, payload.requisicaoItemId, requisicao.status);
+    }
+
+    const usuarios = await this.listarUsuariosPerfis({ somenteAtivos: true });
+    const alcadas = await this.listarAlcadas();
+    const regra = this.selecionarRegraAlcadaCompra(alcadas, {
+      tipoSolicitacao: payload.tipoSolicitacao,
+      obraId: payload.obraId,
+      valor: payload.valorAnalisado,
+      dataReferencia: new Date()
+    });
+    const aprovadorBase = this.encontrarUsuarioPorLookup(regra.aprovadorPrincipalId, regra.aprovadorPrincipalNome, usuarios);
+
+    if (!aprovadorBase) {
+      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', 'Aprovador base da alcada nao localizado entre usuarios ativos.', [
+        { codigo: 'APROVADOR_BASE_NAO_LOCALIZADO', mensagem: regra.regraInternaId }
+      ], payload.requisicaoItemId, requisicao.status);
+    }
+
+    const resolucao = this.resolverAprovadorEfetivo(aprovadorBase, usuarios, new Date());
+    const snapshot = this.criarSnapshotAprovacaoCompra(regra, resolucao, payload.valorAnalisado, payload.marcadorTeste);
+    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.snapshotsRegras),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions({
+        Title: `SNAP-V2.7A-TESTE-${payload.requisicaoItemId}-${timestamp}`,
+        SolicitacaoId: payload.requisicaoItemId,
+        RegraAlcadaUtilizadaId: Number(regra.id),
+        RegraInternaId: regra.regraInternaId,
+        ResumoRegraAplicada: `${payload.marcadorTeste}; ${regra.processo}; ${snapshot.faixaValorVigente}; aprovador ${snapshot.aprovadorBaseNome}`,
+        Processo: 'Compra',
+        FaixaValorVigente: snapshot.faixaValorVigente,
+        ValorAnalisado: snapshot.valorAnalisado,
+        AprovadorBaseId: snapshot.aprovadorBaseId,
+        AprovadorBaseNome: snapshot.aprovadorBaseNome,
+        AprovadorBaseEmail: '',
+        AprovadorEfetivoId: snapshot.aprovadorEfetivoId,
+        AprovadorEfetivoNome: snapshot.aprovadorEfetivoNome,
+        AprovadorEfetivoEmail: '',
+        SubstituicaoAplicada: snapshot.substituicaoAplicada,
+        MotivoResolucaoAprovador: snapshot.motivoResolucaoAprovador,
+        MotivoExcecao: snapshot.motivoExcecao,
+        DataHoraAplicacao: snapshot.dataHoraAplicacao
+      })
+    );
+    const item = await this.ensureJson(response);
+    const snapshotId = Number(item.Id || item.ID);
+
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: 'CriarSnapshotAprovacaoOperacional',
+      mensagem: 'Snapshot operacional V2.7A-TESTE criado. Vinculo ao item deve ser executado apenas em rodada controlada posterior.',
+      itemId: snapshotId,
+      alertas: []
+    };
   }
 
   public async preValidarTesteControladoSnapshot(input: SnapshotCriacaoTesteInput): Promise<PreValidacaoTesteControladoSnapshotResultado> {
@@ -655,6 +1049,146 @@ export class SharePointEnacRepository {
       dataHora: item.Created,
       justificativa: item.Justificativa
     }));
+  }
+
+  private validarFlagsOperacionaisV27A(flags: FlagsEscritaOperacionalV27A): AlertaBloqueioEscrita[] {
+    const alertas: AlertaBloqueioEscrita[] = [];
+
+    if (!flags.habilitarEscritaOperacionalV27A) {
+      alertas.push({ codigo: 'ESCRITA_OPERACIONAL_DESABILITADA', mensagem: 'habilitarEscritaOperacionalV27A deve ser true.' });
+    }
+
+    if (!flags.modoTesteOperacionalV27A) {
+      alertas.push({ codigo: 'MODO_TESTE_OPERACIONAL_DESABILITADO', mensagem: 'modoTesteOperacionalV27A deve ser true nesta preparacao.' });
+    }
+
+    if (!flags.permitirSomenteItensTesteV27A) {
+      alertas.push({ codigo: 'SOMENTE_ITENS_TESTE_OBRIGATORIO', mensagem: 'permitirSomenteItensTesteV27A deve permanecer true na V2.7A.' });
+    }
+
+    if (flags.marcadorTesteOperacionalV27A !== MARCADOR_OPERACIONAL_V27A) {
+      alertas.push({ codigo: 'MARCADOR_OPERACIONAL_INVALIDO', mensagem: `Marcador obrigatorio: ${MARCADOR_OPERACIONAL_V27A}.` });
+    }
+
+    if (flags.exigirConfirmacaoManualV27A && flags.confirmacaoManualV27A !== CONFIRMACAO_OPERACIONAL_V27A) {
+      alertas.push({ codigo: 'CONFIRMACAO_OPERACIONAL_INVALIDA', mensagem: `Confirmacao exigida: ${CONFIRMACAO_OPERACIONAL_V27A}.` });
+    }
+
+    return alertas;
+  }
+
+  private perfilPodeExecutarAcao(acao: AcaoOperacionalV27A, usuario: IUsuarioPerfilEnac): boolean {
+    switch (acao) {
+      case 'CriarRequisicaoCompra':
+        return usuario.podeCriarSolicitacao || usuario.perfilPrincipal === 'Campo' || usuario.podeAdministrarConfiguracoes;
+      case 'AtualizarRequisicaoCompra':
+        return usuario.podeRegistrarCotacoes || usuario.podeEmitirPedido || usuario.podeAdministrarConfiguracoes;
+      case 'CriarPedidoCompra':
+        return usuario.podeEmitirPedido || usuario.podeAdministrarConfiguracoes;
+      case 'VincularNotaFiscal':
+        return usuario.podeVincularNf || usuario.podeAdministrarConfiguracoes;
+      case 'ProgramarPagamento':
+        return usuario.podeProgramarPagamento || usuario.podeAdministrarConfiguracoes;
+      case 'AprovarCompra':
+      case 'CriarSnapshotAprovacaoOperacional':
+        return usuario.podeAprovarCompras || usuario.perfilPrincipal === 'Diretoria' || usuario.podeAdministrarConfiguracoes;
+      case 'RegistrarHistoricoOperacional':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private acoesPermitidasParaPerfil(usuario: IUsuarioPerfilEnac): AcaoOperacionalV27A[] {
+    const acoes: AcaoOperacionalV27A[] = [
+      'CriarRequisicaoCompra',
+      'AtualizarRequisicaoCompra',
+      'CriarPedidoCompra',
+      'VincularNotaFiscal',
+      'ProgramarPagamento',
+      'AprovarCompra',
+      'RegistrarHistoricoOperacional',
+      'CriarSnapshotAprovacaoOperacional'
+    ];
+
+    return acoes.filter((acao) => this.perfilPodeExecutarAcao(acao, usuario));
+  }
+
+  private transicaoPermitidaV27A(acao: AcaoOperacionalV27A, statusAtual: string): boolean {
+    const status = this.normalizarTexto(statusAtual);
+
+    switch (acao) {
+      case 'CriarRequisicaoCompra':
+      case 'RegistrarHistoricoOperacional':
+        return true;
+      case 'AtualizarRequisicaoCompra':
+        return ['novarascunho', 'novasolicitacao', 'aguardandocotacao', 'emcotacao', 'cotada', 'aguardandoaprovacao'].indexOf(status) >= 0;
+      case 'CriarSnapshotAprovacaoOperacional':
+      case 'AprovarCompra':
+        return ['cotada', 'aguardandoaprovacao'].indexOf(status) >= 0;
+      case 'CriarPedidoCompra':
+        return ['aprovadaparacompra', 'aprovada'].indexOf(status) >= 0;
+      case 'VincularNotaFiscal':
+        return ['pedidoemitido', 'comprarealizadaaguardandonf'].indexOf(status) >= 0;
+      case 'ProgramarPagamento':
+        return ['nfvinculada', 'aguardandoprogramacaofinanceira'].indexOf(status) >= 0;
+      default:
+        return false;
+    }
+  }
+
+  private validarPayloadRequisicao(payload: RequisicaoCompraControladaPayload): AlertaBloqueioEscrita[] {
+    const alertas: AlertaBloqueioEscrita[] = [];
+
+    if (!payload.titulo || payload.titulo.indexOf(payload.marcadorTeste) < 0) {
+      alertas.push({ codigo: 'TITULO_SEM_MARCADOR_TESTE', mensagem: `Titulo deve conter ${payload.marcadorTeste}.` });
+    }
+
+    if (!payload.obraItemId || payload.obraItemId <= 0) {
+      alertas.push({ codigo: 'OBRA_OBRIGATORIA', mensagem: 'obraItemId deve ser informado.' });
+    }
+
+    if (!payload.descricao) {
+      alertas.push({ codigo: 'DESCRICAO_OBRIGATORIA', mensagem: 'Descricao deve ser informada.' });
+    }
+
+    if (!payload.dataNecessaria) {
+      alertas.push({ codigo: 'DATA_NECESSARIA_OBRIGATORIA', mensagem: 'Data necessaria deve ser informada.' });
+    }
+
+    return alertas;
+  }
+
+  private criarResultadoOperacionalBloqueado(acao: AcaoOperacionalV27A, mensagem: string, alertas: AlertaBloqueioEscrita[], itemId?: number, statusAnterior?: string): ResultadoOperacionalV27A {
+    return {
+      sucesso: false,
+      bloqueado: true,
+      acao,
+      mensagem,
+      itemId,
+      statusAnterior,
+      alertas
+    };
+  }
+
+  private async obterResumoItemOperacional(listId: string, itemId: number, statusField: string): Promise<{ title: string; status: string }> {
+    const endpoint = `${this.getListItemsEndpoint(listId)}(${itemId})?$select=Id,Title,${statusField}`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+    const item = await this.ensureJson(response);
+
+    return {
+      title: item.Title || '',
+      status: item[statusField] || ''
+    };
+  }
+
+  private normalizarTexto(value: string | undefined): string {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '')
+      .replace(/\//g, '')
+      .toLowerCase();
   }
 
   private validarControleEscritaTeste(input: SnapshotCriacaoTesteInput): AlertaBloqueioEscrita[] {

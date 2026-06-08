@@ -70,3 +70,9 @@
 - `UsuarioInternoId` deve ser obrigatório, único e indexado.
 - Usuários inativos não podem ser selecionados para novas alçadas ou novas aprovações.
 - Auditoria de criação/alteração deve preferir `Created`, `Modified`, `Author` e `Editor` nativos do SharePoint.
+
+## V2.7A - bloqueio por perfil na escrita
+
+Na V2.7A, a webpart deve consultar o usuario autenticado em `ENAC Usuarios Perfis` e bloquear escrita se o usuario estiver inativo, sem perfil compativel ou fora das flags de teste. Botoes ocultos nao sao considerados controle suficiente: os metodos de escrita tambem validam permissao.
+
+A matriz detalhada esta em `docs/v2.7a-matriz-acoes-por-perfil.md`.

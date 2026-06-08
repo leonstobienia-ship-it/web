@@ -200,6 +200,103 @@ export interface ISnapshotRegraEnac {
 }
 
 export type MarcadorTesteEscritaEnac = 'V2.3B-TESTE' | 'V2.6A-TESTE';
+export type MarcadorTesteOperacionalEnac = 'V2.7A-TESTE';
+
+export type AcaoOperacionalV27A =
+  | 'CriarRequisicaoCompra'
+  | 'AtualizarRequisicaoCompra'
+  | 'CriarPedidoCompra'
+  | 'VincularNotaFiscal'
+  | 'ProgramarPagamento'
+  | 'AprovarCompra'
+  | 'RegistrarHistoricoOperacional'
+  | 'CriarSnapshotAprovacaoOperacional';
+
+export interface FlagsEscritaOperacionalV27A {
+  habilitarEscritaOperacionalV27A: boolean;
+  modoTesteOperacionalV27A: boolean;
+  permitirSomenteItensTesteV27A: boolean;
+  marcadorTesteOperacionalV27A: MarcadorTesteOperacionalEnac;
+  exigirConfirmacaoManualV27A: boolean;
+  confirmacaoManualV27A: string;
+}
+
+export interface ResultadoOperacionalV27A {
+  sucesso: boolean;
+  bloqueado: boolean;
+  acao: AcaoOperacionalV27A;
+  mensagem: string;
+  itemId?: number;
+  statusAnterior?: string;
+  statusNovo?: string;
+  alertas: AlertaBloqueioEscrita[];
+}
+
+export interface PreValidacaoOperacionalV27AResultado {
+  sucesso: boolean;
+  bloqueado: boolean;
+  mensagem: string;
+  usuarioAtual?: IUsuarioPerfilEnac;
+  acoesPermitidas: AcaoOperacionalV27A[];
+  alertas: AlertaBloqueioEscrita[];
+}
+
+export interface RequisicaoCompraControladaPayload {
+  titulo: string;
+  obraItemId: number;
+  tipoSolicitacao: TipoSolicitacaoEnac;
+  descricao: string;
+  prioridade: 'Normal' | 'Alta' | 'Emergencial';
+  dataNecessaria: string;
+  marcadorTeste: MarcadorTesteOperacionalEnac;
+}
+
+export interface AtualizacaoRequisicaoCompraControladaPayload {
+  statusNovo?: string;
+  observacao?: string;
+  marcadorTeste: MarcadorTesteOperacionalEnac;
+}
+
+export interface PedidoCompraControladoPayload {
+  requisicaoItemId: number;
+  numeroPedido: string;
+  fornecedor?: string;
+  valorPedido?: number;
+  marcadorTeste: MarcadorTesteOperacionalEnac;
+}
+
+export interface NotaFiscalControladaPayload {
+  numeroNf: string;
+  valor: number;
+  dataEmissao?: string;
+  dataVencimento?: string;
+  marcadorTeste: MarcadorTesteOperacionalEnac;
+}
+
+export interface ProgramacaoPagamentoControladaPayload {
+  valorProgramado: number;
+  dataProgramada: string;
+  formaPagamento: string;
+  marcadorTeste: MarcadorTesteOperacionalEnac;
+}
+
+export interface HistoricoOperacionalPayload {
+  origemLista: string;
+  origemItemId: number;
+  acao: AcaoOperacionalV27A;
+  descricao: string;
+  statusAnterior?: string;
+  statusNovo?: string;
+  marcadorTeste: MarcadorTesteOperacionalEnac;
+}
+
+export interface SnapshotAprovacaoOperacionalPayload {
+  requisicaoItemId: number;
+  valorAnalisado: number;
+  tipoSolicitacao: TipoSolicitacaoEnac;
+  obraId?: string;
+  marcadorTeste: MarcadorTesteOperacionalEnac;
+}
 
 export type EscritaControladaStatus =
   | 'Bloqueada'

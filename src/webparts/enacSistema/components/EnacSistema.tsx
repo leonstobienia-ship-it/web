@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
   IDiagnosticoReadonlyEnac,
+  FlagsEscritaOperacionalV27A,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
   IObraEnac,
@@ -10,6 +11,7 @@ import {
   MarcadorTesteEscritaEnac,
   OrigemDadosEnac,
   PerfilEnac,
+  PreValidacaoOperacionalV27AResultado,
   PreValidacaoTesteControladoSnapshotResultado,
   SnapshotCriacaoTesteResultado,
   StatusProcesso
@@ -33,6 +35,7 @@ export interface IEnacSistemaProps {
   escritaTesteRequisicaoItemId?: number;
   escritaTesteValorAnalisado?: number;
   escritaTesteMarcador?: MarcadorTesteEscritaEnac;
+  flagsEscritaOperacionalV27A?: FlagsEscritaOperacionalV27A;
 }
 
 const obras: IObraEnac[] = [
@@ -118,6 +121,8 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [erroPreValidacaoEscritaTeste, setErroPreValidacaoEscritaTeste] = React.useState<string | null>(null);
   const [confirmacaoFinalEscritaTeste, setConfirmacaoFinalEscritaTeste] = React.useState<string>('');
   const [executandoEscritaTeste, setExecutandoEscritaTeste] = React.useState<boolean>(false);
+  const [preValidacaoOperacionalV27A, setPreValidacaoOperacionalV27A] = React.useState<PreValidacaoOperacionalV27AResultado | null>(null);
+  const [erroOperacionalV27A, setErroOperacionalV27A] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (props.origemDados !== 'sharepoint' || !props.repository) {
@@ -312,6 +317,39 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     props.escritaTesteRequisicaoItemId,
     props.escritaTesteValorAnalisado,
     props.modoEscritaTeste,
+    props.repository
+  ]);
+
+  React.useEffect(() => {
+    if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !props.currentUserEmail || !props.flagsEscritaOperacionalV27A?.habilitarEscritaOperacionalV27A) {
+      setPreValidacaoOperacionalV27A(null);
+      setErroOperacionalV27A(null);
+      return;
+    }
+
+    let disposed = false;
+    setErroOperacionalV27A(null);
+
+    props.repository.preValidarEscritaOperacionalV27A(props.currentUserEmail, props.flagsEscritaOperacionalV27A)
+      .then((resultado) => {
+        if (!disposed) {
+          setPreValidacaoOperacionalV27A(resultado);
+        }
+      })
+      .catch((error: Error) => {
+        if (!disposed) {
+          setPreValidacaoOperacionalV27A(null);
+          setErroOperacionalV27A(error.message);
+        }
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, [
+    origemDadosEfetiva,
+    props.currentUserEmail,
+    props.flagsEscritaOperacionalV27A,
     props.repository
   ]);
 
@@ -512,6 +550,13 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
                 resultado={resultadoEscritaTeste}
                 onConfirmacaoFinalChange={setConfirmacaoFinalEscritaTeste}
                 onExecutar={executarEscritaTesteSnapshot}
+              />
+            )}
+            {perfil === 'AdministradorSistema' && props.flagsEscritaOperacionalV27A?.habilitarEscritaOperacionalV27A && (
+              <PainelOperacionalV27A
+                flags={props.flagsEscritaOperacionalV27A}
+                preValidacao={preValidacaoOperacionalV27A}
+                erro={erroOperacionalV27A}
               />
             )}
           </>
@@ -740,6 +785,36 @@ function TesteEscritaSnapshot({
       <label>Confirmacao final<input value={confirmacaoFinal} onChange={(event) => onConfirmacaoFinalChange(event.currentTarget.value)} /></label>
       <button disabled={disabled} onClick={onExecutar}>Teste controlado V2.6A - criar snapshot de teste</button>
       {resultado && <span>{resultado.status}: {resultado.mensagem}</span>}
+    </div>
+  );
+}
+
+function PainelOperacionalV27A({
+  flags,
+  preValidacao,
+  erro
+}: {
+  flags: FlagsEscritaOperacionalV27A;
+  preValidacao: PreValidacaoOperacionalV27AResultado | null;
+  erro: string | null;
+}): JSX.Element {
+  return (
+    <div className={styles.row}>
+      <strong>V2.7A - escrita operacional restrita</strong>
+      <span>
+        Status das travas: escrita {flags.habilitarEscritaOperacionalV27A ? 'habilitada' : 'desabilitada'},
+        modo teste {flags.modoTesteOperacionalV27A ? 'ativo' : 'inativo'},
+        somente itens {flags.marcadorTesteOperacionalV27A}.
+      </span>
+      {erro && <span>Pre-validacao: {erro}</span>}
+      {preValidacao && (
+        <span>
+          Pre-validacao: {preValidacao.bloqueado ? 'bloqueada' : 'liberada'} - {preValidacao.mensagem}<br />
+          Usuario: {preValidacao.usuarioAtual?.nome || '-'} / {preValidacao.usuarioAtual?.perfilPrincipal || '-'}<br />
+          Acoes permitidas: {preValidacao.acoesPermitidas.length > 0 ? preValidacao.acoesPermitidas.join(', ') : '-'}<br />
+          Alertas: {preValidacao.alertas.length > 0 ? preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') : '-'}
+        </span>
+      )}
     </div>
   );
 }

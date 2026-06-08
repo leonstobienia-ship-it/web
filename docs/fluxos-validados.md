@@ -35,3 +35,7 @@ O MVP reorganiza o fluxo de compras e pagamento em:
 O protótipo Microsoft 365 já validou o uso do usuário autenticado, incluindo o campo "Criado por", para identificar quem envia formulários.
 
 No MVP atual, esse conceito é simulado nos dados de tela e deve ser preservado na futura integração.
+
+## V2.7A - fluxo de escrita restrita
+
+A V2.7A prepara o fluxo de compras para escrita operacional restrita em itens `V2.7A-TESTE`: criar requisicao, complementar/cotar, aprovar por alcada, emitir pedido, vincular NF, programar pagamento e registrar historico. A execucao real em tenant deve ocorrer apenas em V2.7A.1, com flags habilitadas manualmente e sem Power Automate.

@@ -103,6 +103,12 @@ O mapa físico completo está em `sharepoint/mapeamento-listas-reais-v2.3.md`.
 
 A arquitetura está preparada para Power Automate e permissões reais, mas a V2.3 ainda não implementa fluxos de aprovação nem segurança definitiva. Alterações de usuários e alçadas devem ser restringidas por permissões SharePoint a administradores autorizados.
 
+## V2.7A - escrita operacional restrita
+
+A partir da V2.7A, a webpart passa a ter uma base tecnica para escrita operacional restrita, mas desligada por padrao. A camada `SharePointEnacRepository` concentra validacoes de flags, usuario autenticado, perfil ativo, permissao por acao, marcador `V2.7A-TESTE`, status/transicao e campos obrigatorios antes de qualquer POST/MERGE.
+
+Na V2.7A, toda escrita operacional deve permanecer limitada a teste controlado. Power Automate nao foi iniciado e listas operacionais nao receberam nova matriz de permissoes nesta rodada.
+
 ## Integração futura com Teams
 
 A solução SPFx deverá ser empacotada, publicada no catálogo de aplicativos e adicionada como aba no Teams. O protótipo atual não executa essa publicação.
