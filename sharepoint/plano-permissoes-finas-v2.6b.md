@@ -207,3 +207,13 @@ Leon executou `Apply` e o script falhou em `Get-PnPGroup` com `Access is denied.
 O script foi corrigido para validar grupos por nome exato, sem enumerar todos os grupos, e para oferecer o modo `-ConnectedPreflight`, que conecta e valida site, niveis de permissao, listas e grupos sem aplicar alteracoes.
 
 Alteracoes de permissao continuam bloqueadas ate que todo o preflight passe. Se qualquer validacao falhar, o script deve informar que nenhuma alteracao foi aplicada e acionar criterio de parada.
+
+## V2.6B.4B - Falha em BreakRoleInheritance
+
+Leon executou `ConnectedPreflight` com sucesso, validando site, niveis de permissao, listas administrativas e grupos.
+
+Ao executar `Apply`, o script falhou na primeira operacao real de escrita: `Set-PnPList -BreakRoleInheritance` na lista `ENAC Usuarios Perfis`, com `Access is denied. 0x80070005`.
+
+A expectativa tecnica e que nenhuma permissao tenha sido aplicada, pois a falha ocorreu antes de `Set-PnPListPermission`. Antes de nova tentativa, e necessario confirmar manualmente que as quatro listas administrativas continuam herdando permissoes.
+
+Nao repetir `Apply` com o mesmo ClientId/contexto antes de corrigir autorizacao ou escolher aplicacao manual controlada.

@@ -94,3 +94,16 @@ pwsh -File ".\scripts\sharepoint\11-permissoes-finas-v2.6b-apply.ps1" `
 ## Relatorio
 
 Preencher `sharepoint/auditoria-pos-aplicacao-permissoes-v2.6b4.template.md` apos a execucao, se `-Apply` for autorizado e concluido.
+
+## Checklist V2.6B.4B apos falha em BreakRoleInheritance
+
+Leon deve conferir manualmente:
+
+- `ENAC Usuarios Perfis` continua herdando permissoes;
+- `ENAC Alcadas` continua herdando permissoes;
+- `ENAC Historico Configuracoes` continua herdando permissoes;
+- `ENAC Snapshots Regras` continua herdando permissoes;
+- nenhuma lista operacional foi alterada;
+- Power Automate nao foi iniciado.
+
+Nao repetir `Apply` com o mesmo ClientId/contexto ate corrigir autorizacao ou optar por aplicacao manual.

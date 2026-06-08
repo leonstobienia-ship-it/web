@@ -97,6 +97,8 @@ Na V2.6B.4, foi preparada a aplicação real controlada das permissões administ
 
 Na V2.6B.4A, foi corrigida a falha de preflight em `Get-PnPGroup`. O script deixou de enumerar todos os grupos, passou a validar grupos por nome exato e ganhou o modo `-ConnectedPreflight`, que conecta para validar site/listas/grupos/níveis sem aplicar alterações. Nenhuma permissão foi aplicada pelo Codex.
 
+Na V2.6B.4B, foi registrada falha controlada no `Apply`: o `ConnectedPreflight` passou, mas a primeira operação real `Set-PnPList -BreakRoleInheritance` em `ENAC Usuarios Perfis` retornou `Access is denied. 0x80070005`. A expectativa técnica é que nenhuma permissão tenha sido aplicada, mas Leon deve confirmar manualmente que as quatro listas administrativas continuam herdando permissões.
+
 ## Protótipo
 
 Abra no navegador:
@@ -163,6 +165,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b4-prep-registro-grupos-criados.md`
 - `docs/v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
 - `docs/v2.6b4a-falha-preflight-get-pnpgroup.md`
+- `docs/v2.6b4b-falha-breakroleinheritance-access-denied.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
