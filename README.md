@@ -109,6 +109,8 @@ Na V2.7A.1, o build/pacote local da V2.7A foi validado com Node `v22.18.0` encon
 
 Na rodada `V2.7A-RECUPERAR`, a base anteriormente reportada como ausente foi reconferida e estava presente no historico local: `2f39ba3 feat: preparar escrita operacional restrita v2.7a`. A validacao local foi repetida com Node `v22.22.3`, incluindo `tsc`, `npm install`, `gulp clean`, `gulp build`, `gulp bundle --ship` e `gulp package-solution --ship`, todos com sucesso. Codex removeu apenas um relatorio local obsoleto nao rastreado de base ausente, preservou `README-RoG_Leon.md`, nao conectou ao SharePoint e nao alterou tenant/listas/dados.
 
+Na V2.7A.2, foi preparado o roteiro do primeiro teste funcional controlado da escrita operacional restrita. A escrita permanece desligada por padrao e o teste manual deve ficar limitado ao item `V2.7A-TESTE-001`, com marcador `V2.7A-TESTE`, em pagina restrita. A primeira acao recomendada e atualizar status de `Aberta` ou `Recebida` para `Aguardando aprovacao`, sem executar pedido, nota fiscal, pagamento ou Power Automate. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -183,6 +185,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a-transicoes-status-fluxo-compras.md`
 - `docs/v2.7a1-validacao-build-pacote-node22.md`
 - `docs/v2.7a-recuperacao-base-ausente.md`
+- `docs/v2.7a2-teste-funcional-controlado.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -196,6 +199,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
 - `tests/roteiro-v2.6b4c-finalizacao-manual-permissoes-administrativas.md`
 - `tests/roteiro-v2.7a-escrita-operacional-restrita.md`
+- `tests/roteiro-v2.7a2-teste-funcional-controlado.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`

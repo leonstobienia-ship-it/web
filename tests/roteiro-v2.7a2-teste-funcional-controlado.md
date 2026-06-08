@@ -1,0 +1,149 @@
+# Roteiro V2.7A.2 - Teste Funcional Controlado
+
+Data: 2026-06-08
+
+## Objetivo
+
+Orientar Leon a executar manualmente o primeiro teste controlado da escrita operacional restrita V2.7A, limitado a item com marcador `V2.7A-TESTE`, sem Power Automate e sem uso operacional amplo.
+
+Codex nao deve conectar ao SharePoint, publicar pacote, alterar tenant/listas/dados, executar escrita ou iniciar Power Automate.
+
+## Pre-condicoes
+
+- Branch local `dev/v2.3-sharepoint-integracao`.
+- Base V2.7A presente no commit `2f39ba3`.
+- Revalidacao local registrada no commit `31d1adc`.
+- Pacote local V2.7A disponivel em `sharepoint/solution/enac-sistema-spfx.sppkg`.
+- Pagina restrita de teste disponivel no tenant.
+- Permissoes administrativas V2.6B.4D preservadas.
+- Dados `V2.3B-TESTE` e `V2.6A-TESTE` preservados.
+- Power Automate fora do escopo.
+
+## Item De Teste
+
+Criar manualmente um item novo na Lista 02, sem copiar item existente.
+
+| Campo | Valor |
+| --- | --- |
+| Numero da Requisicao | `V2.7A-TESTE-001` |
+| Codigo da Obra | `V2.7A-TESTE` |
+| Centro de Custo | `V2.7A-TESTE` |
+| Tipo da Solicitacao | `Material` |
+| Descricao da Solicitacao | `V2.7A-TESTE - Validacao controlada da escrita operacional restrita` |
+| Observacoes | `V2.7A-TESTE - Item limpo para teste operacional restrito` |
+| Status inicial | `Aberta` ou `Recebida` |
+| Aprovacao Necessaria | `Sim` |
+| SnapshotAprovacaoCompra | vazio |
+| Quantidade | `1` |
+| Unidade | `un` |
+| Valor analisado | `R$ 6.720,00`, se compativel |
+
+## Primeira Acao Recomendada
+
+Executar somente uma acao:
+
+`Aberta/Recebida -> Aguardando aprovacao`
+
+Essa e a Opcao A recomendada para a primeira escrita operacional porque valida item de teste, permissao, transicao de status, escrita controlada na Lista 02 e historico, sem avancar para pedido, nota fiscal ou pagamento.
+
+Se a pagina publicada ainda nao expuser essa transicao de forma segura, parar e usar apenas a Opcao B em rodada autorizada: criar snapshot operacional de aprovacao para o item `V2.7A-TESTE`, sem vincular automaticamente ao item e sem continuar o fluxo.
+
+## Flags Da Webpart
+
+Configurar manualmente no Property Pane da webpart em pagina restrita:
+
+- `habilitarEscritaOperacionalV27A = true`;
+- `modoTesteOperacionalV27A = true`;
+- `permitirSomenteItensTesteV27A = true`;
+- `marcadorTesteOperacionalV27A = V2.7A-TESTE`;
+- `exigirConfirmacaoManualV27A = true`;
+- `confirmacaoManualV27A = CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC`.
+
+Depois do teste:
+
+- desligar `habilitarEscritaOperacionalV27A`;
+- desligar `modoTesteOperacionalV27A`;
+- manter `permitirSomenteItensTesteV27A = true`;
+- limpar `confirmacaoManualV27A`;
+- republicar a pagina com flags desligadas.
+
+## Pre-validacao
+
+Antes de clicar em qualquer acao de escrita, confirmar:
+
+| Conferencia | Resultado esperado |
+| --- | --- |
+| Usuario atual | Exibido/reconhecido pela webpart |
+| Perfil | Reconhecido em `ENAC Usuarios Perfis` |
+| Permissao | Acao permitida para o perfil |
+| Item de teste | Item `V2.7A-TESTE-001` encontrado |
+| Marcador | `V2.7A-TESTE` presente no item/payload |
+| Status atual | `Aberta` ou `Recebida` |
+| Transicao pretendida | `Aguardando aprovacao` |
+| Campos obrigatorios | Presentes |
+| SnapshotAprovacaoCompra | Vazio ou estado esperado |
+| Historico previsto | Indicado antes da escrita |
+| Confirmacao manual | Exigida e correta |
+
+Se qualquer resultado divergir, parar.
+
+## DevTools
+
+Abrir antes da pre-validacao:
+
+`DevTools > Network > Fetch/XHR`
+
+Ativar:
+
+- `Preserve log`;
+- `Disable cache`.
+
+Durante pre-validacao:
+
+- permitido: `GET`;
+- proibido: `POST`, `MERGE`, `PATCH`, `DELETE`.
+
+Durante a escrita autorizada:
+
+- permitido: `GET` de apoio e apenas o `POST`/`MERGE` indispensavel para a acao;
+- proibido: `DELETE`;
+- proibido: `PATCH`, salvo decisao tecnica posterior documentada;
+- proibidas chamadas fora das listas previstas.
+
+## Criterios De Parada
+
+Parar imediatamente se:
+
+- o item nao contiver `V2.7A-TESTE`;
+- usuario ou perfil nao forem reconhecidos;
+- a permissao for negada;
+- a transicao estiver incorreta;
+- campo obrigatorio estiver ausente;
+- ocorrer escrita durante a pre-validacao;
+- aparecer `POST`/`MERGE` em lista nao prevista;
+- aparecer `PATCH` ou `DELETE`;
+- houver erro `400`, `401`, `403` ou `500`;
+- Power Automate iniciar;
+- qualquer item real/operacional for alterado.
+
+## Auditoria Pos-teste
+
+Registrar manualmente:
+
+- item de teste usado;
+- usuario/perfil;
+- flags configuradas;
+- acao executada;
+- chamadas de rede observadas;
+- status final do item, se aplicavel;
+- historico criado, se aplicavel;
+- snapshot criado, se aplicavel;
+- confirmacao de que nao houve alteracao fora de `V2.7A-TESTE`;
+- confirmacao de que flags foram desligadas;
+- confirmacao de que a pagina foi republicada com escrita desligada;
+- confirmacao de que Power Automate nao foi iniciado.
+
+## Resultado Esperado
+
+O teste so deve ser considerado aprovado se uma unica acao controlada for executada, restrita ao item `V2.7A-TESTE-001`, com rede coerente, sem erros, sem `PATCH/DELETE`, sem alteracao de item real e com flags desligadas ao final.
+
