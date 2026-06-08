@@ -243,3 +243,26 @@ Diretriz:
 O roteiro manual esta em `tests/roteiro-v2.6b4c-finalizacao-manual-permissoes-administrativas.md`.
 
 O template de auditoria pos-aplicacao manual esta em `sharepoint/auditoria-pos-aplicacao-manual-permissoes-v2.6b4c.template.md`.
+
+## V2.6B.4D - Permissoes administrativas concluidas manualmente
+
+Leon confirmou manualmente a conclusao da matriz de permissoes nas quatro listas administrativas:
+
+- `ENAC Usuarios Perfis`;
+- `ENAC Alcadas`;
+- `ENAC Historico Configuracoes`;
+- `ENAC Snapshots Regras`.
+
+Status final:
+
+- permissoes exclusivas nas quatro listas: concluido;
+- `Obras em Andamento Owners` mantido com `Controle Total`: concluido;
+- `Obras em Andamento Members` removido das quatro listas: concluido;
+- `Obras em Andamento Visitors` removido das quatro listas: concluido;
+- grupos ENAC aplicados conforme matriz: concluido;
+- listas operacionais nao alteradas nesta etapa;
+- Power Automate nao iniciado.
+
+A auditoria final esta em `sharepoint/auditoria-pos-aplicacao-manual-permissoes-v2.6b4d.md`.
+
+A V2.6B.4 fica encerrada como concluida manualmente por Leon, sujeita apenas a auditorias futuras. O script `11-permissoes-finas-v2.6b-apply.ps1` nao deve ser executado novamente para esta etapa.

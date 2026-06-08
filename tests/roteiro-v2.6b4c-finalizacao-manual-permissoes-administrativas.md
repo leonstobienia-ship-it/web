@@ -6,6 +6,8 @@ Data: 2026-06-08
 
 Guiar Leon na finalizacao manual da matriz de permissoes das quatro listas administrativas, uma lista por vez, sem uso do script `11-permissoes-finas-v2.6b-apply.ps1`.
 
+Atualizacao V2.6B.4D: roteiro executado manualmente por Leon e encerrado como concluido. Este arquivo permanece como evidencia do procedimento seguido.
+
 ## Regras gerais
 
 - Nao usar script durante esta finalizacao.
@@ -105,5 +107,16 @@ Ao final, confirmar:
 - `Obras em Andamento Owners` continua com `Controle Total`;
 - `Members` e `Visitors` foram removidos das quatro listas;
 - os grupos ENAC estao aplicados conforme matriz;
+- nenhuma lista operacional foi alterada;
+- Power Automate nao foi iniciado.
+
+## Resultado V2.6B.4D
+
+Leon confirmou manualmente:
+
+- as quatro listas continuam com permissoes exclusivas;
+- `Obras em Andamento Owners` continua com `Controle Total`;
+- `Members` e `Visitors` foram removidos das quatro listas;
+- os grupos ENAC foram aplicados conforme matriz;
 - nenhuma lista operacional foi alterada;
 - Power Automate nao foi iniciado.

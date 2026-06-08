@@ -101,6 +101,8 @@ Na V2.6B.4B, foi registrada falha controlada no `Apply`: o `ConnectedPreflight` 
 
 Na V2.6B.4C, Leon confirmou manualmente que as quatro listas administrativas estao com permissoes exclusivas. A situacao foi registrada como estado parcial: a heranca esta quebrada, mas a matriz final de grupos ENAC ainda nao esta comprovada como concluida. A finalizacao deve ser manual, uma lista por vez, sem reutilizar o script de `Apply`, sem alterar listas operacionais e sem iniciar Power Automate.
 
+Na V2.6B.4D, Leon confirmou manualmente a conclusao das permissoes administrativas nas quatro listas. Os grupos ENAC foram aplicados conforme matriz, `Obras em Andamento Owners` foi mantido, `Obras em Andamento Members` e `Obras em Andamento Visitors` foram removidos das quatro listas, nenhuma lista operacional foi alterada e Power Automate nao foi iniciado. A V2.6B.4 fica encerrada como concluida manualmente por Leon, sujeita apenas a auditorias futuras.
+
 ## Protótipo
 
 Abra no navegador:
@@ -169,6 +171,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b4a-falha-preflight-get-pnpgroup.md`
 - `docs/v2.6b4b-falha-breakroleinheritance-access-denied.md`
 - `docs/v2.6b4c-estado-parcial-heranca-quebrada.md`
+- `docs/v2.6b4d-registro-final-permissoes-administrativas.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -187,6 +190,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.md`
 - `sharepoint/auditoria-pos-aplicacao-permissoes-v2.6b4.template.md`
 - `sharepoint/auditoria-pos-aplicacao-manual-permissoes-v2.6b4c.template.md`
+- `sharepoint/auditoria-pos-aplicacao-manual-permissoes-v2.6b4d.md`
 - `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`
 - `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`
 - `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`
