@@ -115,3 +115,11 @@ Foi preparado o script `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-au
 O script conecta apenas para leitura, nao possui parametro de aplicacao e nao contem comandos de escrita. Ele inventaria grupos planejados, grupos relacionados a ENAC, listas administrativas, heranca e permissoes atuais quando a API permitir.
 
 Codex nao executou a conexao. O relatorio esperado e `sharepoint/auditoria-permissoes-finas-v2.6b3.md`, que so devera ser versionado se estiver sanitizado.
+
+## V2.6B.3A - Tolerancia a permissao insuficiente
+
+Leon confirmou que a conexao readonly funcionou, mas `Get-PnPGroup` retornou `Access is denied. 0x80070005` tanto com o ClientId readonly quanto com o ClientId de provisionamento.
+
+O script foi ajustado para nao abortar a auditoria quando a leitura de grupos for negada. Nessa situacao, o relatorio registra grupos como `NAO_CONFIRMADO`, documenta a limitacao e continua auditando as listas administrativas individualmente.
+
+Essa correcao nao aplica permissoes, nao cria grupos, nao altera listas e nao inicia Power Automate.

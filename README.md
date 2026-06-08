@@ -81,6 +81,8 @@ Na V2.6B.2, foi preparado um script real protegido de permissões finas para apl
 
 Na V2.6B.3, foi preparado um script conectado/readonly para auditoria manual do estado atual de grupos, listas administrativas, herança e permissões. Codex não executou o script, não conectou ao SharePoint, não aplicou permissões e não iniciou Power Automate. A execução, se aprovada, será manual por Leon e deverá gerar relatório sanitizado para revisão.
 
+Na V2.6B.3A, o script readonly de auditoria de permissões foi corrigido para tolerar falta de permissão em `Get-PnPGroup`. A auditoria agora registra grupos como `NAO_CONFIRMADO` quando a enumeração for negada, continua auditando listas administrativas e gera relatório parcial sanitizado. Nenhuma aplicação, escrita, alteração de permissões ou Power Automate foi executado pelo Codex.
+
 ## Protótipo
 
 Abra no navegador:

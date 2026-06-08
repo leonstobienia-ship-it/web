@@ -41,6 +41,14 @@ pwsh -File ".\scripts\sharepoint\12-permissoes-finas-v2.6b-readonly-auditoria.ps
 - Nenhum e-mail de membro exportado.
 - Nenhuma permissao aplicada.
 
+## Resultado parcial esperado se grupos nao puderem ser lidos
+
+- Relatorio ainda deve ser gerado.
+- Secao `Limitacoes da auditoria` deve informar `Auditoria de grupos: LIMITADA`.
+- Grupos planejados devem aparecer como `NAO_CONFIRMADO`.
+- Listas administrativas devem continuar sendo auditadas.
+- Falha em permissoes de uma lista deve aparecer como limitacao individual, sem abortar o script.
+
 ## O que Leon deve enviar ao Codex
 
 - Saida do terminal.
@@ -48,3 +56,15 @@ pwsh -File ".\scripts\sharepoint\12-permissoes-finas-v2.6b-readonly-auditoria.ps
 - Confirmacao visual se ha e-mails ou dados sensiveis no relatorio.
 - Eventual erro de permissao.
 - Decisao sobre seguir para aplicacao controlada ou ajustar o plano.
+
+## Comando recomendado apos V2.6B.3A
+
+```powershell
+cd "C:\Users\leon\OneDrive - enac.com.br\Documentos\Sistema ENAC"
+
+pwsh -File ".\scripts\sharepoint\12-permissoes-finas-v2.6b-readonly-auditoria.ps1" `
+  -SiteUrl "https://enaccombr.sharepoint.com/sites/Equipe.Obras" `
+  -Tenant "enaccombr.onmicrosoft.com" `
+  -ClientId "8994fd01-5b9b-4e8b-bc11-41c58aa91043" `
+  -AuthMode "DeviceLogin"
+```

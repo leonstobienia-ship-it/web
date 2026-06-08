@@ -75,14 +75,19 @@ function Add-Line {
 function Get-GroupMemberCount {
     param(
         $Connection,
-        $Group
+        $Group,
+        [string]$GroupAuditStatus
     )
+
+    if ($GroupAuditStatus -ne "OK") {
+        return "nao auditado"
+    }
 
     try {
         return @(Get-PnPGroupMember -Identity $Group.Title -Connection $Connection).Count
     }
     catch {
-        return "indisponivel"
+        return "limitado: $(ConvertTo-SafeText $_.Exception.Message)"
     }
 }
 
@@ -124,6 +129,70 @@ function Get-ListRoleAssignments {
     return $rows
 }
 
+function Get-SharePointGroupsSafe {
+    param($Connection)
+
+    try {
+        $groups = @(Get-PnPGroup -Connection $Connection -ErrorAction Stop)
+        return [pscustomobject]@{
+            Status  = "OK"
+            Groups  = $groups
+            Message = ""
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            Status  = "LIMITADO_PERMISSAO"
+            Groups  = @()
+            Message = ConvertTo-SafeText $_.Exception.Message
+        }
+    }
+}
+
+function Get-RoleDefinitionsSafe {
+    param($Connection)
+
+    try {
+        return [pscustomobject]@{
+            Status = "OK"
+            Roles = @(Get-PnPRoleDefinition -Connection $Connection -ErrorAction Stop)
+            Message = ""
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            Status = "LIMITADO_PERMISSAO"
+            Roles = @()
+            Message = ConvertTo-SafeText $_.Exception.Message
+        }
+    }
+}
+
+function Get-AdminListSafe {
+    param(
+        $Connection,
+        [string]$Title
+    )
+
+    try {
+        $list = Get-PnPList -Connection $Connection -Identity $Title -Includes Title,Id,Hidden,ItemCount,HasUniqueRoleAssignments,RootFolder -ErrorAction Stop
+        return [pscustomobject]@{
+            Title = $Title
+            Status = "EXISTE"
+            List = $list
+            Message = ""
+        }
+    }
+    catch {
+        return [pscustomobject]@{
+            Title = $Title
+            Status = "AUSENTE_OU_LIMITADO"
+            List = $null
+            Message = ConvertTo-SafeText $_.Exception.Message
+        }
+    }
+}
+
 Assert-Prerequisites
 
 $outputFullPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputPath)
@@ -134,9 +203,13 @@ if (-not (Test-Path -LiteralPath $outputDir)) {
 
 $connection = Connect-PnPReadonly
 $web = Get-PnPWeb -Connection $connection -Includes Url,Title
-$allGroups = Get-PnPGroup -Connection $connection
-$allLists = Get-PnPList -Connection $connection -Includes Title,Id,Hidden,ItemCount,HasUniqueRoleAssignments,RootFolder
-$roleDefinitions = Get-PnPRoleDefinition -Connection $connection
+$groupAudit = Get-SharePointGroupsSafe -Connection $connection
+$allGroups = $groupAudit.Groups
+$roleDefinitionAudit = Get-RoleDefinitionsSafe -Connection $connection
+$roleDefinitions = $roleDefinitionAudit.Roles
+$listAudits = foreach ($listTitle in $adminLists) {
+    Get-AdminListSafe -Connection $connection -Title $listTitle
+}
 
 $lines = [System.Collections.Generic.List[string]]::new()
 Add-Line $lines "# Auditoria readonly de permissoes finas V2.6B.3"
@@ -155,12 +228,33 @@ Add-Line $lines "- O script nao altera listas, itens ou dados."
 Add-Line $lines "- O script nao exporta e-mails de membros."
 Add-Line $lines ""
 
+Add-Line $lines "## Limitacoes da auditoria"
+Add-Line $lines ""
+if ($groupAudit.Status -eq "OK") {
+    Add-Line $lines "- Auditoria de grupos: OK."
+}
+else {
+    Add-Line $lines "- Auditoria de grupos: LIMITADA."
+    Add-Line $lines "- Motivo: Access denied ou permissao insuficiente ao executar Get-PnPGroup. Detalhe sanitizado: $($groupAudit.Message)"
+    Add-Line $lines "- Impacto: nao foi possivel confirmar existencia ou membros dos grupos planejados nesta rodada."
+    Add-Line $lines "- Acao futura: executar com conta/app com permissao suficiente ou revisar grupos manualmente no SharePoint."
+}
+if ($roleDefinitionAudit.Status -ne "OK") {
+    Add-Line $lines "- Definicoes de permissao: LIMITADAS. Detalhe sanitizado: $($roleDefinitionAudit.Message)"
+}
+Add-Line $lines ""
+
 Add-Line $lines "## Definicoes de permissao disponiveis"
 Add-Line $lines ""
 Add-Line $lines "| Nome | Descricao |"
 Add-Line $lines "| --- | --- |"
-foreach ($roleDefinition in $roleDefinitions | Sort-Object Name) {
-    Add-Line $lines "| $(ConvertTo-SafeText $roleDefinition.Name) | $(ConvertTo-SafeText $roleDefinition.Description) |"
+if ($roleDefinitionAudit.Status -eq "OK") {
+    foreach ($roleDefinition in $roleDefinitions | Sort-Object Name) {
+        Add-Line $lines "| $(ConvertTo-SafeText $roleDefinition.Name) | $(ConvertTo-SafeText $roleDefinition.Description) |"
+    }
+}
+else {
+    Add-Line $lines "| Nao auditado | $($roleDefinitionAudit.Message) |"
 }
 Add-Line $lines ""
 
@@ -169,14 +263,19 @@ Add-Line $lines ""
 Add-Line $lines "| Grupo planejado | Status | Membros contabilizados |"
 Add-Line $lines "| --- | --- | --- |"
 foreach ($groupName in $plannedGroups) {
+    if ($groupAudit.Status -ne "OK") {
+        Add-Line $lines "| $(ConvertTo-SafeText $groupName) | NAO_CONFIRMADO | nao auditado |"
+        continue
+    }
+
     $group = $allGroups | Where-Object { $_.Title -eq $groupName } | Select-Object -First 1
-    if ($group) {
-        $memberCount = Get-GroupMemberCount -Connection $connection -Group $group
-        Add-Line $lines "| $(ConvertTo-SafeText $groupName) | EXISTE | $memberCount |"
-    }
-    else {
+    if (-not $group) {
         Add-Line $lines "| $(ConvertTo-SafeText $groupName) | AUSENTE | 0 |"
+        continue
     }
+
+    $memberCount = Get-GroupMemberCount -Connection $connection -Group $group -GroupAuditStatus $groupAudit.Status
+    Add-Line $lines "| $(ConvertTo-SafeText $groupName) | EXISTE | $memberCount |"
 }
 Add-Line $lines ""
 
@@ -184,29 +283,36 @@ Add-Line $lines "## Outros grupos SharePoint com ENAC no nome"
 Add-Line $lines ""
 Add-Line $lines "| Grupo | Membros contabilizados |"
 Add-Line $lines "| --- | --- |"
-$relatedGroups = $allGroups | Where-Object { $_.Title -like "*ENAC*" } | Sort-Object Title
-if ($relatedGroups.Count -eq 0) {
-    Add-Line $lines "| Nenhum grupo relacionado encontrado | 0 |"
+if ($groupAudit.Status -ne "OK") {
+    Add-Line $lines "| Nao auditado por limitacao de permissao | nao auditado |"
 }
 else {
-    foreach ($group in $relatedGroups) {
-        $memberCount = Get-GroupMemberCount -Connection $connection -Group $group
-        Add-Line $lines "| $(ConvertTo-SafeText $group.Title) | $memberCount |"
+    $relatedGroups = $allGroups | Where-Object { $_.Title -like "*ENAC*" } | Sort-Object Title
+    if ($relatedGroups.Count -eq 0) {
+        Add-Line $lines "| Nenhum grupo relacionado encontrado | 0 |"
+    }
+    else {
+        foreach ($group in $relatedGroups) {
+            $memberCount = Get-GroupMemberCount -Connection $connection -Group $group -GroupAuditStatus $groupAudit.Status
+            Add-Line $lines "| $(ConvertTo-SafeText $group.Title) | $memberCount |"
+        }
     }
 }
 Add-Line $lines ""
 
 Add-Line $lines "## Listas administrativas"
 Add-Line $lines ""
-Add-Line $lines "| Lista | Status | Id | Itens | Heranca unica | Url |"
-Add-Line $lines "| --- | --- | --- | --- | --- | --- |"
-foreach ($listTitle in $adminLists) {
-    $list = $allLists | Where-Object { $_.Title -eq $listTitle } | Select-Object -First 1
-    if ($list) {
-        Add-Line $lines "| $(ConvertTo-SafeText $listTitle) | EXISTE | $($list.Id) | $($list.ItemCount) | $($list.HasUniqueRoleAssignments) | $(ConvertTo-SafeText $list.RootFolder.ServerRelativeUrl) |"
+Add-Line $lines "Auditoria de listas administrativas: prosseguiu independentemente da auditoria de grupos."
+Add-Line $lines ""
+Add-Line $lines "| Lista | Status | Id | Itens | Heranca unica | Url | Observacao |"
+Add-Line $lines "| --- | --- | --- | --- | --- | --- | --- |"
+foreach ($listAudit in $listAudits) {
+    if ($listAudit.List) {
+        $list = $listAudit.List
+        Add-Line $lines "| $(ConvertTo-SafeText $listAudit.Title) | EXISTE | $($list.Id) | $($list.ItemCount) | $($list.HasUniqueRoleAssignments) | $(ConvertTo-SafeText $list.RootFolder.ServerRelativeUrl) |  |"
     }
     else {
-        Add-Line $lines "| $(ConvertTo-SafeText $listTitle) | AUSENTE |  |  |  |  |"
+        Add-Line $lines "| $(ConvertTo-SafeText $listAudit.Title) | AUSENTE_OU_LIMITADO |  |  |  |  | $(ConvertTo-SafeText $listAudit.Message) |"
     }
 }
 Add-Line $lines ""
@@ -216,12 +322,13 @@ foreach ($listTitle in $adminLists) {
     Add-Line $lines ""
     Add-Line $lines "### $(ConvertTo-SafeText $listTitle)"
     Add-Line $lines ""
-    $list = $allLists | Where-Object { $_.Title -eq $listTitle } | Select-Object -First 1
-    if (-not $list) {
-        Add-Line $lines "Lista ausente."
+    $listAudit = $listAudits | Where-Object { $_.Title -eq $listTitle } | Select-Object -First 1
+    if (-not $listAudit.List) {
+        Add-Line $lines "Lista ausente ou nao auditada por limitacao de acesso: $($listAudit.Message)"
         continue
     }
 
+    $list = $listAudit.List
     Add-Line $lines "Heranca unica: $($list.HasUniqueRoleAssignments)"
     Add-Line $lines ""
     Add-Line $lines "| Principal | Tipo | Papeis |"
@@ -238,11 +345,16 @@ Add-Line $lines ""
 Add-Line $lines "| Item | Resultado | Observacao |"
 Add-Line $lines "| --- | --- | --- |"
 foreach ($groupName in $plannedGroups) {
-    $exists = [bool]($allGroups | Where-Object { $_.Title -eq $groupName } | Select-Object -First 1)
-    Add-Line $lines "| Grupo $(ConvertTo-SafeText $groupName) | $(if ($exists) { 'OK' } else { 'PENDENTE' }) | Conferir criacao apenas em rodada futura autorizada |"
+    if ($groupAudit.Status -ne "OK") {
+        Add-Line $lines "| Grupo $(ConvertTo-SafeText $groupName) | NAO_CONFIRMADO | Get-PnPGroup limitado por permissao; conferir manualmente |"
+    }
+    else {
+        $exists = [bool]($allGroups | Where-Object { $_.Title -eq $groupName } | Select-Object -First 1)
+        Add-Line $lines "| Grupo $(ConvertTo-SafeText $groupName) | $(if ($exists) { 'OK' } else { 'PENDENTE' }) | Conferir criacao apenas em rodada futura autorizada |"
+    }
 }
 foreach ($listTitle in $adminLists) {
-    $exists = [bool]($allLists | Where-Object { $_.Title -eq $listTitle } | Select-Object -First 1)
+    $exists = [bool]($listAudits | Where-Object { $_.Title -eq $listTitle -and $_.List } | Select-Object -First 1)
     Add-Line $lines "| Lista $(ConvertTo-SafeText $listTitle) | $(if ($exists) { 'OK' } else { 'PENDENTE' }) | Necessaria para permissao administrativa fina |"
 }
 Add-Line $lines ""
