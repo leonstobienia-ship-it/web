@@ -16,6 +16,9 @@ param(
     [switch]$Apply,
 
     [Parameter(Mandatory = $false)]
+    [switch]$ConnectedPreflight,
+
+    [Parameter(Mandatory = $false)]
     [string]$ConfirmPermissoes = "",
 
     [Parameter(Mandatory = $false)]
@@ -95,6 +98,10 @@ function Write-Section {
 }
 
 function Assert-ApplySafety {
+    if ($Apply -and $ConnectedPreflight) {
+        throw "Parametros invalidos: use -ConnectedPreflight ou -Apply, nunca os dois juntos."
+    }
+
     if (-not $Apply) {
         return
     }
@@ -127,14 +134,33 @@ function Connect-EnacSharePoint {
     return Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId $ClientId -ReturnConnection
 }
 
+function Invoke-PreflightFailure {
+    param([string]$Message)
+
+    Write-Host "Falha de preflight: $Message" -ForegroundColor Red
+    Write-Host "Nenhuma alteracao foi aplicada; falha ocorreu no preflight." -ForegroundColor Yellow
+    Write-Host "Criterio de parada acionado." -ForegroundColor Yellow
+    Write-Host "Proxima acao: executar com conta/app com permissao suficiente ou aplicar permissoes manualmente." -ForegroundColor Yellow
+    throw $Message
+}
+
 function Assert-ExpectedGroupsExist {
     param($Connection)
 
-    $existingGroups = @(Get-PnPGroup -Connection $Connection -ErrorAction Stop)
     foreach ($groupName in $groups) {
-        $existing = $existingGroups | Where-Object { $_.Title -eq $groupName } | Select-Object -First 1
-        if (-not $existing) {
-            throw "Grupo obrigatorio nao encontrado: $groupName. Abortar antes de qualquer alteracao."
+        try {
+            $existing = Get-PnPGroup -Identity $groupName -Connection $Connection -ErrorAction Stop
+            if (-not $existing) {
+                Invoke-PreflightFailure -Message "Grupo nao encontrado: $groupName. Nenhuma alteracao aplicada."
+            }
+        }
+        catch {
+            $safeMessage = $_.Exception.Message
+            if ($safeMessage -match "Access is denied|0x80070005|E_ACCESSDENIED") {
+                Invoke-PreflightFailure -Message "sem permissao para validar grupos SharePoint via PnP. Grupo='$groupName'. Detalhe=$safeMessage"
+            }
+
+            Invoke-PreflightFailure -Message "nao foi possivel validar o grupo '$groupName' via PnP. Detalhe=$safeMessage"
         }
 
         Write-Host "OK grupo existente: $groupName"
@@ -152,6 +178,25 @@ function Assert-AdminListsExist {
 
         Write-Host "OK lista administrativa: $($listPlan.Title)"
     }
+}
+
+function Invoke-Preflight {
+    param($Connection)
+
+    Write-Section "Preflight conectado"
+    $web = Get-PnPWeb -Connection $Connection
+    Write-Host "OK site conectado: $($web.Title)"
+
+    Write-Host "Validando niveis de permissao..."
+    Assert-RoleDefinitionsExist -Connection $Connection
+
+    Write-Host "Validando listas administrativas..."
+    Assert-AdminListsExist -Connection $Connection
+
+    Write-Host "Validando grupos ENAC e Owners por nome exato..."
+    Assert-ExpectedGroupsExist -Connection $Connection
+
+    Write-Host "Preflight conectado concluido sem alteracoes." -ForegroundColor Green
 }
 
 function Assert-RoleDefinitionsExist {
@@ -188,13 +233,15 @@ function Set-AdministrativeListPermissions {
 function Write-Plan {
     Write-Host "SCRIPT PROTEGIDO V2.6B.4 - permissoes administrativas" -ForegroundColor Green
     Write-Host "Modo Apply: $($Apply.IsPresent)"
+    Write-Host "Modo ConnectedPreflight: $($ConnectedPreflight.IsPresent)"
     Write-Host "Ambiente: $Ambiente"
     Write-Host "SiteUrl: $SiteUrl"
     Write-Host "Tenant: $Tenant"
     Write-Host "AuthMode: $AuthMode"
 
     Write-Section "Fase 0 - dry-run local"
-    Write-Host "Sem -Apply, este script nao conecta ao SharePoint e nao aplica permissoes."
+    Write-Host "Sem -Apply e sem -ConnectedPreflight, este script nao conecta ao SharePoint e nao aplica permissoes."
+    Write-Host "Com -ConnectedPreflight, conecta, valida site/listas/grupos/niveis e nao altera nada."
     Write-Host "Com -Apply, exige confirmacao textual, app diferente do readonly e site /sites/Equipe.Obras."
 
     Write-Section "Fase 1 - validacoes antes de qualquer alteracao"
@@ -227,19 +274,27 @@ function Write-Plan {
 Assert-ApplySafety
 Write-Plan
 
-if (-not $Apply) {
+if (-not $Apply -and -not $ConnectedPreflight) {
     Write-Host ""
     Write-Host "Encerramento: dry-run local concluido. Nenhuma conexao ou aplicacao real foi executada." -ForegroundColor Green
     return
 }
 
 $connection = Connect-EnacSharePoint
-$web = Get-PnPWeb -Connection $connection
-Write-Host "Conectado ao site: $($web.Title)"
 
-Assert-ExpectedGroupsExist -Connection $connection
-Assert-AdminListsExist -Connection $connection
-Assert-RoleDefinitionsExist -Connection $connection
+try {
+    Invoke-Preflight -Connection $connection
+}
+catch {
+    throw
+}
+
+if ($ConnectedPreflight) {
+    Write-Host ""
+    Write-Host "Encerramento: ConnectedPreflight concluido. Nenhuma alteracao foi aplicada." -ForegroundColor Green
+    return
+}
+
 Set-AdministrativeListPermissions -Connection $connection
 
 Write-Host ""

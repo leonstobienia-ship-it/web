@@ -199,3 +199,11 @@ Foi preparada a aplicacao real controlada das permissoes administrativas para qu
 O script `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1` foi ajustado para validar grupos ja existentes, abortar se algum grupo/lista/role estiver ausente, nao criar grupos, nao alterar membros, quebrar heranca somente nas quatro listas administrativas e aplicar permissoes conforme matriz.
 
 Codex nao executou o script, nao conectou ao SharePoint e nao aplicou permissoes.
+
+## V2.6B.4A - Preflight reforcado
+
+Leon executou `Apply` e o script falhou em `Get-PnPGroup` com `Access is denied. 0x80070005` durante o preflight.
+
+O script foi corrigido para validar grupos por nome exato, sem enumerar todos os grupos, e para oferecer o modo `-ConnectedPreflight`, que conecta e valida site, niveis de permissao, listas e grupos sem aplicar alteracoes.
+
+Alteracoes de permissao continuam bloqueadas ate que todo o preflight passe. Se qualquer validacao falhar, o script deve informar que nenhuma alteracao foi aplicada e acionar criterio de parada.

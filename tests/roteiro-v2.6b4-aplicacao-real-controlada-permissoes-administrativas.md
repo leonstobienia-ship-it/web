@@ -37,7 +37,21 @@ Confirmar que o dry-run:
 
 ## Apply controlado
 
-Executar somente apos revisar o dry-run:
+Antes do Apply, executar o preflight conectado:
+
+```powershell
+pwsh -File ".\scripts\sharepoint\11-permissoes-finas-v2.6b-apply.ps1" `
+  -SiteUrl "https://enaccombr.sharepoint.com/sites/Equipe.Obras" `
+  -Tenant "enaccombr.onmicrosoft.com" `
+  -ClientId "8994fd01-5b9b-4e8b-bc11-41c58aa91043" `
+  -AuthMode "DeviceLogin" `
+  -Ambiente "V2.6B.4" `
+  -ConnectedPreflight
+```
+
+Esse comando nao deve aplicar permissoes. Se falhar, parar.
+
+Executar Apply somente apos revisar o dry-run e o preflight conectado:
 
 ```powershell
 cd "C:\Users\leon\OneDrive - enac.com.br\Documentos\Sistema ENAC"
@@ -67,6 +81,8 @@ pwsh -File ".\scripts\sharepoint\11-permissoes-finas-v2.6b-apply.ps1" `
 
 - Grupo ENAC ausente.
 - Lista administrativa ausente.
+- Falha no `ConnectedPreflight`.
+- Falha em `Get-PnPGroup`.
 - Dry-run menciona lista operacional no escopo de aplicacao.
 - Script tenta criar/excluir grupo.
 - Script tenta adicionar/remover membro.

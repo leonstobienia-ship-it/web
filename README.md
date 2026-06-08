@@ -95,6 +95,8 @@ Ainda na V2.6B.4-PREP, Leon criou manualmente os sete grupos ENAC planejados e a
 
 Na V2.6B.4, foi preparada a aplicação real controlada das permissões administrativas nas quatro listas administrativas. O script protegido foi ajustado para validar grupos existentes, não criar grupos, não alterar membros, quebrar herança apenas das listas administrativas e aplicar permissões aos grupos ENAC. Codex não executou o script nem conectou ao SharePoint.
 
+Na V2.6B.4A, foi corrigida a falha de preflight em `Get-PnPGroup`. O script deixou de enumerar todos os grupos, passou a validar grupos por nome exato e ganhou o modo `-ConnectedPreflight`, que conecta para validar site/listas/grupos/níveis sem aplicar alterações. Nenhuma permissão foi aplicada pelo Codex.
+
 ## Protótipo
 
 Abra no navegador:
@@ -160,6 +162,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b4-prep-criacao-manual-grupos-enac.md`
 - `docs/v2.6b4-prep-registro-grupos-criados.md`
 - `docs/v2.6b4-aplicacao-real-controlada-permissoes-administrativas.md`
+- `docs/v2.6b4a-falha-preflight-get-pnpgroup.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
