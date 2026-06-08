@@ -105,6 +105,8 @@ Na V2.6B.4D, Leon confirmou manualmente a conclusao das permissoes administrativ
 
 Na V2.7A, foi preparada a base tecnica de escrita operacional restrita e controlada, ainda sem Power Automate e sem liberacao ampla. A webpart ganhou flags explicitas desligadas por padrao, pre-validacao de perfil via `ENAC Usuarios Perfis.ContaMicrosoft365`, metodos de escrita protegidos no reposititorio e matriz documental para itens `V2.7A-TESTE`. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao modificou as permissoes administrativas V2.6B.4D.
 
+Na V2.7A.1, o build/pacote local da V2.7A foi validado com Node `v22.18.0` encontrado fora do PATH em instalacao local da Adobe. `tsc --noEmit`, `gulp clean`, `gulp bundle`, `gulp bundle --ship` e `gulp package-solution --ship` passaram. O pacote `sharepoint/solution/enac-sistema-spfx.sppkg` foi gerado localmente e permanece ignorado no Git. Codex nao publicou, nao instalou app, nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao iniciou Power Automate.
+
 ## Protótipo
 
 Abra no navegador:
@@ -177,6 +179,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a-escrita-operacional-restrita.md`
 - `docs/v2.7a-matriz-acoes-por-perfil.md`
 - `docs/v2.7a-transicoes-status-fluxo-compras.md`
+- `docs/v2.7a1-validacao-build-pacote-node22.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
