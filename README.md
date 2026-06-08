@@ -73,6 +73,8 @@ Na V2.6A.2, foram preparadas propriedades SPFx seguras para habilitação futura
 
 Em 2026-06-06, Leon executou manualmente a validação V2.6A de escrita controlada em item de teste. O item 10 da Lista 02, requisição `V2.6A-TESTE-001`, recebeu o snapshot `SNAP-V2.6A-TESTE-10-20260606145447`, com histórico `V2.6A-TESTE snapshot 2`, usando a regra `alc-v23b-teste-compra-ate-20000` e aprovador base/efetivo `V2.3B-TESTE - Gustavo`. A confirmação textual usada foi `TESTAR-ESCRITA-V2.6A-ENAC`. Após o teste, Leon desligou as flags V2.6A, republicou a página com flags desligadas, manteve apenas uma webpart `Sistema ENAC` na página e o bloco de teste desapareceu. Power Automate não foi iniciado e a escrita operacional geral continua não liberada.
 
+Na V2.6B, foi preparada a governança documental de permissões finas para listas administrativas e controle de acesso por perfil. A rodada criou matriz de permissões, política de acesso SharePoint/webpart, plano de permissões finas e controle futuro de interface por perfil. Não houve conexão ao SharePoint pelo Codex, publicação, instalação, alteração de tenant/listas/permissões/dados, escrita pela webpart, alteração de `src/prototype/app.js` ou Power Automate.
+
 ## Protótipo
 
 Abra no navegador:
@@ -126,6 +128,10 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6a1-auditoria-pre-teste-escrita-controlada.md`
 - `docs/v2.6a2-habilitacao-segura-teste-escrita.md`
 - `docs/v2.6a-validacao-manual-escrita-controlada.md`
+- `docs/v2.6b-matriz-permissoes-finas.md`
+- `docs/v2.6b-politica-acesso-sharepoint-webpart.md`
+- `docs/v2.6b-controle-interface-por-perfil.md`
+- `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
