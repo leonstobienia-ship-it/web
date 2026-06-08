@@ -79,6 +79,8 @@ Na V2.6B.1, foi preparado um dry-run local de permissões finas. A rodada criou 
 
 Na V2.6B.2, foi preparado um script real protegido de permissões finas para aplicação futura. O modo padrão permanece dry-run local sem conexão; qualquer aplicação futura exige `-Apply`, confirmação textual `APLICAR-PERMISSOES-V2.6B-ENAC`, app diferente do readonly e rodada própria autorizada por Leon. Codex não executou aplicação, não conectou ao SharePoint, não alterou permissões reais e não iniciou Power Automate.
 
+Na V2.6B.3, foi preparado um script conectado/readonly para auditoria manual do estado atual de grupos, listas administrativas, herança e permissões. Codex não executou o script, não conectou ao SharePoint, não aplicou permissões e não iniciou Power Automate. A execução, se aprovada, será manual por Leon e deverá gerar relatório sanitizado para revisão.
+
 ## Protótipo
 
 Abra no navegador:
@@ -137,14 +139,17 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b-controle-interface-por-perfil.md`
 - `docs/v2.6b1-dryrun-permissoes-finas.md`
 - `docs/v2.6b2-script-real-protegido-permissoes-finas.md`
+- `docs/v2.6b3-auditoria-readonly-permissoes-finas.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/listas-existentes.md`
 - `sharepoint/list-schema.json`
 - `sharepoint/mapeamento-listas-reais-v2.3.md`
 - `tests/roteiro-v2.6b1-dryrun-permissoes-finas.md`
 - `tests/roteiro-v2.6b2-revisao-script-permissoes-finas.md`
+- `tests/roteiro-v2.6b3-auditoria-readonly-permissoes-finas.md`
 - `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`
 - `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`
+- `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`
 - `src/prototype/`
 - `src/webparts/enacSistema/`
 - `tests/fluxos-mvp.md`

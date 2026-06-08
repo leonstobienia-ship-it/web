@@ -107,3 +107,11 @@ Foi preparado o script protegido `scripts/sharepoint/11-permissoes-finas-v2.6b-a
 Sem `-Apply`, o script funciona como dry-run local e nao conecta ao SharePoint. Com `-Apply`, exige confirmacao textual `APLICAR-PERMISSOES-V2.6B-ENAC`, app diferente do readonly, site `/sites/Equipe.Obras` e ambiente explicito.
 
 A V2.6B.2 nao executou o script em modo de aplicacao. Nenhuma permissao real foi aplicada. Membros reais dos grupos permanecem pendentes e listas operacionais continuam apenas planejadas.
+
+## V2.6B.3 - Auditoria readonly conectada
+
+Foi preparado o script `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1` para execucao manual por Leon.
+
+O script conecta apenas para leitura, nao possui parametro de aplicacao e nao contem comandos de escrita. Ele inventaria grupos planejados, grupos relacionados a ENAC, listas administrativas, heranca e permissoes atuais quando a API permitir.
+
+Codex nao executou a conexao. O relatorio esperado e `sharepoint/auditoria-permissoes-finas-v2.6b3.md`, que so devera ser versionado se estiver sanitizado.
