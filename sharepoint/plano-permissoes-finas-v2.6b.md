@@ -162,3 +162,19 @@ Permissoes atuais no nivel do site:
 Os grupos ENAC planejados nao foram encontrados na permissao do site. As quatro listas administrativas (`ENAC Usuarios Perfis`, `ENAC Alcadas`, `ENAC Historico Configuracoes` e `ENAC Snapshots Regras`) herdam permissoes do site.
 
 Conclusao: a segregacao de permissoes finas administrativas ainda nao esta implementada. Antes de escrita operacional ampla ou Power Automate, recomenda-se V2.6B.4 ou V2.6B.4-prep.
+
+## V2.6B.4-PREP - Grupos ENAC manuais
+
+Foi preparada a etapa intermediaria de criacao/revisao manual dos grupos ENAC.
+
+Grupos previstos:
+
+- `ENAC Sistema Admin`;
+- `ENAC Diretoria`;
+- `ENAC Planejamento`;
+- `ENAC Compras Financeiro`;
+- `ENAC Cotacoes Contratos`;
+- `ENAC Campo Engenharia`;
+- `ENAC Leitura Auditoria`.
+
+Nenhuma permissao deve ser aplicada nesta etapa. As listas administrativas continuam inalteradas ate a V2.6B.4.
