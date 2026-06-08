@@ -85,6 +85,8 @@ Na V2.6B.3A, o script readonly de auditoria de permissões foi corrigido para to
 
 Na V2.6B.3B, foi registrado o relatório readonly gerado manualmente por Leon em `sharepoint/auditoria-permissoes-finas-v2.6b3.md`. A auditoria confirmou as quatro listas administrativas e mostrou `Heranca unica False` em todas, indicando que permissões finas ainda não foram aplicadas. Grupos planejados e permissões detalhadas permaneceram não confirmados por limitação de permissão de leitura.
 
+Na V2.6B.3C, foi preparada a auditoria manual orientada de grupos e permissões no SharePoint. A etapa existe para Leon confirmar manualmente grupos planejados, permissões do site, herança das listas administrativas e usuários individuais com acesso direto antes de qualquer `Apply`. Nenhuma alteração no tenant será feita nesta etapa.
+
 ## Protótipo
 
 Abra no navegador:
@@ -145,6 +147,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.6b2-script-real-protegido-permissoes-finas.md`
 - `docs/v2.6b3-auditoria-readonly-permissoes-finas.md`
 - `docs/v2.6b3b-registro-auditoria-readonly-permissoes-finas.md`
+- `docs/v2.6b3c-auditoria-manual-grupos-permissoes.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -153,6 +156,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.6b1-dryrun-permissoes-finas.md`
 - `tests/roteiro-v2.6b2-revisao-script-permissoes-finas.md`
 - `tests/roteiro-v2.6b3-auditoria-readonly-permissoes-finas.md`
+- `tests/roteiro-v2.6b3c-auditoria-manual-grupos-permissoes.md`
+- `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `scripts/sharepoint/10-permissoes-finas-v2.6b-dryrun.ps1`
 - `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`
 - `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`

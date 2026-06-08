@@ -136,3 +136,15 @@ O relatorio foi considerado seguro para versionamento. Ele confirma a existencia
 - `ENAC Snapshots Regras`.
 
 Conclusao: as permissoes finas ainda nao foram aplicadas. Grupos planejados e permissoes detalhadas permanecem nao confirmados por limitacao de permissao de leitura.
+
+## V2.6B.3C - Auditoria manual orientada
+
+Foi preparada uma auditoria manual orientada para Leon conferir diretamente no SharePoint:
+
+- existencia dos sete grupos ENAC planejados;
+- papeis atuais do site;
+- usuarios individuais com acesso direto relevante;
+- heranca das quatro listas administrativas;
+- riscos antes de qualquer quebra de heranca.
+
+Nenhuma alteracao deve ser feita nessa etapa. A meta e confirmar os grupos antes de qualquer execucao real protegida.
