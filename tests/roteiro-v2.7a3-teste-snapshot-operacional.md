@@ -137,3 +137,32 @@ Depois do teste:
 - limpar confirmacao manual;
 - republicar pagina;
 - nao prosseguir para pedido, NF, pagamento ou Power Automate na mesma rodada.
+
+## Resultado Manual V2.7A.3B
+
+Data-base: 2026-06-09
+
+Leon executou manualmente a acao controlada e confirmou:
+
+| Conferencia | Resultado |
+| --- | --- |
+| Acao | `CriarSnapshotAprovacaoOperacional` |
+| Item | `11` |
+| Marcador | `V2.7A-TESTE` |
+| Snapshot criado | ID `3` |
+| Snapshot title | `SNAP-V2.7A-TESTE-11-20260609025123` |
+| Campo vinculado | `SnapshotAprovacaoCompra` |
+| Status anterior | `Aguardando aprovação` |
+| Status posterior | `Aguardando aprovação` |
+| Historico operacional criado | Sim |
+| HTTP escrita | `204` |
+| Alertas de execucao | `-` |
+| `PATCH`/`DELETE` no Network | Nao |
+| Item diferente do 11 alterado | Nao |
+| Flags V2.7A desligadas | Sim |
+| Pagina republicada com flags desligadas | Sim |
+| Power Automate iniciado | Nao |
+
+Conclusao: V2.7A.3 validada manualmente para snapshot operacional criado e vinculado em item de teste, sem liberacao ampla de producao.
+
+Pedido, NF e pagamento nao foram testados nesta etapa.

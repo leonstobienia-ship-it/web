@@ -123,6 +123,8 @@ Na V2.7A.3, foi preparada localmente a proxima acao controlada: `CriarSnapshotAp
 
 Na V2.7A.3A, foi corrigida a normalizacao do campo `Aprovação Necessária?` na pre-validacao do snapshot operacional. Leon confirmou que o SharePoint retornava o internal name `Aprova_x00e7__x00e3_oNecess_x00e` e que o valor era `Sim`, mas a tela bloqueava com `APROVACAO_NAO_NECESSARIA`. A webpart agora resolve candidatos de campo e normaliza boolean/choice como `Sim`, `Nao` ou `Nao resolvido`, distinguindo `APROVACAO_NAO_NECESSARIA` de `APROVACAO_NECESSARIA_NAO_RESOLVIDA`. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
 
+Na V2.7A.3B, Leon validou manualmente o snapshot operacional no tenant. Em 2026-06-09, a acao `CriarSnapshotAprovacaoOperacional` criou o snapshot ID `3`, title `SNAP-V2.7A-TESTE-11-20260609025123`, e vinculou `SnapshotAprovacaoCompra` no item `11` da `Lista 02 — Requisições de Compra`, mantendo o status em `Aguardando aprovação`. O historico operacional foi criado, HTTP escrita `204`, sem `PATCH`/`DELETE`, sem outro item alterado, com flags desligadas e pagina republicada. Power Automate nao foi iniciado. A validacao e restrita a acao controlada de snapshot operacional; pedido, NF e pagamento nao foram testados.
+
 ## Protótipo
 
 Abra no navegador:
@@ -204,6 +206,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a2d-validacao-manual-escrita-operacional.md`
 - `docs/v2.7a3-teste-snapshot-operacional.md`
 - `docs/v2.7a3a-correcao-aprovacao-necessaria-snapshot.md`
+- `docs/v2.7a3b-validacao-manual-snapshot-operacional.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
