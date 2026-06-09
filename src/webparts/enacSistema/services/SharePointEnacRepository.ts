@@ -645,6 +645,109 @@ export class SharePointEnacRepository {
     };
   }
 
+  public async executarAtualizacaoStatusRequisicaoV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A, config: ConfiguracaoTesteOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const itemId = Number(config.itemTesteOperacionalIdV27A || 0);
+    const statusDestino = config.statusDestinoTesteOperacionalV27A || 'Aguardando aprovação';
+    const observacao = config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - teste operacional restrito';
+    const preValidacao = await this.preValidarEscritaOperacionalRestritaV27A(emailOuLogin, flags, config);
+    const alertas: AlertaBloqueioEscrita[] = [...preValidacao.alertas];
+
+    if (!preValidacao.podeExecutar) {
+      alertas.push({ codigo: 'EXECUCAO_SEM_PREVALIDACAO_ESPECIFICA', mensagem: 'Pre-validacao especifica do item nao esta aprovada no momento da execucao.' });
+    }
+
+    if (preValidacao.itemTesteId !== itemId) {
+      alertas.push({ codigo: 'EXECUCAO_ITEM_DIVERGENTE', mensagem: `Item validado ${preValidacao.itemTesteId || '-'} difere do item configurado ${itemId || '-'}.` });
+    }
+
+    if (preValidacao.acaoPretendida !== 'AtualizarStatusRequisicao') {
+      alertas.push({ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Nesta rodada somente AtualizarStatusRequisicao esta autorizada.' });
+    }
+
+    if (!preValidacao.marcadorEncontrado) {
+      alertas.push({ codigo: 'EXECUCAO_MARCADOR_NAO_CONFIRMADO', mensagem: 'Marcador V2.7A-TESTE nao foi confirmado no item.' });
+    }
+
+    if (this.normalizarTexto(preValidacao.statusAtual) !== 'recebida' && this.normalizarTexto(preValidacao.statusAtual) !== 'aberta') {
+      alertas.push({ codigo: 'EXECUCAO_STATUS_ORIGEM_INVALIDO', mensagem: `Status origem invalido para o primeiro teste: ${preValidacao.statusAtual || '-'}.` });
+    }
+
+    if (this.normalizarTexto(preValidacao.statusDestino) !== 'aguardandoaprovacao') {
+      alertas.push({ codigo: 'EXECUCAO_STATUS_DESTINO_INVALIDO', mensagem: `Status destino invalido: ${preValidacao.statusDestino || '-'}.` });
+    }
+
+    if (preValidacao.campoAlterado !== LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD) {
+      alertas.push({ codigo: 'EXECUCAO_CAMPO_STATUS_INVALIDO', mensagem: `Campo validado invalido: ${preValidacao.campoAlterado || '-'}.` });
+    }
+
+    if (!preValidacao.acoesPermitidas.some((acao) => acao === 'AtualizarStatusRequisicao')) {
+      alertas.push({ codigo: 'EXECUCAO_PERFIL_SEM_PERMISSAO', mensagem: 'Perfil atual nao esta autorizado para AtualizarStatusRequisicao.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado(
+        'AtualizarStatusRequisicao',
+        `Atualizacao de status bloqueada: ${alertas.map((alerta) => alerta.codigo).join(', ')}.`,
+        alertas,
+        itemId,
+        preValidacao.statusAtual
+      );
+    }
+
+    const response = await this.spHttpClient.post(
+      `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${itemId})`,
+      SPHttpClient.configurations.v1,
+      this.criarMergeOptions({ [LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD]: statusDestino })
+    );
+
+    if (!response.ok) {
+      return this.criarResultadoOperacionalBloqueado('AtualizarStatusRequisicao', `MERGE de status retornou ${response.status}: ${response.statusText}.`, [
+        { codigo: 'ERRO_MERGE_STATUS_REQUISICAO', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}` }
+      ], itemId, preValidacao.statusAtual);
+    }
+
+    try {
+      const historico = await this.registrarHistoricoOperacional({
+        origemLista: 'Lista 02',
+        origemItemId: itemId,
+        acao: 'AtualizarStatusRequisicao',
+        descricao: `${observacao}; origem Webpart V2.7A.2C; sem Power Automate.`,
+        statusAnterior: preValidacao.statusAtual,
+        statusNovo: statusDestino,
+        marcadorTeste: flags.marcadorTesteOperacionalV27A
+      }, emailOuLogin, flags);
+
+      return {
+        sucesso: true,
+        bloqueado: false,
+        acao: 'AtualizarStatusRequisicao',
+        mensagem: 'Status da requisicao atualizado com controle V2.7A.2C e historico registrado.',
+        itemId,
+        campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
+        statusAnterior: preValidacao.statusAtual,
+        statusNovo: statusDestino,
+        historicoRegistrado: historico.sucesso,
+        historicoItemId: historico.itemId,
+        statusHttpEscrita: response.status,
+        alertas: historico.alertas
+      };
+    } catch (error) {
+      return {
+        sucesso: true,
+        bloqueado: false,
+        acao: 'AtualizarStatusRequisicao',
+        mensagem: 'Status da requisicao atualizado, mas o historico operacional falhou e exige auditoria manual.',
+        itemId,
+        campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
+        statusAnterior: preValidacao.statusAtual,
+        statusNovo: statusDestino,
+        historicoRegistrado: false,
+        statusHttpEscrita: response.status,
+        alertas: [{ codigo: 'HISTORICO_OPERACIONAL_FALHOU', mensagem: this.getErrorMessage(error) }]
+      };
+    }
+  }
+
   public async criarPedidoCompraControlado(payload: PedidoCompraControladoPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
     const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
     const requisicao = await this.obterResumoItemOperacional(LISTAS_ENAC.requisicoesCompra, payload.requisicaoItemId, 'StatusdaRequisi_x00e7__x00e3_o');
@@ -1220,7 +1323,7 @@ export class SharePointEnacRepository {
         return usuario.podeCriarSolicitacao || usuario.perfilPrincipal === 'Campo' || usuario.podeAdministrarConfiguracoes;
       case 'AtualizarRequisicaoCompra':
       case 'AtualizarStatusRequisicao':
-        return usuario.podeRegistrarCotacoes || usuario.podeEmitirPedido || usuario.podeAdministrarConfiguracoes;
+        return usuario.podeRegistrarCotacoes || usuario.podeEmitirPedido || usuario.podeAtualizarStatusFinal || usuario.perfilPrincipal === 'Diretoria' || usuario.podeAdministrarConfiguracoes;
       case 'CriarPedidoCompra':
         return usuario.podeEmitirPedido || usuario.podeAdministrarConfiguracoes;
       case 'VincularNotaFiscal':

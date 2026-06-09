@@ -236,8 +236,12 @@ export interface ResultadoOperacionalV27A {
   acao: AcaoOperacionalV27A;
   mensagem: string;
   itemId?: number;
+  campoAlterado?: string;
   statusAnterior?: string;
   statusNovo?: string;
+  historicoRegistrado?: boolean;
+  historicoItemId?: number;
+  statusHttpEscrita?: number;
   alertas: AlertaBloqueioEscrita[];
 }
 

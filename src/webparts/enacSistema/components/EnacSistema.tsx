@@ -448,20 +448,29 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
+    if (
+      preValidacaoOperacionalV27A.acaoPretendida !== 'AtualizarStatusRequisicao' ||
+      preValidacaoOperacionalV27A.statusDestino !== (config.statusDestinoTesteOperacionalV27A || 'Aguardando aprovação') ||
+      preValidacaoOperacionalV27A.campoAlterado !== 'StatusdaRequisi_x00e7__x00e3_o'
+    ) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: esta rodada permite apenas atualizar status da requisicao validada.',
+        itemId,
+        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao no campo StatusdaRequisi_x00e7__x00e3_o esta autorizada na V2.7A.2C.' }]
+      });
+      return;
+    }
+
     setExecutandoOperacionalV27A(true);
     try {
-      const resultado = config.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
-        ? await props.repository.criarSnapshotAprovacaoOperacional({
-          requisicaoItemId: itemId,
-          valorAnalisado: config.valorTesteOperacionalV27A || 6720,
-          tipoSolicitacao: 'Material',
-          marcadorTeste: flags.marcadorTesteOperacionalV27A
-        }, props.currentUserEmail, flags)
-        : await props.repository.atualizarRequisicaoCompraControlada(itemId, {
-          statusNovo: config.statusDestinoTesteOperacionalV27A || 'Aguardando aprovação',
-          observacao: config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - teste operacional restrito',
-          marcadorTeste: flags.marcadorTesteOperacionalV27A
-        }, config.acaoTesteOperacionalV27A, props.currentUserEmail, flags);
+      const resultado = await props.repository.executarAtualizacaoStatusRequisicaoV27A(
+        props.currentUserEmail,
+        flags,
+        config
+      );
 
       setResultadoOperacionalV27A(resultado);
     } catch (error) {
@@ -938,6 +947,14 @@ function PainelOperacionalV27A({
       )}
       {!podeExibirBotao && <span>Botao de escrita oculto ate a pre-validacao especifica do item aprovar e a confirmacao final bater exatamente.</span>}
       {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
+      {resultado && (
+        <span>
+          Item: {resultado.itemId || '-'} / campo {resultado.campoAlterado || '-'}<br />
+          Status: {resultado.statusAnterior || '-'} {'->'} {resultado.statusNovo || '-'}<br />
+          Historico criado: {resultado.historicoRegistrado ? 'sim' : 'nao'} / HTTP escrita {resultado.statusHttpEscrita || '-'}<br />
+          Alertas execucao: {resultado.alertas.length > 0 ? resultado.alertas.map((alerta) => alerta.codigo).join(', ') : '-'}
+        </span>
+      )}
     </div>
   );
 }

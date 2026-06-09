@@ -129,6 +129,31 @@ Ao repetir a pre-validacao do item 11, conferir no painel:
 
 Se o HTTP nao indicar sucesso, se o campo de status vier vazio ou se nenhum campo trouxer `V2.7A-TESTE`, parar.
 
+## Ajuste V2.7A.2C - Execucao De Status
+
+Se a pre-validacao exibir `pode executar = sim`, a execucao manual deve ser feita uma unica vez.
+
+Antes do clique, confirmar novamente:
+
+- item: `11`;
+- acao: `AtualizarStatusRequisicao`;
+- status atual: `Recebida`;
+- status destino: `Aguardando aprovação`;
+- campo: `StatusdaRequisi_x00e7__x00e3_o`;
+- marcador: confirmado;
+- confirmacao final: `CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC`.
+
+Resultado esperado apos o clique:
+
+- status atualizado para `Aguardando aprovação`;
+- historico operacional registrado;
+- painel exibindo item, campo, valor anterior, valor novo, historico criado e HTTP da escrita;
+- nenhuma chamada para pedido, NF, pagamento ou snapshot;
+- nenhuma chamada `PATCH` ou `DELETE`;
+- Power Automate nao iniciado.
+
+Se aparecer bloqueio, registrar os codigos exibidos e nao repetir a execucao sem nova revisao.
+
 ## DevTools
 
 Abrir antes da pre-validacao:
