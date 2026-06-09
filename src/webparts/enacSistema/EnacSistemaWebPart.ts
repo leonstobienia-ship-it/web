@@ -163,7 +163,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                   options: [
                     { key: 'AtualizarStatusRequisicao', text: 'Atualizar status da requisicao' },
                     { key: 'CriarSnapshotAprovacaoOperacional', text: 'Criar snapshot operacional' },
-                    { key: 'AprovarCompra', text: 'Aprovar compra' }
+                    { key: 'AprovarCompra', text: 'Aprovar compra' },
+                    { key: 'CriarPedidoCompra', text: 'Criar pedido de compra' }
                   ]
                 }),
                 PropertyPaneTextField('statusDestinoTesteOperacionalV27A', {
@@ -218,7 +219,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     const acoesSuportadas: AcaoOperacionalV27A[] = [
       'AtualizarStatusRequisicao',
       'CriarSnapshotAprovacaoOperacional',
-      'AprovarCompra'
+      'AprovarCompra',
+      'CriarPedidoCompra'
     ];
     const acao = acoesSuportadas.indexOf(this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A) >= 0
       ? this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A

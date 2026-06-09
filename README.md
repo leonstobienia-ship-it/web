@@ -135,6 +135,8 @@ Na V2.7A.4C/V2.7A.4D, a validacao manual de `AprovarCompra` foi registrada como 
 
 Na V2.7A.4E, Leon confirmou manualmente que o campo `Snapshot da Aprovação de Compra` do item `11` permaneceu vinculado ao snapshot `3` / `SNAP-V2.7A-TESTE-11-20260609025123` apos `AprovarCompra`. A acao fica VALIDADA MANUALMENTE para Diretoria como alçada superior, com status `Aguardando aprovação -> Aprovada para compra`, historico criado, HTTP escrita `204`, sem pedido, NF, pagamento ou Power Automate. Isso nao representa liberacao ampla de producao.
 
+Na V2.7A.5, `CriarPedidoCompra` foi preparado apenas como diagnostico/pre-validacao no Property Pane. A execucao permanece bloqueada porque a estrutura real da `Lista 03 — Pedidos de Compra` ainda exige auditoria readonly: o inventario local confirma o GUID `18ca132a-c36a-42aa-9968-d87ecd547a79` e campos como `ValordoPedido`, `DatadoPedido` e `StatusdoPedido`, mas nao confirma `SolicitacaoId`, choices de status nem obrigatoriedade/campo correto de fornecedor. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -221,6 +223,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a4c-validacao-manual-aprovar-compra-diretoria.md`
 - `docs/v2.7a4d-auditoria-preservacao-snapshot-aprovar-compra.md`
 - `docs/v2.7a4e-validacao-final-aprovar-compra-pos-auditoria.md`
+- `docs/v2.7a5-teste-criar-pedido-compra.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -238,6 +241,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a3-teste-snapshot-operacional.md`
 - `tests/roteiro-v2.7a4-teste-criar-pedido-compra.md`
 - `tests/roteiro-v2.7a4a-teste-aprovar-compra.md`
+- `tests/roteiro-v2.7a5-teste-criar-pedido-compra.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`

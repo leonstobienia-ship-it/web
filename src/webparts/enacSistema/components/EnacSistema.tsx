@@ -503,14 +503,26 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
-    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional' && config.acaoTesteOperacionalV27A !== 'AprovarCompra') {
+    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional' && config.acaoTesteOperacionalV27A !== 'AprovarCompra' && config.acaoTesteOperacionalV27A !== 'CriarPedidoCompra') {
       setResultadoOperacionalV27A({
         sucesso: false,
         bloqueado: true,
         acao: config.acaoTesteOperacionalV27A,
         mensagem: 'Escrita V2.7A bloqueada: acao ainda nao preparada para teste manual.',
         itemId,
-        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional e AprovarCompra estao preparados nesta fase.' }]
+        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional, AprovarCompra e diagnostico de CriarPedidoCompra estao preparados nesta fase.' }]
+      });
+      return;
+    }
+
+    if (config.acaoTesteOperacionalV27A === 'CriarPedidoCompra') {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: CriarPedidoCompra esta em preparacao diagnostica e depende de auditoria readonly da Lista 03.',
+        itemId,
+        alertas: [{ codigo: 'EXECUCAO_PEDIDO_BLOQUEADA_LISTA03', mensagem: 'Confirme SolicitacaoId, Fornecedor, StatusdoPedido e campos obrigatorios reais antes de liberar escrita.' }]
       });
       return;
     }

@@ -93,6 +93,15 @@ const LISTA_02_STATUS_REQUISICAO_CHOICES_CONFIRMADOS = [
   'Cancelada'
 ];
 const STATUS_APROVADO_COMPRA_V27A = 'Aprovada para compra';
+const LISTA_03_PEDIDOS_COMPRA_TITULO = 'Lista 03 — Pedidos de Compra';
+const LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS = [
+  'Title',
+  'SolicitacaoId',
+  'Fornecedor',
+  'ValordoPedido',
+  'DatadoPedido',
+  'StatusdoPedido'
+];
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -692,7 +701,80 @@ export class SharePointEnacRepository {
       }
     }
 
+    if (acaoPretendida === 'CriarPedidoCompra') {
+      if (item && this.normalizarTexto(statusAtual) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
+        alertas.push({ codigo: 'STATUS_NAO_ELEGIVEL_PARA_PEDIDO', mensagem: 'CriarPedidoCompra exige status atual Aprovada para compra.' });
+      }
+
+      if (!snapshotExistenteId) {
+        alertas.push({ codigo: 'SNAPSHOT_OBRIGATORIO_AUSENTE', mensagem: 'CriarPedidoCompra exige SnapshotAprovacaoCompra ja vinculado.' });
+      }
+
+      if (!config.valorTesteOperacionalV27A || config.valorTesteOperacionalV27A <= 0) {
+        alertas.push({ codigo: 'VALOR_TESTE_AUSENTE', mensagem: 'valorTesteOperacionalV27A deve ser maior que zero para criar pedido.' });
+      }
+
+      const aprovacaoNecessaria = this.obterAprovacaoNecessaria(item);
+      aprovacaoNecessariaCampo = aprovacaoNecessaria.campo;
+      aprovacaoNecessariaValorBruto = this.formatarValorBrutoSharePoint(aprovacaoNecessaria.valorBruto);
+      aprovacaoNecessariaNormalizada = aprovacaoNecessaria.normalizado === true
+        ? 'Sim'
+        : aprovacaoNecessaria.normalizado === false
+          ? 'Nao'
+          : 'Nao resolvido';
+
+      if (item && !item.Descri_x00e7__x00e3_odaSolicita_) {
+        alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Descricao da solicitacao deve estar preenchida para preparar pedido.' });
+      }
+
+      if (item && (!item.Quantidade || !item.Unidade)) {
+        alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Quantidade e unidade devem estar preenchidas para preparar pedido.' });
+      }
+
+      if (item && !item.CentrodeCusto) {
+        alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Centro de custo deve estar preenchido para preparar pedido.' });
+      }
+
+      if (item && !item.ObraId) {
+        alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Obra deve estar preenchida para preparar pedido.' });
+      }
+
+      alertas.push({
+        codigo: 'CAMPO_SOLICITACAO_PEDIDO_NAO_MAPEADO',
+        mensagem: 'O inventario local nao confirmou SolicitacaoId na Lista 03; nao liberar escrita ate auditoria readonly manual confirmar tipo e obrigatoriedade do campo.'
+      });
+      alertas.push({
+        codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES',
+        mensagem: 'Campos obrigatorios reais e choices de StatusdoPedido da Lista 03 ainda nao estao suficientemente confirmados para escrita.'
+      });
+      alertas.push({
+        codigo: 'FORNECEDOR_OBRIGATORIO_AUSENTE',
+        mensagem: 'A Lista 03 possui Fornecedor antigo texto e Fornecedor0 lookup; e necessario confirmar qual campo e obrigatorio antes de criar pedido.'
+      });
+      alertas.push({
+        codigo: 'STATUS_PEDIDO_INICIAL_NAO_MAPEADO',
+        mensagem: 'Choice inicial de StatusdoPedido deve ser confirmada por auditoria readonly antes da escrita.'
+      });
+
+      registraraHistorico = true;
+    }
+
     const podeExecutar = Boolean(alertas.length === 0 && usuarioAtual && item && marcadorEncontrado && transicaoPermitida && camposObrigatoriosPresentes);
+    const listaAlterada = acaoPretendida === 'CriarPedidoCompra'
+      ? `${LISTA_03_PEDIDOS_COMPRA_TITULO} (${LISTAS_ENAC.pedidosCompra})`
+      : acaoPretendida === 'CriarSnapshotAprovacaoOperacional'
+        ? 'ENAC Snapshots Regras'
+        : LISTA_02_REQUISICOES_COMPRA_TITULO;
+    const campoAlterado = acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra'
+      ? LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD
+      : acaoPretendida === 'CriarPedidoCompra'
+        ? LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS.join(', ')
+        : 'ENAC Snapshots Regras';
+    const valorNovoPrevisto = acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra'
+      ? statusDestino
+      : acaoPretendida === 'CriarPedidoCompra'
+        ? `Pedido V2.7A para solicitacao ${itemTesteId}; valor ${config.valorTesteOperacionalV27A || 0}`
+        : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`;
 
     return {
       sucesso: podeExecutar,
@@ -739,10 +821,10 @@ export class SharePointEnacRepository {
       vincularaSnapshotAprovacaoCompra,
       registraraHistorico,
       historicoPrevisto: item ? `${flags.marcadorTesteOperacionalV27A} ${acaoPretendida} ${itemTesteId}` : undefined,
-      listaAlterada: LISTA_02_REQUISICOES_COMPRA_TITULO,
-      campoAlterado: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra' ? LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD : 'ENAC Snapshots Regras',
+      listaAlterada,
+      campoAlterado,
       valorAnteriorPrevisto: statusAtual,
-      valorNovoPrevisto: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra' ? statusDestino : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`,
+      valorNovoPrevisto,
       podeExecutar,
       acoesPermitidas,
       alertas
