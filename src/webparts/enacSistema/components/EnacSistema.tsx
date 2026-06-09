@@ -1011,6 +1011,9 @@ function PainelOperacionalV27A({
         <span>
           Item: {resultado.itemId || '-'} / campo {resultado.campoAlterado || '-'}<br />
           Snapshot: {resultado.snapshotItemId || '-'} / {resultado.snapshotTitle || '-'}<br />
+          Snapshot antes: {resultado.snapshotAntesId || '-'} / {resultado.snapshotAntesTitulo || '-'}<br />
+          Snapshot depois: {resultado.snapshotDepoisId || '-'} / {resultado.snapshotDepoisTitulo || '-'}<br />
+          Snapshot preservado: {resultado.snapshotPreservado === undefined ? '-' : resultado.snapshotPreservado ? 'sim' : 'nao'}<br />
           Status: {resultado.statusAnterior || '-'} {'->'} {resultado.statusNovo || '-'}<br />
           Historico criado: {resultado.historicoRegistrado ? 'sim' : 'nao'} / HTTP escrita {resultado.statusHttpEscrita || '-'}<br />
           Alertas execucao: {resultado.alertas.length > 0 ? resultado.alertas.map((alerta) => alerta.codigo).join(', ') : '-'}

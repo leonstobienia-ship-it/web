@@ -238,6 +238,11 @@ export interface ResultadoOperacionalV27A {
   itemId?: number;
   snapshotItemId?: number;
   snapshotTitle?: string;
+  snapshotAntesId?: number;
+  snapshotAntesTitulo?: string;
+  snapshotDepoisId?: number;
+  snapshotDepoisTitulo?: string;
+  snapshotPreservado?: boolean;
   campoAlterado?: string;
   statusAnterior?: string;
   statusNovo?: string;

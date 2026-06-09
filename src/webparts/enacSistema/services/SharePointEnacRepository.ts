@@ -1199,10 +1199,12 @@ export class SharePointEnacRepository {
     const item = leituraItem.item;
     const statusAtual = String(item?.[LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD] || '');
     const camposComMarcador = item ? this.obterCamposComMarcadorV27A(item, flags.marcadorTesteOperacionalV27A) : [];
+    const snapshotAntesId = leituraItem.snapshotExistenteId;
+    const snapshotAntesTitulo = leituraItem.snapshotExistenteTitulo;
 
-    if (!item || camposComMarcador.length === 0 || this.normalizarTexto(statusAtual) !== 'aguardandoaprovacao' || !leituraItem.snapshotExistenteId) {
+    if (!item || camposComMarcador.length === 0 || this.normalizarTexto(statusAtual) !== 'aguardandoaprovacao' || !snapshotAntesId) {
       return this.criarResultadoOperacionalBloqueado('AprovarCompra', 'Revalidacao imediata do item bloqueou a aprovacao.', [
-        { codigo: 'EXECUCAO_REVALIDACAO_ITEM_FALHOU', mensagem: leituraItem.erro || `Status=${statusAtual || '-'}; snapshot=${leituraItem.snapshotExistenteId || '-'}.` }
+        { codigo: 'EXECUCAO_REVALIDACAO_ITEM_FALHOU', mensagem: leituraItem.erro || `Status=${statusAtual || '-'}; snapshot=${snapshotAntesId || '-'}.` }
       ], itemId, statusAtual);
     }
 
@@ -1218,12 +1220,63 @@ export class SharePointEnacRepository {
       ], itemId, statusAtual);
     }
 
+    const leituraPosMerge = await this.obterRequisicaoOperacionalParaPreValidacao(itemId);
+    const snapshotDepoisId = leituraPosMerge.snapshotExistenteId;
+    const snapshotDepoisTitulo = leituraPosMerge.snapshotExistenteTitulo;
+    const snapshotPreservado = Boolean(snapshotAntesId && snapshotDepoisId === snapshotAntesId);
+
+    if (leituraPosMerge.erro) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        acao: 'AprovarCompra',
+        mensagem: 'Aprovacao executada no status, mas a confirmacao posterior do SnapshotAprovacaoCompra falhou. Auditoria manual obrigatoria antes de seguir.',
+        itemId,
+        snapshotItemId: snapshotAntesId,
+        snapshotTitle: snapshotAntesTitulo,
+        snapshotAntesId,
+        snapshotAntesTitulo,
+        snapshotDepoisId,
+        snapshotDepoisTitulo,
+        snapshotPreservado: false,
+        campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
+        statusAnterior: statusAtual,
+        statusNovo: statusDestino,
+        historicoRegistrado: false,
+        statusHttpEscrita: response.status,
+        alertas: [{ codigo: 'SNAPSHOT_NAO_CONFIRMADO_APOS_APROVACAO', mensagem: leituraPosMerge.erro }]
+      };
+    }
+
+    if (!snapshotPreservado) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        acao: 'AprovarCompra',
+        mensagem: 'Aprovacao executada no status, mas SnapshotAprovacaoCompra nao foi preservado apos o MERGE. Auditoria manual obrigatoria antes de seguir.',
+        itemId,
+        snapshotItemId: snapshotAntesId,
+        snapshotTitle: snapshotAntesTitulo,
+        snapshotAntesId,
+        snapshotAntesTitulo,
+        snapshotDepoisId,
+        snapshotDepoisTitulo,
+        snapshotPreservado: false,
+        campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
+        statusAnterior: statusAtual,
+        statusNovo: statusDestino,
+        historicoRegistrado: false,
+        statusHttpEscrita: response.status,
+        alertas: [{ codigo: 'SNAPSHOT_PERDIDO_APOS_APROVACAO', mensagem: `Snapshot antes=${snapshotAntesId || '-'}; depois=${snapshotDepoisId || '-'}. Historico operacional nao registrado nesta execucao.` }]
+      };
+    }
+
     try {
       const historico = await this.registrarHistoricoOperacional({
         origemLista: 'Lista 02',
         origemItemId: itemId,
         acao: 'AprovarCompra',
-        descricao: `${observacao}; snapshot ${leituraItem.snapshotExistenteId}; regra ${preValidacao.regraInternaId || '-'}; aprovador previsto ${preValidacao.aprovadorPrevistoNome || preValidacao.aprovadorEfetivoNome || '-'}; aprovador efetivo ${preValidacao.aprovadorEfetivoOperacionalNome || preValidacao.aprovadorEfetivoNome || '-'}; tipo ${preValidacao.tipoAprovacaoCompra || 'Aprovador direto'}; ${preValidacao.justificativaAprovacaoPrevista || 'Aprovacao pelo aprovador previsto.'}; origem Webpart V2.7A.4B; sem Power Automate.`,
+        descricao: `${observacao}; snapshot ${snapshotAntesId}; snapshot preservado apos MERGE; regra ${preValidacao.regraInternaId || '-'}; aprovador previsto ${preValidacao.aprovadorPrevistoNome || preValidacao.aprovadorEfetivoNome || '-'}; aprovador efetivo ${preValidacao.aprovadorEfetivoOperacionalNome || preValidacao.aprovadorEfetivoNome || '-'}; tipo ${preValidacao.tipoAprovacaoCompra || 'Aprovador direto'}; ${preValidacao.justificativaAprovacaoPrevista || 'Aprovacao pelo aprovador previsto.'}; origem Webpart V2.7A.4B/V2.7A.4D; sem Power Automate.`,
         statusAnterior: statusAtual,
         statusNovo: statusDestino,
         marcadorTeste: flags.marcadorTesteOperacionalV27A
@@ -1233,10 +1286,15 @@ export class SharePointEnacRepository {
         sucesso: true,
         bloqueado: false,
         acao: 'AprovarCompra',
-        mensagem: 'Compra aprovada com controle V2.7A.4A e historico registrado.',
+        mensagem: 'Compra aprovada com controle V2.7A.4B, snapshot preservado e historico registrado.',
         itemId,
-        snapshotItemId: leituraItem.snapshotExistenteId,
-        snapshotTitle: leituraItem.snapshotExistenteTitulo,
+        snapshotItemId: snapshotDepoisId,
+        snapshotTitle: snapshotDepoisTitulo,
+        snapshotAntesId,
+        snapshotAntesTitulo,
+        snapshotDepoisId,
+        snapshotDepoisTitulo,
+        snapshotPreservado,
         campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
         statusAnterior: statusAtual,
         statusNovo: statusDestino,
@@ -1252,8 +1310,13 @@ export class SharePointEnacRepository {
         acao: 'AprovarCompra',
         mensagem: 'Compra aprovada, mas o historico operacional falhou e exige auditoria manual.',
         itemId,
-        snapshotItemId: leituraItem.snapshotExistenteId,
-        snapshotTitle: leituraItem.snapshotExistenteTitulo,
+        snapshotItemId: snapshotDepoisId,
+        snapshotTitle: snapshotDepoisTitulo,
+        snapshotAntesId,
+        snapshotAntesTitulo,
+        snapshotDepoisId,
+        snapshotDepoisTitulo,
+        snapshotPreservado,
         campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
         statusAnterior: statusAtual,
         statusNovo: statusDestino,

@@ -131,6 +131,8 @@ Na V2.7A.4A, foi preparada localmente a acao controlada `AprovarCompra`. A choic
 
 Na V2.7A.4B, foi implementada localmente a aprovacao por Diretoria como alcada superior para `AprovarCompra`. A regra vale somente quando o item esta em `Aguardando aprovação`, o destino e `Aprovada para compra`, existe snapshot vinculado, o usuario esta ativo com perfil `Diretoria`, possui permissao de aprovacao, o marcador `V2.7A-TESTE` esta confirmado e o historico registra aprovador previsto, aprovador efetivo e justificativa de alcada superior. O caso esperado para o item `11` e aprovador previsto `V2.3B-TESTE - Gustavo` e aprovador efetivo operacional `V2.3B-TESTE - Leon / Diretoria`, com diagnostico `DIRETORIA_ALCADA_SUPERIOR_VALIDADA`. A regra nao libera bypass amplo, nao cria pedido e mantem Power Automate fora do escopo.
 
+Na V2.7A.4C/V2.7A.4D, a validacao manual de `AprovarCompra` foi registrada como pendente de auditoria porque Leon observou o campo visual `Snapshot da Aprovação de Compra` vazio no formulario do SharePoint. A rotina foi corrigida localmente para confirmar `SnapshotAprovacaoCompra` por GET apos o MERGE de status, registrar historico somente quando o snapshot for preservado e retornar alerta critico se o lookup nao for comprovado. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao executou nova escrita operacional.
+
 ## Protótipo
 
 Abra no navegador:
@@ -214,6 +216,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a3a-correcao-aprovacao-necessaria-snapshot.md`
 - `docs/v2.7a3b-validacao-manual-snapshot-operacional.md`
 - `docs/v2.7a4-teste-criar-pedido-compra.md`
+- `docs/v2.7a4c-validacao-manual-aprovar-compra-diretoria.md`
+- `docs/v2.7a4d-auditoria-preservacao-snapshot-aprovar-compra.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

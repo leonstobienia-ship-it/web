@@ -88,7 +88,8 @@ Executar somente se:
 - campo alterado: `StatusdaRequisi_x00e7__x00e3_o`;
 - valor anterior: `Aguardando aprovação`;
 - valor novo: `Aprovada para compra`;
-- historico operacional criado;
+- snapshot antes/depois exibido e preservado;
+- historico operacional criado somente se o snapshot for preservado;
 - historico registra aprovador previsto, aprovador efetivo e aprovacao por alcada superior quando aplicavel;
 - nenhum pedido criado;
 - nenhuma NF criada;
@@ -104,7 +105,8 @@ Registrar:
 - HTTP da escrita;
 - ID do historico operacional;
 - status final do item;
-- snapshot mantido;
+- snapshot mantido na visualizacao da lista e no formulario;
+- ausencia de `SNAPSHOT_PERDIDO_APOS_APROVACAO` e `SNAPSHOT_NAO_CONFIRMADO_APOS_APROVACAO`;
 - ausencia de `PATCH` e `DELETE`;
 - flags desligadas apos o teste;
 - pagina republicada com flags desligadas.
@@ -112,3 +114,5 @@ Registrar:
 ## Proxima Etapa
 
 Somente depois de `AprovarCompra` validado, retomar `CriarPedidoCompra` com validacao readonly previa da Lista 03.
+
+Se o campo `SnapshotAprovacaoCompra` estiver vazio apos a aprovacao, interromper a rodada e nao seguir para pedido de compra.
