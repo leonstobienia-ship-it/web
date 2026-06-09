@@ -81,12 +81,34 @@ Parar se:
 - anexo/boleto/comprovante for obrigatorio sem regra de teste;
 - Power Automate for necessario.
 
-## Execucao Futura
+## Atualizacao V2.7A.7B - Execucao Manual Futura
 
-Somente em rodada posterior:
+A Lista 10 foi escolhida como destino preparado para `ProgramarPagamento`; a Lista 05 permanece como referencia/legado nesta rodada.
 
-- criar programacao de pagamento de teste;
-- vincular a NF `Lista 04-4`;
+Depois de publicar manualmente o pacote e configurar pagina restrita, Leon deve usar:
+
+- acao `ProgramarPagamento`;
+- item de requisicao `11`;
+- NF de origem `4`;
+- numero da NF `NF-V2.7A-TESTE-001`;
+- valor `6720`;
+- status `Programado`;
+- forma `Pix`;
+- conta `Itaú ENAC`;
+- categoria `Material de Obra`;
+- origem `Compra de Material`.
+
+Antes de executar, confirmar no painel:
+
+- `pode executar = sim`;
+- sem `PAGAMENTO_JA_EXISTENTE`;
+- fornecedor, obra, valor, vencimento e data programada resolvidos;
+- Lista/campo apontando para Lista 10 e campos `N_x00ba_daNotaFiscal`, `Fornecedor_x002f_PrestadorId`, `ValorBruto`, `ValorL_x00ed_quidoaPagar` e `StatusdoPagamento`;
+- diagnostico informando `VINCULO_TEXTUAL_NF_USADO`.
+
+Na execucao manual futura:
+
+- criar programacao de pagamento de teste na Lista 10;
 - registrar historico;
 - nao marcar como pago;
 - nao enviar para contabilidade;

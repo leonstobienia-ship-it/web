@@ -244,6 +244,14 @@ export interface ConfiguracaoTesteOperacionalV27A {
   dataEmissaoNotaFiscalTesteV27A?: string;
   dataVencimentoNotaFiscalTesteV27A?: string;
   linkNotaFiscalTesteV27A?: string;
+  notaFiscalTesteIdV27A?: number;
+  pagamentoValorTesteV27A?: number;
+  pagamentoStatusInicialTesteV27A?: string;
+  pagamentoFormaTesteV27A?: string;
+  pagamentoContaTesteV27A?: string;
+  pagamentoCategoriaTesteV27A?: string;
+  pagamentoOrigemTesteV27A?: string;
+  pagamentoDataProgramadaTesteV27A?: string;
 }
 
 export interface ResultadoOperacionalV27A {
@@ -329,6 +337,25 @@ export interface PreValidacaoOperacionalV27AResultado {
   notaFiscalEnviadaContabilidade?: string;
   notaFiscalExistenteId?: number;
   notaFiscalExistenteTitulo?: string;
+  diagnosticoPagamento?: string[];
+  pagamentoTituloPrevisto?: string;
+  pagamentoNotaFiscalId?: number;
+  pagamentoNotaFiscalNumero?: string;
+  pagamentoVinculoNf?: string;
+  pagamentoFornecedorId?: number;
+  pagamentoFornecedorTitulo?: string;
+  pagamentoObraId?: number;
+  pagamentoValorBruto?: number;
+  pagamentoValorLiquido?: number;
+  pagamentoVencimento?: string;
+  pagamentoDataProgramada?: string;
+  pagamentoStatusInicial?: string;
+  pagamentoForma?: string;
+  pagamentoConta?: string;
+  pagamentoCategoria?: string;
+  pagamentoOrigem?: string;
+  pagamentoExistenteId?: number;
+  pagamentoExistenteTitulo?: string;
   snapshotPrevistoTitulo?: string;
   criaraSnapshot?: boolean;
   vincularaSnapshotAprovacaoCompra?: boolean;

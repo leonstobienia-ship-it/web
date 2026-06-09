@@ -145,6 +145,8 @@ Na V2.7A.5C, Leon registrou a validacao manual de `CriarPedidoCompra`. Em 09/06/
 
 Na V2.7A.6, foi preparada a proxima etapa `VincularNotaFiscal` como auditoria readonly da `Lista 04 - Notas Fiscais Recebidas`, GUID `25aa4447-193d-418a-8e71-9bfd8e9995da`. O inventario local indica campos como `N_x00ba_doPedido`, `N_x00ba_daNotaFiscal`, `Fornecedor0`, `ValorBrutodaNF`, `DatadeEmiss_x00e3_o`, `DatadeVencimento` e `StatusdaConfer_x00ea_ncia`, mas ainda falta auditoria especifica para confirmar vinculo com pedido, choices, obrigatoriedade, anexo/documento e inexistencia de NF de teste. Foi criado script readonly para execucao manual por Leon; `VincularNotaFiscal` permanece bloqueada e nenhum TypeScript de escrita foi preparado.
 
+Na V2.7A.7B, `ProgramarPagamento` foi preparado localmente para usar a `Lista 10 - Contas a Pagar / Programacao Financeira`, GUID `f0d253cc-3f42-46b8-bfd6-9dcb6fe9a680`, enquanto a Lista 05 permanece como referencia/legado nesta rodada. A prevalidação exige NF `Lista 04-4`, numero `NF-V2.7A-TESTE-001`, pedido `PED-V2.7A-TESTE-11-20260609125401`, valor `6720`, status `Recebida`, contabilidade `não`, fornecedor, obra, vencimento, choices da Lista 10 e inexistencia de pagamento anterior. A escrita futura criara somente programacao com status `Programado`, forma `Pix`, conta `Itaú ENAC`, categoria `Material de Obra` e origem `Compra de Material`, sem marcar como pago, sem enviar para contabilidade e sem Power Automate. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:

@@ -503,14 +503,14 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
-    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional' && config.acaoTesteOperacionalV27A !== 'AprovarCompra' && config.acaoTesteOperacionalV27A !== 'CriarPedidoCompra' && config.acaoTesteOperacionalV27A !== 'VincularNotaFiscal') {
+    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional' && config.acaoTesteOperacionalV27A !== 'AprovarCompra' && config.acaoTesteOperacionalV27A !== 'CriarPedidoCompra' && config.acaoTesteOperacionalV27A !== 'VincularNotaFiscal' && config.acaoTesteOperacionalV27A !== 'ProgramarPagamento') {
       setResultadoOperacionalV27A({
         sucesso: false,
         bloqueado: true,
         acao: config.acaoTesteOperacionalV27A,
         mensagem: 'Escrita V2.7A bloqueada: acao ainda nao preparada para teste manual.',
         itemId,
-        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional, AprovarCompra, CriarPedidoCompra e VincularNotaFiscal estao preparados nesta fase.' }]
+        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional, AprovarCompra, CriarPedidoCompra, VincularNotaFiscal e ProgramarPagamento estao preparados nesta fase.' }]
       });
       return;
     }
@@ -559,6 +559,35 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
+    if (config.acaoTesteOperacionalV27A === 'ProgramarPagamento' && (
+      preValidacaoOperacionalV27A.acaoPretendida !== 'ProgramarPagamento' ||
+      preValidacaoOperacionalV27A.campoAlterado?.indexOf('Fornecedor_x002f_PrestadorId') === -1 ||
+      !preValidacaoOperacionalV27A.snapshotExistenteId ||
+      !preValidacaoOperacionalV27A.pagamentoNotaFiscalId ||
+      !preValidacaoOperacionalV27A.pagamentoNotaFiscalNumero ||
+      !preValidacaoOperacionalV27A.pagamentoFornecedorId ||
+      !preValidacaoOperacionalV27A.pagamentoObraId ||
+      !preValidacaoOperacionalV27A.pagamentoValorBruto ||
+      !preValidacaoOperacionalV27A.pagamentoVencimento ||
+      !preValidacaoOperacionalV27A.pagamentoDataProgramada ||
+      !preValidacaoOperacionalV27A.pagamentoStatusInicial ||
+      !preValidacaoOperacionalV27A.pagamentoForma ||
+      !preValidacaoOperacionalV27A.pagamentoConta ||
+      !preValidacaoOperacionalV27A.pagamentoCategoria ||
+      !preValidacaoOperacionalV27A.pagamentoOrigem ||
+      preValidacaoOperacionalV27A.pagamentoExistenteId
+    )) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: ProgramarPagamento exige pre-validacao completa da Lista 10, NF, fornecedor, obra, valores e choices de pagamento.',
+        itemId,
+        alertas: [{ codigo: 'EXECUCAO_PAGAMENTO_PREVALIDACAO_INCOMPLETA', mensagem: 'Revise notaFiscalTesteIdV27A, numeroNotaFiscalTesteV27A, valor, Fornecedor_x002f_PrestadorId, ObraId, StatusdoPagamento, FormadePagamento, ContadePagamento e inexistencia de pagamento anterior.' }]
+      });
+      return;
+    }
+
     setExecutandoOperacionalV27A(true);
     try {
       const resultado = config.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
@@ -569,7 +598,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             ? await props.repository.executarCriarPedidoCompraV27A(props.currentUserEmail, flags, config)
             : config.acaoTesteOperacionalV27A === 'VincularNotaFiscal'
               ? await props.repository.executarVincularNotaFiscalV27A(props.currentUserEmail, flags, config)
-              : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
+              : config.acaoTesteOperacionalV27A === 'ProgramarPagamento'
+                ? await props.repository.executarProgramarPagamentoV27A(props.currentUserEmail, flags, config)
+                : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
 
       setResultadoOperacionalV27A(resultado);
     } catch (error) {
@@ -1048,6 +1079,15 @@ function PainelOperacionalV27A({
           NF status/tipo/contabilidade: {preValidacao.notaFiscalStatusInicial || '-'} / {preValidacao.notaFiscalTipo || '-'} / {preValidacao.notaFiscalEnviadaContabilidade || '-'}<br />
           NF existente: {preValidacao.notaFiscalExistenteId || '-'} {preValidacao.notaFiscalExistenteTitulo || ''}<br />
           Diagnostico NF: {preValidacao.diagnosticoNotaFiscal && preValidacao.diagnosticoNotaFiscal.length > 0 ? preValidacao.diagnosticoNotaFiscal.join(' | ') : '-'}<br />
+          Pagamento previsto: {preValidacao.pagamentoTituloPrevisto || '-'} / NF {preValidacao.pagamentoNotaFiscalId || '-'} {preValidacao.pagamentoNotaFiscalNumero || '-'}<br />
+          Pagamento vinculo NF: {preValidacao.pagamentoVinculoNf || '-'}<br />
+          Pagamento fornecedor/obra: {preValidacao.pagamentoFornecedorId || '-'} / {preValidacao.pagamentoFornecedorTitulo || '-'} / obra {preValidacao.pagamentoObraId || '-'}<br />
+          Pagamento valores: bruto {preValidacao.pagamentoValorBruto ? formatCurrency(preValidacao.pagamentoValorBruto) : '-'} / liquido {preValidacao.pagamentoValorLiquido ? formatCurrency(preValidacao.pagamentoValorLiquido) : '-'}<br />
+          Pagamento datas: vencimento {preValidacao.pagamentoVencimento || '-'} / programada {preValidacao.pagamentoDataProgramada || '-'}<br />
+          Pagamento status/forma/conta: {preValidacao.pagamentoStatusInicial || '-'} / {preValidacao.pagamentoForma || '-'} / {preValidacao.pagamentoConta || '-'}<br />
+          Pagamento categoria/origem: {preValidacao.pagamentoCategoria || '-'} / {preValidacao.pagamentoOrigem || '-'}<br />
+          Pagamento existente: {preValidacao.pagamentoExistenteId || '-'} {preValidacao.pagamentoExistenteTitulo || ''}<br />
+          Diagnostico pagamento: {preValidacao.diagnosticoPagamento && preValidacao.diagnosticoPagamento.length > 0 ? preValidacao.diagnosticoPagamento.join(' | ') : '-'}<br />
           Snapshot previsto: {preValidacao.snapshotPrevistoTitulo || '-'}<br />
           Acoes previstas: snapshot {preValidacao.criaraSnapshot ? 'sim' : 'nao'}, vinculo {preValidacao.vincularaSnapshotAprovacaoCompra ? 'sim' : 'nao'}, historico {preValidacao.registraraHistorico ? 'sim' : 'nao'}<br />
           Transicao: {preValidacao.transicaoPermitida ? 'permitida' : 'bloqueada'} / campos {preValidacao.camposObrigatoriosPresentes ? 'presentes' : 'pendentes'}<br />

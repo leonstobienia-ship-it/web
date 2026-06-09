@@ -50,6 +50,14 @@ export interface IEnacSistemaWebPartProps {
   dataEmissaoNotaFiscalTesteV27A: string;
   dataVencimentoNotaFiscalTesteV27A: string;
   linkNotaFiscalTesteV27A: string;
+  notaFiscalTesteIdV27A: string;
+  pagamentoValorTesteV27A: string;
+  pagamentoStatusInicialTesteV27A: string;
+  pagamentoFormaTesteV27A: string;
+  pagamentoContaTesteV27A: string;
+  pagamentoCategoriaTesteV27A: string;
+  pagamentoOrigemTesteV27A: string;
+  pagamentoDataProgramadaTesteV27A: string;
 }
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
@@ -66,6 +74,11 @@ const SERIE_NF_PADRAO_V27A = '1';
 const TIPO_NF_PADRAO_V27A = 'Material';
 const STATUS_NF_INICIAL_PADRAO_V27A = 'Recebida';
 const ENVIADA_CONTABILIDADE_PADRAO_V27A = 'não';
+const PAGAMENTO_STATUS_INICIAL_PADRAO_V27A = 'Programado';
+const PAGAMENTO_FORMA_PADRAO_V27A = 'Pix';
+const PAGAMENTO_CONTA_PADRAO_V27A = 'Itaú ENAC';
+const PAGAMENTO_CATEGORIA_PADRAO_V27A = 'Material de Obra';
+const PAGAMENTO_ORIGEM_PADRAO_V27A = 'Compra de Material';
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
@@ -140,6 +153,14 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     this.properties.dataEmissaoNotaFiscalTesteV27A = this.properties.dataEmissaoNotaFiscalTesteV27A || '';
     this.properties.dataVencimentoNotaFiscalTesteV27A = this.properties.dataVencimentoNotaFiscalTesteV27A || '';
     this.properties.linkNotaFiscalTesteV27A = this.properties.linkNotaFiscalTesteV27A || '';
+    this.properties.notaFiscalTesteIdV27A = this.properties.notaFiscalTesteIdV27A || '';
+    this.properties.pagamentoValorTesteV27A = this.properties.pagamentoValorTesteV27A || '';
+    this.properties.pagamentoStatusInicialTesteV27A = this.properties.pagamentoStatusInicialTesteV27A || PAGAMENTO_STATUS_INICIAL_PADRAO_V27A;
+    this.properties.pagamentoFormaTesteV27A = this.properties.pagamentoFormaTesteV27A || PAGAMENTO_FORMA_PADRAO_V27A;
+    this.properties.pagamentoContaTesteV27A = this.properties.pagamentoContaTesteV27A || PAGAMENTO_CONTA_PADRAO_V27A;
+    this.properties.pagamentoCategoriaTesteV27A = this.properties.pagamentoCategoriaTesteV27A || PAGAMENTO_CATEGORIA_PADRAO_V27A;
+    this.properties.pagamentoOrigemTesteV27A = this.properties.pagamentoOrigemTesteV27A || PAGAMENTO_ORIGEM_PADRAO_V27A;
+    this.properties.pagamentoDataProgramadaTesteV27A = this.properties.pagamentoDataProgramadaTesteV27A || '';
 
     return Promise.resolve();
   }
@@ -204,7 +225,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                     { key: 'CriarSnapshotAprovacaoOperacional', text: 'Criar snapshot operacional' },
                     { key: 'AprovarCompra', text: 'Aprovar compra' },
                     { key: 'CriarPedidoCompra', text: 'Criar pedido de compra' },
-                    { key: 'VincularNotaFiscal', text: 'Vincular nota fiscal' }
+                    { key: 'VincularNotaFiscal', text: 'Vincular nota fiscal' },
+                    { key: 'ProgramarPagamento', text: 'Programar pagamento' }
                   ]
                 }),
                 PropertyPaneTextField('statusDestinoTesteOperacionalV27A', {
@@ -263,6 +285,30 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                 }),
                 PropertyPaneTextField('linkNotaFiscalTesteV27A', {
                   label: 'V2.7A - link da NF, opcional'
+                }),
+                PropertyPaneTextField('notaFiscalTesteIdV27A', {
+                  label: 'V2.7A - ID da NF de teste'
+                }),
+                PropertyPaneTextField('pagamentoValorTesteV27A', {
+                  label: 'V2.7A - valor do pagamento'
+                }),
+                PropertyPaneTextField('pagamentoStatusInicialTesteV27A', {
+                  label: 'V2.7A - status inicial do pagamento'
+                }),
+                PropertyPaneTextField('pagamentoFormaTesteV27A', {
+                  label: 'V2.7A - forma de pagamento'
+                }),
+                PropertyPaneTextField('pagamentoContaTesteV27A', {
+                  label: 'V2.7A - conta de pagamento'
+                }),
+                PropertyPaneTextField('pagamentoCategoriaTesteV27A', {
+                  label: 'V2.7A - categoria do pagamento'
+                }),
+                PropertyPaneTextField('pagamentoOrigemTesteV27A', {
+                  label: 'V2.7A - origem do pagamento'
+                }),
+                PropertyPaneTextField('pagamentoDataProgramadaTesteV27A', {
+                  label: 'V2.7A - data programada, opcional ISO'
                 })
               ]
             }
@@ -309,7 +355,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       'CriarSnapshotAprovacaoOperacional',
       'AprovarCompra',
       'CriarPedidoCompra',
-      'VincularNotaFiscal'
+      'VincularNotaFiscal',
+      'ProgramarPagamento'
     ];
     const acao = acoesSuportadas.indexOf(this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A) >= 0
       ? this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A
@@ -336,7 +383,15 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       enviadaContabilidadeTesteV27A: this.properties.enviadaContabilidadeTesteV27A || ENVIADA_CONTABILIDADE_PADRAO_V27A,
       dataEmissaoNotaFiscalTesteV27A: this.properties.dataEmissaoNotaFiscalTesteV27A || '',
       dataVencimentoNotaFiscalTesteV27A: this.properties.dataVencimentoNotaFiscalTesteV27A || '',
-      linkNotaFiscalTesteV27A: this.properties.linkNotaFiscalTesteV27A || ''
+      linkNotaFiscalTesteV27A: this.properties.linkNotaFiscalTesteV27A || '',
+      notaFiscalTesteIdV27A: this.parsePositiveNumber(this.properties.notaFiscalTesteIdV27A),
+      pagamentoValorTesteV27A: this.parsePositiveNumber(this.properties.pagamentoValorTesteV27A),
+      pagamentoStatusInicialTesteV27A: this.properties.pagamentoStatusInicialTesteV27A || PAGAMENTO_STATUS_INICIAL_PADRAO_V27A,
+      pagamentoFormaTesteV27A: this.properties.pagamentoFormaTesteV27A || PAGAMENTO_FORMA_PADRAO_V27A,
+      pagamentoContaTesteV27A: this.properties.pagamentoContaTesteV27A || PAGAMENTO_CONTA_PADRAO_V27A,
+      pagamentoCategoriaTesteV27A: this.properties.pagamentoCategoriaTesteV27A || PAGAMENTO_CATEGORIA_PADRAO_V27A,
+      pagamentoOrigemTesteV27A: this.properties.pagamentoOrigemTesteV27A || PAGAMENTO_ORIGEM_PADRAO_V27A,
+      pagamentoDataProgramadaTesteV27A: this.properties.pagamentoDataProgramadaTesteV27A || ''
     };
   }
 }

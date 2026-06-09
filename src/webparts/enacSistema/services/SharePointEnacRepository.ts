@@ -176,6 +176,52 @@ const LISTA_04_NOTAS_FISCAIS_CAMPOS_PREVISTOS = [
   LISTA_04_NOTAS_FISCAIS_LINK_FIELD,
   LISTA_04_NOTAS_FISCAIS_ENVIADA_CONTABILIDADE_FIELD
 ];
+const LISTA_10_PROGRAMACAO_FINANCEIRA_TITULO = 'Lista 10 - Contas a Pagar / Programacao Financeira';
+const LISTA_10_PAGAMENTO_NUMERO_NF_FIELD = 'N_x00ba_daNotaFiscal';
+const LISTA_10_PAGAMENTO_FORNECEDOR_FIELD = 'Fornecedor_x002f_PrestadorId';
+const LISTA_10_PAGAMENTO_OBRA_FIELD = 'ObraId';
+const LISTA_10_PAGAMENTO_VALOR_BRUTO_FIELD = 'ValorBruto';
+const LISTA_10_PAGAMENTO_VALOR_LIQUIDO_FIELD = 'ValorL_x00ed_quidoaPagar';
+const LISTA_10_PAGAMENTO_DATA_EMISSAO_FIELD = 'DatadeEmiss_x00e3_o';
+const LISTA_10_PAGAMENTO_DATA_VENCIMENTO_FIELD = 'DatadeVencimento';
+const LISTA_10_PAGAMENTO_DATA_PROGRAMADA_FIELD = 'DataProgramadaparaPagamento';
+const LISTA_10_PAGAMENTO_STATUS_FIELD = 'StatusdoPagamento';
+const LISTA_10_PAGAMENTO_FORMA_FIELD = 'FormadePagamento';
+const LISTA_10_PAGAMENTO_CONTA_FIELD = 'ContadePagamento';
+const LISTA_10_PAGAMENTO_CATEGORIA_FIELD = 'CategoriadoPagamento';
+const LISTA_10_PAGAMENTO_ORIGEM_FIELD = 'OrigemdoPagamento';
+const LISTA_10_PAGAMENTO_CENTRO_CUSTO_FIELD = 'CentrodeCusto';
+const LISTA_10_PAGAMENTO_LINK_NF_FIELD = 'LinkdaNotaFiscal';
+const LISTA_10_PAGAMENTO_OBSERVACOES_FIELD = 'Observa_x00e7__x00f5_es';
+const LISTA_10_PAGAMENTO_STATUS_INICIAL = 'Programado';
+const LISTA_10_PAGAMENTO_FORMA_INICIAL = 'Pix';
+const LISTA_10_PAGAMENTO_CONTA_INICIAL = 'Itaú ENAC';
+const LISTA_10_PAGAMENTO_CATEGORIA_INICIAL = 'Material de Obra';
+const LISTA_10_PAGAMENTO_ORIGEM_INICIAL = 'Compra de Material';
+const LISTA_10_PAGAMENTO_STATUS_CHOICES_CONFIRMADOS = ['Programado'];
+const LISTA_10_PAGAMENTO_FORMA_CHOICES_CONFIRMADAS = ['Pix'];
+const LISTA_10_PAGAMENTO_CONTA_CHOICES_CONFIRMADAS = ['Itaú ENAC'];
+const LISTA_10_PAGAMENTO_CATEGORIA_CHOICES_CONFIRMADAS = ['Material de Obra'];
+const LISTA_10_PAGAMENTO_ORIGEM_CHOICES_CONFIRMADAS = ['Compra de Material'];
+const LISTA_10_PAGAMENTO_CAMPOS_PREVISTOS = [
+  'Title',
+  LISTA_10_PAGAMENTO_NUMERO_NF_FIELD,
+  LISTA_10_PAGAMENTO_OBRA_FIELD,
+  LISTA_10_PAGAMENTO_FORNECEDOR_FIELD,
+  LISTA_10_PAGAMENTO_VALOR_BRUTO_FIELD,
+  LISTA_10_PAGAMENTO_VALOR_LIQUIDO_FIELD,
+  LISTA_10_PAGAMENTO_DATA_EMISSAO_FIELD,
+  LISTA_10_PAGAMENTO_DATA_VENCIMENTO_FIELD,
+  LISTA_10_PAGAMENTO_DATA_PROGRAMADA_FIELD,
+  LISTA_10_PAGAMENTO_STATUS_FIELD,
+  LISTA_10_PAGAMENTO_FORMA_FIELD,
+  LISTA_10_PAGAMENTO_CONTA_FIELD,
+  LISTA_10_PAGAMENTO_CATEGORIA_FIELD,
+  LISTA_10_PAGAMENTO_ORIGEM_FIELD,
+  LISTA_10_PAGAMENTO_CENTRO_CUSTO_FIELD,
+  LISTA_10_PAGAMENTO_LINK_NF_FIELD,
+  LISTA_10_PAGAMENTO_OBSERVACOES_FIELD
+];
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -229,6 +275,29 @@ interface NotaFiscalExistenteV27A {
   title: string;
   numeroNotaFiscal: string;
   numeroPedido: string;
+}
+
+interface NotaFiscalOrigemPagamentoV27A {
+  id: number;
+  title: string;
+  numeroNotaFiscal: string;
+  numeroPedido: string;
+  statusConferencia: string;
+  enviadaContabilidade: string;
+  valorBruto: number;
+  dataEmissao?: string;
+  dataVencimento?: string;
+  fornecedorId?: number;
+  fornecedorTitulo?: string;
+  obraId?: number;
+  centroCusto?: string;
+  linkNotaFiscal?: string;
+}
+
+interface PagamentoExistenteV27A {
+  id: number;
+  title: string;
+  numeroNotaFiscal: string;
 }
 
 /**
@@ -661,6 +730,25 @@ export class SharePointEnacRepository {
     let notaFiscalEnviadaContabilidade: string | undefined;
     let notaFiscalExistenteId: number | undefined;
     let notaFiscalExistenteTitulo: string | undefined;
+    let diagnosticoPagamento: string[] | undefined;
+    let pagamentoTituloPrevisto: string | undefined;
+    let pagamentoNotaFiscalId: number | undefined;
+    let pagamentoNotaFiscalNumero: string | undefined;
+    let pagamentoVinculoNf: string | undefined;
+    let pagamentoFornecedorId: number | undefined;
+    let pagamentoFornecedorTitulo: string | undefined;
+    let pagamentoObraId: number | undefined;
+    let pagamentoValorBruto: number | undefined;
+    let pagamentoValorLiquido: number | undefined;
+    let pagamentoVencimento: string | undefined;
+    let pagamentoDataProgramada: string | undefined;
+    let pagamentoStatusInicial: string | undefined;
+    let pagamentoForma: string | undefined;
+    let pagamentoConta: string | undefined;
+    let pagamentoCategoria: string | undefined;
+    let pagamentoOrigem: string | undefined;
+    let pagamentoExistenteId: number | undefined;
+    let pagamentoExistenteTitulo: string | undefined;
 
     if (itemTesteId > 0 && !item) {
       alertas.push({ codigo: leituraItem?.statusHttp === 403 ? 'ERRO_REST_LISTA02' : 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: leituraItem?.erro || `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
@@ -1022,11 +1110,140 @@ export class SharePointEnacRepository {
       registraraHistorico = true;
     }
 
+    if (acaoPretendida === 'ProgramarPagamento') {
+      const notaFiscalTesteId = Number(config.notaFiscalTesteIdV27A || 0);
+      const numeroNfEsperado = String(config.numeroNotaFiscalTesteV27A || 'NF-V2.7A-TESTE-001').trim();
+      const valorPagamento = Number(config.pagamentoValorTesteV27A || config.valorNotaFiscalTesteV27A || config.valorTesteOperacionalV27A || 0);
+      const statusPagamento = config.pagamentoStatusInicialTesteV27A || LISTA_10_PAGAMENTO_STATUS_INICIAL;
+      const formaPagamento = config.pagamentoFormaTesteV27A || LISTA_10_PAGAMENTO_FORMA_INICIAL;
+      const contaPagamento = config.pagamentoContaTesteV27A || LISTA_10_PAGAMENTO_CONTA_INICIAL;
+      const categoriaPagamento = config.pagamentoCategoriaTesteV27A || LISTA_10_PAGAMENTO_CATEGORIA_INICIAL;
+      const origemPagamento = config.pagamentoOrigemTesteV27A || LISTA_10_PAGAMENTO_ORIGEM_INICIAL;
+      let nfOrigem: NotaFiscalOrigemPagamentoV27A | undefined;
+
+      pagamentoNotaFiscalId = notaFiscalTesteId > 0 ? notaFiscalTesteId : undefined;
+      pagamentoNotaFiscalNumero = numeroNfEsperado;
+      pagamentoTituloPrevisto = notaFiscalTesteId > 0 ? this.criarTituloPagamentoV27A(notaFiscalTesteId, config) : undefined;
+      pagamentoStatusInicial = statusPagamento;
+      pagamentoForma = formaPagamento;
+      pagamentoConta = contaPagamento;
+      pagamentoCategoria = categoriaPagamento;
+      pagamentoOrigem = origemPagamento;
+      diagnosticoPagamento = [
+        `Lista 10 por GUID ${LISTAS_ENAC.programacaoFinanceira}.`,
+        'Lista 05 permanece somente como referencia/legado nesta rodada.',
+        'Informativo: VINCULO_TEXTUAL_NF_USADO; Lista 10 nao possui lookup auditado para a NF nesta rodada.',
+        `Campos previstos: ${LISTA_10_PAGAMENTO_CAMPOS_PREVISTOS.join(', ')}.`
+      ];
+
+      if (!notaFiscalTesteId || notaFiscalTesteId <= 0) {
+        alertas.push({ codigo: 'NF_TESTE_NAO_ENCONTRADA', mensagem: 'notaFiscalTesteIdV27A deve informar o item de NF de teste da Lista 04.' });
+      } else {
+        try {
+          nfOrigem = await this.obterNotaFiscalOrigemPagamentoV27A(notaFiscalTesteId);
+          pagamentoNotaFiscalNumero = nfOrigem.numeroNotaFiscal;
+          pagamentoVinculoNf = nfOrigem.title || nfOrigem.numeroNotaFiscal;
+          pagamentoFornecedorId = nfOrigem.fornecedorId;
+          pagamentoFornecedorTitulo = nfOrigem.fornecedorTitulo;
+          pagamentoObraId = nfOrigem.obraId;
+          pagamentoValorBruto = nfOrigem.valorBruto;
+          pagamentoValorLiquido = valorPagamento || nfOrigem.valorBruto;
+          pagamentoVencimento = nfOrigem.dataVencimento;
+          pagamentoDataProgramada = config.pagamentoDataProgramadaTesteV27A || nfOrigem.dataVencimento;
+        } catch (error) {
+          alertas.push({ codigo: 'ERRO_REST_LISTA04', mensagem: this.getErrorMessage(error) });
+        }
+      }
+
+      if (item && this.normalizarTexto(statusAtual) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
+        alertas.push({ codigo: 'REQUISICAO_STATUS_NAO_ELEGIVEL_PARA_PAGAMENTO', mensagem: 'ProgramarPagamento exige requisicao origem preservada em Aprovada para compra.' });
+      }
+
+      if (!snapshotExistenteId) {
+        alertas.push({ codigo: 'SNAPSHOT_OBRIGATORIO_AUSENTE', mensagem: 'ProgramarPagamento exige SnapshotAprovacaoCompra preservado na requisicao origem.' });
+      }
+
+      if (nfOrigem) {
+        if (nfOrigem.numeroNotaFiscal !== numeroNfEsperado) {
+          alertas.push({ codigo: 'NF_NUMERO_DIVERGENTE', mensagem: `NF ${notaFiscalTesteId} retornou numero ${nfOrigem.numeroNotaFiscal || '-'}; esperado ${numeroNfEsperado}.` });
+        }
+
+        if (nfOrigem.numeroPedido !== 'PED-V2.7A-TESTE-11-20260609125401') {
+          alertas.push({ codigo: 'NF_PEDIDO_DIVERGENTE', mensagem: `NF ${notaFiscalTesteId} esta vinculada ao pedido ${nfOrigem.numeroPedido || '-'}; esperado PED-V2.7A-TESTE-11-20260609125401.` });
+        }
+
+        if (this.normalizarTexto(nfOrigem.statusConferencia) !== this.normalizarTexto(LISTA_04_NOTAS_FISCAIS_STATUS_INICIAL)) {
+          alertas.push({ codigo: 'NF_STATUS_NAO_ELEGIVEL_PARA_PAGAMENTO', mensagem: `Status da NF deve ser ${LISTA_04_NOTAS_FISCAIS_STATUS_INICIAL}; atual ${nfOrigem.statusConferencia || '-'}.` });
+        }
+
+        if (this.normalizarTexto(nfOrigem.enviadaContabilidade) !== this.normalizarTexto(LISTA_04_NOTAS_FISCAIS_CONTABILIDADE_INICIAL)) {
+          alertas.push({ codigo: 'NF_CONTABILIDADE_NAO_ELEGIVEL', mensagem: `Enviada para contabilidade deve permanecer ${LISTA_04_NOTAS_FISCAIS_CONTABILIDADE_INICIAL}; atual ${nfOrigem.enviadaContabilidade || '-'}.` });
+        }
+
+        if (!nfOrigem.fornecedorId) {
+          alertas.push({ codigo: 'FORNECEDOR_NF_AUSENTE', mensagem: 'NF de origem nao possui Fornecedor0 preenchido.' });
+        }
+
+        if (!nfOrigem.obraId) {
+          alertas.push({ codigo: 'OBRA_NF_AUSENTE', mensagem: 'NF de origem nao possui ObraId preenchido.' });
+        }
+
+        if (Math.abs(nfOrigem.valorBruto - 6720) > 0.009 || (valorPagamento > 0 && Math.abs(nfOrigem.valorBruto - valorPagamento) > 0.009)) {
+          alertas.push({ codigo: 'VALOR_PAGAMENTO_DIVERGENTE', mensagem: `Valor da NF/pagamento deve ser 6720. NF=${nfOrigem.valorBruto}; pagamento=${valorPagamento || '-'}.` });
+        }
+
+        if (!nfOrigem.dataVencimento) {
+          alertas.push({ codigo: 'NF_VENCIMENTO_AUSENTE', mensagem: 'NF de origem deve possuir DatadeVencimento para programar pagamento.' });
+        }
+      }
+
+      if (!valorPagamento || valorPagamento <= 0) {
+        alertas.push({ codigo: 'VALOR_PAGAMENTO_AUSENTE', mensagem: 'pagamentoValorTesteV27A ou valorNotaFiscalTesteV27A deve ser maior que zero.' });
+      }
+
+      if (!this.statusPagamentoInicialMapeadoV27A(statusPagamento)) {
+        alertas.push({ codigo: 'STATUS_PAGAMENTO_INICIAL_NAO_MAPEADO', mensagem: `Status inicial do pagamento "${statusPagamento}" nao consta nas choices confirmadas da Lista 10.` });
+      }
+
+      if (!this.formaPagamentoMapeadaV27A(formaPagamento)) {
+        alertas.push({ codigo: 'FORMA_PAGAMENTO_NAO_MAPEADA', mensagem: `Forma de pagamento "${formaPagamento}" nao consta nas choices confirmadas da Lista 10.` });
+      }
+
+      if (!this.contaPagamentoMapeadaV27A(contaPagamento)) {
+        alertas.push({ codigo: 'CONTA_PAGAMENTO_NAO_MAPEADA', mensagem: `Conta de pagamento "${contaPagamento}" nao consta nas choices confirmadas da Lista 10.` });
+      }
+
+      if (!this.categoriaPagamentoMapeadaV27A(categoriaPagamento)) {
+        alertas.push({ codigo: 'CATEGORIA_PAGAMENTO_NAO_MAPEADA', mensagem: `Categoria de pagamento "${categoriaPagamento}" nao consta nas choices confirmadas da Lista 10.` });
+      }
+
+      if (!this.origemPagamentoMapeadaV27A(origemPagamento)) {
+        alertas.push({ codigo: 'ORIGEM_PAGAMENTO_NAO_MAPEADA', mensagem: `Origem de pagamento "${origemPagamento}" nao consta nas choices confirmadas da Lista 10.` });
+      }
+
+      if (nfOrigem?.numeroNotaFiscal) {
+        try {
+          const pagamentoExistente = await this.obterPagamentoExistenteV27A(nfOrigem.numeroNotaFiscal, notaFiscalTesteId);
+          if (pagamentoExistente) {
+            pagamentoExistenteId = pagamentoExistente.id;
+            pagamentoExistenteTitulo = pagamentoExistente.title;
+            alertas.push({ codigo: 'PAGAMENTO_JA_EXISTENTE', mensagem: `Pagamento existente encontrado: ${pagamentoExistente.id} / ${pagamentoExistente.title}.` });
+          }
+        } catch (error) {
+          alertas.push({ codigo: 'ERRO_REST_LISTA10', mensagem: this.getErrorMessage(error) });
+        }
+      }
+
+      registraraHistorico = true;
+    }
+
     const podeExecutar = Boolean(alertas.length === 0 && usuarioAtual && item && marcadorEncontrado && transicaoPermitida && camposObrigatoriosPresentes);
     const listaAlterada = acaoPretendida === 'CriarPedidoCompra'
       ? `${LISTA_03_PEDIDOS_COMPRA_TITULO} (${LISTAS_ENAC.pedidosCompra})`
       : acaoPretendida === 'VincularNotaFiscal'
         ? `${LISTA_04_NOTAS_FISCAIS_TITULO} (${LISTAS_ENAC.notasFiscaisRecebidas})`
+      : acaoPretendida === 'ProgramarPagamento'
+        ? `${LISTA_10_PROGRAMACAO_FINANCEIRA_TITULO} (${LISTAS_ENAC.programacaoFinanceira})`
       : acaoPretendida === 'CriarSnapshotAprovacaoOperacional'
         ? 'ENAC Snapshots Regras'
         : LISTA_02_REQUISICOES_COMPRA_TITULO;
@@ -1036,6 +1253,8 @@ export class SharePointEnacRepository {
         ? LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS.join(', ')
         : acaoPretendida === 'VincularNotaFiscal'
           ? LISTA_04_NOTAS_FISCAIS_CAMPOS_PREVISTOS.join(', ')
+        : acaoPretendida === 'ProgramarPagamento'
+          ? LISTA_10_PAGAMENTO_CAMPOS_PREVISTOS.join(', ')
         : 'ENAC Snapshots Regras';
     const valorNovoPrevisto = acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra'
       ? statusDestino
@@ -1043,6 +1262,8 @@ export class SharePointEnacRepository {
         ? `POST Lista 03: Title=${pedidoTituloPrevisto || '-'}; ${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD}=${pedidoVinculoTextual || '-'}; ObraId=${item?.ObraId || '-'}; Fornecedor0Id=${pedidoFornecedorId || '-'}; ValordoPedido=${config.valorTesteOperacionalV27A || 0}; StatusdoPedido=${pedidoStatusInicial || '-'}`
         : acaoPretendida === 'VincularNotaFiscal'
           ? `POST Lista 04: Title=${notaFiscalTituloPrevisto || '-'}; ${LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD}=${notaFiscalVinculoPedido || '-'}; ${LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD}=${notaFiscalNumeroPrevisto || '-'}; Fornecedor0Id=${notaFiscalFornecedorId || '-'}; ObraId=${notaFiscalObraId || '-'}; ValorBrutodaNF=${config.valorNotaFiscalTesteV27A || config.valorTesteOperacionalV27A || 0}; Status=${notaFiscalStatusInicial || '-'}; Contabilidade=${notaFiscalEnviadaContabilidade || '-'}`
+        : acaoPretendida === 'ProgramarPagamento'
+          ? `POST Lista 10: Title=${pagamentoTituloPrevisto || '-'}; ${LISTA_10_PAGAMENTO_NUMERO_NF_FIELD}=${pagamentoNotaFiscalNumero || '-'}; ${LISTA_10_PAGAMENTO_FORNECEDOR_FIELD}=${pagamentoFornecedorId || '-'}; ${LISTA_10_PAGAMENTO_OBRA_FIELD}=${pagamentoObraId || '-'}; ${LISTA_10_PAGAMENTO_VALOR_BRUTO_FIELD}=${pagamentoValorBruto || '-'}; ${LISTA_10_PAGAMENTO_VALOR_LIQUIDO_FIELD}=${pagamentoValorLiquido || '-'}; ${LISTA_10_PAGAMENTO_DATA_PROGRAMADA_FIELD}=${pagamentoDataProgramada || '-'}; ${LISTA_10_PAGAMENTO_STATUS_FIELD}=${pagamentoStatusInicial || '-'}`
         : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`;
 
     return {
@@ -1108,6 +1329,25 @@ export class SharePointEnacRepository {
       notaFiscalEnviadaContabilidade,
       notaFiscalExistenteId,
       notaFiscalExistenteTitulo,
+      diagnosticoPagamento,
+      pagamentoTituloPrevisto,
+      pagamentoNotaFiscalId,
+      pagamentoNotaFiscalNumero,
+      pagamentoVinculoNf,
+      pagamentoFornecedorId,
+      pagamentoFornecedorTitulo,
+      pagamentoObraId,
+      pagamentoValorBruto,
+      pagamentoValorLiquido,
+      pagamentoVencimento,
+      pagamentoDataProgramada,
+      pagamentoStatusInicial,
+      pagamentoForma,
+      pagamentoConta,
+      pagamentoCategoria,
+      pagamentoOrigem,
+      pagamentoExistenteId,
+      pagamentoExistenteTitulo,
       snapshotPrevistoTitulo,
       criaraSnapshot,
       vincularaSnapshotAprovacaoCompra,
@@ -2026,35 +2266,196 @@ export class SharePointEnacRepository {
   }
 
   public async programarPagamentoControlado(id: number, payload: ProgramacaoPagamentoControladaPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
-    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
-    const alertas = this.validarPermissaoAcao('ProgramarPagamento', { title: payload.marcadorTeste, status: 'NF vinculada' }, usuario, flags);
+    void id;
+    void payload;
+    void emailOuLogin;
+    void flags;
+    return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', 'Metodo legado bloqueado. Use executarProgramarPagamentoV27A com schema real da Lista 10.', [
+      { codigo: 'METODO_LEGADO_PAGAMENTO_BLOQUEADO', mensagem: 'A Lista 10 exige NF textual, Fornecedor_x002f_PrestadorId, ObraId, valores, status, forma, conta, categoria e origem confirmados pela auditoria readonly.' }
+    ]);
+  }
 
-    if (payload.valorProgramado <= 0 || !payload.dataProgramada || !payload.formaPagamento) {
-      alertas.push({ codigo: 'PROGRAMACAO_INCOMPLETA', mensagem: 'Valor, data e forma de pagamento sao obrigatorios.' });
+  public async executarProgramarPagamentoV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A, config: ConfiguracaoTesteOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const requisicaoItemId = Number(config.itemTesteOperacionalIdV27A || 0);
+    const notaFiscalId = Number(config.notaFiscalTesteIdV27A || 0);
+    const numeroNfEsperado = String(config.numeroNotaFiscalTesteV27A || 'NF-V2.7A-TESTE-001').trim();
+    const valorPagamento = Number(config.pagamentoValorTesteV27A || config.valorNotaFiscalTesteV27A || config.valorTesteOperacionalV27A || 0);
+    const statusPagamento = config.pagamentoStatusInicialTesteV27A || LISTA_10_PAGAMENTO_STATUS_INICIAL;
+    const formaPagamento = config.pagamentoFormaTesteV27A || LISTA_10_PAGAMENTO_FORMA_INICIAL;
+    const contaPagamento = config.pagamentoContaTesteV27A || LISTA_10_PAGAMENTO_CONTA_INICIAL;
+    const categoriaPagamento = config.pagamentoCategoriaTesteV27A || LISTA_10_PAGAMENTO_CATEGORIA_INICIAL;
+    const origemPagamento = config.pagamentoOrigemTesteV27A || LISTA_10_PAGAMENTO_ORIGEM_INICIAL;
+    const preValidacao = await this.preValidarEscritaOperacionalRestritaV27A(emailOuLogin, flags, config);
+    const alertas: AlertaBloqueioEscrita[] = [...preValidacao.alertas];
+
+    if (!preValidacao.podeExecutar) {
+      alertas.push({ codigo: 'EXECUCAO_SEM_PREVALIDACAO_ESPECIFICA', mensagem: 'Pre-validacao especifica do item nao esta aprovada no momento da execucao.' });
+    }
+
+    if (preValidacao.acaoPretendida !== 'ProgramarPagamento') {
+      alertas.push({ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Esta rotina permite somente ProgramarPagamento.' });
+    }
+
+    if (preValidacao.itemTesteId !== requisicaoItemId) {
+      alertas.push({ codigo: 'EXECUCAO_ITEM_DIVERGENTE', mensagem: `Requisicao validada ${preValidacao.itemTesteId || '-'} difere da configurada ${requisicaoItemId || '-'}.` });
+    }
+
+    if (!preValidacao.marcadorEncontrado) {
+      alertas.push({ codigo: 'EXECUCAO_MARCADOR_NAO_CONFIRMADO', mensagem: 'Marcador V2.7A-TESTE nao foi confirmado na requisicao origem.' });
+    }
+
+    if (!notaFiscalId || notaFiscalId <= 0) {
+      alertas.push({ codigo: 'NF_TESTE_NAO_ENCONTRADA', mensagem: 'notaFiscalTesteIdV27A deve ser informado.' });
+    }
+
+    if (!numeroNfEsperado) {
+      alertas.push({ codigo: 'NUMERO_NF_TESTE_AUSENTE', mensagem: 'numeroNotaFiscalTesteV27A deve ser informado.' });
+    }
+
+    if (!valorPagamento || valorPagamento <= 0) {
+      alertas.push({ codigo: 'VALOR_PAGAMENTO_AUSENTE', mensagem: 'pagamentoValorTesteV27A ou valorNotaFiscalTesteV27A deve ser maior que zero.' });
+    }
+
+    if (!this.statusPagamentoInicialMapeadoV27A(statusPagamento)) {
+      alertas.push({ codigo: 'STATUS_PAGAMENTO_INICIAL_NAO_MAPEADO', mensagem: `Status inicial do pagamento invalido: ${statusPagamento}.` });
+    }
+
+    if (!this.formaPagamentoMapeadaV27A(formaPagamento)) {
+      alertas.push({ codigo: 'FORMA_PAGAMENTO_NAO_MAPEADA', mensagem: `Forma de pagamento invalida: ${formaPagamento}.` });
+    }
+
+    if (!this.contaPagamentoMapeadaV27A(contaPagamento)) {
+      alertas.push({ codigo: 'CONTA_PAGAMENTO_NAO_MAPEADA', mensagem: `Conta de pagamento invalida: ${contaPagamento}.` });
+    }
+
+    if (!this.categoriaPagamentoMapeadaV27A(categoriaPagamento)) {
+      alertas.push({ codigo: 'CATEGORIA_PAGAMENTO_NAO_MAPEADA', mensagem: `Categoria de pagamento invalida: ${categoriaPagamento}.` });
+    }
+
+    if (!this.origemPagamentoMapeadaV27A(origemPagamento)) {
+      alertas.push({ codigo: 'ORIGEM_PAGAMENTO_NAO_MAPEADA', mensagem: `Origem de pagamento invalida: ${origemPagamento}.` });
+    }
+
+    if (!preValidacao.acoesPermitidas.some((acao) => acao === 'ProgramarPagamento')) {
+      alertas.push({ codigo: 'EXECUCAO_PERFIL_SEM_PERMISSAO', mensagem: 'Perfil atual nao esta autorizado para ProgramarPagamento.' });
     }
 
     if (alertas.length > 0) {
-      return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', 'Programacao de pagamento bloqueada.', alertas, id);
+      return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', `Programacao de pagamento bloqueada: ${alertas.map((alerta) => alerta.codigo).join(', ')}.`, alertas, notaFiscalId);
+    }
+
+    const leituraItem = await this.obterRequisicaoOperacionalParaPreValidacao(requisicaoItemId);
+    const requisicao = leituraItem.item;
+    const statusRequisicao = String(requisicao?.[LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD] || '');
+    const camposComMarcador = requisicao ? this.obterCamposComMarcadorV27A(requisicao, flags.marcadorTesteOperacionalV27A) : [];
+
+    if (!requisicao || camposComMarcador.length === 0 || this.normalizarTexto(statusRequisicao) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A) || !leituraItem.snapshotExistenteId) {
+      return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', 'Revalidacao imediata da requisicao origem bloqueou a programacao.', [
+        { codigo: 'EXECUCAO_REVALIDACAO_REQUISICAO_FALHOU', mensagem: leituraItem.erro || `Status=${statusRequisicao || '-'}; snapshot=${leituraItem.snapshotExistenteId || '-'}.` }
+      ], notaFiscalId, statusRequisicao);
+    }
+
+    const nfOrigem = await this.obterNotaFiscalOrigemPagamentoV27A(notaFiscalId);
+    if (
+      nfOrigem.numeroNotaFiscal !== numeroNfEsperado ||
+      nfOrigem.numeroPedido !== 'PED-V2.7A-TESTE-11-20260609125401' ||
+      !nfOrigem.fornecedorId ||
+      !nfOrigem.obraId ||
+      Math.abs(nfOrigem.valorBruto - 6720) > 0.009 ||
+      Math.abs(nfOrigem.valorBruto - valorPagamento) > 0.009 ||
+      this.normalizarTexto(nfOrigem.statusConferencia) !== this.normalizarTexto(LISTA_04_NOTAS_FISCAIS_STATUS_INICIAL) ||
+      this.normalizarTexto(nfOrigem.enviadaContabilidade) !== this.normalizarTexto(LISTA_04_NOTAS_FISCAIS_CONTABILIDADE_INICIAL) ||
+      !nfOrigem.dataVencimento
+    ) {
+      return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', 'Revalidacao imediata da NF origem bloqueou a programacao.', [
+        { codigo: 'EXECUCAO_REVALIDACAO_NF_FALHOU', mensagem: `NF=${nfOrigem.numeroNotaFiscal || '-'}; pedido=${nfOrigem.numeroPedido || '-'}; status=${nfOrigem.statusConferencia || '-'}; contabilidade=${nfOrigem.enviadaContabilidade || '-'}; fornecedor=${nfOrigem.fornecedorId || '-'}; obra=${nfOrigem.obraId || '-'}; valor=${nfOrigem.valorBruto}; vencimento=${nfOrigem.dataVencimento || '-'}.` }
+      ], notaFiscalId, statusRequisicao);
+    }
+
+    const pagamentoExistente = await this.obterPagamentoExistenteV27A(nfOrigem.numeroNotaFiscal, notaFiscalId);
+    if (pagamentoExistente) {
+      return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', 'Pagamento de teste ja existente para a NF.', [
+        { codigo: 'PAGAMENTO_JA_EXISTENTE', mensagem: `${pagamentoExistente.id} / ${pagamentoExistente.title}` }
+      ], notaFiscalId, statusRequisicao);
+    }
+
+    const now = new Date();
+    const dataProgramada = config.pagamentoDataProgramadaTesteV27A || nfOrigem.dataVencimento || now.toISOString();
+    const tituloPagamento = this.criarTituloPagamentoV27A(notaFiscalId, config, now);
+    const body: Record<string, unknown> = {
+      Title: tituloPagamento,
+      [LISTA_10_PAGAMENTO_NUMERO_NF_FIELD]: nfOrigem.numeroNotaFiscal,
+      [LISTA_10_PAGAMENTO_OBRA_FIELD]: nfOrigem.obraId,
+      [LISTA_10_PAGAMENTO_FORNECEDOR_FIELD]: nfOrigem.fornecedorId,
+      [LISTA_10_PAGAMENTO_VALOR_BRUTO_FIELD]: valorPagamento,
+      [LISTA_10_PAGAMENTO_VALOR_LIQUIDO_FIELD]: valorPagamento,
+      [LISTA_10_PAGAMENTO_DATA_EMISSAO_FIELD]: nfOrigem.dataEmissao || now.toISOString(),
+      [LISTA_10_PAGAMENTO_DATA_VENCIMENTO_FIELD]: nfOrigem.dataVencimento,
+      [LISTA_10_PAGAMENTO_DATA_PROGRAMADA_FIELD]: dataProgramada,
+      [LISTA_10_PAGAMENTO_STATUS_FIELD]: statusPagamento,
+      [LISTA_10_PAGAMENTO_FORMA_FIELD]: formaPagamento,
+      [LISTA_10_PAGAMENTO_CONTA_FIELD]: contaPagamento,
+      [LISTA_10_PAGAMENTO_CATEGORIA_FIELD]: categoriaPagamento,
+      [LISTA_10_PAGAMENTO_ORIGEM_FIELD]: origemPagamento,
+      [LISTA_10_PAGAMENTO_CENTRO_CUSTO_FIELD]: nfOrigem.centroCusto || 'V2.7A-TESTE',
+      [LISTA_10_PAGAMENTO_OBSERVACOES_FIELD]: config.observacaoTesteOperacionalV27A || `V2.7A-TESTE - programacao controlada de pagamento a partir da NF ${notaFiscalId}`
+    };
+
+    if (nfOrigem.linkNotaFiscal) {
+      body[LISTA_10_PAGAMENTO_LINK_NF_FIELD] = { Url: nfOrigem.linkNotaFiscal, Description: nfOrigem.numeroNotaFiscal };
     }
 
     const response = await this.spHttpClient.post(
       this.getListItemsEndpoint(LISTAS_ENAC.programacaoFinanceira),
       SPHttpClient.configurations.v1,
-      this.criarPostOptions({
-        Title: `${payload.marcadorTeste} programacao ${id}`,
-        ValorBruto: payload.valorProgramado,
-        DataProgramadaparaPagamento: payload.dataProgramada,
-        StatusdoPagamento: 'Programado'
-      })
+      this.criarPostOptions(body)
     );
-    const item = await this.ensureJson(response);
+
+    if (!response.ok) {
+      return this.criarResultadoOperacionalBloqueado('ProgramarPagamento', `POST de pagamento retornou ${response.status}: ${response.statusText}.`, [
+        { codigo: 'ERRO_POST_PAGAMENTO', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}` }
+      ], notaFiscalId, statusRequisicao);
+    }
+
+    const pagamento = await this.ensureJson(response);
+    const pagamentoId = Number(pagamento.Id || pagamento.ID);
+    const alertasPosCriacao: AlertaBloqueioEscrita[] = [];
+    const pagamentoCriado = await this.obterPagamentoCriadoV27A(pagamentoId);
+
+    if (
+      pagamentoCriado.numeroNotaFiscal !== nfOrigem.numeroNotaFiscal ||
+      this.normalizarTexto(pagamentoCriado.status) !== this.normalizarTexto(statusPagamento) ||
+      Math.abs(pagamentoCriado.valorBruto - valorPagamento) > 0.009
+    ) {
+      alertasPosCriacao.push({
+        codigo: 'PAGAMENTO_POS_CRIACAO_DIVERGENTE',
+        mensagem: `Pagamento criado com NF=${pagamentoCriado.numeroNotaFiscal || '-'}; status=${pagamentoCriado.status || '-'}; valor=${pagamentoCriado.valorBruto}. Conferir manualmente.`
+      });
+    }
+
+    const historico = await this.registrarHistoricoOperacional({
+      origemLista: 'Lista 10',
+      origemItemId: pagamentoId,
+      acao: 'ProgramarPagamento',
+      descricao: `${config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - programacao controlada de pagamento'}; pagamento ${pagamentoId}/${tituloPagamento}; NF ${notaFiscalId}/${nfOrigem.numeroNotaFiscal}; pedido ${nfOrigem.numeroPedido}; requisicao ${requisicaoItemId}; valor ${valorPagamento}; status ${statusPagamento}; forma ${formaPagamento}; conta ${contaPagamento}; origem Webpart V2.7A.7B; sem Power Automate.`,
+      statusAnterior: '',
+      statusNovo: statusPagamento,
+      marcadorTeste: flags.marcadorTesteOperacionalV27A
+    }, emailOuLogin, flags);
+
     return {
       sucesso: true,
       bloqueado: false,
       acao: 'ProgramarPagamento',
-      mensagem: 'Programacao financeira V2.7A-TESTE criada.',
-      itemId: Number(item.Id || item.ID),
-      alertas: []
+      mensagem: 'Pagamento programado na Lista 10 com controle V2.7A.7B e historico registrado.',
+      itemId: pagamentoId,
+      campoAlterado: LISTA_10_PAGAMENTO_CAMPOS_PREVISTOS.join(', '),
+      statusAnterior: '',
+      statusNovo: statusPagamento,
+      historicoRegistrado: historico.sucesso,
+      historicoItemId: historico.itemId,
+      statusHttpEscrita: response.status,
+      alertas: [...alertasPosCriacao, ...historico.alertas]
     };
   }
 
@@ -2516,7 +2917,7 @@ export class SharePointEnacRepository {
       case 'VincularNotaFiscal':
         return ['aprovadaparacompra', 'pedidoemitido', 'comprarealizadaaguardandonf'].indexOf(status) >= 0;
       case 'ProgramarPagamento':
-        return ['nfvinculada', 'aguardandoprogramacaofinanceira'].indexOf(status) >= 0;
+        return ['aprovadaparacompra', 'nfvinculada', 'aguardandoprogramacaofinanceira'].indexOf(status) >= 0;
       default:
         return false;
     }
@@ -2867,6 +3268,124 @@ export class SharePointEnacRepository {
         numeroNotaFiscal: item[LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD] || ''
       }
       : undefined;
+  }
+
+  private statusPagamentoInicialMapeadoV27A(status: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(status || LISTA_10_PAGAMENTO_STATUS_INICIAL);
+    return LISTA_10_PAGAMENTO_STATUS_CHOICES_CONFIRMADOS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private formaPagamentoMapeadaV27A(forma: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(forma || LISTA_10_PAGAMENTO_FORMA_INICIAL);
+    return LISTA_10_PAGAMENTO_FORMA_CHOICES_CONFIRMADAS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private contaPagamentoMapeadaV27A(conta: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(conta || LISTA_10_PAGAMENTO_CONTA_INICIAL);
+    return LISTA_10_PAGAMENTO_CONTA_CHOICES_CONFIRMADAS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private categoriaPagamentoMapeadaV27A(categoria: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(categoria || LISTA_10_PAGAMENTO_CATEGORIA_INICIAL);
+    return LISTA_10_PAGAMENTO_CATEGORIA_CHOICES_CONFIRMADAS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private origemPagamentoMapeadaV27A(origem: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(origem || LISTA_10_PAGAMENTO_ORIGEM_INICIAL);
+    return LISTA_10_PAGAMENTO_ORIGEM_CHOICES_CONFIRMADAS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private criarTituloPagamentoV27A(notaFiscalId: number, config: ConfiguracaoTesteOperacionalV27A, dataReferencia: Date = new Date()): string {
+    const configurado = String(config.numeroNotaFiscalTesteV27A || '').trim().replace(/\s+/g, '-');
+    const sufixo = configurado || `NF-${notaFiscalId}`;
+    return `PAG-V2.7A-TESTE-NF-${notaFiscalId}-${sufixo}-${this.formatTimestampCompacto(dataReferencia)}`;
+  }
+
+  private async obterNotaFiscalOrigemPagamentoV27A(notaFiscalId: number): Promise<NotaFiscalOrigemPagamentoV27A> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.notasFiscaisRecebidas)}(${notaFiscalId})?$select=Id,Title,${LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD},${LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD},${LISTA_04_NOTAS_FISCAIS_STATUS_FIELD},${LISTA_04_NOTAS_FISCAIS_ENVIADA_CONTABILIDADE_FIELD},${LISTA_04_NOTAS_FISCAIS_VALOR_FIELD},${LISTA_04_NOTAS_FISCAIS_DATA_EMISSAO_FIELD},${LISTA_04_NOTAS_FISCAIS_DATA_VENCIMENTO_FIELD},${LISTA_04_NOTAS_FISCAIS_LINK_FIELD},CentrodeCusto,ObraId,Fornecedor0/Id,Fornecedor0/Title&$expand=Fornecedor0`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    if (!response.ok) {
+      throw new Error(`NF ${notaFiscalId} nao resolvida na Lista 04: ${response.status} ${response.statusText}`);
+    }
+
+    const item = await response.json();
+    return {
+      id: Number(item.Id || notaFiscalId),
+      title: item.Title || '',
+      numeroNotaFiscal: item[LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD] || '',
+      numeroPedido: item[LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD] || '',
+      statusConferencia: item[LISTA_04_NOTAS_FISCAIS_STATUS_FIELD] || '',
+      enviadaContabilidade: item[LISTA_04_NOTAS_FISCAIS_ENVIADA_CONTABILIDADE_FIELD] || '',
+      valorBruto: Number(item[LISTA_04_NOTAS_FISCAIS_VALOR_FIELD] || 0),
+      dataEmissao: item[LISTA_04_NOTAS_FISCAIS_DATA_EMISSAO_FIELD],
+      dataVencimento: item[LISTA_04_NOTAS_FISCAIS_DATA_VENCIMENTO_FIELD],
+      fornecedorId: Number(item.Fornecedor0?.Id || 0) || undefined,
+      fornecedorTitulo: item.Fornecedor0?.Title || '',
+      obraId: Number(item.ObraId || 0) || undefined,
+      centroCusto: item.CentrodeCusto || '',
+      linkNotaFiscal: this.extrairUrlSharePoint(item[LISTA_04_NOTAS_FISCAIS_LINK_FIELD])
+    };
+  }
+
+  private async obterPagamentoExistenteV27A(numeroNotaFiscal: string, notaFiscalId: number): Promise<PagamentoExistenteV27A | undefined> {
+    const numeroEscaped = this.escapeOData(numeroNotaFiscal);
+    const prefixoTitulo = this.escapeOData(`PAG-V2.7A-TESTE-NF-${notaFiscalId}`);
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.programacaoFinanceira)}?$top=1&$select=Id,Title,${LISTA_10_PAGAMENTO_NUMERO_NF_FIELD}&$filter=${LISTA_10_PAGAMENTO_NUMERO_NF_FIELD} eq '${numeroEscaped}' or substringof('${prefixoTitulo}',Title)`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    if (!response.ok) {
+      throw new Error(`Consulta de pagamento existente na Lista 10 retornou ${response.status}: ${response.statusText}`);
+    }
+
+    const payload = await response.json();
+    const item = payload.value?.[0];
+    return item
+      ? {
+        id: Number(item.Id),
+        title: item.Title || '',
+        numeroNotaFiscal: item[LISTA_10_PAGAMENTO_NUMERO_NF_FIELD] || ''
+      }
+      : undefined;
+  }
+
+  private async obterPagamentoCriadoV27A(pagamentoId: number): Promise<{ numeroNotaFiscal: string; status: string; valorBruto: number }> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.programacaoFinanceira)}(${pagamentoId})?$select=Id,${LISTA_10_PAGAMENTO_NUMERO_NF_FIELD},${LISTA_10_PAGAMENTO_STATUS_FIELD},${LISTA_10_PAGAMENTO_VALOR_BRUTO_FIELD}`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    if (!response.ok) {
+      throw new Error(`Pagamento ${pagamentoId} nao resolvido apos criacao na Lista 10: ${response.status} ${response.statusText}`);
+    }
+
+    const item = await response.json();
+    return {
+      numeroNotaFiscal: item[LISTA_10_PAGAMENTO_NUMERO_NF_FIELD] || '',
+      status: item[LISTA_10_PAGAMENTO_STATUS_FIELD] || '',
+      valorBruto: Number(item[LISTA_10_PAGAMENTO_VALOR_BRUTO_FIELD] || 0)
+    };
+  }
+
+  private extrairUrlSharePoint(valor: unknown): string | undefined {
+    if (!valor) {
+      return undefined;
+    }
+
+    if (typeof valor === 'string') {
+      return valor;
+    }
+
+    if (typeof valor === 'object') {
+      const objeto = valor as { Url?: unknown; url?: unknown; Description?: unknown };
+      const url = objeto.Url || objeto.url;
+      return url ? String(url) : undefined;
+    }
+
+    return undefined;
   }
 
   private addDays(data: Date, dias: number): Date {
