@@ -133,6 +133,8 @@ Na V2.7A.4B, foi implementada localmente a aprovacao por Diretoria como alcada s
 
 Na V2.8E, foi preparada a pagina dedicada tipo app para o Sistema ENAC. O manifest da webpart passou a suportar `SharePointFullPage`, preservando `SharePointWebPart`, para permitir uso em Single Part App Page / `SingleWebPartAppPage`. Foram documentados a pagina `Sistema ENAC - Homologação`, a URL esperada `/sites/Equipe.Obras/SitePages/Sistema-ENAC-Homologacao.aspx`, recomendacoes de permissao para usuarios finais sem edicao de pagina e um script manual protegido para conversao/criacao posterior. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados/permissoes e nao iniciou Power Automate.
 
+Na V2.8E1, foi habilitado `supportsFullBleed` no manifest da webpart e o SCSS do shell principal foi ajustado para usar `width: 100%`, `max-width: none` e `margin: 0`, preservando `SharePointFullPage`. O objetivo e permitir melhor uso de secoes `Largura total` / `Full-width column` em paginas modernas e reduzir limitacoes internas de largura sem usar `100vw` global. Nenhuma regra, payload, fluxo operacional, alçada, status, chamada REST ou trava de escrita foi alterada.
+
 Na V2.7A.4C/V2.7A.4D, a validacao manual de `AprovarCompra` foi registrada como pendente de auditoria porque Leon observou o campo visual `Snapshot da Aprovação de Compra` vazio no formulario do SharePoint. A rotina foi corrigida localmente para confirmar `SnapshotAprovacaoCompra` por GET apos o MERGE de status, registrar historico somente quando o snapshot for preservado e retornar alerta critico se o lookup nao for comprovado. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao executou nova escrita operacional.
 
 Na V2.7A.4E, Leon confirmou manualmente que o campo `Snapshot da Aprovação de Compra` do item `11` permaneceu vinculado ao snapshot `3` / `SNAP-V2.7A-TESTE-11-20260609025123` apos `AprovarCompra`. A acao fica VALIDADA MANUALMENTE para Diretoria como alçada superior, com status `Aguardando aprovação -> Aprovada para compra`, historico criado, HTTP escrita `204`, sem pedido, NF, pagamento ou Power Automate. Isso nao representa liberacao ampla de producao.
@@ -278,6 +280,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8d1-correcao-dryrun-limpeza-controlada.md`
 - `docs/v2.8e-pagina-dedicada-sistema-enac.md`
 - `docs/v2.8e-acesso-permissoes-pagina-sistema.md`
+- `docs/v2.8e1-full-bleed-largura-total-webpart.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -304,6 +307,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/checklist-v2.8c-validacao-visual-admin.md`
 - `tests/checklist-v2.8d-limpeza-controlada.md`
 - `tests/checklist-v2.8e-validacao-pagina-app.md`
+- `tests/checklist-v2.8e1-validacao-largura-total.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`

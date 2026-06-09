@@ -1,12 +1,16 @@
 .enacSistema {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
+  width: 100%;
+  max-width: none;
   min-height: 720px;
+  margin: 0;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #f6f7f9;
   color: #111827;
   font-family: "Segoe UI", Arial, sans-serif;
+  box-sizing: border-box;
   overflow: hidden;
 
   aside {
@@ -17,14 +21,19 @@
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     background: #151515;
     color: #ffffff;
+    box-sizing: border-box;
   }
 
   main {
     display: grid;
     align-content: start;
     gap: 18px;
+    width: 100%;
+    max-width: none;
     padding: 24px;
     min-width: 0;
+    box-sizing: border-box;
+    overflow-x: auto;
   }
 
   button {
@@ -137,6 +146,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     background: #ffffff;
+    box-sizing: border-box;
     box-shadow: 0 8px 20px rgba(17, 24, 39, 0.05);
   }
 
@@ -145,10 +155,13 @@
   }
 
   table {
+    display: block;
     width: 100%;
+    max-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 
   th,
@@ -252,6 +265,8 @@
 .contentPanel {
   display: grid;
   gap: 18px;
+  width: 100%;
+  max-width: none;
   min-width: 0;
 }
 
