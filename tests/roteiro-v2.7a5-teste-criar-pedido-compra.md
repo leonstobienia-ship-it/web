@@ -97,3 +97,26 @@ Somente em rodada manual posterior, apos pre-validacao aprovada:
 - nao criar NF;
 - nao programar pagamento;
 - nao iniciar Power Automate.
+
+## Resultado Manual Registrado Na V2.7A.5C
+
+Em 09/06/2026, Leon executou manualmente a acao `CriarPedidoCompra` e informou:
+
+- pedido criado na `Lista 03`, item `3`;
+- vinculo textual `N_x00ba_daRequisi_x00e7__x00e3_o = V2.7A-TESTE-001`;
+- fornecedor correto preenchido no lookup `Fornecedor0` com `00.000.000/0001-00`;
+- campo `Fornecedor antigo` texto legado ficou vazio e nao bloqueia;
+- valor `6720`;
+- status `Em elaboração`;
+- historico criado;
+- HTTP escrita `201`;
+- item `11` preservado em `Aprovada para compra`;
+- snapshot `3` preservado no item `11`;
+- sem `PATCH`/`DELETE`;
+- sem NF/pagamento;
+- flags desligadas e pagina republicada apos o teste;
+- Power Automate nao iniciado.
+
+`CriarPedidoCompra` fica validada manualmente como acao operacional controlada, restrita a item marcado, flags, pre-validacao especifica e confirmacao manual.
+
+Proxima validacao recomendada: `V2.7A.6 — VincularNotaFiscal`, apos auditoria readonly da estrutura real da `Lista 04 — Notas Fiscais`.
