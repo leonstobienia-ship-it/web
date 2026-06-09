@@ -119,6 +119,8 @@ Na V2.7A.2C, a execucao foi corrigida apos a pre-validacao especifica aprovar o 
 
 Na V2.7A.2D, Leon registrou a validacao manual da escrita operacional restrita corrigida na V2.7A.2C. Em 2026-06-08, o item 11 da `Lista 02 — Requisições de Compra`, marcado como `V2.7A-TESTE`, teve o campo `StatusdaRequisi_x00e7__x00e3_o` alterado de `Recebida` para `Aguardando aprovação`, com historico operacional criado e HTTP de escrita `204`. Nao houve `PATCH`/`DELETE`, nenhum outro item foi alterado, as flags V2.7A foram desligadas e a pagina foi republicada com flags desligadas. A validacao e restrita a transicao unica controlada de status; pedido, NF, pagamento, snapshot e Power Automate nao foram testados.
 
+Na V2.7A.3, foi preparada localmente a proxima acao controlada: `CriarSnapshotAprovacaoOperacional`. A pre-validacao passa a exigir item `V2.7A-TESTE`, status `Aguardando aprovação`, `SnapshotAprovacaoCompra` vazio, valor de teste, regra/alçada resolvida e aprovador base/efetivo resolvidos. A execucao manual futura fica limitada a criar snapshot em `ENAC Snapshots Regras`, vincular `SnapshotAprovacaoCompra` no item de teste e registrar historico operacional, sem aprovar compra, criar pedido, NF, pagamento ou Power Automate. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -198,6 +200,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a2b-correcao-leitura-item-teste.md`
 - `docs/v2.7a2c-correcao-execucao-status.md`
 - `docs/v2.7a2d-validacao-manual-escrita-operacional.md`
+- `docs/v2.7a3-teste-snapshot-operacional.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -212,6 +215,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.6b4c-finalizacao-manual-permissoes-administrativas.md`
 - `tests/roteiro-v2.7a-escrita-operacional-restrita.md`
 - `tests/roteiro-v2.7a2-teste-funcional-controlado.md`
+- `tests/roteiro-v2.7a3-teste-snapshot-operacional.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`

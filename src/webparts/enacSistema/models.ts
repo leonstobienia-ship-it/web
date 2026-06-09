@@ -236,6 +236,8 @@ export interface ResultadoOperacionalV27A {
   acao: AcaoOperacionalV27A;
   mensagem: string;
   itemId?: number;
+  snapshotItemId?: number;
+  snapshotTitle?: string;
   campoAlterado?: string;
   statusAnterior?: string;
   statusNovo?: string;
@@ -270,6 +272,15 @@ export interface PreValidacaoOperacionalV27AResultado {
   camposObrigatoriosPresentes?: boolean;
   snapshotExistenteId?: number;
   snapshotExistenteTitulo?: string;
+  valorAnalisado?: number;
+  regraInternaId?: string;
+  resumoRegraAplicada?: string;
+  aprovadorBaseNome?: string;
+  aprovadorEfetivoNome?: string;
+  snapshotPrevistoTitulo?: string;
+  criaraSnapshot?: boolean;
+  vincularaSnapshotAprovacaoCompra?: boolean;
+  registraraHistorico?: boolean;
   historicoPrevisto?: string;
   listaAlterada?: string;
   campoAlterado?: string;

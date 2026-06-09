@@ -484,6 +484,14 @@ export class SharePointEnacRepository {
     const camposObrigatoriosPresentes = Boolean(title && statusAtual && tipoSolicitacao);
     const snapshotExistenteId = leituraItem?.snapshotExistenteId;
     const snapshotExistenteTitulo = leituraItem?.snapshotExistenteTitulo;
+    let regraInternaId: string | undefined;
+    let resumoRegraAplicada: string | undefined;
+    let aprovadorBaseNome: string | undefined;
+    let aprovadorEfetivoNome: string | undefined;
+    let snapshotPrevistoTitulo: string | undefined;
+    let criaraSnapshot = false;
+    let vincularaSnapshotAprovacaoCompra = false;
+    let registraraHistorico = false;
 
     if (itemTesteId > 0 && !item) {
       alertas.push({ codigo: leituraItem?.statusHttp === 403 ? 'ERRO_REST_LISTA02' : 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: leituraItem?.erro || `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
@@ -505,8 +513,54 @@ export class SharePointEnacRepository {
       alertas.push({ codigo: 'CAMPOS_OBRIGATORIOS_AUSENTES', mensagem: 'Title, tipo da solicitacao e status atual devem estar preenchidos.' });
     }
 
-    if (acaoPretendida === 'CriarSnapshotAprovacaoOperacional' && (!config.valorTesteOperacionalV27A || config.valorTesteOperacionalV27A <= 0)) {
-      alertas.push({ codigo: 'VALOR_TESTE_OBRIGATORIO', mensagem: 'valorTesteOperacionalV27A deve ser maior que zero para criar snapshot.' });
+    if (acaoPretendida === 'CriarSnapshotAprovacaoOperacional') {
+      if (item && this.normalizarTexto(statusAtual) !== 'aguardandoaprovacao') {
+        alertas.push({ codigo: 'STATUS_NAO_ELEGIVEL_PARA_SNAPSHOT', mensagem: 'Snapshot operacional exige status atual Aguardando aprovação.' });
+      }
+
+      if (snapshotExistenteId) {
+        alertas.push({ codigo: 'SNAPSHOT_JA_EXISTENTE', mensagem: `Item ja possui SnapshotAprovacaoCompra=${snapshotExistenteId}.` });
+      }
+
+      if (!config.valorTesteOperacionalV27A || config.valorTesteOperacionalV27A <= 0) {
+        alertas.push({ codigo: 'VALOR_TESTE_AUSENTE', mensagem: 'valorTesteOperacionalV27A deve ser maior que zero para criar snapshot.' });
+      }
+
+      const aprovacaoNecessaria = String(item?.Aprova_x00e7__x00e3_oNecess_x00e || '');
+      if (item && aprovacaoNecessaria && this.normalizarTexto(aprovacaoNecessaria) !== 'sim') {
+        alertas.push({ codigo: 'APROVACAO_NAO_NECESSARIA', mensagem: `Aprovacao necessaria retornou "${aprovacaoNecessaria}".` });
+      }
+
+      if (item && config.valorTesteOperacionalV27A && config.valorTesteOperacionalV27A > 0 && !snapshotExistenteId) {
+        try {
+          const usuarios = await this.listarUsuariosPerfis({ somenteAtivos: true });
+          const alcadas = await this.listarAlcadas();
+          const regra = this.selecionarRegraAlcadaCompra(alcadas, {
+            tipoSolicitacao: this.mapTipoSolicitacao(tipoSolicitacao),
+            obraId: item.ObraId ? String(item.ObraId) : undefined,
+            valor: config.valorTesteOperacionalV27A,
+            dataReferencia: new Date()
+          });
+          const aprovadorBase = this.encontrarUsuarioPorLookup(regra.aprovadorPrincipalId, regra.aprovadorPrincipalNome, usuarios);
+
+          if (!aprovadorBase) {
+            alertas.push({ codigo: 'APROVADOR_NAO_RESOLVIDO', mensagem: `Aprovador da regra ${regra.regraInternaId} nao foi localizado entre usuarios ativos.` });
+          } else {
+            const resolucao = this.resolverAprovadorEfetivo(aprovadorBase, usuarios, new Date());
+            const snapshot = this.criarSnapshotAprovacaoCompra(regra, resolucao, config.valorTesteOperacionalV27A, flags.marcadorTesteOperacionalV27A);
+            regraInternaId = regra.regraInternaId;
+            resumoRegraAplicada = `${flags.marcadorTesteOperacionalV27A}; ${regra.processo}; ${snapshot.faixaValorVigente}; aprovador ${snapshot.aprovadorBaseNome}`;
+            aprovadorBaseNome = snapshot.aprovadorBaseNome;
+            aprovadorEfetivoNome = snapshot.aprovadorEfetivoNome;
+            snapshotPrevistoTitulo = `SNAP-V2.7A-TESTE-${itemTesteId}-<timestamp>`;
+            criaraSnapshot = true;
+            vincularaSnapshotAprovacaoCompra = true;
+            registraraHistorico = true;
+          }
+        } catch (error) {
+          alertas.push({ codigo: 'REGRA_ALCADA_NAO_RESOLVIDA', mensagem: this.getErrorMessage(error) });
+        }
+      }
     }
 
     const podeExecutar = Boolean(alertas.length === 0 && usuarioAtual && item && marcadorEncontrado && transicaoPermitida && camposObrigatoriosPresentes);
@@ -538,6 +592,15 @@ export class SharePointEnacRepository {
       camposObrigatoriosPresentes,
       snapshotExistenteId,
       snapshotExistenteTitulo,
+      valorAnalisado: config.valorTesteOperacionalV27A,
+      regraInternaId,
+      resumoRegraAplicada,
+      aprovadorBaseNome,
+      aprovadorEfetivoNome,
+      snapshotPrevistoTitulo,
+      criaraSnapshot,
+      vincularaSnapshotAprovacaoCompra,
+      registraraHistorico,
       historicoPrevisto: item ? `${flags.marcadorTesteOperacionalV27A} ${acaoPretendida} ${itemTesteId}` : undefined,
       listaAlterada: LISTA_02_REQUISICOES_COMPRA_TITULO,
       campoAlterado: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' ? 'StatusdaRequisi_x00e7__x00e3_o' : 'ENAC Snapshots Regras',
@@ -748,6 +811,185 @@ export class SharePointEnacRepository {
     }
   }
 
+  public async executarCriarSnapshotAprovacaoOperacionalV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A, config: ConfiguracaoTesteOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const itemId = Number(config.itemTesteOperacionalIdV27A || 0);
+    const valorAnalisado = Number(config.valorTesteOperacionalV27A || 0);
+    const observacao = config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - teste operacional restrito';
+    const preValidacao = await this.preValidarEscritaOperacionalRestritaV27A(emailOuLogin, flags, config);
+    const alertas: AlertaBloqueioEscrita[] = [...preValidacao.alertas];
+
+    if (!preValidacao.podeExecutar) {
+      alertas.push({ codigo: 'EXECUCAO_SEM_PREVALIDACAO_ESPECIFICA', mensagem: 'Pre-validacao especifica do item nao esta aprovada no momento da execucao.' });
+    }
+
+    if (preValidacao.itemTesteId !== itemId) {
+      alertas.push({ codigo: 'EXECUCAO_ITEM_DIVERGENTE', mensagem: `Item validado ${preValidacao.itemTesteId || '-'} difere do item configurado ${itemId || '-'}.` });
+    }
+
+    if (preValidacao.acaoPretendida !== 'CriarSnapshotAprovacaoOperacional') {
+      alertas.push({ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Esta rodada permite somente CriarSnapshotAprovacaoOperacional.' });
+    }
+
+    if (!preValidacao.marcadorEncontrado) {
+      alertas.push({ codigo: 'EXECUCAO_MARCADOR_NAO_CONFIRMADO', mensagem: 'Marcador V2.7A-TESTE nao foi confirmado no item.' });
+    }
+
+    if (this.normalizarTexto(preValidacao.statusAtual) !== 'aguardandoaprovacao') {
+      alertas.push({ codigo: 'EXECUCAO_STATUS_ORIGEM_INVALIDO', mensagem: `Status origem invalido para snapshot: ${preValidacao.statusAtual || '-'}.` });
+    }
+
+    if (preValidacao.snapshotExistenteId) {
+      alertas.push({ codigo: 'EXECUCAO_SNAPSHOT_JA_EXISTENTE', mensagem: `Item ja possui SnapshotAprovacaoCompra=${preValidacao.snapshotExistenteId}.` });
+    }
+
+    if (!valorAnalisado || valorAnalisado <= 0) {
+      alertas.push({ codigo: 'EXECUCAO_VALOR_TESTE_AUSENTE', mensagem: 'Valor de teste deve ser maior que zero.' });
+    }
+
+    if (!preValidacao.regraInternaId) {
+      alertas.push({ codigo: 'EXECUCAO_REGRA_ALCADA_NAO_RESOLVIDA', mensagem: 'Regra de alcada nao foi resolvida na pre-validacao.' });
+    }
+
+    if (!preValidacao.aprovadorBaseNome || !preValidacao.aprovadorEfetivoNome) {
+      alertas.push({ codigo: 'EXECUCAO_APROVADOR_NAO_RESOLVIDO', mensagem: 'Aprovador base/efetivo nao foi resolvido na pre-validacao.' });
+    }
+
+    if (!preValidacao.acoesPermitidas.some((acao) => acao === 'CriarSnapshotAprovacaoOperacional')) {
+      alertas.push({ codigo: 'EXECUCAO_PERFIL_SEM_PERMISSAO', mensagem: 'Perfil atual nao esta autorizado para CriarSnapshotAprovacaoOperacional.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado(
+        'CriarSnapshotAprovacaoOperacional',
+        `Criacao de snapshot operacional bloqueada: ${alertas.map((alerta) => alerta.codigo).join(', ')}.`,
+        alertas,
+        itemId,
+        preValidacao.statusAtual
+      );
+    }
+
+    const leituraItem = await this.obterRequisicaoOperacionalParaPreValidacao(itemId);
+    const item = leituraItem.item;
+    const statusAtual = String(item?.[LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD] || '');
+    const camposComMarcador = item ? this.obterCamposComMarcadorV27A(item, flags.marcadorTesteOperacionalV27A) : [];
+
+    if (!item || camposComMarcador.length === 0 || this.normalizarTexto(statusAtual) !== 'aguardandoaprovacao' || leituraItem.snapshotExistenteId) {
+      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', 'Revalidacao imediata do item bloqueou a criacao do snapshot.', [
+        { codigo: 'EXECUCAO_REVALIDACAO_ITEM_FALHOU', mensagem: leituraItem.erro || `Status=${statusAtual || '-'}; snapshot=${leituraItem.snapshotExistenteId || '-'}.` }
+      ], itemId, statusAtual);
+    }
+
+    const usuarios = await this.listarUsuariosPerfis({ somenteAtivos: true });
+    const alcadas = await this.listarAlcadas();
+    const regra = this.selecionarRegraAlcadaCompra(alcadas, {
+      tipoSolicitacao: this.mapTipoSolicitacao(String(item.TipodaSolicita_x00e7__x00e3_o || '')),
+      obraId: item.ObraId ? String(item.ObraId) : undefined,
+      valor: valorAnalisado,
+      dataReferencia: new Date()
+    });
+    const aprovadorBase = this.encontrarUsuarioPorLookup(regra.aprovadorPrincipalId, regra.aprovadorPrincipalNome, usuarios);
+
+    if (!aprovadorBase) {
+      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', 'Aprovador base da alcada nao localizado entre usuarios ativos.', [
+        { codigo: 'APROVADOR_NAO_RESOLVIDO', mensagem: regra.regraInternaId }
+      ], itemId, statusAtual);
+    }
+
+    const resolucao = this.resolverAprovadorEfetivo(aprovadorBase, usuarios, new Date());
+    const snapshot = this.criarSnapshotAprovacaoCompra(regra, resolucao, valorAnalisado, flags.marcadorTesteOperacionalV27A);
+    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+    const snapshotTitle = `SNAP-V2.7A-TESTE-${itemId}-${timestamp}`;
+    const snapshotResponse = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.snapshotsRegras),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions({
+        Title: snapshotTitle,
+        SolicitacaoId: itemId,
+        RegraAlcadaUtilizadaId: Number(regra.id),
+        RegraInternaId: regra.regraInternaId,
+        ResumoRegraAplicada: `${flags.marcadorTesteOperacionalV27A}; ${regra.processo}; ${snapshot.faixaValorVigente}; aprovador ${snapshot.aprovadorBaseNome}`,
+        Processo: 'Compra',
+        FaixaValorVigente: snapshot.faixaValorVigente,
+        ValorAnalisado: snapshot.valorAnalisado,
+        AprovadorBaseId: snapshot.aprovadorBaseId,
+        AprovadorBaseNome: snapshot.aprovadorBaseNome,
+        AprovadorBaseEmail: '',
+        AprovadorEfetivoId: snapshot.aprovadorEfetivoId,
+        AprovadorEfetivoNome: snapshot.aprovadorEfetivoNome,
+        AprovadorEfetivoEmail: '',
+        SubstituicaoAplicada: snapshot.substituicaoAplicada,
+        MotivoResolucaoAprovador: snapshot.motivoResolucaoAprovador,
+        MotivoExcecao: snapshot.motivoExcecao || flags.marcadorTesteOperacionalV27A,
+        DataHoraAplicacao: snapshot.dataHoraAplicacao
+      })
+    );
+
+    if (!snapshotResponse.ok) {
+      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', `POST do snapshot retornou ${snapshotResponse.status}: ${snapshotResponse.statusText}.`, [
+        { codigo: 'ERRO_REST_SNAPSHOTS', mensagem: `SharePoint retornou ${snapshotResponse.status}: ${snapshotResponse.statusText}` }
+      ], itemId, statusAtual);
+    }
+
+    const snapshotPayload = await snapshotResponse.json();
+    const snapshotId = Number(snapshotPayload.Id || snapshotPayload.ID);
+    const vinculoResponse = await this.spHttpClient.post(
+      `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${itemId})`,
+      SPHttpClient.configurations.v1,
+      this.criarMergeOptions({ SnapshotAprovacaoCompraId: snapshotId })
+    );
+
+    if (!vinculoResponse.ok) {
+      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', `Snapshot criado, mas MERGE do vinculo retornou ${vinculoResponse.status}: ${vinculoResponse.statusText}.`, [
+        { codigo: 'ERRO_MERGE_SNAPSHOT_APROVACAO_COMPRA', mensagem: `Snapshot ${snapshotId} exige auditoria manual antes de nova tentativa.` }
+      ], itemId, statusAtual);
+    }
+
+    try {
+      const historico = await this.registrarHistoricoOperacional({
+        origemLista: 'Lista 02',
+        origemItemId: itemId,
+        acao: 'CriarSnapshotAprovacaoOperacional',
+        descricao: `${observacao}; snapshot ${snapshotId}; regra ${regra.regraInternaId}; origem Webpart V2.7A.3; sem Power Automate.`,
+        statusAnterior: statusAtual,
+        statusNovo: statusAtual,
+        marcadorTeste: flags.marcadorTesteOperacionalV27A
+      }, emailOuLogin, flags);
+
+      return {
+        sucesso: true,
+        bloqueado: false,
+        acao: 'CriarSnapshotAprovacaoOperacional',
+        mensagem: 'Snapshot operacional criado, vinculado ao item de teste e historico registrado com controle V2.7A.3.',
+        itemId,
+        snapshotItemId: snapshotId,
+        snapshotTitle,
+        campoAlterado: 'SnapshotAprovacaoCompra',
+        statusAnterior: statusAtual,
+        statusNovo: statusAtual,
+        historicoRegistrado: historico.sucesso,
+        historicoItemId: historico.itemId,
+        statusHttpEscrita: vinculoResponse.status,
+        alertas: historico.alertas
+      };
+    } catch (error) {
+      return {
+        sucesso: true,
+        bloqueado: false,
+        acao: 'CriarSnapshotAprovacaoOperacional',
+        mensagem: 'Snapshot operacional criado e vinculado, mas o historico operacional falhou e exige auditoria manual.',
+        itemId,
+        snapshotItemId: snapshotId,
+        snapshotTitle,
+        campoAlterado: 'SnapshotAprovacaoCompra',
+        statusAnterior: statusAtual,
+        statusNovo: statusAtual,
+        historicoRegistrado: false,
+        statusHttpEscrita: vinculoResponse.status,
+        alertas: [{ codigo: 'HISTORICO_OPERACIONAL_FALHOU', mensagem: this.getErrorMessage(error) }]
+      };
+    }
+  }
+
   public async criarPedidoCompraControlado(payload: PedidoCompraControladoPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
     const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
     const requisicao = await this.obterResumoItemOperacional(LISTAS_ENAC.requisicoesCompra, payload.requisicaoItemId, 'StatusdaRequisi_x00e7__x00e3_o');
@@ -893,78 +1135,13 @@ export class SharePointEnacRepository {
   }
 
   public async criarSnapshotAprovacaoOperacional(payload: SnapshotAprovacaoOperacionalPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
-    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
-    const requisicao = await this.obterResumoItemOperacional(LISTAS_ENAC.requisicoesCompra, payload.requisicaoItemId, 'StatusdaRequisi_x00e7__x00e3_o');
-    const alertas = this.validarPermissaoAcao('CriarSnapshotAprovacaoOperacional', requisicao, usuario, flags);
-
-    if (payload.valorAnalisado <= 0) {
-      alertas.push({ codigo: 'VALOR_INVALIDO', mensagem: 'Valor analisado deve ser maior que zero.' });
-    }
-
-    if (payload.marcadorTeste !== flags.marcadorTesteOperacionalV27A) {
-      alertas.push({ codigo: 'MARCADOR_PAYLOAD_INVALIDO', mensagem: 'Snapshot operacional deve usar marcador V2.7A-TESTE.' });
-    }
-
-    if (alertas.length > 0) {
-      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', 'Snapshot operacional bloqueado.', alertas, payload.requisicaoItemId, requisicao.status);
-    }
-
-    const usuarios = await this.listarUsuariosPerfis({ somenteAtivos: true });
-    const alcadas = await this.listarAlcadas();
-    const regra = this.selecionarRegraAlcadaCompra(alcadas, {
-      tipoSolicitacao: payload.tipoSolicitacao,
-      obraId: payload.obraId,
-      valor: payload.valorAnalisado,
-      dataReferencia: new Date()
-    });
-    const aprovadorBase = this.encontrarUsuarioPorLookup(regra.aprovadorPrincipalId, regra.aprovadorPrincipalNome, usuarios);
-
-    if (!aprovadorBase) {
-      return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', 'Aprovador base da alcada nao localizado entre usuarios ativos.', [
-        { codigo: 'APROVADOR_BASE_NAO_LOCALIZADO', mensagem: regra.regraInternaId }
-      ], payload.requisicaoItemId, requisicao.status);
-    }
-
-    const resolucao = this.resolverAprovadorEfetivo(aprovadorBase, usuarios, new Date());
-    const snapshot = this.criarSnapshotAprovacaoCompra(regra, resolucao, payload.valorAnalisado, payload.marcadorTeste);
-    const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
-    const response = await this.spHttpClient.post(
-      this.getListItemsEndpoint(LISTAS_ENAC.snapshotsRegras),
-      SPHttpClient.configurations.v1,
-      this.criarPostOptions({
-        Title: `SNAP-V2.7A-TESTE-${payload.requisicaoItemId}-${timestamp}`,
-        SolicitacaoId: payload.requisicaoItemId,
-        RegraAlcadaUtilizadaId: Number(regra.id),
-        RegraInternaId: regra.regraInternaId,
-        ResumoRegraAplicada: `${payload.marcadorTeste}; ${regra.processo}; ${snapshot.faixaValorVigente}; aprovador ${snapshot.aprovadorBaseNome}`,
-        Processo: 'Compra',
-        FaixaValorVigente: snapshot.faixaValorVigente,
-        ValorAnalisado: snapshot.valorAnalisado,
-        AprovadorBaseId: snapshot.aprovadorBaseId,
-        AprovadorBaseNome: snapshot.aprovadorBaseNome,
-        AprovadorBaseEmail: '',
-        AprovadorEfetivoId: snapshot.aprovadorEfetivoId,
-        AprovadorEfetivoNome: snapshot.aprovadorEfetivoNome,
-        AprovadorEfetivoEmail: '',
-        SubstituicaoAplicada: snapshot.substituicaoAplicada,
-        MotivoResolucaoAprovador: snapshot.motivoResolucaoAprovador,
-        MotivoExcecao: snapshot.motivoExcecao,
-        DataHoraAplicacao: snapshot.dataHoraAplicacao
-      })
-    );
-    const item = await this.ensureJson(response);
-    const snapshotId = Number(item.Id || item.ID);
-
-    return {
-      sucesso: true,
-      bloqueado: false,
-      acao: 'CriarSnapshotAprovacaoOperacional',
-      mensagem: 'Snapshot operacional V2.7A-TESTE criado. Vinculo ao item deve ser executado apenas em rodada controlada posterior.',
-      itemId: snapshotId,
-      alertas: []
-    };
+    void payload;
+    void emailOuLogin;
+    void flags;
+    return this.criarResultadoOperacionalBloqueado('CriarSnapshotAprovacaoOperacional', 'Criacao direta de snapshot operacional bloqueada. Use executarCriarSnapshotAprovacaoOperacionalV27A(), com pre-validacao especifica, vinculo e historico.', [
+      { codigo: 'METODO_DIRETO_SNAPSHOT_BLOQUEADO', mensagem: 'A V2.7A.3 permite somente o orquestrador protegido do teste de snapshot operacional.' }
+    ]);
   }
-
   public async preValidarTesteControladoSnapshot(input: SnapshotCriacaoTesteInput): Promise<PreValidacaoTesteControladoSnapshotResultado> {
     const alertas = this.validarControleEscritaTeste(input);
     if (alertas.length > 0) {

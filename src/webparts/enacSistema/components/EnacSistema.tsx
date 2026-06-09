@@ -448,11 +448,11 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
-    if (
+    if (config.acaoTesteOperacionalV27A === 'AtualizarStatusRequisicao' && (
       preValidacaoOperacionalV27A.acaoPretendida !== 'AtualizarStatusRequisicao' ||
       preValidacaoOperacionalV27A.statusDestino !== (config.statusDestinoTesteOperacionalV27A || 'Aguardando aprovação') ||
       preValidacaoOperacionalV27A.campoAlterado !== 'StatusdaRequisi_x00e7__x00e3_o'
-    ) {
+    )) {
       setResultadoOperacionalV27A({
         sucesso: false,
         bloqueado: true,
@@ -464,13 +464,42 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
+    if (config.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional' && (
+      preValidacaoOperacionalV27A.acaoPretendida !== 'CriarSnapshotAprovacaoOperacional' ||
+      preValidacaoOperacionalV27A.campoAlterado !== 'ENAC Snapshots Regras' ||
+      preValidacaoOperacionalV27A.snapshotExistenteId ||
+      !preValidacaoOperacionalV27A.regraInternaId ||
+      !preValidacaoOperacionalV27A.aprovadorBaseNome ||
+      !preValidacaoOperacionalV27A.aprovadorEfetivoNome
+    )) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: snapshot operacional exige pre-validacao especifica completa e item sem snapshot.',
+        itemId,
+        alertas: [{ codigo: 'EXECUCAO_SNAPSHOT_PREVALIDACAO_INCOMPLETA', mensagem: 'Revise item, snapshot existente, regra e aprovador antes da escrita.' }]
+      });
+      return;
+    }
+
+    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional') {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: acao ainda nao preparada para teste manual.',
+        itemId,
+        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao e CriarSnapshotAprovacaoOperacional estao preparados nesta fase.' }]
+      });
+      return;
+    }
+
     setExecutandoOperacionalV27A(true);
     try {
-      const resultado = await props.repository.executarAtualizacaoStatusRequisicaoV27A(
-        props.currentUserEmail,
-        flags,
-        config
-      );
+      const resultado = config.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
+        ? await props.repository.executarCriarSnapshotAprovacaoOperacionalV27A(props.currentUserEmail, flags, config)
+        : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
 
       setResultadoOperacionalV27A(resultado);
     } catch (error) {
@@ -932,6 +961,11 @@ function PainelOperacionalV27A({
           Valores de marcador: {preValidacao.valoresCamposMarcador && preValidacao.valoresCamposMarcador.length > 0 ? preValidacao.valoresCamposMarcador.join(' | ') : '-'}<br />
           Campos retornados: {preValidacao.camposRetornados && preValidacao.camposRetornados.length > 0 ? preValidacao.camposRetornados.join(', ') : '-'}<br />
           Status: {preValidacao.statusAtual || '-'} {'->'} {preValidacao.statusDestino || '-'}<br />
+          Snapshot atual: {preValidacao.snapshotExistenteId || '-'} {preValidacao.snapshotExistenteTitulo || ''}<br />
+          Valor analisado: {preValidacao.valorAnalisado ? formatCurrency(preValidacao.valorAnalisado) : '-'}<br />
+          Regra/aprovadores: {preValidacao.regraInternaId || '-'} / {preValidacao.aprovadorBaseNome || '-'} / {preValidacao.aprovadorEfetivoNome || '-'}<br />
+          Snapshot previsto: {preValidacao.snapshotPrevistoTitulo || '-'}<br />
+          Acoes previstas: snapshot {preValidacao.criaraSnapshot ? 'sim' : 'nao'}, vinculo {preValidacao.vincularaSnapshotAprovacaoCompra ? 'sim' : 'nao'}, historico {preValidacao.registraraHistorico ? 'sim' : 'nao'}<br />
           Transicao: {preValidacao.transicaoPermitida ? 'permitida' : 'bloqueada'} / campos {preValidacao.camposObrigatoriosPresentes ? 'presentes' : 'pendentes'}<br />
           Lista/campo: {preValidacao.listaAlterada || '-'} / {preValidacao.campoAlterado || '-'}<br />
           Valor previsto: {preValidacao.valorAnteriorPrevisto || '-'} {'->'} {preValidacao.valorNovoPrevisto || '-'}<br />
@@ -950,6 +984,7 @@ function PainelOperacionalV27A({
       {resultado && (
         <span>
           Item: {resultado.itemId || '-'} / campo {resultado.campoAlterado || '-'}<br />
+          Snapshot: {resultado.snapshotItemId || '-'} / {resultado.snapshotTitle || '-'}<br />
           Status: {resultado.statusAnterior || '-'} {'->'} {resultado.statusNovo || '-'}<br />
           Historico criado: {resultado.historicoRegistrado ? 'sim' : 'nao'} / HTTP escrita {resultado.statusHttpEscrita || '-'}<br />
           Alertas execucao: {resultado.alertas.length > 0 ? resultado.alertas.map((alerta) => alerta.codigo).join(', ') : '-'}
