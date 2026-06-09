@@ -50,6 +50,24 @@ Antes de liberar escrita, Leon deve confirmar manualmente:
 - obrigatoriedade de `Fornecedor`, `ValordoPedido`, `DatadoPedido`, `Obra`, `CentrodeCusto` e descricao;
 - inexistencia de pedido anterior vinculado ao item `11`.
 
+## Script Readonly V2.7A.5A
+
+Opcionalmente, Leon pode executar:
+
+```powershell
+pwsh .\scripts\sharepoint\11-auditoria-lista03-pedidos-readonly.ps1 `
+  -Tenant "enaccombr.onmicrosoft.com" `
+  -ClientId "<app-id-autorizado>" `
+  -AuthMode DeviceLogin
+```
+
+O script deve gerar:
+
+- `reports/lista03-pedidos-fields-readonly.json`;
+- `reports/lista03-pedidos-fields-readonly.md`.
+
+Nao seguir para escrita sem revisar esses relatórios.
+
 ## Criterios De Parada
 
 Parar se:
@@ -72,4 +90,3 @@ Somente em rodada posterior, apos schema confirmado:
 - nao criar NF;
 - nao programar pagamento;
 - nao iniciar Power Automate.
-
