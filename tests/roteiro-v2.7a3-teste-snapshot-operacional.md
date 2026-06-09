@@ -61,6 +61,9 @@ O painel deve exibir:
 - marcador;
 - status atual;
 - snapshot atual;
+- campo de aprovacao necessaria usado;
+- valor bruto de aprovacao necessaria;
+- aprovacao necessaria normalizada como `Sim`;
 - valor analisado;
 - regra/alçada;
 - aprovador base/efetivo;
@@ -69,6 +72,18 @@ O painel deve exibir:
 - historico previsto;
 - alertas;
 - `pode executar`.
+
+## Ajuste V2.7A.3A
+
+Na repeticao da pre-validacao apos o pacote corrigido, conferir especificamente:
+
+- campo usado: preferencialmente `Aprova_x00e7__x00e3_oNecess_x00e`;
+- valor bruto coerente com `Sim` ou verdadeiro;
+- valor normalizado: `Sim`;
+- ausencia de `APROVACAO_NAO_NECESSARIA`;
+- ausencia de `APROVACAO_NECESSARIA_NAO_RESOLVIDA`.
+
+Se qualquer alerta de aprovacao necessaria permanecer, nao executar a escrita e retornar a evidencia da tela.
 
 ## Execucao Autorizada
 

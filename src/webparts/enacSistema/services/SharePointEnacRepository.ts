@@ -71,6 +71,14 @@ const LISTA_02_REQUISICOES_COMPRA_CAMPOS_MARCADOR = [
   'Descri_x00e7__x00e3_odaSolicita_',
   'Observa_x00e7__x00f5_es'
 ];
+const LISTA_02_REQUISICOES_COMPRA_CAMPOS_APROVACAO_NECESSARIA = [
+  'Aprova_x00e7__x00e3_oNecess_x00e',
+  'Aprova_x00e7__x00e3_oNecess_x00e1_ria',
+  'Aprova_x00e7__x00e3_oNecess_x00e1_ria_x003f_',
+  'AprovacaoNecessaria',
+  'AprovacaoNecessaria?',
+  'Aprovação Necessária?'
+];
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -492,6 +500,9 @@ export class SharePointEnacRepository {
     let criaraSnapshot = false;
     let vincularaSnapshotAprovacaoCompra = false;
     let registraraHistorico = false;
+    let aprovacaoNecessariaCampo: string | undefined;
+    let aprovacaoNecessariaValorBruto: string | undefined;
+    let aprovacaoNecessariaNormalizada: 'Sim' | 'Nao' | 'Nao resolvido' | undefined;
 
     if (itemTesteId > 0 && !item) {
       alertas.push({ codigo: leituraItem?.statusHttp === 403 ? 'ERRO_REST_LISTA02' : 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: leituraItem?.erro || `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
@@ -526,9 +537,21 @@ export class SharePointEnacRepository {
         alertas.push({ codigo: 'VALOR_TESTE_AUSENTE', mensagem: 'valorTesteOperacionalV27A deve ser maior que zero para criar snapshot.' });
       }
 
-      const aprovacaoNecessaria = String(item?.Aprova_x00e7__x00e3_oNecess_x00e || '');
-      if (item && aprovacaoNecessaria && this.normalizarTexto(aprovacaoNecessaria) !== 'sim') {
-        alertas.push({ codigo: 'APROVACAO_NAO_NECESSARIA', mensagem: `Aprovacao necessaria retornou "${aprovacaoNecessaria}".` });
+      const aprovacaoNecessaria = this.obterAprovacaoNecessaria(item);
+      aprovacaoNecessariaCampo = aprovacaoNecessaria.campo;
+      aprovacaoNecessariaValorBruto = this.formatarValorBrutoSharePoint(aprovacaoNecessaria.valorBruto);
+      aprovacaoNecessariaNormalizada = aprovacaoNecessaria.normalizado === true
+        ? 'Sim'
+        : aprovacaoNecessaria.normalizado === false
+          ? 'Nao'
+          : 'Nao resolvido';
+
+      if (item && aprovacaoNecessaria.normalizado === false) {
+        alertas.push({ codigo: 'APROVACAO_NAO_NECESSARIA', mensagem: `Aprovacao necessaria resolvida como Nao no campo ${aprovacaoNecessariaCampo || '-'}. Valor bruto: ${aprovacaoNecessariaValorBruto || '-'}.` });
+      }
+
+      if (item && aprovacaoNecessaria.normalizado === null) {
+        alertas.push({ codigo: 'APROVACAO_NECESSARIA_NAO_RESOLVIDA', mensagem: `Aprovacao necessaria nao resolvida. Campos candidatos: ${LISTA_02_REQUISICOES_COMPRA_CAMPOS_APROVACAO_NECESSARIA.join(', ')}.` });
       }
 
       if (item && config.valorTesteOperacionalV27A && config.valorTesteOperacionalV27A > 0 && !snapshotExistenteId) {
@@ -592,6 +615,9 @@ export class SharePointEnacRepository {
       camposObrigatoriosPresentes,
       snapshotExistenteId,
       snapshotExistenteTitulo,
+      aprovacaoNecessariaCampo,
+      aprovacaoNecessariaValorBruto,
+      aprovacaoNecessariaNormalizada,
       valorAnalisado: config.valorTesteOperacionalV27A,
       regraInternaId,
       resumoRegraAplicada,
@@ -1662,6 +1688,93 @@ export class SharePointEnacRepository {
 
   private obterValoresCamposMarcadorV27A(item: any): string[] {
     return LISTA_02_REQUISICOES_COMPRA_CAMPOS_MARCADOR.map((campo) => `${campo}: ${String(item?.[campo] || '-')}`);
+  }
+
+  private obterAprovacaoNecessaria(item: any): { campo?: string; valorBruto: unknown; normalizado: boolean | null } {
+    if (!item) {
+      return { valorBruto: undefined, normalizado: null };
+    }
+
+    for (const campo of LISTA_02_REQUISICOES_COMPRA_CAMPOS_APROVACAO_NECESSARIA) {
+      if (Object.prototype.hasOwnProperty.call(item, campo)) {
+        const valorBruto = item[campo];
+        return {
+          campo,
+          valorBruto,
+          normalizado: this.normalizarBooleanoSharePoint(valorBruto)
+        };
+      }
+    }
+
+    return { valorBruto: undefined, normalizado: null };
+  }
+
+  private normalizarBooleanoSharePoint(valor: unknown): boolean | null {
+    if (valor === undefined || valor === null) {
+      return null;
+    }
+
+    if (typeof valor === 'boolean') {
+      return valor;
+    }
+
+    if (typeof valor === 'number') {
+      if (valor === 1) {
+        return true;
+      }
+      if (valor === 0) {
+        return false;
+      }
+      return null;
+    }
+
+    if (Array.isArray(valor)) {
+      for (const item of valor) {
+        const normalizado = this.normalizarBooleanoSharePoint(item);
+        if (normalizado !== null) {
+          return normalizado;
+        }
+      }
+      return null;
+    }
+
+    if (typeof valor === 'object') {
+      const objeto = valor as { Label?: unknown; Value?: unknown; Title?: unknown; results?: unknown };
+      for (const candidato of [objeto.Label, objeto.Value, objeto.Title, objeto.results]) {
+        const normalizado = this.normalizarBooleanoSharePoint(candidato);
+        if (normalizado !== null) {
+          return normalizado;
+        }
+      }
+      return null;
+    }
+
+    const texto = this.normalizarTexto(String(valor));
+    if (['true', 'sim', 'yes', '1'].indexOf(texto) >= 0) {
+      return true;
+    }
+
+    if (['false', 'nao', 'no', '0'].indexOf(texto) >= 0) {
+      return false;
+    }
+
+    return null;
+  }
+
+  private formatarValorBrutoSharePoint(valor: unknown): string {
+    if (valor === undefined || valor === null) {
+      return '';
+    }
+
+    if (typeof valor === 'object') {
+      try {
+        return JSON.stringify(valor);
+      } catch (error) {
+        return this.getErrorMessage(error);
+      }
+    }
+
+    return String(valor);
   }
 
   private normalizarTexto(value: string | undefined): string {

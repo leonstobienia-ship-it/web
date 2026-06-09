@@ -272,6 +272,9 @@ export interface PreValidacaoOperacionalV27AResultado {
   camposObrigatoriosPresentes?: boolean;
   snapshotExistenteId?: number;
   snapshotExistenteTitulo?: string;
+  aprovacaoNecessariaCampo?: string;
+  aprovacaoNecessariaValorBruto?: string;
+  aprovacaoNecessariaNormalizada?: 'Sim' | 'Nao' | 'Nao resolvido';
   valorAnalisado?: number;
   regraInternaId?: string;
   resumoRegraAplicada?: string;

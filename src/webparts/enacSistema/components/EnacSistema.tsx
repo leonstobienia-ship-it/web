@@ -962,6 +962,7 @@ function PainelOperacionalV27A({
           Campos retornados: {preValidacao.camposRetornados && preValidacao.camposRetornados.length > 0 ? preValidacao.camposRetornados.join(', ') : '-'}<br />
           Status: {preValidacao.statusAtual || '-'} {'->'} {preValidacao.statusDestino || '-'}<br />
           Snapshot atual: {preValidacao.snapshotExistenteId || '-'} {preValidacao.snapshotExistenteTitulo || ''}<br />
+          Aprovação necessária: campo {preValidacao.aprovacaoNecessariaCampo || '-'} / bruto {preValidacao.aprovacaoNecessariaValorBruto || '-'} / normalizado {preValidacao.aprovacaoNecessariaNormalizada || '-'}<br />
           Valor analisado: {preValidacao.valorAnalisado ? formatCurrency(preValidacao.valorAnalisado) : '-'}<br />
           Regra/aprovadores: {preValidacao.regraInternaId || '-'} / {preValidacao.aprovadorBaseNome || '-'} / {preValidacao.aprovadorEfetivoNome || '-'}<br />
           Snapshot previsto: {preValidacao.snapshotPrevistoTitulo || '-'}<br />
