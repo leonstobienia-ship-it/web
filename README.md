@@ -151,6 +151,8 @@ Na V2.7A.7C, Leon validou manualmente `ProgramarPagamento` no tenant em 09/06/20
 
 Na V2.8A, o fluxo manual completo foi consolidado documentalmente para preparar homologacao assistida: `Solicitacao -> Snapshot -> Aprovacao -> Pedido -> NF -> Programacao de Pagamento`. A rodada criou dossie tecnico, matriz de listas/campos/vinculos, matriz de status/transicoes, riscos pre-homologacao e roteiro de homologacao assistida. O fluxo esta pronto para homologacao assistida controlada, mas nao para producao ampla: ainda ha vinculos textuais temporarios entre requisicao/pedido/NF/programacao, status intermediarios nao testados, comprovantes/anexos e contabilidade fora do fluxo validado, e Power Automate continua sem inicio. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
 
+Na V2.8B, foi preparado o pacote documental para Leon conduzir homologacao assistida com a equipe, ainda sem execucao pelo Codex. A etapa definiu plano de reuniao, checklist executivo, matriz de participantes e responsabilidades, criterios de aprovacao/reprovacao, plano de parada/contingencia, roteiro de equipe e checklist de evidencias. O marcador sugerido para a homologacao e `V2.8B-HOMOLOGACAO`; dados sensiveis reais, pagamento efetivo, comprovante real e Power Automate ficam fora do escopo. A etapa tambem separou pendencias nao bloqueantes para V2.8B das pendencias bloqueantes para producao ampla.
+
 ## Protótipo
 
 Abra no navegador:
@@ -253,6 +255,11 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8a-matriz-listas-campos-vinculos.md`
 - `docs/v2.8a-matriz-status-transicoes.md`
 - `docs/v2.8a-riscos-e-pendencias-pre-homologacao.md`
+- `docs/v2.8b-plano-homologacao-assistida.md`
+- `docs/v2.8b-checklist-executivo-homologacao.md`
+- `docs/v2.8b-matriz-participantes-responsabilidades.md`
+- `docs/v2.8b-criterios-aprovacao-reprovacao.md`
+- `docs/v2.8b-plano-parada-e-contingencia.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -274,6 +281,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a6-teste-vincular-nota-fiscal.md`
 - `tests/roteiro-v2.7a7-teste-programar-pagamento.md`
 - `tests/roteiro-v2.8a-homologacao-assistida-fluxo-completo.md`
+- `tests/roteiro-v2.8b-homologacao-assistida-equipe.md`
+- `tests/checklist-v2.8b-evidencias.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
