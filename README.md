@@ -159,6 +159,8 @@ Na V2.8C, foram preparadas correcoes pre-homologacao: logo PNG com transparencia
 
 Na V2.8D, foi preparada a limpeza controlada dos dados transacionais de teste identificados no inventario readonly V2.8C. A etapa classificou seis itens candidatos para limpeza futura, preservou snapshots, historico, usuarios/perfis e alcadas como evidencia/configuracao, e criou script com dry-run por padrao, whitelist fixa, checagem de `Title`/marcador, suporte a `-WhatIf` e token obrigatorio para qualquer remocao futura. Codex nao conectou ao SharePoint, nao executou limpeza/delecao, nao publicou pacote, nao alterou tenant/listas/dados e nao iniciou Power Automate.
 
+Na V2.8D1, foi corrigido o dry-run da limpeza controlada apos Leon observar falha de leitura por parameter set em todos os seis candidatos. A leitura passou a usar `Get-PnPListItem -Id` por item whitelistado, sem combinar `-Query` e `-Fields`, e os relatorios passaram a destacar leitura, bloqueios, erros, totais e autorizacao para execucao. O dry-run anterior fica invalido para autorizar limpeza; execucao real continua bloqueada ate novo dry-run limpo e revisado por Leon.
+
 ## Protótipo
 
 Abra no navegador:
@@ -271,6 +273,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8c-plano-limpeza-dados-teste.md`
 - `docs/v2.8d-analise-inventario-limpeza.md`
 - `docs/v2.8d-plano-limpeza-controlada-dados-teste.md`
+- `docs/v2.8d1-correcao-dryrun-limpeza-controlada.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

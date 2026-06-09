@@ -24,10 +24,19 @@ Conferir:
 - arquivo `reports/v2.8d-limpeza-dryrun.md` criado;
 - arquivo `reports/v2.8d-limpeza-dryrun.json` criado;
 - modo reportado como `DRYRUN`;
+- `Dry-run nao executou limpeza` reportado como `True`;
+- `AUTORIZACAO PARA EXECUCAO` reportada como `NAO` se houver qualquer erro ou bloqueio;
 - remocoes executadas igual a `0`;
+- total lido igual a `6`;
+- total erro igual a `0`;
+- total nao encontrado igual a `0`;
 - cada item mostra `TitleOk = true` e `MarkerOk = true`;
+- cada item mostra leitura `LIDO_OK`;
+- cada item elegivel mostra validacao `APTO_PARA_LIMPEZA`;
 - nenhuma divergencia de lista, item, title ou marcador;
 - nenhum item fora da whitelist aparece no relatorio.
+
+Se aparecer `ERRO_LEITURA`, `ITEM_NAO_ENCONTRADO`, `TITLE_DIVERGENTE` ou `MARCADOR_DIVERGENTE`, o dry-run deve ser tratado como invalido para autorizar limpeza.
 
 ## Antes De Execucao Futura
 

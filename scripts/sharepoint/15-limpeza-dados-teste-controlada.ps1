@@ -144,26 +144,30 @@ function Get-ItemByWhitelistEntry {
     )
 
     $fieldList = @("Id","Title") + $Entry.Fields | Select-Object -Unique
-    $query = @"
-<View>
-  <Query>
-    <Where>
-      <Eq>
-        <FieldRef Name='ID' />
-        <Value Type='Counter'>$($Entry.ItemId)</Value>
-      </Eq>
-    </Where>
-  </Query>
-  <RowLimit>1</RowLimit>
-</View>
-"@
 
-    $items = @(Get-PnPListItem -Connection $Connection -List $Entry.ListGuid -Query $query -Fields $fieldList)
-    if ($items.Count -eq 0) {
-        return $null
+    try {
+        $item = Get-PnPListItem -Connection $Connection -List $Entry.ListGuid -Id $Entry.ItemId -Fields $fieldList -ErrorAction Stop
+        return @{
+            Ok = $true
+            Item = $item
+            Error = $null
+            NotFound = $false
+        }
     }
+    catch {
+        $message = $_.Exception.Message
+        $isNotFound = $message -like "*does not exist*" -or
+            $message -like "*not found*" -or
+            $message -like "*Cannot find*" -or
+            $message -like "*doesn't exist*"
 
-    return $items[0]
+        return @{
+            Ok = $false
+            Item = $null
+            Error = $message
+            NotFound = $isNotFound
+        }
+    }
 }
 
 function Get-SanitizedSnapshot {
@@ -224,6 +228,7 @@ foreach ($entry in ($cleanupPlan | Sort-Object Order)) {
     $rowStatus = "BLOQUEADO"
     $action = "NAO_EXECUTADO"
     $reason = ""
+    $readStatus = "BLOQUEADO"
     $currentTitle = ""
     $snapshot = ""
     $markerOk = $false
@@ -234,13 +239,29 @@ foreach ($entry in ($cleanupPlan | Sort-Object Order)) {
     Write-Host "Esperado: $($entry.ExpectedTitle) / marcador $($entry.Marker)"
 
     try {
-        $item = Get-ItemByWhitelistEntry -Connection $connection -Entry $entry
+        $readResult = Get-ItemByWhitelistEntry -Connection $connection -Entry $entry
 
-        if ($null -eq $item) {
+        if (-not $readResult.Ok) {
+            if ($readResult.NotFound) {
+                $readStatus = "ITEM_NAO_ENCONTRADO"
+                $reason = "ITEM_NAO_ENCONTRADO"
+            }
+            else {
+                $readStatus = "ERRO_LEITURA"
+                $reason = "ERRO_LEITURA: $(ConvertTo-SafeText $readResult.Error)"
+            }
+            $rowStatus = "BLOQUEADO"
+            Write-Warning $reason
+        }
+        elseif ($null -eq $readResult.Item) {
+            $readStatus = "ITEM_NAO_ENCONTRADO"
             $reason = "ITEM_NAO_ENCONTRADO"
+            $rowStatus = "BLOQUEADO"
             Write-Warning $reason
         }
         else {
+            $item = $readResult.Item
+            $readStatus = "LIDO_OK"
             $currentTitle = ConvertTo-SafeText $item["Title"]
             $snapshot = Get-SanitizedSnapshot -Item $item -Fields $entry.Fields
             $titleOk = $currentTitle -eq $entry.ExpectedTitle
@@ -251,12 +272,14 @@ foreach ($entry in ($cleanupPlan | Sort-Object Order)) {
 
             if (-not $titleOk) {
                 $reason = "TITLE_DIVERGENTE"
+                $rowStatus = "BLOQUEADO"
             }
             elseif (-not $markerOk) {
                 $reason = "MARCADOR_DIVERGENTE"
+                $rowStatus = "BLOQUEADO"
             }
             else {
-                $rowStatus = "VALIDADO"
+                $rowStatus = "APTO_PARA_LIMPEZA"
                 $reason = "TITLE_E_MARCADOR_CONFERIDOS"
 
                 if ($executionAuthorized) {
@@ -276,7 +299,9 @@ foreach ($entry in ($cleanupPlan | Sort-Object Order)) {
         }
     }
     catch {
-        $reason = "ERRO: $(ConvertTo-SafeText $_.Exception.Message)"
+        $readStatus = "ERRO_LEITURA"
+        $rowStatus = "BLOQUEADO"
+        $reason = "ERRO_LEITURA: $(ConvertTo-SafeText $_.Exception.Message)"
         Write-Warning $reason
     }
 
@@ -291,6 +316,7 @@ foreach ($entry in ($cleanupPlan | Sort-Object Order)) {
         Marker = $entry.Marker
         TitleOk = $titleOk
         MarkerOk = $markerOk
+        ReadStatus = $readStatus
         ValidationStatus = $rowStatus
         Action = $action
         Reason = $reason
@@ -302,15 +328,33 @@ $baseName = if ($executionAuthorized) { "v2.8d-limpeza-execucao" } else { "v2.8d
 $jsonPath = Join-Path $outputFullDirectory "$baseName.json"
 $markdownPath = Join-Path $outputFullDirectory "$baseName.md"
 
+$totalRead = @($rows | Where-Object { $_.ReadStatus -eq "LIDO_OK" }).Count
+$totalReady = @($rows | Where-Object { $_.ValidationStatus -eq "APTO_PARA_LIMPEZA" }).Count
+$totalBlocked = @($rows | Where-Object { $_.ValidationStatus -eq "BLOQUEADO" }).Count
+$totalError = @($rows | Where-Object { $_.ReadStatus -eq "ERRO_LEITURA" }).Count
+$totalNotFound = @($rows | Where-Object { $_.ReadStatus -eq "ITEM_NAO_ENCONTRADO" }).Count
+$cleanupWasDryRunOnly = -not $executionAuthorized
+$authorizationForExecution = if ($totalError -gt 0 -or $totalBlocked -gt 0) { "NAO" } else { "NAO - depende de autorizacao explicita de Leon em rodada futura" }
+
 $report = [pscustomobject]@{
     Version = "V2.8D"
     StartedAt = $startedAt.ToString("o")
     FinishedAt = (Get-Date).ToString("o")
     SiteUrl = ConvertTo-SafeText $web.Url
     Mode = $mode
+    DryRunNaoExecutouLimpeza = $cleanupWasDryRunOnly
+    AutorizacaoParaExecucao = $authorizationForExecution
     ExecuteParameter = [bool]$Execute
     ConfirmationTokenAccepted = $hasValidExecutionToken
     RemovedCount = @($rows | Where-Object { $_.Action -eq "REMOVIDO" }).Count
+    Summary = [pscustomobject]@{
+        TotalItensWhitelist = $rows.Count
+        TotalLido = $totalRead
+        TotalApto = $totalReady
+        TotalBloqueado = $totalBlocked
+        TotalErro = $totalError
+        TotalNaoEncontrado = $totalNotFound
+    }
     Rows = $rows
 }
 
@@ -321,16 +365,29 @@ Add-Line $lines "# V2.8D - Limpeza Controlada De Dados De Teste"
 Add-Line $lines ""
 Add-Line $lines "Site: $(ConvertTo-SafeText $web.Url)"
 Add-Line $lines ""
-Add-Line $lines "Modo: `$mode`."
+Add-Line $lines "Modo: ``$mode``."
 Add-Line $lines ""
-Add-Line $lines "Token aceito: `$hasValidExecutionToken`."
+Add-Line $lines "Dry-run nao executou limpeza: ``$cleanupWasDryRunOnly``."
+Add-Line $lines ""
+Add-Line $lines "Token aceito: ``$hasValidExecutionToken``."
+Add-Line $lines ""
+Add-Line $lines "AUTORIZACAO PARA EXECUCAO: $authorizationForExecution."
 Add-Line $lines ""
 Add-Line $lines "Remocoes executadas: $($report.RemovedCount)."
 Add-Line $lines ""
-Add-Line $lines "| Ordem | Lista | Item | Title esperado | Title atual | Marcador | Validacao | Acao | Motivo |"
-Add-Line $lines "| ---: | --- | ---: | --- | --- | --- | --- | --- | --- |"
+Add-Line $lines "## Resumo"
+Add-Line $lines ""
+Add-Line $lines "- Total whitelist: $($rows.Count)"
+Add-Line $lines "- Total lido: $totalRead"
+Add-Line $lines "- Total apto: $totalReady"
+Add-Line $lines "- Total bloqueado: $totalBlocked"
+Add-Line $lines "- Total erro: $totalError"
+Add-Line $lines "- Total nao encontrado: $totalNotFound"
+Add-Line $lines ""
+Add-Line $lines "| Ordem | Lista | Item | Title esperado | Title atual | Marcador | Leitura | Validacao | Acao | Motivo |"
+Add-Line $lines "| ---: | --- | ---: | --- | --- | --- | --- | --- | --- | --- |"
 foreach ($row in $rows) {
-    Add-Line $lines "| $($row.Order) | $($row.ListTitle) | $($row.ItemId) | $($row.ExpectedTitle) | $($row.CurrentTitle) | $($row.Marker) | $($row.ValidationStatus) | $($row.Action) | $($row.Reason) |"
+    Add-Line $lines "| $($row.Order) | $($row.ListTitle) | $($row.ItemId) | $($row.ExpectedTitle) | $($row.CurrentTitle) | $($row.Marker) | $($row.ReadStatus) | $($row.ValidationStatus) | $($row.Action) | $($row.Reason) |"
 }
 
 $lines | Set-Content -Path $markdownPath -Encoding UTF8
