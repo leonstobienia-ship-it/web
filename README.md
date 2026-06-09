@@ -143,6 +143,8 @@ Na V2.7A.5B, `CriarPedidoCompra` foi adaptado localmente ao schema real confirma
 
 Na V2.7A.5C, Leon registrou a validacao manual de `CriarPedidoCompra`. Em 09/06/2026, apos pre-validacao aprovada, foi criado o pedido item `3` na `Lista 03 — Pedidos de Compra`, vinculado textualmente por `N_x00ba_daRequisi_x00e7__x00e3_o = V2.7A-TESTE-001`, com fornecedor correto no lookup `Fornecedor0` (`00.000.000/0001-00`), valor `6720`, status `Em elaboração`, historico criado e HTTP escrita `201`. O item `11` permaneceu em `Aprovada para compra`, o snapshot `3` permaneceu vinculado, nao houve `PATCH`/`DELETE`, NF/pagamento nao foram criados, as flags V2.7A foram desligadas e a pagina foi republicada. A acao fica validada manualmente como controlada, sem liberacao ampla de producao e sem Power Automate.
 
+Na V2.7A.6, foi preparada a proxima etapa `VincularNotaFiscal` como auditoria readonly da `Lista 04 - Notas Fiscais Recebidas`, GUID `25aa4447-193d-418a-8e71-9bfd8e9995da`. O inventario local indica campos como `N_x00ba_doPedido`, `N_x00ba_daNotaFiscal`, `Fornecedor0`, `ValorBrutodaNF`, `DatadeEmiss_x00e3_o`, `DatadeVencimento` e `StatusdaConfer_x00ea_ncia`, mas ainda falta auditoria especifica para confirmar vinculo com pedido, choices, obrigatoriedade, anexo/documento e inexistencia de NF de teste. Foi criado script readonly para execucao manual por Leon; `VincularNotaFiscal` permanece bloqueada e nenhum TypeScript de escrita foi preparado.
+
 ## Protótipo
 
 Abra no navegador:
@@ -233,6 +235,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a5a-auditoria-readonly-lista03-pedidos.md`
 - `docs/v2.7a5b-ajuste-criar-pedido-schema-lista03.md`
 - `docs/v2.7a5c-validacao-manual-criar-pedido-compra.md`
+- `docs/v2.7a6-teste-vincular-nota-fiscal.md`
+- `docs/v2.7a6a-auditoria-readonly-lista04-notas-fiscais.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -251,6 +255,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a4-teste-criar-pedido-compra.md`
 - `tests/roteiro-v2.7a4a-teste-aprovar-compra.md`
 - `tests/roteiro-v2.7a5-teste-criar-pedido-compra.md`
+- `tests/roteiro-v2.7a6-teste-vincular-nota-fiscal.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
@@ -263,6 +268,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `scripts/sharepoint/11-permissoes-finas-v2.6b-apply.ps1`
 - `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`
 - `scripts/sharepoint/11-auditoria-lista03-pedidos-readonly.ps1`
+- `scripts/sharepoint/12-auditoria-lista04-notas-fiscais-readonly.ps1`
 - `src/prototype/`
 - `src/webparts/enacSistema/`
 - `tests/fluxos-mvp.md`
