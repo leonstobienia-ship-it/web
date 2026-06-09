@@ -238,6 +238,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a6-teste-vincular-nota-fiscal.md`
 - `docs/v2.7a6a-auditoria-readonly-lista04-notas-fiscais.md`
 - `docs/v2.7a6b-ajuste-vincular-nf-schema-lista04.md`
+- `docs/v2.7a6c-validacao-manual-vincular-nota-fiscal.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

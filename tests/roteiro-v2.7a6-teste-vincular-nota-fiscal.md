@@ -4,7 +4,7 @@ Data: 2026-06-09
 
 ## Objetivo
 
-Preparar a validacao futura de `VincularNotaFiscal`, iniciando por auditoria readonly da `Lista 04 - Notas Fiscais Recebidas`.
+Registrar o roteiro e o resultado da validacao manual de `VincularNotaFiscal`, iniciada por auditoria readonly da `Lista 04 - Notas Fiscais Recebidas`.
 
 Codex nao executa teste no tenant, nao conecta ao SharePoint, nao publica pacote, nao altera listas/dados e nao executa escrita operacional.
 
@@ -33,9 +33,9 @@ Campos obrigatorios para criacao inicial: `Fornecedor0Id`, `ObraId`, `Enviadapar
 
 Choices confirmadas para `EnviadaparaContabilidade_x003f_`: `sim`, `não`.
 
-## Configuracao Futura Do Property Pane
+## Configuracao Usada No Property Pane
 
-Somente apos auditoria da Lista 04, avaliar propriedades:
+Configuracao esperada para o teste manual validado:
 
 | Propriedade | Valor esperado |
 | --- | --- |
@@ -59,7 +59,7 @@ Somente apos auditoria da Lista 04, avaliar propriedades:
 | `linkNotaFiscalTesteV27A` | opcional |
 | `observacaoTesteOperacionalV27A` | `V2.7A-TESTE - vinculação controlada de nota fiscal` |
 
-## Pre-validacao Futura
+## Pre-validacao
 
 A pre-validacao deve usar somente GET e confirmar:
 
@@ -94,12 +94,34 @@ Parar se:
 - aparecer `PATCH` ou `DELETE`;
 - Power Automate for acionado.
 
-## Execucao Futura
+## Execucao Manual Registrada
 
-Somente em rodada posterior:
+Leon executou manualmente a acao no tenant apos pre-validacao liberada:
 
-- criar ou vincular NF de teste conforme schema real;
-- registrar historico operacional;
-- nao programar pagamento;
-- nao criar conta a pagar na mesma rodada;
-- nao iniciar Power Automate.
+- NF criada: `Lista 04-4`;
+- title / no controle NF: `NF-V2.7A-TESTE-PED-3-NF-V2.7A-TESTE-001-20260609141255`;
+- no do pedido: `PED-V2.7A-TESTE-11-20260609125401`;
+- no da NF: `NF-V2.7A-TESTE-001`;
+- fornecedor: `Fornecedor Teste`;
+- obra: `Obra Teste`;
+- centro de custo: `V2.7A-TESTE`;
+- valor bruto: `6720`;
+- tipo NF: `Material`;
+- status da conferencia: `Recebida`;
+- enviada para contabilidade: `não`;
+- valor liquido calculado: `6720`;
+- HTTP escrita: `201`;
+- historico operacional criado: sim;
+- pagamento criado: nao;
+- Power Automate iniciado: nao.
+
+Ressalvas nao bloqueantes:
+
+- `CNPJFornecedor` vazio;
+- link/anexo vazios;
+- data de recebimento vazia;
+- valor exibido visualmente em formato en-US, com valor gravado `6720`.
+
+## Proxima Rodada
+
+V2.7A.7 deve preparar teste controlado de `ProgramarPagamento`, com auditoria readonly previa da lista real de contas/pagamentos e sem iniciar Power Automate.
