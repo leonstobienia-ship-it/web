@@ -157,6 +157,8 @@ Na V2.8B-UI, a webpart recebeu melhoria visual pre-homologacao com identidade EN
 
 Na V2.8C, foram preparadas correcoes pre-homologacao: logo PNG com transparencia, cabeçalho mais compacto, identidade exibida apenas uma vez, acentuacoes visiveis corrigidas, limpeza visual de prefixos `V2.3B-TESTE -`, `usr-` e `USR-`, e telas administrativas com controles preparados/desabilitados para futura alteracao controlada de perfil, status e alçada. A limpeza de dados ficou apenas em inventario readonly/dry-run por script, sem delecao. Nenhuma regra, payload, chamada REST operacional ou fluxo validado foi alterado; Power Automate continuou fora do escopo.
 
+Na V2.8D, foi preparada a limpeza controlada dos dados transacionais de teste identificados no inventario readonly V2.8C. A etapa classificou seis itens candidatos para limpeza futura, preservou snapshots, historico, usuarios/perfis e alcadas como evidencia/configuracao, e criou script com dry-run por padrao, whitelist fixa, checagem de `Title`/marcador, suporte a `-WhatIf` e token obrigatorio para qualquer remocao futura. Codex nao conectou ao SharePoint, nao executou limpeza/delecao, nao publicou pacote, nao alterou tenant/listas/dados e nao iniciou Power Automate.
+
 ## Protótipo
 
 Abra no navegador:
@@ -267,6 +269,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8b-ui-melhoria-visual-identidade-enac.md`
 - `docs/v2.8c-correcoes-pre-homologacao-ui-admin-limpeza.md`
 - `docs/v2.8c-plano-limpeza-dados-teste.md`
+- `docs/v2.8d-analise-inventario-limpeza.md`
+- `docs/v2.8d-plano-limpeza-controlada-dados-teste.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -291,6 +295,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.8b-homologacao-assistida-equipe.md`
 - `tests/checklist-v2.8b-evidencias.md`
 - `tests/checklist-v2.8c-validacao-visual-admin.md`
+- `tests/checklist-v2.8d-limpeza-controlada.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
@@ -308,6 +313,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `scripts/sharepoint/12-auditoria-lista04-notas-fiscais-readonly.ps1`
 - `scripts/sharepoint/13-auditoria-lista05-contas-pagar-readonly.ps1`
 - `scripts/sharepoint/14-inventario-limpeza-dados-teste-readonly.ps1`
+- `scripts/sharepoint/15-limpeza-dados-teste-controlada.ps1`
 - `src/prototype/`
 - `src/webparts/enacSistema/`
 - `tests/fluxos-mvp.md`
