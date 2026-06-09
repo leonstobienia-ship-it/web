@@ -147,6 +147,8 @@ Na V2.7A.6, foi preparada a proxima etapa `VincularNotaFiscal` como auditoria re
 
 Na V2.7A.7B, `ProgramarPagamento` foi preparado localmente para usar a `Lista 10 - Contas a Pagar / Programacao Financeira`, GUID `f0d253cc-3f42-46b8-bfd6-9dcb6fe9a680`, enquanto a Lista 05 permanece como referencia/legado nesta rodada. A prevalidação exige NF `Lista 04-4`, numero `NF-V2.7A-TESTE-001`, pedido `PED-V2.7A-TESTE-11-20260609125401`, valor `6720`, status `Recebida`, contabilidade `não`, fornecedor, obra, vencimento, choices da Lista 10 e inexistencia de pagamento anterior. A escrita futura criara somente programacao com status `Programado`, forma `Pix`, conta `Itaú ENAC`, categoria `Material de Obra` e origem `Compra de Material`, sem marcar como pago, sem enviar para contabilidade e sem Power Automate. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
 
+Na V2.7A.7C, Leon validou manualmente `ProgramarPagamento` no tenant em 09/06/2026. A acao criou a programacao financeira `Lista 10-3`, title `PAG-V2.7A-TESTE-NF-4-NF-V2.7A-TESTE-001-20260609161247`, a partir da NF `Lista 04-4` / `NF-V2.7A-TESTE-001`, pedido `Lista 03-3` e requisicao `Lista 02-11`. Foram confirmados fornecedor, obra, centro de custo `V2.7A-TESTE`, valor bruto/liquido `6720`, vencimento/data programada `16/06/2026`, status `Programado`, forma `Pix`, conta `Itaú ENAC`, categoria `Material de Obra`, origem `Compra de Material`, historico criado e HTTP escrita `201`. Pagamento efetivo, data de pagamento e comprovante nao foram criados; NF, pedido e requisicao nao foram alterados indevidamente; nao houve `PATCH`/`DELETE`. Power Automate nao foi verificado diretamente no run history, sem indicio observado e nao iniciado pelo Codex. A validacao nao representa liberacao ampla de producao.
+
 ## Protótipo
 
 Abra no navegador:
@@ -243,6 +245,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a6c-validacao-manual-vincular-nota-fiscal.md`
 - `docs/v2.7a7-teste-programar-pagamento.md`
 - `docs/v2.7a7a-auditoria-readonly-lista-pagamentos.md`
+- `docs/v2.7a7b-ajuste-programar-pagamento-lista10.md`
+- `docs/v2.7a7c-validacao-manual-programar-pagamento.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

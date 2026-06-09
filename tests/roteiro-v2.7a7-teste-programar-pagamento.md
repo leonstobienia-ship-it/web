@@ -113,3 +113,33 @@ Na execucao manual futura:
 - nao marcar como pago;
 - nao enviar para contabilidade;
 - nao iniciar Power Automate.
+
+## Resultado Manual V2.7A.7C
+
+Leon executou manualmente o roteiro em 09/06/2026 apos publicar o pacote da V2.7A.7B e obter pre-validacao liberada.
+
+Resultado registrado:
+
+- `ProgramarPagamento` validado manualmente;
+- programacao criada na Lista 10: item `3`;
+- title `PAG-V2.7A-TESTE-NF-4-NF-V2.7A-TESTE-001-20260609161247`;
+- NF `Lista 04-4` / `NF-V2.7A-TESTE-001`;
+- pedido `Lista 03-3` / `PED-V2.7A-TESTE-11-20260609125401`;
+- requisicao `Lista 02-11`;
+- fornecedor e obra preenchidos;
+- valor bruto/liquido `6720`;
+- data programada `16/06/2026`;
+- status `Programado`;
+- forma `Pix`;
+- conta `Itaú ENAC`;
+- categoria `Material de Obra`;
+- origem `Compra de Material`;
+- historico criado;
+- HTTP escrita `201`;
+- pagamento efetivo, data do pagamento e comprovante nao foram criados;
+- NF, pedido e requisicao nao foram alterados indevidamente, conforme fechamento manual;
+- `PATCH`/`DELETE`: nao.
+
+Power Automate nao foi verificado diretamente no run history por Leon. Nao houve indicio observado e Codex nao iniciou Power Automate.
+
+Proxima recomendacao: V2.8 para consolidar o fluxo completo e auditar historico ponta a ponta antes de qualquer homologacao assistida ou plano futuro de Power Automate.
