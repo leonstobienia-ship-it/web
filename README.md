@@ -139,6 +139,8 @@ Na V2.7A.5, `CriarPedidoCompra` foi preparado apenas como diagnostico/pre-valida
 
 Na V2.7A.5A, foi preparado um script PowerShell readonly para Leon auditar manualmente a estrutura real da `Lista 03 — Pedidos de Compra`: `scripts/sharepoint/11-auditoria-lista03-pedidos-readonly.ps1`. O script deve gerar relatórios em `reports/` e nao foi executado pelo Codex. `CriarPedidoCompra` continua bloqueado ate o resultado da auditoria confirmar campo de vinculo, fornecedor correto, choices de `StatusdoPedido` e campos obrigatorios.
 
+Na V2.7A.5B, `CriarPedidoCompra` foi adaptado localmente ao schema real confirmado da `Lista 03 — Pedidos de Compra`. Como a auditoria readonly nao confirmou `SolicitacaoId`, o pedido passa a usar vinculo textual temporario por `N_x00ba_daRequisi_x00e7__x00e3_o`; o fornecedor obrigatorio usa `Fornecedor0Id`; e o status inicial previsto e `Em elaboração`. A execucao futura exige `fornecedorTesteIdV27A` valido, pre-validacao sem alertas, inexistencia de pedido anterior e confirmacao manual. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -227,6 +229,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a4e-validacao-final-aprovar-compra-pos-auditoria.md`
 - `docs/v2.7a5-teste-criar-pedido-compra.md`
 - `docs/v2.7a5a-auditoria-readonly-lista03-pedidos.md`
+- `docs/v2.7a5b-ajuste-criar-pedido-schema-lista03.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

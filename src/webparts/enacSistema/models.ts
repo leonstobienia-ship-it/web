@@ -228,6 +228,12 @@ export interface ConfiguracaoTesteOperacionalV27A {
   statusDestinoTesteOperacionalV27A?: string;
   valorTesteOperacionalV27A?: number;
   observacaoTesteOperacionalV27A?: string;
+  fornecedorTesteIdV27A?: number;
+  statusPedidoInicialTesteV27A?: string;
+  tituloPedidoTesteV27A?: string;
+  descricaoPedidoTesteV27A?: string;
+  condicaoPagamentoTesteV27A?: string;
+  prazoEntregaTesteV27A?: string;
 }
 
 export interface ResultadoOperacionalV27A {
@@ -290,6 +296,15 @@ export interface PreValidacaoOperacionalV27AResultado {
   tipoAprovacaoCompra?: 'Aprovador direto' | 'Alçada superior / Diretoria';
   diagnosticoAprovacaoCompra?: 'APROVADOR_DO_SNAPSHOT_VALIDO' | 'DIRETORIA_ALCADA_SUPERIOR_VALIDADA';
   justificativaAprovacaoPrevista?: string;
+  diagnosticoPedidoCompra?: string[];
+  pedidoTituloPrevisto?: string;
+  pedidoVinculoTextual?: string;
+  pedidoFornecedorId?: number;
+  pedidoFornecedorTitulo?: string;
+  pedidoFornecedorLookup?: string;
+  pedidoStatusInicial?: string;
+  pedidoExistenteId?: number;
+  pedidoExistenteTitulo?: string;
   snapshotPrevistoTitulo?: string;
   criaraSnapshot?: boolean;
   vincularaSnapshotAprovacaoCompra?: boolean;

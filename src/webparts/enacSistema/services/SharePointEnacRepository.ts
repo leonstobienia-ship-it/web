@@ -41,7 +41,8 @@ const LISTAS_ENAC = {
   usuariosPerfis: '99cb9bae-5589-4f8b-854b-08adce371e82',
   alcadas: '901d4458-15b4-427b-a869-161c63cf70ef',
   historicoConfiguracoes: 'cac67186-e478-4f15-b5a0-2db92d74b2c4',
-  snapshotsRegras: '767e1867-8a98-46be-9dcc-be53a12c51aa'
+  snapshotsRegras: '767e1867-8a98-46be-9dcc-be53a12c51aa',
+  fornecedoresPrestadores: '953cc56f-108b-4818-9ffc-cc522cd1b62d'
 };
 
 const CONFIRMACAO_ESCRITA_TESTE = 'TESTAR-ESCRITA-V2.6A-ENAC';
@@ -94,13 +95,31 @@ const LISTA_02_STATUS_REQUISICAO_CHOICES_CONFIRMADOS = [
 ];
 const STATUS_APROVADO_COMPRA_V27A = 'Aprovada para compra';
 const LISTA_03_PEDIDOS_COMPRA_TITULO = 'Lista 03 — Pedidos de Compra';
+const LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD = 'N_x00ba_daRequisi_x00e7__x00e3_o';
+const LISTA_03_PEDIDOS_COMPRA_DESCRICAO_FIELD = 'Descri_x00e7__x00e3_odoPedido';
+const LISTA_03_PEDIDOS_COMPRA_CONDICAO_PAGAMENTO_FIELD = 'Condi_x00e7__x00e3_odePagamento';
+const LISTA_03_PEDIDOS_COMPRA_FORNECEDOR_FIELD = 'Fornecedor0Id';
+const LISTA_03_PEDIDOS_COMPRA_STATUS_INICIAL = 'Em elaboração';
+const LISTA_03_PEDIDOS_COMPRA_STATUS_CHOICES_CONFIRMADOS = [
+  'Em elaboração',
+  'Aguardando aprovação',
+  'Aprovado',
+  'Enviado ao fornecedor',
+  'Aguardando entrega',
+  'Entregue parcial',
+  'Entregue total',
+  'Cancelado'
+];
 const LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS = [
   'Title',
-  'SolicitacaoId',
-  'Fornecedor',
+  LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD,
+  'ObraId',
+  LISTA_03_PEDIDOS_COMPRA_FORNECEDOR_FIELD,
   'ValordoPedido',
   'DatadoPedido',
-  'StatusdoPedido'
+  'StatusdoPedido',
+  'CentrodeCusto',
+  LISTA_03_PEDIDOS_COMPRA_DESCRICAO_FIELD
 ];
 
 export interface ISharePointEnacRepositoryOptions {
@@ -123,6 +142,18 @@ interface ResultadoLeituraItemOperacionalV27A {
   camposRetornados?: string[];
   snapshotExistenteId?: number;
   snapshotExistenteTitulo?: string;
+}
+
+interface FornecedorTestePedidoV27A {
+  id: number;
+  title: string;
+  lookup: string;
+}
+
+interface PedidoCompraExistenteV27A {
+  id: number;
+  title: string;
+  vinculoTextual: string;
 }
 
 /**
@@ -532,6 +563,15 @@ export class SharePointEnacRepository {
     let aprovacaoNecessariaCampo: string | undefined;
     let aprovacaoNecessariaValorBruto: string | undefined;
     let aprovacaoNecessariaNormalizada: 'Sim' | 'Nao' | 'Nao resolvido' | undefined;
+    let diagnosticoPedidoCompra: string[] | undefined;
+    let pedidoTituloPrevisto: string | undefined;
+    let pedidoVinculoTextual: string | undefined;
+    let pedidoFornecedorId: number | undefined;
+    let pedidoFornecedorTitulo: string | undefined;
+    let pedidoFornecedorLookup: string | undefined;
+    let pedidoStatusInicial: string | undefined;
+    let pedidoExistenteId: number | undefined;
+    let pedidoExistenteTitulo: string | undefined;
 
     if (itemTesteId > 0 && !item) {
       alertas.push({ codigo: leituraItem?.statusHttp === 403 ? 'ERRO_REST_LISTA02' : 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: leituraItem?.erro || `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
@@ -702,6 +742,18 @@ export class SharePointEnacRepository {
     }
 
     if (acaoPretendida === 'CriarPedidoCompra') {
+      const statusPedidoInicial = config.statusPedidoInicialTesteV27A || LISTA_03_PEDIDOS_COMPRA_STATUS_INICIAL;
+      const fornecedorTesteId = Number(config.fornecedorTesteIdV27A || 0);
+      pedidoStatusInicial = statusPedidoInicial;
+      pedidoFornecedorId = fornecedorTesteId > 0 ? fornecedorTesteId : undefined;
+      pedidoVinculoTextual = item ? this.obterNumeroRequisicaoPedidoV27A(item, itemTesteId) : undefined;
+      pedidoTituloPrevisto = item ? this.criarTituloPedidoV27A(itemTesteId, config) : undefined;
+      diagnosticoPedidoCompra = [
+        `Lista 03 por GUID ${LISTAS_ENAC.pedidosCompra}.`,
+        `SolicitacaoId ausente na auditoria readonly; usar ${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD} como vinculo textual temporario.`,
+        `Campos previstos: ${LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS.join(', ')}.`
+      ];
+
       if (item && this.normalizarTexto(statusAtual) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
         alertas.push({ codigo: 'STATUS_NAO_ELEGIVEL_PARA_PEDIDO', mensagem: 'CriarPedidoCompra exige status atual Aprovada para compra.' });
       }
@@ -727,34 +779,50 @@ export class SharePointEnacRepository {
         alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Descricao da solicitacao deve estar preenchida para preparar pedido.' });
       }
 
-      if (item && (!item.Quantidade || !item.Unidade)) {
-        alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Quantidade e unidade devem estar preenchidas para preparar pedido.' });
-      }
-
       if (item && !item.CentrodeCusto) {
         alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Centro de custo deve estar preenchido para preparar pedido.' });
       }
 
       if (item && !item.ObraId) {
-        alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Obra deve estar preenchida para preparar pedido.' });
+        alertas.push({ codigo: 'OBRA_OBRIGATORIA_AUSENTE', mensagem: 'ObraId deve estar preenchido para criar pedido na Lista 03.' });
       }
 
-      alertas.push({
-        codigo: 'CAMPO_SOLICITACAO_PEDIDO_NAO_MAPEADO',
-        mensagem: 'O inventario local nao confirmou SolicitacaoId na Lista 03; nao liberar escrita ate auditoria readonly manual confirmar tipo e obrigatoriedade do campo.'
-      });
-      alertas.push({
-        codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES',
-        mensagem: 'Campos obrigatorios reais e choices de StatusdoPedido da Lista 03 ainda nao estao suficientemente confirmados para escrita.'
-      });
-      alertas.push({
-        codigo: 'FORNECEDOR_OBRIGATORIO_AUSENTE',
-        mensagem: 'A Lista 03 possui Fornecedor antigo texto e Fornecedor0 lookup; e necessario confirmar qual campo e obrigatorio antes de criar pedido.'
-      });
-      alertas.push({
-        codigo: 'STATUS_PEDIDO_INICIAL_NAO_MAPEADO',
-        mensagem: 'Choice inicial de StatusdoPedido deve ser confirmada por auditoria readonly antes da escrita.'
-      });
+      if (!pedidoVinculoTextual) {
+        alertas.push({ codigo: 'CAMPOS_PEDIDO_OBRIGATORIOS_AUSENTES', mensagem: 'Title ou numero textual da requisicao deve estar preenchido para vinculo temporario.' });
+      }
+
+      if (!fornecedorTesteId || fornecedorTesteId <= 0) {
+        alertas.push({ codigo: 'FORNECEDOR_TESTE_NAO_INFORMADO', mensagem: 'fornecedorTesteIdV27A deve informar um item valido da Lista 06 para preencher Fornecedor0Id.' });
+      } else {
+        try {
+          const fornecedor = await this.obterFornecedorTestePedidoV27A(fornecedorTesteId);
+          pedidoFornecedorTitulo = fornecedor.title;
+          pedidoFornecedorLookup = fornecedor.lookup;
+        } catch (error) {
+          const mensagem = this.getErrorMessage(error);
+          alertas.push({
+            codigo: mensagem.indexOf('404') >= 0 ? 'FORNECEDOR_TESTE_NAO_ENCONTRADO' : 'ERRO_REST_FORNECEDORES',
+            mensagem
+          });
+        }
+      }
+
+      if (!this.statusPedidoInicialMapeadoV27A(statusPedidoInicial)) {
+        alertas.push({ codigo: 'STATUS_PEDIDO_INICIAL_NAO_MAPEADO', mensagem: `StatusdoPedido inicial "${statusPedidoInicial}" nao consta nas choices confirmadas da Lista 03.` });
+      }
+
+      if (item && pedidoVinculoTextual) {
+        try {
+          const pedidoExistente = await this.obterPedidoExistenteV27A(pedidoVinculoTextual, itemTesteId);
+          if (pedidoExistente) {
+            pedidoExistenteId = pedidoExistente.id;
+            pedidoExistenteTitulo = pedidoExistente.title;
+            alertas.push({ codigo: 'PEDIDO_JA_EXISTENTE', mensagem: `Pedido existente encontrado: ${pedidoExistente.id} / ${pedidoExistente.title}.` });
+          }
+        } catch (error) {
+          alertas.push({ codigo: 'ERRO_REST_LISTA03', mensagem: this.getErrorMessage(error) });
+        }
+      }
 
       registraraHistorico = true;
     }
@@ -773,7 +841,7 @@ export class SharePointEnacRepository {
     const valorNovoPrevisto = acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra'
       ? statusDestino
       : acaoPretendida === 'CriarPedidoCompra'
-        ? `Pedido V2.7A para solicitacao ${itemTesteId}; valor ${config.valorTesteOperacionalV27A || 0}`
+        ? `POST Lista 03: Title=${pedidoTituloPrevisto || '-'}; ${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD}=${pedidoVinculoTextual || '-'}; ObraId=${item?.ObraId || '-'}; Fornecedor0Id=${pedidoFornecedorId || '-'}; ValordoPedido=${config.valorTesteOperacionalV27A || 0}; StatusdoPedido=${pedidoStatusInicial || '-'}`
         : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`;
 
     return {
@@ -816,6 +884,15 @@ export class SharePointEnacRepository {
       tipoAprovacaoCompra,
       diagnosticoAprovacaoCompra,
       justificativaAprovacaoPrevista,
+      diagnosticoPedidoCompra,
+      pedidoTituloPrevisto,
+      pedidoVinculoTextual,
+      pedidoFornecedorId,
+      pedidoFornecedorTitulo,
+      pedidoFornecedorLookup,
+      pedidoStatusInicial,
+      pedidoExistenteId,
+      pedidoExistenteTitulo,
       snapshotPrevistoTitulo,
       criaraSnapshot,
       vincularaSnapshotAprovacaoCompra,
@@ -1410,42 +1487,165 @@ export class SharePointEnacRepository {
   }
 
   public async criarPedidoCompraControlado(payload: PedidoCompraControladoPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
-    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
-    const requisicao = await this.obterResumoItemOperacional(LISTAS_ENAC.requisicoesCompra, payload.requisicaoItemId, 'StatusdaRequisi_x00e7__x00e3_o');
-    const alertas = this.validarPermissaoAcao('CriarPedidoCompra', requisicao, usuario, flags);
+    void payload;
+    void emailOuLogin;
+    void flags;
+    return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', 'Metodo legado bloqueado. Use executarCriarPedidoCompraV27A com schema real da Lista 03.', [
+      { codigo: 'METODO_LEGADO_PEDIDO_BLOQUEADO', mensagem: 'A Lista 03 nao possui lookup forte de solicitacao nesta rodada; o fluxo V2.7A.5B usa vinculo textual temporario e Fornecedor0Id.' }
+    ]);
+  }
 
-    if (!payload.numeroPedido) {
-      alertas.push({ codigo: 'NUMERO_PEDIDO_OBRIGATORIO', mensagem: 'Numero do pedido deve ser informado.' });
+  public async executarCriarPedidoCompraV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A, config: ConfiguracaoTesteOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const itemId = Number(config.itemTesteOperacionalIdV27A || 0);
+    const valorPedido = Number(config.valorTesteOperacionalV27A || 0);
+    const fornecedorId = Number(config.fornecedorTesteIdV27A || 0);
+    const statusPedido = config.statusPedidoInicialTesteV27A || LISTA_03_PEDIDOS_COMPRA_STATUS_INICIAL;
+    const preValidacao = await this.preValidarEscritaOperacionalRestritaV27A(emailOuLogin, flags, config);
+    const alertas: AlertaBloqueioEscrita[] = [...preValidacao.alertas];
+
+    if (!preValidacao.podeExecutar) {
+      alertas.push({ codigo: 'EXECUCAO_SEM_PREVALIDACAO_ESPECIFICA', mensagem: 'Pre-validacao especifica do item nao esta aprovada no momento da execucao.' });
     }
 
-    if (payload.marcadorTeste !== flags.marcadorTesteOperacionalV27A) {
-      alertas.push({ codigo: 'MARCADOR_PAYLOAD_INVALIDO', mensagem: 'Pedido deve usar marcador V2.7A-TESTE.' });
+    if (preValidacao.itemTesteId !== itemId) {
+      alertas.push({ codigo: 'EXECUCAO_ITEM_DIVERGENTE', mensagem: `Item validado ${preValidacao.itemTesteId || '-'} difere do item configurado ${itemId || '-'}.` });
+    }
+
+    if (preValidacao.acaoPretendida !== 'CriarPedidoCompra') {
+      alertas.push({ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Esta rotina permite somente CriarPedidoCompra.' });
+    }
+
+    if (!preValidacao.marcadorEncontrado) {
+      alertas.push({ codigo: 'EXECUCAO_MARCADOR_NAO_CONFIRMADO', mensagem: 'Marcador V2.7A-TESTE nao foi confirmado no item.' });
+    }
+
+    if (this.normalizarTexto(preValidacao.statusAtual) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
+      alertas.push({ codigo: 'EXECUCAO_STATUS_ORIGEM_INVALIDO', mensagem: `Status origem invalido para pedido: ${preValidacao.statusAtual || '-'}.` });
+    }
+
+    if (!preValidacao.snapshotExistenteId) {
+      alertas.push({ codigo: 'SNAPSHOT_OBRIGATORIO_AUSENTE', mensagem: 'CriarPedidoCompra exige SnapshotAprovacaoCompra vinculado.' });
+    }
+
+    if (!valorPedido || valorPedido <= 0) {
+      alertas.push({ codigo: 'EXECUCAO_VALOR_TESTE_AUSENTE', mensagem: 'Valor de teste deve ser maior que zero.' });
+    }
+
+    if (!fornecedorId || fornecedorId <= 0) {
+      alertas.push({ codigo: 'FORNECEDOR_TESTE_NAO_INFORMADO', mensagem: 'fornecedorTesteIdV27A deve ser informado.' });
+    }
+
+    if (!this.statusPedidoInicialMapeadoV27A(statusPedido)) {
+      alertas.push({ codigo: 'STATUS_PEDIDO_INICIAL_NAO_MAPEADO', mensagem: `StatusdoPedido inicial "${statusPedido}" nao consta nas choices confirmadas.` });
+    }
+
+    if (!preValidacao.acoesPermitidas.some((acao) => acao === 'CriarPedidoCompra')) {
+      alertas.push({ codigo: 'EXECUCAO_PERFIL_SEM_PERMISSAO', mensagem: 'Perfil atual nao esta autorizado para CriarPedidoCompra.' });
     }
 
     if (alertas.length > 0) {
-      return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', 'Criacao de pedido bloqueada.', alertas);
+      return this.criarResultadoOperacionalBloqueado(
+        'CriarPedidoCompra',
+        `Criacao de pedido bloqueada: ${alertas.map((alerta) => alerta.codigo).join(', ')}.`,
+        alertas,
+        itemId,
+        preValidacao.statusAtual
+      );
+    }
+
+    const leituraItem = await this.obterRequisicaoOperacionalParaPreValidacao(itemId);
+    const item = leituraItem.item;
+    const statusAtual = String(item?.[LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD] || '');
+    const camposComMarcador = item ? this.obterCamposComMarcadorV27A(item, flags.marcadorTesteOperacionalV27A) : [];
+    const numeroRequisicao = item ? this.obterNumeroRequisicaoPedidoV27A(item, itemId) : '';
+
+    if (!item || camposComMarcador.length === 0 || this.normalizarTexto(statusAtual) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A) || !leituraItem.snapshotExistenteId || !item.ObraId || !numeroRequisicao) {
+      return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', 'Revalidacao imediata da requisicao bloqueou a criacao do pedido.', [
+        { codigo: 'EXECUCAO_REVALIDACAO_ITEM_FALHOU', mensagem: leituraItem.erro || `Status=${statusAtual || '-'}; snapshot=${leituraItem.snapshotExistenteId || '-'}; ObraId=${item?.ObraId || '-'}.` }
+      ], itemId, statusAtual);
+    }
+
+    try {
+      await this.obterFornecedorTestePedidoV27A(fornecedorId);
+    } catch (error) {
+      return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', 'Revalidacao do fornecedor falhou.', [
+        { codigo: 'ERRO_REST_FORNECEDORES', mensagem: this.getErrorMessage(error) }
+      ], itemId, statusAtual);
+    }
+
+    try {
+      const pedidoExistente = await this.obterPedidoExistenteV27A(numeroRequisicao, itemId);
+      if (pedidoExistente) {
+        return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', 'Pedido ja existente para a requisicao de teste.', [
+          { codigo: 'PEDIDO_JA_EXISTENTE', mensagem: `${pedidoExistente.id} / ${pedidoExistente.title}` }
+        ], itemId, statusAtual);
+      }
+    } catch (error) {
+      return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', 'Revalidacao de pedido existente falhou.', [
+        { codigo: 'ERRO_REST_LISTA03', mensagem: this.getErrorMessage(error) }
+      ], itemId, statusAtual);
+    }
+
+    const now = new Date();
+    const tituloPedido = this.criarTituloPedidoV27A(itemId, config, now);
+    const descricaoPedido = config.descricaoPedidoTesteV27A || `V2.7A-TESTE - pedido de compra controlado a partir da requisicao ${itemId}`;
+    const body: Record<string, unknown> = {
+      Title: tituloPedido,
+      [LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD]: numeroRequisicao,
+      ObraId: Number(item.ObraId),
+      [LISTA_03_PEDIDOS_COMPRA_FORNECEDOR_FIELD]: fornecedorId,
+      ValordoPedido: valorPedido,
+      DatadoPedido: now.toISOString(),
+      StatusdoPedido: statusPedido,
+      CentrodeCusto: item.CentrodeCusto || '',
+      [LISTA_03_PEDIDOS_COMPRA_DESCRICAO_FIELD]: descricaoPedido
+    };
+
+    if (config.condicaoPagamentoTesteV27A) {
+      body[LISTA_03_PEDIDOS_COMPRA_CONDICAO_PAGAMENTO_FIELD] = config.condicaoPagamentoTesteV27A;
+    }
+
+    if (config.prazoEntregaTesteV27A) {
+      body.PrazodeEntrega = config.prazoEntregaTesteV27A;
     }
 
     const response = await this.spHttpClient.post(
       this.getListItemsEndpoint(LISTAS_ENAC.pedidosCompra),
       SPHttpClient.configurations.v1,
-      this.criarPostOptions({
-        Title: `${payload.marcadorTeste} ${payload.numeroPedido}`,
-        SolicitacaoId: payload.requisicaoItemId,
-        Fornecedor: payload.fornecedor,
-        ValordoPedido: payload.valorPedido,
-        DatadoPedido: new Date().toISOString(),
-        StatusdoPedido: 'Pedido emitido'
-      })
+      this.criarPostOptions(body)
     );
-    const item = await this.ensureJson(response);
+
+    if (!response.ok) {
+      return this.criarResultadoOperacionalBloqueado('CriarPedidoCompra', `POST de pedido retornou ${response.status}: ${response.statusText}.`, [
+        { codigo: 'ERRO_POST_PEDIDO_COMPRA', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}` }
+      ], itemId, statusAtual);
+    }
+
+    const pedido = await this.ensureJson(response);
+    const pedidoId = Number(pedido.Id || pedido.ID);
+    const historico = await this.registrarHistoricoOperacional({
+      origemLista: 'Lista 02',
+      origemItemId: itemId,
+      acao: 'CriarPedidoCompra',
+      descricao: `${config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - criacao controlada de pedido de compra'}; pedido ${pedidoId}/${tituloPedido}; vinculo ${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD}=${numeroRequisicao}; vinculo textual temporario por ausencia de SolicitacaoId; fornecedor ${fornecedorId}; valor ${valorPedido}; status inicial ${statusPedido}; origem Webpart V2.7A.5B; sem Power Automate.`,
+      statusAnterior: statusAtual,
+      statusNovo: statusAtual,
+      marcadorTeste: flags.marcadorTesteOperacionalV27A
+    }, emailOuLogin, flags);
+
     return {
       sucesso: true,
       bloqueado: false,
       acao: 'CriarPedidoCompra',
-      mensagem: 'Pedido de compra V2.7A-TESTE criado.',
-      itemId: Number(item.Id || item.ID),
-      alertas: []
+      mensagem: 'Pedido de compra criado na Lista 03 com controle V2.7A.5B e historico registrado.',
+      itemId: pedidoId,
+      campoAlterado: LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS.join(', '),
+      statusAnterior: statusAtual,
+      statusNovo: statusAtual,
+      historicoRegistrado: historico.sucesso,
+      historicoItemId: historico.itemId,
+      statusHttpEscrita: response.status,
+      alertas: historico.alertas
     };
   }
 
@@ -2175,6 +2375,71 @@ export class SharePointEnacRepository {
     const normalizado = this.normalizarTexto(status);
     return LISTA_02_STATUS_REQUISICAO_CHOICES_CONFIRMADOS
       .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private statusPedidoInicialMapeadoV27A(status: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(status || LISTA_03_PEDIDOS_COMPRA_STATUS_INICIAL);
+    return LISTA_03_PEDIDOS_COMPRA_STATUS_CHOICES_CONFIRMADOS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private criarTituloPedidoV27A(itemId: number, config: ConfiguracaoTesteOperacionalV27A, dataReferencia: Date = new Date()): string {
+    const configurado = String(config.tituloPedidoTesteV27A || '').trim();
+    if (configurado) {
+      return configurado;
+    }
+
+    return `PED-V2.7A-TESTE-${itemId}-${this.formatTimestampCompacto(dataReferencia)}`;
+  }
+
+  private formatTimestampCompacto(data: Date): string {
+    return data.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
+  }
+
+  private obterNumeroRequisicaoPedidoV27A(item: any, itemId: number): string {
+    const title = String(item?.Title || '').trim();
+    if (title) {
+      return title;
+    }
+
+    return `V2.7A-TESTE-${itemId}`;
+  }
+
+  private async obterFornecedorTestePedidoV27A(fornecedorId: number): Promise<FornecedorTestePedidoV27A> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.fornecedoresPrestadores)}(${fornecedorId})?$select=Id,Title,CNPJ_x002f_CPF,NomeFantasia`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    if (!response.ok) {
+      throw new Error(`Fornecedor0Id ${fornecedorId} nao resolvido na Lista 06: ${response.status} ${response.statusText}`);
+    }
+
+    const item = await response.json();
+    return {
+      id: Number(item.Id || fornecedorId),
+      title: item.Title || '',
+      lookup: item.CNPJ_x002f_CPF || item.NomeFantasia || item.Title || String(fornecedorId)
+    };
+  }
+
+  private async obterPedidoExistenteV27A(numeroRequisicao: string, itemId: number): Promise<PedidoCompraExistenteV27A | undefined> {
+    const escaped = this.escapeOData(numeroRequisicao);
+    const prefixoTitulo = this.escapeOData(`PED-V2.7A-TESTE-${itemId}`);
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.pedidosCompra)}?$top=1&$select=Id,Title,${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD}&$filter=${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD} eq '${escaped}' or substringof('${prefixoTitulo}',Title)`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    if (!response.ok) {
+      throw new Error(`Consulta de pedido existente na Lista 03 retornou ${response.status}: ${response.statusText}`);
+    }
+
+    const payload = await response.json();
+    const item = payload.value?.[0];
+    return item
+      ? {
+        id: Number(item.Id),
+        title: item.Title || '',
+        vinculoTextual: item[LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD] || ''
+      }
+      : undefined;
   }
 
   private usuarioCorrespondeAoAprovadorSnapshotV27A(usuario: IUsuarioPerfilEnac, snapshot: ISnapshotRegraEnac): boolean {

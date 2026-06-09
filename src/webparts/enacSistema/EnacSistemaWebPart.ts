@@ -34,6 +34,12 @@ export interface IEnacSistemaWebPartProps {
   statusDestinoTesteOperacionalV27A: string;
   valorTesteOperacionalV27A: string;
   observacaoTesteOperacionalV27A: string;
+  fornecedorTesteIdV27A: string;
+  statusPedidoInicialTesteV27A: string;
+  tituloPedidoTesteV27A: string;
+  descricaoPedidoTesteV27A: string;
+  condicaoPagamentoTesteV27A: string;
+  prazoEntregaTesteV27A: string;
 }
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
@@ -43,6 +49,8 @@ const MARCADOR_OPERACIONAL_V27A: MarcadorTesteOperacionalEnac = 'V2.7A-TESTE';
 const ACAO_OPERACIONAL_PADRAO_V27A: AcaoOperacionalV27A = 'CriarSnapshotAprovacaoOperacional';
 const STATUS_DESTINO_OPERACIONAL_PADRAO_V27A = 'Aguardando aprovação';
 const OBSERVACAO_OPERACIONAL_PADRAO_V27A = 'V2.7A-TESTE - teste operacional restrito';
+const STATUS_PEDIDO_INICIAL_PADRAO_V27A = 'Em elaboração';
+const DESCRICAO_PEDIDO_PADRAO_V27A = 'V2.7A-TESTE - pedido de compra controlado';
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
@@ -101,6 +109,12 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     this.properties.statusDestinoTesteOperacionalV27A = this.properties.statusDestinoTesteOperacionalV27A || STATUS_DESTINO_OPERACIONAL_PADRAO_V27A;
     this.properties.valorTesteOperacionalV27A = this.properties.valorTesteOperacionalV27A || '';
     this.properties.observacaoTesteOperacionalV27A = this.properties.observacaoTesteOperacionalV27A || OBSERVACAO_OPERACIONAL_PADRAO_V27A;
+    this.properties.fornecedorTesteIdV27A = this.properties.fornecedorTesteIdV27A || '';
+    this.properties.statusPedidoInicialTesteV27A = this.properties.statusPedidoInicialTesteV27A || STATUS_PEDIDO_INICIAL_PADRAO_V27A;
+    this.properties.tituloPedidoTesteV27A = this.properties.tituloPedidoTesteV27A || '';
+    this.properties.descricaoPedidoTesteV27A = this.properties.descricaoPedidoTesteV27A || DESCRICAO_PEDIDO_PADRAO_V27A;
+    this.properties.condicaoPagamentoTesteV27A = this.properties.condicaoPagamentoTesteV27A || '';
+    this.properties.prazoEntregaTesteV27A = this.properties.prazoEntregaTesteV27A || '';
 
     return Promise.resolve();
   }
@@ -175,6 +189,24 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                 }),
                 PropertyPaneTextField('observacaoTesteOperacionalV27A', {
                   label: 'V2.7A - observacao de teste'
+                }),
+                PropertyPaneTextField('fornecedorTesteIdV27A', {
+                  label: 'V2.7A - fornecedor de teste (Fornecedor0Id)'
+                }),
+                PropertyPaneTextField('statusPedidoInicialTesteV27A', {
+                  label: 'V2.7A - status inicial do pedido'
+                }),
+                PropertyPaneTextField('tituloPedidoTesteV27A', {
+                  label: 'V2.7A - titulo do pedido, opcional'
+                }),
+                PropertyPaneTextField('descricaoPedidoTesteV27A', {
+                  label: 'V2.7A - descricao do pedido'
+                }),
+                PropertyPaneTextField('condicaoPagamentoTesteV27A', {
+                  label: 'V2.7A - condicao de pagamento do pedido, opcional'
+                }),
+                PropertyPaneTextField('prazoEntregaTesteV27A', {
+                  label: 'V2.7A - prazo de entrega do pedido, opcional ISO'
                 })
               ]
             }
@@ -231,7 +263,13 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       acaoTesteOperacionalV27A: acao,
       statusDestinoTesteOperacionalV27A: this.properties.statusDestinoTesteOperacionalV27A || STATUS_DESTINO_OPERACIONAL_PADRAO_V27A,
       valorTesteOperacionalV27A: this.parsePositiveNumber(this.properties.valorTesteOperacionalV27A),
-      observacaoTesteOperacionalV27A: this.properties.observacaoTesteOperacionalV27A || OBSERVACAO_OPERACIONAL_PADRAO_V27A
+      observacaoTesteOperacionalV27A: this.properties.observacaoTesteOperacionalV27A || OBSERVACAO_OPERACIONAL_PADRAO_V27A,
+      fornecedorTesteIdV27A: this.parsePositiveNumber(this.properties.fornecedorTesteIdV27A),
+      statusPedidoInicialTesteV27A: this.properties.statusPedidoInicialTesteV27A || STATUS_PEDIDO_INICIAL_PADRAO_V27A,
+      tituloPedidoTesteV27A: this.properties.tituloPedidoTesteV27A || '',
+      descricaoPedidoTesteV27A: this.properties.descricaoPedidoTesteV27A || DESCRICAO_PEDIDO_PADRAO_V27A,
+      condicaoPagamentoTesteV27A: this.properties.condicaoPagamentoTesteV27A || '',
+      prazoEntregaTesteV27A: this.properties.prazoEntregaTesteV27A || ''
     };
   }
 }

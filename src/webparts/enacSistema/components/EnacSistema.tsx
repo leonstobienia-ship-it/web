@@ -510,19 +510,27 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         acao: config.acaoTesteOperacionalV27A,
         mensagem: 'Escrita V2.7A bloqueada: acao ainda nao preparada para teste manual.',
         itemId,
-        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional, AprovarCompra e diagnostico de CriarPedidoCompra estao preparados nesta fase.' }]
+        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional, AprovarCompra e CriarPedidoCompra estao preparados nesta fase.' }]
       });
       return;
     }
 
-    if (config.acaoTesteOperacionalV27A === 'CriarPedidoCompra') {
+    if (config.acaoTesteOperacionalV27A === 'CriarPedidoCompra' && (
+      preValidacaoOperacionalV27A.acaoPretendida !== 'CriarPedidoCompra' ||
+      preValidacaoOperacionalV27A.campoAlterado?.indexOf('Fornecedor0Id') === -1 ||
+      !preValidacaoOperacionalV27A.pedidoFornecedorId ||
+      !preValidacaoOperacionalV27A.pedidoVinculoTextual ||
+      !preValidacaoOperacionalV27A.pedidoTituloPrevisto ||
+      !preValidacaoOperacionalV27A.snapshotExistenteId ||
+      preValidacaoOperacionalV27A.pedidoExistenteId
+    )) {
       setResultadoOperacionalV27A({
         sucesso: false,
         bloqueado: true,
         acao: config.acaoTesteOperacionalV27A,
-        mensagem: 'Escrita V2.7A bloqueada: CriarPedidoCompra esta em preparacao diagnostica e depende de auditoria readonly da Lista 03.',
+        mensagem: 'Escrita V2.7A bloqueada: CriarPedidoCompra exige pre-validacao completa da Lista 03, fornecedor e vinculo textual.',
         itemId,
-        alertas: [{ codigo: 'EXECUCAO_PEDIDO_BLOQUEADA_LISTA03', mensagem: 'Confirme SolicitacaoId, Fornecedor, StatusdoPedido e campos obrigatorios reais antes de liberar escrita.' }]
+        alertas: [{ codigo: 'EXECUCAO_PEDIDO_PREVALIDACAO_INCOMPLETA', mensagem: 'Revise fornecedorTesteIdV27A, SnapshotAprovacaoCompra, vinculo textual e inexistencia de pedido anterior.' }]
       });
       return;
     }
@@ -533,7 +541,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         ? await props.repository.executarCriarSnapshotAprovacaoOperacionalV27A(props.currentUserEmail, flags, config)
         : config.acaoTesteOperacionalV27A === 'AprovarCompra'
           ? await props.repository.executarAprovarCompraV27A(props.currentUserEmail, flags, config)
-        : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
+          : config.acaoTesteOperacionalV27A === 'CriarPedidoCompra'
+            ? await props.repository.executarCriarPedidoCompraV27A(props.currentUserEmail, flags, config)
+            : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
 
       setResultadoOperacionalV27A(resultado);
     } catch (error) {
@@ -1002,6 +1012,10 @@ function PainelOperacionalV27A({
           Aprovacao compra: previsto {preValidacao.aprovadorPrevistoNome || '-'} / efetivo {preValidacao.aprovadorEfetivoOperacionalNome || '-'} / tipo {preValidacao.tipoAprovacaoCompra || '-'}<br />
           Diagnostico aprovacao: {preValidacao.diagnosticoAprovacaoCompra || '-'}<br />
           Justificativa prevista: {preValidacao.justificativaAprovacaoPrevista || '-'}<br />
+          Pedido previsto: {preValidacao.pedidoTituloPrevisto || '-'} / vinculo {preValidacao.pedidoVinculoTextual || '-'}<br />
+          Pedido fornecedor: {preValidacao.pedidoFornecedorId || '-'} / {preValidacao.pedidoFornecedorLookup || preValidacao.pedidoFornecedorTitulo || '-'}<br />
+          Pedido status inicial: {preValidacao.pedidoStatusInicial || '-'} / existente {preValidacao.pedidoExistenteId || '-'} {preValidacao.pedidoExistenteTitulo || ''}<br />
+          Diagnostico pedido: {preValidacao.diagnosticoPedidoCompra && preValidacao.diagnosticoPedidoCompra.length > 0 ? preValidacao.diagnosticoPedidoCompra.join(' | ') : '-'}<br />
           Snapshot previsto: {preValidacao.snapshotPrevistoTitulo || '-'}<br />
           Acoes previstas: snapshot {preValidacao.criaraSnapshot ? 'sim' : 'nao'}, vinculo {preValidacao.vincularaSnapshotAprovacaoCompra ? 'sim' : 'nao'}, historico {preValidacao.registraraHistorico ? 'sim' : 'nao'}<br />
           Transicao: {preValidacao.transicaoPermitida ? 'permitida' : 'bloqueada'} / campos {preValidacao.camposObrigatoriosPresentes ? 'presentes' : 'pendentes'}<br />
