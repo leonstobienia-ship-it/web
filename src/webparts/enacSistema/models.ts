@@ -251,6 +251,14 @@ export interface PreValidacaoOperacionalV27AResultado {
   acaoPretendida?: AcaoOperacionalV27A;
   itemTesteId?: number;
   itemEncontrado?: boolean;
+  listaConsulta?: string;
+  modoAcessoLista?: 'GUID' | 'DisplayName';
+  itemIdSolicitado?: number;
+  statusHttpLeitura?: number;
+  erroLeituraItem?: string;
+  camposRetornados?: string[];
+  camposComMarcador?: string[];
+  valoresCamposMarcador?: string[];
   marcadorEncontrado?: boolean;
   statusAtual?: string;
   statusDestino?: string;

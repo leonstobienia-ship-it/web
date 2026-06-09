@@ -112,6 +112,23 @@ O painel deve mostrar explicitamente:
 
 Se o botao aparecer sem esses dados, parar e nao executar.
 
+## Ajuste V2.7A.2B - Leitura Por GUID
+
+Ao repetir a pre-validacao do item 11, conferir no painel:
+
+- lista: `Lista 02 — Requisições de Compra (0a204b87-b9a1-4d16-8654-55567a62ed01)`;
+- modo de acesso: `GUID`;
+- item solicitado: `11`;
+- HTTP da leitura: sucesso;
+- campos retornados: devem incluir `Title`, `C_x00f3_digodaObra`, `CentrodeCusto`, `TipodaSolicita_x00e7__x00e3_o`, `Descri_x00e7__x00e3_odaSolicita_`, `StatusdaRequisi_x00e7__x00e3_o`, `Observa_x00e7__x00f5_es`, `Quantidade`, `Unidade`;
+- campos com marcador: pelo menos um campo contendo `V2.7A-TESTE`;
+- status atual: `Recebida`;
+- status destino: `Aguardando aprovação`;
+- transicao: `permitida`;
+- pode executar: `sim`.
+
+Se o HTTP nao indicar sucesso, se o campo de status vier vazio ou se nenhum campo trouxer `V2.7A-TESTE`, parar.
+
 ## DevTools
 
 Abrir antes da pre-validacao:

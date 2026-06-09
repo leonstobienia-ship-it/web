@@ -113,6 +113,8 @@ Na V2.7A.2, foi preparado o roteiro do primeiro teste funcional controlado da es
 
 Na V2.7A.2A, a pre-validacao operacional foi corrigida para ser especifica do item de teste. A validacao generica de flags/perfil nao libera mais escrita: o Property Pane deve informar `itemTesteOperacionalIdV27A`, acao, status destino e confirmacao; a webpart deve ler o item por GET, confirmar marcador `V2.7A-TESTE`, status atual, transicao, campo alterado, valor previsto e historico antes de exibir o botao. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
 
+Na V2.7A.2B, a leitura do item de teste foi corrigida para usar a Lista 02 por GUID `0a204b87-b9a1-4d16-8654-55567a62ed01` e internal names reais do inventario, incluindo `Descri_x00e7__x00e3_odaSolicita_` e `Observa_x00e7__x00f5_es`. O painel passa a exibir HTTP da leitura, modo GUID, campos retornados, campos com marcador e valores lidos. A execucao permanece bloqueada se o item 11 nao for resolvido ou se `pode executar` nao for `sim`. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -189,6 +191,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a-recuperacao-base-ausente.md`
 - `docs/v2.7a2-teste-funcional-controlado.md`
 - `docs/v2.7a2a-prevalidacao-item-especifico.md`
+- `docs/v2.7a2b-correcao-leitura-item-teste.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

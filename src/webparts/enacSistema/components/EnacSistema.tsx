@@ -916,7 +916,12 @@ function PainelOperacionalV27A({
         <span>
           Pre-validacao: {preValidacao.bloqueado ? 'bloqueada' : 'liberada'} - {preValidacao.mensagem}<br />
           Usuario: {preValidacao.usuarioAtual?.nome || '-'} / {preValidacao.usuarioAtual?.perfilPrincipal || '-'}<br />
+          Leitura: {preValidacao.listaConsulta || '-'} / {preValidacao.modoAcessoLista || '-'} / item {preValidacao.itemIdSolicitado || '-'} / HTTP {preValidacao.statusHttpLeitura || '-'}<br />
+          Erro leitura: {preValidacao.erroLeituraItem || '-'}<br />
           Item lido: {preValidacao.itemEncontrado ? preValidacao.itemTesteId : '-'} / marcador {preValidacao.marcadorEncontrado ? 'confirmado' : 'nao confirmado'}<br />
+          Campos com marcador: {preValidacao.camposComMarcador && preValidacao.camposComMarcador.length > 0 ? preValidacao.camposComMarcador.join(', ') : '-'}<br />
+          Valores de marcador: {preValidacao.valoresCamposMarcador && preValidacao.valoresCamposMarcador.length > 0 ? preValidacao.valoresCamposMarcador.join(' | ') : '-'}<br />
+          Campos retornados: {preValidacao.camposRetornados && preValidacao.camposRetornados.length > 0 ? preValidacao.camposRetornados.join(', ') : '-'}<br />
           Status: {preValidacao.statusAtual || '-'} {'->'} {preValidacao.statusDestino || '-'}<br />
           Transicao: {preValidacao.transicaoPermitida ? 'permitida' : 'bloqueada'} / campos {preValidacao.camposObrigatoriosPresentes ? 'presentes' : 'pendentes'}<br />
           Lista/campo: {preValidacao.listaAlterada || '-'} / {preValidacao.campoAlterado || '-'}<br />

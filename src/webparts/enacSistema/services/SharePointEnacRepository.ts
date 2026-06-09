@@ -48,6 +48,29 @@ const CONFIRMACAO_ESCRITA_TESTE = 'TESTAR-ESCRITA-V2.6A-ENAC';
 const MARCADORES_TESTE_PERMITIDOS = ['V2.3B-TESTE', 'V2.6A-TESTE'];
 const CONFIRMACAO_OPERACIONAL_V27A = 'CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC';
 const MARCADOR_OPERACIONAL_V27A = 'V2.7A-TESTE';
+const LISTA_02_REQUISICOES_COMPRA_TITULO = 'Lista 02 — Requisições de Compra';
+const LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD = 'StatusdaRequisi_x00e7__x00e3_o';
+const LISTA_02_REQUISICOES_COMPRA_SELECT_PREVALIDACAO = [
+  'Id',
+  'Title',
+  'C_x00f3_digodaObra',
+  'CentrodeCusto',
+  'TipodaSolicita_x00e7__x00e3_o',
+  'Descri_x00e7__x00e3_odaSolicita_',
+  'StatusdaRequisi_x00e7__x00e3_o',
+  'Aprova_x00e7__x00e3_oNecess_x00e',
+  'Observa_x00e7__x00f5_es',
+  'Quantidade',
+  'Unidade',
+  'ObraId'
+];
+const LISTA_02_REQUISICOES_COMPRA_CAMPOS_MARCADOR = [
+  'Title',
+  'C_x00f3_digodaObra',
+  'CentrodeCusto',
+  'Descri_x00e7__x00e3_odaSolicita_',
+  'Observa_x00e7__x00f5_es'
+];
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -60,6 +83,15 @@ export interface IResolverAlcadaCompraOptions {
   valor: number;
   dataReferencia: Date;
   motivoExcecao?: string;
+}
+
+interface ResultadoLeituraItemOperacionalV27A {
+  item?: any;
+  statusHttp?: number;
+  erro?: string;
+  camposRetornados?: string[];
+  snapshotExistenteId?: number;
+  snapshotExistenteTitulo?: string;
 }
 
 /**
@@ -76,7 +108,7 @@ export class SharePointEnacRepository {
   }
 
   public async listarSolicitacoes(): Promise<ISolicitacaoEnac[]> {
-    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}?$top=20&$select=Id,Title,TipodaSolicita_x00e7__x00e3_o,Descri_x00e7__x00e3_o,StatusdaRequisi_x00e7__x00e3_o,Solicitante/Title,Obra/Id,Obra/Title,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=Solicitante,Obra,SnapshotAprovacaoCompra`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}?$top=20&$select=Id,Title,TipodaSolicita_x00e7__x00e3_o,Descri_x00e7__x00e3_odaSolicita_,StatusdaRequisi_x00e7__x00e3_o,Solicitante/Title,Obra/Id,Obra/Title,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=Solicitante,Obra,SnapshotAprovacaoCompra`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
 
@@ -84,7 +116,7 @@ export class SharePointEnacRepository {
       id: `REQ-${item.Id}`,
       titulo: item.Title,
       tipo: this.mapTipoSolicitacao(item.TipodaSolicita_x00e7__x00e3_o),
-      descricao: item.Descri_x00e7__x00e3_o || '',
+      descricao: item.Descri_x00e7__x00e3_odaSolicita_ || '',
       especificacaoTecnica: '',
       quantidade: Number(item.Quantidade || 0),
       unidade: item.Unidade,
@@ -419,11 +451,12 @@ export class SharePointEnacRepository {
     const acaoPretendida = config.acaoTesteOperacionalV27A || 'AtualizarStatusRequisicao';
     const statusDestino = config.statusDestinoTesteOperacionalV27A || 'Aguardando aprovação';
     let usuarioAtual: IUsuarioPerfilEnac | undefined;
+    let leituraItem: ResultadoLeituraItemOperacionalV27A | undefined;
     let item: any | undefined;
     let acoesPermitidas: AcaoOperacionalV27A[] = [];
 
     if (!itemTesteId || itemTesteId <= 0) {
-      alertas.push({ codigo: 'ITEM_TESTE_ID_OBRIGATORIO', mensagem: 'itemTesteOperacionalIdV27A deve ser informado antes da escrita.' });
+      alertas.push({ codigo: 'ITEM_TESTE_ID_AUSENTE', mensagem: 'itemTesteOperacionalIdV27A deve ser informado antes da escrita.' });
     }
 
     try {
@@ -435,28 +468,33 @@ export class SharePointEnacRepository {
       }
 
       if (itemTesteId > 0) {
-        item = await this.obterRequisicaoOperacionalParaPreValidacao(itemTesteId);
+        leituraItem = await this.obterRequisicaoOperacionalParaPreValidacao(itemTesteId);
+        item = leituraItem.item;
       }
     } catch (error) {
       alertas.push({ codigo: itemTesteId > 0 ? 'ITEM_OU_PERFIL_NAO_RESOLVIDO' : 'PERFIL_NAO_RESOLVIDO', mensagem: this.getErrorMessage(error) });
     }
 
     const title = String(item?.Title || '');
-    const descricao = String(item?.Descri_x00e7__x00e3_o || '');
     const tipoSolicitacao = String(item?.TipodaSolicita_x00e7__x00e3_o || '');
-    const statusAtual = String(item?.StatusdaRequisi_x00e7__x00e3_o || '');
-    const marcadorEncontrado = Boolean(item && (title.indexOf(flags.marcadorTesteOperacionalV27A) >= 0 || descricao.indexOf(flags.marcadorTesteOperacionalV27A) >= 0));
+    const statusAtual = String(item?.[LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD] || '');
+    const camposComMarcador = item ? this.obterCamposComMarcadorV27A(item, flags.marcadorTesteOperacionalV27A) : [];
+    const marcadorEncontrado = camposComMarcador.length > 0;
     const transicaoPermitida = item ? this.transicaoPermitidaV27A(acaoPretendida, statusAtual, statusDestino) : false;
     const camposObrigatoriosPresentes = Boolean(title && statusAtual && tipoSolicitacao);
-    const snapshotExistenteId = item?.SnapshotAprovacaoCompra?.Id ? Number(item.SnapshotAprovacaoCompra.Id) : undefined;
-    const snapshotExistenteTitulo = item?.SnapshotAprovacaoCompra?.Title;
+    const snapshotExistenteId = leituraItem?.snapshotExistenteId;
+    const snapshotExistenteTitulo = leituraItem?.snapshotExistenteTitulo;
 
     if (itemTesteId > 0 && !item) {
-      alertas.push({ codigo: 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
+      alertas.push({ codigo: leituraItem?.statusHttp === 403 ? 'ERRO_REST_LISTA02' : 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: leituraItem?.erro || `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
     }
 
     if (item && !marcadorEncontrado) {
-      alertas.push({ codigo: 'ITEM_SEM_MARCADOR_TESTE_V27A', mensagem: `Item ${itemTesteId} deve conter ${flags.marcadorTesteOperacionalV27A} no titulo ou descricao.` });
+      alertas.push({ codigo: 'ITEM_TESTE_SEM_MARCADOR', mensagem: `Item ${itemTesteId} deve conter ${flags.marcadorTesteOperacionalV27A} no numero, codigo da obra, centro de custo, descricao ou observacoes.` });
+    }
+
+    if (item && !statusAtual) {
+      alertas.push({ codigo: 'STATUS_ATUAL_NAO_RESOLVIDO', mensagem: `Campo ${LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD} nao retornou valor.` });
     }
 
     if (item && !transicaoPermitida) {
@@ -485,6 +523,14 @@ export class SharePointEnacRepository {
       acaoPretendida,
       itemTesteId,
       itemEncontrado: Boolean(item),
+      listaConsulta: `${LISTA_02_REQUISICOES_COMPRA_TITULO} (${LISTAS_ENAC.requisicoesCompra})`,
+      modoAcessoLista: 'GUID',
+      itemIdSolicitado: itemTesteId,
+      statusHttpLeitura: leituraItem?.statusHttp,
+      erroLeituraItem: leituraItem?.erro,
+      camposRetornados: leituraItem?.camposRetornados,
+      camposComMarcador,
+      valoresCamposMarcador: item ? this.obterValoresCamposMarcadorV27A(item) : undefined,
       marcadorEncontrado,
       statusAtual,
       statusDestino,
@@ -493,7 +539,7 @@ export class SharePointEnacRepository {
       snapshotExistenteId,
       snapshotExistenteTitulo,
       historicoPrevisto: item ? `${flags.marcadorTesteOperacionalV27A} ${acaoPretendida} ${itemTesteId}` : undefined,
-      listaAlterada: 'Lista 02 — Requisições de Compra',
+      listaAlterada: LISTA_02_REQUISICOES_COMPRA_TITULO,
       campoAlterado: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' ? 'StatusdaRequisi_x00e7__x00e3_o' : 'ENAC Snapshots Regras',
       valorAnteriorPrevisto: statusAtual,
       valorNovoPrevisto: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' ? statusDestino : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`,
@@ -1280,11 +1326,62 @@ export class SharePointEnacRepository {
     };
   }
 
-  private async obterRequisicaoOperacionalParaPreValidacao(itemId: number): Promise<any> {
-    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${itemId})?$select=Id,Title,TipodaSolicita_x00e7__x00e3_o,Descri_x00e7__x00e3_o,StatusdaRequisi_x00e7__x00e3_o,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=SnapshotAprovacaoCompra`;
+  private async obterRequisicaoOperacionalParaPreValidacao(itemId: number): Promise<ResultadoLeituraItemOperacionalV27A> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${itemId})?$select=${LISTA_02_REQUISICOES_COMPRA_SELECT_PREVALIDACAO.join(',')}`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+    const statusHttp = response.status;
+
+    if (!response.ok) {
+      return {
+        statusHttp,
+        erro: `REST Lista 02 por GUID retornou ${response.status}: ${response.statusText}`
+      };
+    }
+
+    try {
+      const item = await response.json();
+      const snapshot = await this.obterSnapshotAprovacaoCompraOpcional(itemId);
+      return {
+        item,
+        statusHttp,
+        camposRetornados: Object.keys(item || {}).sort(),
+        snapshotExistenteId: snapshot.snapshotExistenteId,
+        snapshotExistenteTitulo: snapshot.snapshotExistenteTitulo,
+        erro: snapshot.erro
+      };
+    } catch (error) {
+      return {
+        statusHttp,
+        erro: `Erro de parsing da leitura do item ${itemId}: ${this.getErrorMessage(error)}`
+      };
+    }
+  }
+
+  private async obterSnapshotAprovacaoCompraOpcional(itemId: number): Promise<{ snapshotExistenteId?: number; snapshotExistenteTitulo?: string; erro?: string }> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${itemId})?$select=Id,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=SnapshotAprovacaoCompra`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
 
-    return this.ensureJson(response);
+    if (!response.ok) {
+      return { erro: `SnapshotAprovacaoCompra nao resolvido: ${response.status} ${response.statusText}` };
+    }
+
+    try {
+      const item = await response.json();
+      return {
+        snapshotExistenteId: item?.SnapshotAprovacaoCompra?.Id ? Number(item.SnapshotAprovacaoCompra.Id) : undefined,
+        snapshotExistenteTitulo: item?.SnapshotAprovacaoCompra?.Title
+      };
+    } catch (error) {
+      return { erro: `SnapshotAprovacaoCompra nao parseado: ${this.getErrorMessage(error)}` };
+    }
+  }
+
+  private obterCamposComMarcadorV27A(item: any, marcador: string): string[] {
+    return LISTA_02_REQUISICOES_COMPRA_CAMPOS_MARCADOR.filter((campo) => String(item?.[campo] || '').indexOf(marcador) >= 0);
+  }
+
+  private obterValoresCamposMarcadorV27A(item: any): string[] {
+    return LISTA_02_REQUISICOES_COMPRA_CAMPOS_MARCADOR.map((campo) => `${campo}: ${String(item?.[campo] || '-')}`);
   }
 
   private normalizarTexto(value: string | undefined): string {
