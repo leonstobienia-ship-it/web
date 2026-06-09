@@ -117,6 +117,8 @@ Na V2.7A.2B, a leitura do item de teste foi corrigida para usar a Lista 02 por G
 
 Na V2.7A.2C, a execucao foi corrigida apos a pre-validacao especifica aprovar o item 11. A interface deixou de chamar o metodo generico de atualizacao e passou a usar `executarAtualizacaoStatusRequisicaoV27A()`, restrito a revalidar o item por GET, executar MERGE apenas em `StatusdaRequisi_x00e7__x00e3_o` e registrar historico operacional. A primeira escrita permitida continua limitada ao status do item `V2.7A-TESTE`; pedido, NF, pagamento, snapshot e Power Automate seguem fora do escopo. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
 
+Na V2.7A.2D, Leon registrou a validacao manual da escrita operacional restrita corrigida na V2.7A.2C. Em 2026-06-08, o item 11 da `Lista 02 — Requisições de Compra`, marcado como `V2.7A-TESTE`, teve o campo `StatusdaRequisi_x00e7__x00e3_o` alterado de `Recebida` para `Aguardando aprovação`, com historico operacional criado e HTTP de escrita `204`. Nao houve `PATCH`/`DELETE`, nenhum outro item foi alterado, as flags V2.7A foram desligadas e a pagina foi republicada com flags desligadas. A validacao e restrita a transicao unica controlada de status; pedido, NF, pagamento, snapshot e Power Automate nao foram testados.
+
 ## Protótipo
 
 Abra no navegador:
@@ -195,6 +197,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a2a-prevalidacao-item-especifico.md`
 - `docs/v2.7a2b-correcao-leitura-item-teste.md`
 - `docs/v2.7a2c-correcao-execucao-status.md`
+- `docs/v2.7a2d-validacao-manual-escrita-operacional.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

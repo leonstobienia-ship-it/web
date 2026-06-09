@@ -213,3 +213,36 @@ Registrar manualmente:
 ## Resultado Esperado
 
 O teste so deve ser considerado aprovado se uma unica acao controlada for executada, restrita ao item `V2.7A-TESTE-001`, com rede coerente, sem erros, sem `PATCH/DELETE`, sem alteracao de item real e com flags desligadas ao final.
+
+## Resultado Manual V2.7A.2D
+
+Data-base: 2026-06-08
+
+Leon executou manualmente a validacao da V2.7A.2C e confirmou:
+
+| Conferencia | Resultado |
+| --- | --- |
+| Item 11 com status final `Aguardando aprovação` | Sim |
+| Historico operacional criado | Sim |
+| `PATCH`/`DELETE` no Network | Nao |
+| Item diferente do 11 alterado | Nao |
+| Flags V2.7A desligadas | Sim |
+| Pagina republicada com flags desligadas | Sim |
+
+Detalhes registrados:
+
+- pacote usado: `sharepoint/solution/enac-sistema-spfx.sppkg`;
+- commit tecnico validado: `0846fcb`;
+- item de teste: `11`;
+- marcador: `V2.7A-TESTE`;
+- acao: `AtualizarStatusRequisicao`;
+- campo alterado: `StatusdaRequisi_x00e7__x00e3_o`;
+- valor anterior: `Recebida`;
+- valor novo: `Aguardando aprovação`;
+- HTTP escrita: `204`;
+- mensagem de sucesso: `Executada: Status da requisição atualizado com controle V2.7A.2C e histórico registrado.`;
+- alertas de execucao: `-`.
+
+Conclusao: V2.7A.2C validada manualmente para escrita operacional restrita de status em item de teste, sem liberacao ampla de producao.
+
+Pedido, NF, pagamento, snapshot e Power Automate permanecem fora do escopo validado.
