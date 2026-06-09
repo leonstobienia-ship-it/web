@@ -6,6 +6,7 @@ declare const styles: {
   headerMeta: string;
   environmentBadge: string;
   contentPanel: string;
+  adminNotice: string;
   active: string;
   metrics: string;
   split: string;

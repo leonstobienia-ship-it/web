@@ -13,7 +13,7 @@
     display: grid;
     align-content: start;
     gap: 6px;
-    padding: 20px 16px;
+    padding: 16px 14px;
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     background: #151515;
     color: #ffffff;
@@ -172,27 +172,15 @@
 }
 
 .sideBrand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 52px;
+  display: block;
+  min-height: 30px;
   margin-bottom: 10px;
-  padding-bottom: 16px;
+  padding: 0 4px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  color: #d1d5db;
+  font-size: 12px;
   font-weight: 700;
-
-  img {
-    width: 86px;
-    max-height: 38px;
-    object-fit: contain;
-    padding: 5px 6px;
-    border-radius: 6px;
-    background: #ffffff;
-  }
-
-  span {
-    color: #ffffff;
-  }
+  text-transform: uppercase;
 }
 
 .appHeader {
@@ -201,10 +189,10 @@
   justify-content: space-between;
   gap: 18px;
   min-width: 0;
-  border-top: 4px solid #e52420;
+  border-top: 3px solid #e52420;
   border-radius: 8px;
   background: #ffffff;
-  padding: 18px;
+  padding: 10px 14px;
   box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
 }
 
@@ -215,8 +203,8 @@
   min-width: 0;
 
   img {
-    width: 112px;
-    max-height: 48px;
+    width: 98px;
+    max-height: 34px;
     object-fit: contain;
   }
 
@@ -226,13 +214,14 @@
 }
 
 .headerMeta {
-  display: grid;
-  justify-items: end;
-  gap: 10px;
-  min-width: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 360px;
 
   label {
-    width: 100%;
+    width: 220px;
     margin-bottom: 0;
   }
 }
@@ -248,6 +237,16 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 700;
+}
+
+.adminNotice {
+  border: 1px solid rgba(181, 71, 8, 0.2);
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #7c2d12;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .contentPanel {

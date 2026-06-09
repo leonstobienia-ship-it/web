@@ -24,17 +24,17 @@ import styles from './EnacSistema.module.scss';
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
 const enacLogo = require('../assets/enac-logo.png');
 const views = [
-  { key: 'dashboard', label: 'Visao Geral' },
-  { key: 'nova', label: 'Nova solicitacao' },
-  { key: 'minhas', label: 'Requisicoes' },
-  { key: 'cotacoes', label: 'Cotacoes' },
-  { key: 'aprovacoes', label: 'Aprovacoes' },
+  { key: 'dashboard', label: 'Visão geral' },
+  { key: 'nova', label: 'Nova solicitação' },
+  { key: 'minhas', label: 'Requisições' },
+  { key: 'cotacoes', label: 'Cotações' },
+  { key: 'aprovacoes', label: 'Aprovações' },
   { key: 'pedido', label: 'Pedidos' },
   { key: 'financeiro', label: 'Notas e pagamentos' },
-  { key: 'liberacao', label: 'Liberacao' },
-  { key: 'historico', label: 'Historico' },
-  { key: 'adminUsuarios', label: 'Usuarios' },
-  { key: 'adminAlcadas', label: 'Alcadas' },
+  { key: 'liberacao', label: 'Liberação' },
+  { key: 'historico', label: 'Histórico' },
+  { key: 'adminUsuarios', label: 'Usuários' },
+  { key: 'adminAlcadas', label: 'Alçadas' },
   { key: 'adminHistorico', label: 'Auditoria' }
 ];
 
@@ -63,6 +63,17 @@ const obras: IObraEnac[] = [
 
 const formatCurrency = (value: number | undefined): string =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
+
+const formatDisplayName = (value: string | undefined): string =>
+  String(value || '-')
+    .replace(/^V2\.3B-TESTE\s*-\s*/i, '')
+    .replace(/^usr-/i, '')
+    .trim() || '-';
+
+const formatUserInternalId = (value: string | undefined): string => {
+  const cleaned = formatDisplayName(value).replace(/^USR-/i, '');
+  return cleaned === '-' ? '-' : cleaned;
+};
 
 const alcadasIniciais: IAlcadaEnac[] = [
   { id: '1', regraInternaId: 'ALC-COMPRA-GUSTAVO-0001', processo: 'Compra', tipoSolicitacao: 'Todos', obra: 'Todas', valorMinimo: 0, valorMaximo: 20000, ilimitado: false, aprovadorPrincipalId: 'usr-gustavo', aprovadorPrincipalNome: 'Gustavo', aprovadorPrincipalEmail: 'gustavo@example.invalid', exigeAprovacaoAdicional: false, vigenciaInicial: '2026-06-02', ativa: true, observacoes: 'Parametro inicial editavel.' },
@@ -737,10 +748,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   return (
     <section className={styles.enacSistema}>
       <aside>
-        <div className={styles.sideBrand}>
-          <img src={enacLogo} alt="ENAC" />
-          <span>Sistema ENAC</span>
-        </div>
+        <div className={styles.sideBrand}>Módulos</div>
         {views.map((item) => (
           <button key={item.key} className={view === item.key ? styles.active : ''} onClick={() => setView(item.key)}>{item.label}</button>
         ))}
@@ -751,16 +759,16 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             <img src={enacLogo} alt="ENAC" />
             <div>
               <h1>Sistema ENAC</h1>
-              <p>Obras, compras, notas fiscais e programacao financeira</p>
+              <p>Obras, compras, NF e financeiro</p>
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.environmentBadge}>Homologacao assistida</span>
+            <span className={styles.environmentBadge}>Homologação assistida</span>
             <label>
               Perfil atual
               <select value={perfil} onChange={(event) => setPerfil(event.target.value as PerfilEnac)}>
                 <option value="Campo">Campo / Engenheiro</option>
-                <option value="CotacoesContratos">Cotacoes e Contratos / Kemilly</option>
+                <option value="CotacoesContratos">Cotações e Contratos / Kemilly</option>
                 <option value="ComprasFinanceiroOperacional">Compras e Financeiro Operacional / Matheus</option>
                 <option value="Planejamento">Planejamento / Gustavo</option>
                 <option value="Diretoria">Diretoria / Leon</option>
@@ -873,19 +881,19 @@ function NovaSolicitacao({ onSubmit }: { onSubmit: (form: FormData) => void }): 
   return (
     <form onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); }}>
       <label>Obra<select name="obra">{obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.nome}</option>)}</select></label>
-      <label>Tipo<select name="tipo"><option value="Material">Material</option><option value="Servico">Servico</option><option value="Locacao">Locacao</option><option value="Equipamento">Equipamento</option></select></label>
-      <label>Descricao do item/servico<input name="titulo" required /></label>
-      <label>Descricao complementar<textarea name="descricao" required /></label>
-      <label>Especificacao tecnica<textarea name="especificacaoTecnica" required /></label>
+      <label>Tipo<select name="tipo"><option value="Material">Material</option><option value="Servico">Serviço</option><option value="Locacao">Locação</option><option value="Equipamento">Equipamento</option></select></label>
+      <label>Descrição do item/serviço<input name="titulo" required /></label>
+      <label>Descrição complementar<textarea name="descricao" required /></label>
+      <label>Especificação técnica<textarea name="especificacaoTecnica" required /></label>
       <label>Quantidade<input name="quantidade" type="number" step="0.01" /></label>
       <label>Unidade<input name="unidade" /></label>
-      <label>Frente de servico/local<input name="frenteServico" required /></label>
-      <label>Data necessaria<input name="dataNecessaria" type="date" required /></label>
+      <label>Frente de serviço/local<input name="frenteServico" required /></label>
+      <label>Data necessária<input name="dataNecessaria" type="date" required /></label>
       <label>Prioridade<select name="prioridade"><option>Normal</option><option>Alta</option><option>Emergencial</option></select></label>
-      <label>Justificativa de urgencia<textarea name="justificativaUrgencia" /></label>
+      <label>Justificativa de urgência<textarea name="justificativaUrgencia" /></label>
       <label>Anexo/foto/projeto/referencia<input name="anexoReferencia" /></label>
-      <label>Observacoes<textarea name="observacoes" /></label>
-      <button type="submit">Enviar para cotacao</button>
+      <label>Observações<textarea name="observacoes" /></label>
+      <button type="submit">Enviar para cotação</button>
     </form>
   );
 }
@@ -895,12 +903,12 @@ function Cotacoes({ solicitacoes, selected, onSelect, onRegistrarCotacao }: { so
     <div className={styles.split}>
       <Tabela solicitacoes={solicitacoes.filter((item) => item.status === 'AguardandoCotacao' || item.status === 'EmCotacao')} onSelect={onSelect} />
       <form onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); onRegistrarCotacao(selected.id, Number(form.get('valor')), String(form.get('fornecedor'))); }}>
-        <h2>Cotacao por Kemilly</h2>
+        <h2>Cotação por Kemilly</h2>
         <p>{selected.id} - {selected.titulo}</p>
         <label>Fornecedor recomendado<input name="fornecedor" defaultValue={selected.cotacao?.fornecedorRecomendado} required /></label>
         <label>Valor recomendado<input name="valor" type="number" step="0.01" defaultValue={selected.cotacao?.valorRecomendado || 0} required /></label>
         <label>Justificativa<textarea name="justificativa" defaultValue={selected.cotacao?.justificativaRecomendacao} /></label>
-        <button type="submit">Enviar para aprovacao</button>
+        <button type="submit">Enviar para aprovação</button>
       </form>
     </div>
   );
@@ -910,7 +918,7 @@ function Aprovacoes({ solicitacoes, perfil, onApprove }: { solicitacoes: ISolici
   const aprovador = perfil === 'Planejamento' ? 'Gustavo' : perfil === 'Diretoria' ? 'Leon' : '';
   return (
     <>
-      <h2>Aprovacoes Pendentes</h2>
+      <h2>Aprovações pendentes</h2>
       {solicitacoes.filter((item) => item.status === 'AguardandoAprovacao' && (!aprovador || item.aprovadorExigido === aprovador)).map((item) => (
         <div className={styles.row} key={item.id}>
           <span>{item.id} - {item.titulo}<br />{item.snapshotAprovacaoCompra?.faixaValorVigente}</span>
@@ -938,7 +946,7 @@ function Pedido({ selected, onEmitirPedido }: { selected: ISolicitacaoEnac; onEm
 function Financeiro({ selected, onProgramarPagamento }: { selected: ISolicitacaoEnac; onProgramarPagamento: (id: string) => void }): JSX.Element {
   return (
     <form onSubmit={(event) => { event.preventDefault(); onProgramarPagamento(selected.id); }}>
-      <h2>NF e Programacao Bancaria por Matheus</h2>
+      <h2>NF e programação bancária por Matheus</h2>
       <p>{selected.id} - {selected.titulo}</p>
       <label>Numero da NF<input /></label>
       <label>Boleto ou dados de pagamento<input /></label>
@@ -951,7 +959,7 @@ function Financeiro({ selected, onProgramarPagamento }: { selected: ISolicitacao
 function Liberacao({ solicitacoes, onConcluir }: { solicitacoes: ISolicitacaoEnac[]; onConcluir: (id: string) => void }): JSX.Element {
   return (
     <>
-      <h2>Liberacao Bancaria por Leon</h2>
+      <h2>Liberação bancária por Leon</h2>
       {solicitacoes.filter((item) => item.status === 'AguardandoLiberacaoBancaria').map((item) => (
         <div className={styles.row} key={item.id}>
           <span>{item.id} - {item.titulo}<br />{item.programacaoBancaria?.dataProgramada}</span>
@@ -967,16 +975,34 @@ function AdminUsuarios({ usuarios: usuariosExibidos, origemDados }: { usuarios: 
   return (
     <>
       <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint readonly' : 'Fallback local'}</p>
+      <div className={styles.adminNotice}>
+        Edição administrativa preparada para homologação: perfil, status e justificativa devem passar por auditoria readonly, pré-validação e confirmação manual antes de qualquer escrita real.
+      </div>
       <table>
-        <thead><tr><th>Nome</th><th>Usuario interno</th><th>Perfil</th><th>Cargo/Função</th><th>Status</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Usuário interno</th><th>Perfil atual</th><th>Alterar perfil</th><th>Cargo/Função</th><th>Status</th><th>Alterar status</th></tr></thead>
         <tbody>
           {usuariosExibidos.map((usuario) => (
             <tr key={usuario.usuarioInternoId || usuario.id}>
-              <td>{usuario.nome}</td>
-              <td>{usuario.usuarioInternoId}</td>
+              <td>{formatDisplayName(usuario.nome)}</td>
+              <td>{formatUserInternalId(usuario.usuarioInternoId || usuario.id)}</td>
               <td>{usuario.perfilPrincipal}</td>
+              <td>
+                <select value={usuario.perfilPrincipal} disabled aria-label={`Perfil técnico de ${formatDisplayName(usuario.nome)}`}>
+                  <option value="Campo">Campo</option>
+                  <option value="CotacoesContratos">Cotações e Contratos</option>
+                  <option value="ComprasFinanceiroOperacional">Compras / Financeiro</option>
+                  <option value="Planejamento">Planejamento</option>
+                  <option value="Diretoria">Diretoria</option>
+                  <option value="AdministradorSistema">Administrador do Sistema</option>
+                </select>
+              </td>
               <td>{usuario.cargoFuncao || '-'}</td>
-              <td>{usuario.usuarioAtivo ? 'Ativo' : 'Inativo'}</td>
+              <td>
+                <select value={usuario.usuarioAtivo ? 'Ativo' : 'Inativo'} disabled aria-label={`Status técnico de ${formatDisplayName(usuario.nome)}`}>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Inativo">Inativo</option>
+                </select>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -993,7 +1019,7 @@ function AdminHistorico({ historico, origemDados }: { historico: IHistoricoConfi
         <thead><tr><th>Configuracao</th><th>Anterior</th><th>Novo</th><th>Usuario</th><th>Justificativa</th></tr></thead>
         <tbody>
           {historico.map((item, index) => (
-            <tr key={`${item.tipoConfiguracao}-${item.dataHora}-${index}`}><td>{item.tipoConfiguracao}</td><td>{item.valorAnterior}</td><td>{item.valorNovo}</td><td>{item.usuarioAlteracao}</td><td>{item.justificativa}</td></tr>
+            <tr key={`${item.tipoConfiguracao}-${item.dataHora}-${index}`}><td>{item.tipoConfiguracao}</td><td>{item.valorAnterior}</td><td>{item.valorNovo}</td><td>{formatDisplayName(item.usuarioAlteracao)}</td><td>{item.justificativa}</td></tr>
           ))}
         </tbody>
       </table>
@@ -1157,8 +1183,11 @@ function Alcadas({ alcadas, origemDados }: { alcadas: IAlcadaEnac[]; origemDados
   return (
     <>
       <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint readonly' : 'Fallback local'}</p>
+      <div className={styles.adminNotice}>
+        Alteração de alçadas por usuário preparada como ação controlada futura: depende de schema confirmado, pré-validação, confirmação manual e histórico.
+      </div>
       <table>
-        <thead><tr><th>Regra</th><th>Processo</th><th>Tipo</th><th>Faixa</th><th>Aprovador</th><th>Status</th></tr></thead>
+        <thead><tr><th>Regra</th><th>Processo</th><th>Tipo</th><th>Faixa</th><th>Aprovador</th><th>Prévia de limite</th><th>Status</th></tr></thead>
         <tbody>
           {alcadas.map((item) => (
             <tr key={item.id}>
@@ -1166,7 +1195,10 @@ function Alcadas({ alcadas, origemDados }: { alcadas: IAlcadaEnac[]; origemDados
               <td>{item.processo}</td>
               <td>{item.tipoSolicitacao}</td>
               <td>{formatCurrency(item.valorMinimo)}<br />{item.ilimitado ? 'Ilimitado' : formatCurrency(item.valorMaximo)}</td>
-              <td>{item.aprovadorPrincipalNome || item.aprovadorPrincipalId || '-'}</td>
+              <td>{formatDisplayName(item.aprovadorPrincipalNome || item.aprovadorPrincipalId || '-')}</td>
+              <td>
+                <input value={item.ilimitado ? 'Ilimitado' : String(item.valorMaximo || '')} disabled aria-label={`Limite técnico de ${item.regraInternaId || item.id}`} />
+              </td>
               <td>{item.ativa ? 'Ativa' : 'Inativa'}</td>
             </tr>
           ))}
@@ -1179,12 +1211,12 @@ function Alcadas({ alcadas, origemDados }: { alcadas: IAlcadaEnac[]; origemDados
 function Historico({ selected }: { selected: ISolicitacaoEnac }): JSX.Element {
   return (
     <>
-      <h2>Historico do Processo</h2>
+      <h2>Histórico do processo</h2>
       <p>{selected.id} - {selected.titulo}</p>
       {selected.historico.map((evento, index) => (
         <div className={styles.row} key={index}>
           <strong>{evento.descricao}</strong>
-          <span>{evento.autor} - {evento.statusNovo}</span>
+          <span>{formatDisplayName(evento.autor)} - {evento.statusNovo}</span>
         </div>
       ))}
     </>
