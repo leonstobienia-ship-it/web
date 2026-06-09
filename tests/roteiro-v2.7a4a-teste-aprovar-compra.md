@@ -116,3 +116,19 @@ Registrar:
 Somente depois de `AprovarCompra` validado, retomar `CriarPedidoCompra` com validacao readonly previa da Lista 03.
 
 Se o campo `SnapshotAprovacaoCompra` estiver vazio apos a aprovacao, interromper a rodada e nao seguir para pedido de compra.
+
+## Registro Final V2.7A.4E
+
+Leon confirmou manualmente que o teste de `AprovarCompra` foi concluido em 09/06/2026:
+
+- item `11`;
+- marcador `V2.7A-TESTE`;
+- status `Aguardando aprovação -> Aprovada para compra`;
+- snapshot preservado `3` / `SNAP-V2.7A-TESTE-11-20260609025123`;
+- historico criado;
+- HTTP escrita `204`;
+- aprovacao por Diretoria/alçada superior;
+- pedido, NF e pagamento nao criados;
+- Power Automate nao iniciado.
+
+Este roteiro fica encerrado para a acao `AprovarCompra` controlada, sem liberar producao ampla.
