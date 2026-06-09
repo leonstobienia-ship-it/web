@@ -79,6 +79,20 @@ const LISTA_02_REQUISICOES_COMPRA_CAMPOS_APROVACAO_NECESSARIA = [
   'AprovacaoNecessaria?',
   'Aprovação Necessária?'
 ];
+const LISTA_02_STATUS_REQUISICAO_CHOICES_CONFIRMADOS = [
+  'Recebida',
+  'Em análise',
+  'Aguardando aprovação',
+  'Aprovada para compra',
+  'Reprovada',
+  'Em cotação',
+  'Pedido de compra gerado',
+  'Aguardando entrega',
+  'Entregue / concluída',
+  'Suspensa',
+  'Cancelada'
+];
+const STATUS_APROVADO_COMPRA_V27A = 'Aprovada para compra';
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -497,6 +511,7 @@ export class SharePointEnacRepository {
     let aprovadorBaseNome: string | undefined;
     let aprovadorEfetivoNome: string | undefined;
     let snapshotPrevistoTitulo: string | undefined;
+    let snapshotAprovacao: ISnapshotRegraEnac | undefined;
     let criaraSnapshot = false;
     let vincularaSnapshotAprovacaoCompra = false;
     let registraraHistorico = false;
@@ -518,6 +533,10 @@ export class SharePointEnacRepository {
 
     if (item && !transicaoPermitida) {
       alertas.push({ codigo: 'TRANSICAO_NAO_PERMITIDA', mensagem: `Status atual "${statusAtual}" nao permite ${acaoPretendida} para "${statusDestino}".` });
+    }
+
+    if (item && !this.statusRequisicaoMapeadoV27A(statusDestino)) {
+      alertas.push({ codigo: 'STATUS_DESTINO_NAO_MAPEADO', mensagem: `Status destino "${statusDestino}" nao consta nas choices reais conhecidas da Lista 02.` });
     }
 
     if (item && !camposObrigatoriosPresentes) {
@@ -586,6 +605,71 @@ export class SharePointEnacRepository {
       }
     }
 
+    if (acaoPretendida === 'AprovarCompra') {
+      if (item && this.normalizarTexto(statusAtual) !== 'aguardandoaprovacao') {
+        alertas.push({ codigo: 'STATUS_NAO_ELEGIVEL_PARA_APROVACAO', mensagem: 'AprovarCompra exige status atual Aguardando aprovação.' });
+      }
+
+      if (this.normalizarTexto(statusDestino) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
+        alertas.push({ codigo: 'STATUS_DESTINO_NAO_MAPEADO', mensagem: `AprovarCompra deve usar a choice real "${STATUS_APROVADO_COMPRA_V27A}".` });
+      }
+
+      if (!snapshotExistenteId) {
+        alertas.push({ codigo: 'SNAPSHOT_OBRIGATORIO_AUSENTE', mensagem: 'AprovarCompra exige SnapshotAprovacaoCompra ja vinculado.' });
+      }
+
+      if (!config.valorTesteOperacionalV27A || config.valorTesteOperacionalV27A <= 0) {
+        alertas.push({ codigo: 'VALOR_TESTE_AUSENTE', mensagem: 'valorTesteOperacionalV27A deve ser maior que zero para aprovar compra.' });
+      }
+
+      const aprovacaoNecessaria = this.obterAprovacaoNecessaria(item);
+      aprovacaoNecessariaCampo = aprovacaoNecessaria.campo;
+      aprovacaoNecessariaValorBruto = this.formatarValorBrutoSharePoint(aprovacaoNecessaria.valorBruto);
+      aprovacaoNecessariaNormalizada = aprovacaoNecessaria.normalizado === true
+        ? 'Sim'
+        : aprovacaoNecessaria.normalizado === false
+          ? 'Nao'
+          : 'Nao resolvido';
+
+      if (item && aprovacaoNecessaria.normalizado === false) {
+        alertas.push({ codigo: 'APROVACAO_NAO_NECESSARIA', mensagem: `Aprovacao necessaria resolvida como Nao no campo ${aprovacaoNecessariaCampo || '-'}. Valor bruto: ${aprovacaoNecessariaValorBruto || '-'}.` });
+      }
+
+      if (item && aprovacaoNecessaria.normalizado === null) {
+        alertas.push({ codigo: 'APROVACAO_NECESSARIA_NAO_RESOLVIDA', mensagem: `Aprovacao necessaria nao resolvida. Campos candidatos: ${LISTA_02_REQUISICOES_COMPRA_CAMPOS_APROVACAO_NECESSARIA.join(', ')}.` });
+      }
+
+      if (item && snapshotExistenteId) {
+        try {
+          snapshotAprovacao = await this.obterSnapshotDaRequisicao(itemTesteId);
+
+          if (!snapshotAprovacao) {
+            alertas.push({ codigo: 'SNAPSHOT_OBRIGATORIO_AUSENTE', mensagem: `SnapshotAprovacaoCompra ${snapshotExistenteId} nao foi resolvido.` });
+          } else {
+            regraInternaId = snapshotAprovacao.regraAlcadaUtilizada;
+            resumoRegraAplicada = `${flags.marcadorTesteOperacionalV27A}; ${snapshotAprovacao.processo}; ${snapshotAprovacao.faixaValorVigente}; aprovador ${snapshotAprovacao.aprovadorBaseNome}`;
+            aprovadorBaseNome = snapshotAprovacao.aprovadorBaseNome;
+            aprovadorEfetivoNome = snapshotAprovacao.aprovadorEfetivoNome;
+            registraraHistorico = true;
+
+            if (!snapshotAprovacao.regraAlcadaUtilizada) {
+              alertas.push({ codigo: 'REGRA_ALCADA_NAO_RESOLVIDA', mensagem: 'Snapshot vinculado nao possui regra/alçada resolvida.' });
+            }
+
+            if (!snapshotAprovacao.aprovadorBaseNome || !snapshotAprovacao.aprovadorEfetivoNome) {
+              alertas.push({ codigo: 'APROVADOR_NAO_RESOLVIDO', mensagem: 'Snapshot vinculado nao possui aprovador base/efetivo resolvido.' });
+            }
+
+            if (usuarioAtual && !this.usuarioCorrespondeAoAprovadorSnapshotV27A(usuarioAtual, snapshotAprovacao)) {
+              alertas.push({ codigo: 'USUARIO_NAO_E_APROVADOR', mensagem: `Usuario atual nao corresponde ao aprovador efetivo/base do snapshot (${snapshotAprovacao.aprovadorEfetivoNome || snapshotAprovacao.aprovadorBaseNome || '-'}).` });
+            }
+          }
+        } catch (error) {
+          alertas.push({ codigo: 'REGRA_ALCADA_NAO_RESOLVIDA', mensagem: this.getErrorMessage(error) });
+        }
+      }
+    }
+
     const podeExecutar = Boolean(alertas.length === 0 && usuarioAtual && item && marcadorEncontrado && transicaoPermitida && camposObrigatoriosPresentes);
 
     return {
@@ -629,9 +713,9 @@ export class SharePointEnacRepository {
       registraraHistorico,
       historicoPrevisto: item ? `${flags.marcadorTesteOperacionalV27A} ${acaoPretendida} ${itemTesteId}` : undefined,
       listaAlterada: LISTA_02_REQUISICOES_COMPRA_TITULO,
-      campoAlterado: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' ? 'StatusdaRequisi_x00e7__x00e3_o' : 'ENAC Snapshots Regras',
+      campoAlterado: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra' ? LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD : 'ENAC Snapshots Regras',
       valorAnteriorPrevisto: statusAtual,
-      valorNovoPrevisto: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' ? statusDestino : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`,
+      valorNovoPrevisto: acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra' ? statusDestino : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`,
       podeExecutar,
       acoesPermitidas,
       alertas
@@ -1011,6 +1095,143 @@ export class SharePointEnacRepository {
         statusNovo: statusAtual,
         historicoRegistrado: false,
         statusHttpEscrita: vinculoResponse.status,
+        alertas: [{ codigo: 'HISTORICO_OPERACIONAL_FALHOU', mensagem: this.getErrorMessage(error) }]
+      };
+    }
+  }
+
+  public async executarAprovarCompraV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A, config: ConfiguracaoTesteOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const itemId = Number(config.itemTesteOperacionalIdV27A || 0);
+    const statusDestino = config.statusDestinoTesteOperacionalV27A || STATUS_APROVADO_COMPRA_V27A;
+    const observacao = config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - aprovação controlada para teste de pedido';
+    const preValidacao = await this.preValidarEscritaOperacionalRestritaV27A(emailOuLogin, flags, {
+      ...config,
+      statusDestinoTesteOperacionalV27A: statusDestino
+    });
+    const alertas: AlertaBloqueioEscrita[] = [...preValidacao.alertas];
+
+    if (!preValidacao.podeExecutar) {
+      alertas.push({ codigo: 'EXECUCAO_SEM_PREVALIDACAO_ESPECIFICA', mensagem: 'Pre-validacao especifica do item nao esta aprovada no momento da execucao.' });
+    }
+
+    if (preValidacao.itemTesteId !== itemId) {
+      alertas.push({ codigo: 'EXECUCAO_ITEM_DIVERGENTE', mensagem: `Item validado ${preValidacao.itemTesteId || '-'} difere do item configurado ${itemId || '-'}.` });
+    }
+
+    if (preValidacao.acaoPretendida !== 'AprovarCompra') {
+      alertas.push({ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Esta rodada permite somente AprovarCompra.' });
+    }
+
+    if (!preValidacao.marcadorEncontrado) {
+      alertas.push({ codigo: 'EXECUCAO_MARCADOR_NAO_CONFIRMADO', mensagem: 'Marcador V2.7A-TESTE nao foi confirmado no item.' });
+    }
+
+    if (this.normalizarTexto(preValidacao.statusAtual) === this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
+      alertas.push({ codigo: 'VALIDACAO_EXISTENTE', mensagem: 'Item ja esta aprovado para compra. Nenhuma nova escrita deve ser executada.' });
+    }
+
+    if (this.normalizarTexto(preValidacao.statusAtual) !== 'aguardandoaprovacao') {
+      alertas.push({ codigo: 'EXECUCAO_STATUS_ORIGEM_INVALIDO', mensagem: `Status origem invalido para aprovacao: ${preValidacao.statusAtual || '-'}.` });
+    }
+
+    if (this.normalizarTexto(preValidacao.statusDestino) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
+      alertas.push({ codigo: 'EXECUCAO_STATUS_DESTINO_INVALIDO', mensagem: `Status destino invalido para aprovacao: ${preValidacao.statusDestino || '-'}.` });
+    }
+
+    if (preValidacao.campoAlterado !== LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD) {
+      alertas.push({ codigo: 'EXECUCAO_CAMPO_STATUS_INVALIDO', mensagem: `Campo validado invalido: ${preValidacao.campoAlterado || '-'}.` });
+    }
+
+    if (!preValidacao.snapshotExistenteId) {
+      alertas.push({ codigo: 'EXECUCAO_SNAPSHOT_OBRIGATORIO_AUSENTE', mensagem: 'SnapshotAprovacaoCompra deve estar preenchido antes da aprovacao.' });
+    }
+
+    if (!preValidacao.regraInternaId) {
+      alertas.push({ codigo: 'EXECUCAO_REGRA_ALCADA_NAO_RESOLVIDA', mensagem: 'Regra de alcada nao foi resolvida pelo snapshot.' });
+    }
+
+    if (!preValidacao.aprovadorBaseNome || !preValidacao.aprovadorEfetivoNome) {
+      alertas.push({ codigo: 'EXECUCAO_APROVADOR_NAO_RESOLVIDO', mensagem: 'Aprovador base/efetivo nao foi resolvido pelo snapshot.' });
+    }
+
+    if (!preValidacao.acoesPermitidas.some((acao) => acao === 'AprovarCompra')) {
+      alertas.push({ codigo: 'EXECUCAO_PERFIL_SEM_PERMISSAO', mensagem: 'Perfil atual nao esta autorizado para AprovarCompra.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado(
+        'AprovarCompra',
+        `Aprovacao de compra bloqueada: ${alertas.map((alerta) => alerta.codigo).join(', ')}.`,
+        alertas,
+        itemId,
+        preValidacao.statusAtual
+      );
+    }
+
+    const leituraItem = await this.obterRequisicaoOperacionalParaPreValidacao(itemId);
+    const item = leituraItem.item;
+    const statusAtual = String(item?.[LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD] || '');
+    const camposComMarcador = item ? this.obterCamposComMarcadorV27A(item, flags.marcadorTesteOperacionalV27A) : [];
+
+    if (!item || camposComMarcador.length === 0 || this.normalizarTexto(statusAtual) !== 'aguardandoaprovacao' || !leituraItem.snapshotExistenteId) {
+      return this.criarResultadoOperacionalBloqueado('AprovarCompra', 'Revalidacao imediata do item bloqueou a aprovacao.', [
+        { codigo: 'EXECUCAO_REVALIDACAO_ITEM_FALHOU', mensagem: leituraItem.erro || `Status=${statusAtual || '-'}; snapshot=${leituraItem.snapshotExistenteId || '-'}.` }
+      ], itemId, statusAtual);
+    }
+
+    const response = await this.spHttpClient.post(
+      `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}(${itemId})`,
+      SPHttpClient.configurations.v1,
+      this.criarMergeOptions({ [LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD]: statusDestino })
+    );
+
+    if (!response.ok) {
+      return this.criarResultadoOperacionalBloqueado('AprovarCompra', `MERGE de aprovacao retornou ${response.status}: ${response.statusText}.`, [
+        { codigo: 'ERRO_MERGE_APROVACAO_COMPRA', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}` }
+      ], itemId, statusAtual);
+    }
+
+    try {
+      const historico = await this.registrarHistoricoOperacional({
+        origemLista: 'Lista 02',
+        origemItemId: itemId,
+        acao: 'AprovarCompra',
+        descricao: `${observacao}; snapshot ${leituraItem.snapshotExistenteId}; regra ${preValidacao.regraInternaId || '-'}; aprovador ${preValidacao.aprovadorEfetivoNome || '-'}; origem Webpart V2.7A.4A; sem Power Automate.`,
+        statusAnterior: statusAtual,
+        statusNovo: statusDestino,
+        marcadorTeste: flags.marcadorTesteOperacionalV27A
+      }, emailOuLogin, flags);
+
+      return {
+        sucesso: true,
+        bloqueado: false,
+        acao: 'AprovarCompra',
+        mensagem: 'Compra aprovada com controle V2.7A.4A e historico registrado.',
+        itemId,
+        snapshotItemId: leituraItem.snapshotExistenteId,
+        snapshotTitle: leituraItem.snapshotExistenteTitulo,
+        campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
+        statusAnterior: statusAtual,
+        statusNovo: statusDestino,
+        historicoRegistrado: historico.sucesso,
+        historicoItemId: historico.itemId,
+        statusHttpEscrita: response.status,
+        alertas: historico.alertas
+      };
+    } catch (error) {
+      return {
+        sucesso: true,
+        bloqueado: false,
+        acao: 'AprovarCompra',
+        mensagem: 'Compra aprovada, mas o historico operacional falhou e exige auditoria manual.',
+        itemId,
+        snapshotItemId: leituraItem.snapshotExistenteId,
+        snapshotTitle: leituraItem.snapshotExistenteTitulo,
+        campoAlterado: LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD,
+        statusAnterior: statusAtual,
+        statusNovo: statusDestino,
+        historicoRegistrado: false,
+        statusHttpEscrita: response.status,
         alertas: [{ codigo: 'HISTORICO_OPERACIONAL_FALHOU', mensagem: this.getErrorMessage(error) }]
       };
     }
@@ -1574,8 +1795,9 @@ export class SharePointEnacRepository {
         }
         return ['novarascunho', 'novasolicitacao', 'aguardandocotacao', 'emcotacao', 'cotada', 'aguardandoaprovacao'].indexOf(status) >= 0;
       case 'CriarSnapshotAprovacaoOperacional':
-      case 'AprovarCompra':
         return ['cotada', 'aguardandoaprovacao'].indexOf(status) >= 0;
+      case 'AprovarCompra':
+        return ['cotada', 'aguardandoaprovacao'].indexOf(status) >= 0 && destino === this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A);
       case 'CriarPedidoCompra':
         return ['aprovadaparacompra', 'aprovada'].indexOf(status) >= 0;
       case 'VincularNotaFiscal':
@@ -1775,6 +1997,34 @@ export class SharePointEnacRepository {
     }
 
     return String(valor);
+  }
+
+  private statusRequisicaoMapeadoV27A(status: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(status);
+    return LISTA_02_STATUS_REQUISICAO_CHOICES_CONFIRMADOS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private usuarioCorrespondeAoAprovadorSnapshotV27A(usuario: IUsuarioPerfilEnac, snapshot: ISnapshotRegraEnac): boolean {
+    const candidatosUsuario = [
+      usuario.id,
+      usuario.usuarioInternoId,
+      usuario.nome,
+      usuario.emailCorporativo,
+      usuario.contaMicrosoft365Email,
+      usuario.contaMicrosoft365Nome,
+      usuario.contaMicrosoft365Login
+    ].map((value) => this.normalizarTexto(value));
+    const candidatosSnapshot = [
+      snapshot.aprovadorEfetivoId,
+      snapshot.aprovadorEfetivoNome,
+      snapshot.aprovadorEfetivoEmail,
+      snapshot.aprovadorBaseId,
+      snapshot.aprovadorBaseNome,
+      snapshot.aprovadorBaseEmail
+    ].map((value) => this.normalizarTexto(value)).filter(Boolean);
+
+    return candidatosSnapshot.some((value) => candidatosUsuario.indexOf(value) >= 0);
   }
 
   private normalizarTexto(value: string | undefined): string {

@@ -483,14 +483,34 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
-    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional') {
+    if (config.acaoTesteOperacionalV27A === 'AprovarCompra' && (
+      preValidacaoOperacionalV27A.acaoPretendida !== 'AprovarCompra' ||
+      preValidacaoOperacionalV27A.statusDestino !== (config.statusDestinoTesteOperacionalV27A || 'Aprovada para compra') ||
+      preValidacaoOperacionalV27A.campoAlterado !== 'StatusdaRequisi_x00e7__x00e3_o' ||
+      !preValidacaoOperacionalV27A.snapshotExistenteId ||
+      !preValidacaoOperacionalV27A.regraInternaId ||
+      !preValidacaoOperacionalV27A.aprovadorBaseNome ||
+      !preValidacaoOperacionalV27A.aprovadorEfetivoNome
+    )) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: AprovarCompra exige pre-validacao especifica completa, snapshot e aprovador resolvidos.',
+        itemId,
+        alertas: [{ codigo: 'EXECUCAO_APROVACAO_PREVALIDACAO_INCOMPLETA', mensagem: 'Revise item, status destino, snapshot, regra e aprovador antes da escrita.' }]
+      });
+      return;
+    }
+
+    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional' && config.acaoTesteOperacionalV27A !== 'AprovarCompra') {
       setResultadoOperacionalV27A({
         sucesso: false,
         bloqueado: true,
         acao: config.acaoTesteOperacionalV27A,
         mensagem: 'Escrita V2.7A bloqueada: acao ainda nao preparada para teste manual.',
         itemId,
-        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao e CriarSnapshotAprovacaoOperacional estao preparados nesta fase.' }]
+        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional e AprovarCompra estao preparados nesta fase.' }]
       });
       return;
     }
@@ -499,6 +519,8 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     try {
       const resultado = config.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
         ? await props.repository.executarCriarSnapshotAprovacaoOperacionalV27A(props.currentUserEmail, flags, config)
+        : config.acaoTesteOperacionalV27A === 'AprovarCompra'
+          ? await props.repository.executarAprovarCompraV27A(props.currentUserEmail, flags, config)
         : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
 
       setResultadoOperacionalV27A(resultado);

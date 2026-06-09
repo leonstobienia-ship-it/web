@@ -127,6 +127,8 @@ Na V2.7A.3B, Leon validou manualmente o snapshot operacional no tenant. Em 2026-
 
 Na V2.7A.4, foi analisada a proxima acao `CriarPedidoCompra`. A regra atual do codigo e da documentacao exige status `Aprovada` ou `Aprovada para compra`; portanto o item `11`, ainda em `Aguardando aprovação`, nao esta elegivel para pedido. A Lista 03 de pedidos esta mapeada como `Lista 03 — Pedidos de Compra`, GUID `18ca132a-c36a-42aa-9968-d87ecd547a79`, mas seus campos obrigatorios reais ainda precisam de pre-validacao readonly antes de qualquer escrita. A acao de pedido nao foi liberada nesta rodada; a recomendacao e preparar antes uma etapa controlada de `AprovarCompra`.
 
+Na V2.7A.4A, foi preparada localmente a acao controlada `AprovarCompra`. A choice real confirmada no inventario sanitizado para o status aprovado da Lista 02 e `Aprovada para compra`; `Aprovada` nao consta como choice real da lista. A pre-validacao passa a exigir item `V2.7A-TESTE`, status atual `Aguardando aprovação`, `SnapshotAprovacaoCompra` preenchido, aprovacao necessaria resolvida, valor `6720`, regra/aprovador do snapshot resolvidos, usuario autenticado correspondente ao aprovador do snapshot, perfil permitido e confirmacao manual exata. A execucao futura fica restrita a MERGE somente em `StatusdaRequisi_x00e7__x00e3_o` e registro de historico operacional, sem criar pedido, NF, pagamento ou Power Automate. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -226,6 +228,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a2-teste-funcional-controlado.md`
 - `tests/roteiro-v2.7a3-teste-snapshot-operacional.md`
 - `tests/roteiro-v2.7a4-teste-criar-pedido-compra.md`
+- `tests/roteiro-v2.7a4a-teste-aprovar-compra.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`

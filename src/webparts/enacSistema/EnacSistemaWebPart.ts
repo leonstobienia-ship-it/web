@@ -162,7 +162,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                   label: 'V2.7A - acao operacional de teste',
                   options: [
                     { key: 'AtualizarStatusRequisicao', text: 'Atualizar status da requisicao' },
-                    { key: 'CriarSnapshotAprovacaoOperacional', text: 'Criar snapshot operacional' }
+                    { key: 'CriarSnapshotAprovacaoOperacional', text: 'Criar snapshot operacional' },
+                    { key: 'AprovarCompra', text: 'Aprovar compra' }
                   ]
                 }),
                 PropertyPaneTextField('statusDestinoTesteOperacionalV27A', {
@@ -214,8 +215,13 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
   }
 
   private getConfiguracaoTesteOperacionalV27A(): ConfiguracaoTesteOperacionalV27A {
-    const acao = this.properties.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
-      ? 'CriarSnapshotAprovacaoOperacional'
+    const acoesSuportadas: AcaoOperacionalV27A[] = [
+      'AtualizarStatusRequisicao',
+      'CriarSnapshotAprovacaoOperacional',
+      'AprovarCompra'
+    ];
+    const acao = acoesSuportadas.indexOf(this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A) >= 0
+      ? this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A
       : ACAO_OPERACIONAL_PADRAO_V27A;
 
     return {
