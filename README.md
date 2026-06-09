@@ -149,6 +149,8 @@ Na V2.7A.7B, `ProgramarPagamento` foi preparado localmente para usar a `Lista 10
 
 Na V2.7A.7C, Leon validou manualmente `ProgramarPagamento` no tenant em 09/06/2026. A acao criou a programacao financeira `Lista 10-3`, title `PAG-V2.7A-TESTE-NF-4-NF-V2.7A-TESTE-001-20260609161247`, a partir da NF `Lista 04-4` / `NF-V2.7A-TESTE-001`, pedido `Lista 03-3` e requisicao `Lista 02-11`. Foram confirmados fornecedor, obra, centro de custo `V2.7A-TESTE`, valor bruto/liquido `6720`, vencimento/data programada `16/06/2026`, status `Programado`, forma `Pix`, conta `Itaú ENAC`, categoria `Material de Obra`, origem `Compra de Material`, historico criado e HTTP escrita `201`. Pagamento efetivo, data de pagamento e comprovante nao foram criados; NF, pedido e requisicao nao foram alterados indevidamente; nao houve `PATCH`/`DELETE`. Power Automate nao foi verificado diretamente no run history, sem indicio observado e nao iniciado pelo Codex. A validacao nao representa liberacao ampla de producao.
 
+Na V2.8A, o fluxo manual completo foi consolidado documentalmente para preparar homologacao assistida: `Solicitacao -> Snapshot -> Aprovacao -> Pedido -> NF -> Programacao de Pagamento`. A rodada criou dossie tecnico, matriz de listas/campos/vinculos, matriz de status/transicoes, riscos pre-homologacao e roteiro de homologacao assistida. O fluxo esta pronto para homologacao assistida controlada, mas nao para producao ampla: ainda ha vinculos textuais temporarios entre requisicao/pedido/NF/programacao, status intermediarios nao testados, comprovantes/anexos e contabilidade fora do fluxo validado, e Power Automate continua sem inicio. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
+
 ## Protótipo
 
 Abra no navegador:
@@ -247,6 +249,10 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a7a-auditoria-readonly-lista-pagamentos.md`
 - `docs/v2.7a7b-ajuste-programar-pagamento-lista10.md`
 - `docs/v2.7a7c-validacao-manual-programar-pagamento.md`
+- `docs/v2.8a-consolidacao-fluxo-manual-completo.md`
+- `docs/v2.8a-matriz-listas-campos-vinculos.md`
+- `docs/v2.8a-matriz-status-transicoes.md`
+- `docs/v2.8a-riscos-e-pendencias-pre-homologacao.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -267,6 +273,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a5-teste-criar-pedido-compra.md`
 - `tests/roteiro-v2.7a6-teste-vincular-nota-fiscal.md`
 - `tests/roteiro-v2.7a7-teste-programar-pagamento.md`
+- `tests/roteiro-v2.8a-homologacao-assistida-fluxo-completo.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
