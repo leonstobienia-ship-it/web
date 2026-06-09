@@ -121,6 +121,61 @@ const LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS = [
   'CentrodeCusto',
   LISTA_03_PEDIDOS_COMPRA_DESCRICAO_FIELD
 ];
+const LISTA_04_NOTAS_FISCAIS_TITULO = 'Lista 04 - Notas Fiscais Recebidas';
+const LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD = 'N_x00ba_doPedido';
+const LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD = 'N_x00ba_daNotaFiscal';
+const LISTA_04_NOTAS_FISCAIS_SERIE_FIELD = 'S_x00e9_rieNF';
+const LISTA_04_NOTAS_FISCAIS_DATA_EMISSAO_FIELD = 'DatadeEmiss_x00e3_o';
+const LISTA_04_NOTAS_FISCAIS_DATA_VENCIMENTO_FIELD = 'DatadeVencimento';
+const LISTA_04_NOTAS_FISCAIS_VALOR_FIELD = 'ValorBrutodaNF';
+const LISTA_04_NOTAS_FISCAIS_TIPO_FIELD = 'TipodeNF';
+const LISTA_04_NOTAS_FISCAIS_STATUS_FIELD = 'StatusdaConfer_x00ea_ncia';
+const LISTA_04_NOTAS_FISCAIS_FORNECEDOR_FIELD = 'Fornecedor0Id';
+const LISTA_04_NOTAS_FISCAIS_OBRA_FIELD = 'ObraId';
+const LISTA_04_NOTAS_FISCAIS_LINK_FIELD = 'LinkdaNFnoSharePoint';
+const LISTA_04_NOTAS_FISCAIS_ENVIADA_CONTABILIDADE_FIELD = 'EnviadaparaContabilidade_x003f_';
+const LISTA_04_NOTAS_FISCAIS_STATUS_INICIAL = 'Recebida';
+const LISTA_04_NOTAS_FISCAIS_TIPO_INICIAL = 'Material';
+const LISTA_04_NOTAS_FISCAIS_CONTABILIDADE_INICIAL = 'não';
+const LISTA_04_STATUS_CHOICES_CONFIRMADOS = [
+  'Recebida',
+  'Em conferência',
+  'Aguardando correção do fornecedor',
+  'Aguardando aprovação',
+  'Aprovada para pagamento',
+  'Reprovada',
+  'Enviada para contabilidade',
+  'Cancelada'
+];
+const LISTA_04_TIPO_NF_CHOICES_CONFIRMADOS = [
+  'Material',
+  'Serviço',
+  'Locação',
+  'Equipamento',
+  'Transporte',
+  'EPI',
+  'Terceiro / Prestador',
+  'Taxa / Documento',
+  'Outro'
+];
+const LISTA_04_ENVIADA_CONTABILIDADE_CHOICES_CONFIRMADOS = ['sim', 'não'];
+const LISTA_04_NOTAS_FISCAIS_CAMPOS_PREVISTOS = [
+  'Title',
+  LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD,
+  LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD,
+  LISTA_04_NOTAS_FISCAIS_SERIE_FIELD,
+  LISTA_04_NOTAS_FISCAIS_DATA_EMISSAO_FIELD,
+  LISTA_04_NOTAS_FISCAIS_DATA_VENCIMENTO_FIELD,
+  LISTA_04_NOTAS_FISCAIS_VALOR_FIELD,
+  LISTA_04_NOTAS_FISCAIS_TIPO_FIELD,
+  LISTA_04_NOTAS_FISCAIS_STATUS_FIELD,
+  LISTA_04_NOTAS_FISCAIS_FORNECEDOR_FIELD,
+  LISTA_04_NOTAS_FISCAIS_OBRA_FIELD,
+  'CentrodeCusto',
+  'CNPJFornecedor',
+  LISTA_04_NOTAS_FISCAIS_LINK_FIELD,
+  LISTA_04_NOTAS_FISCAIS_ENVIADA_CONTABILIDADE_FIELD
+];
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
@@ -154,6 +209,26 @@ interface PedidoCompraExistenteV27A {
   id: number;
   title: string;
   vinculoTextual: string;
+}
+
+interface PedidoOrigemNotaFiscalV27A {
+  id: number;
+  title: string;
+  numeroRequisicao: string;
+  status: string;
+  valor: number;
+  obraId?: number;
+  centroCusto?: string;
+  fornecedorId?: number;
+  fornecedorTitulo?: string;
+  fornecedorLookup?: string;
+}
+
+interface NotaFiscalExistenteV27A {
+  id: number;
+  title: string;
+  numeroNotaFiscal: string;
+  numeroPedido: string;
 }
 
 /**
@@ -572,6 +647,20 @@ export class SharePointEnacRepository {
     let pedidoStatusInicial: string | undefined;
     let pedidoExistenteId: number | undefined;
     let pedidoExistenteTitulo: string | undefined;
+    let diagnosticoNotaFiscal: string[] | undefined;
+    let notaFiscalTituloPrevisto: string | undefined;
+    let notaFiscalNumeroPrevisto: string | undefined;
+    let notaFiscalPedidoId: number | undefined;
+    let notaFiscalPedidoTitulo: string | undefined;
+    let notaFiscalVinculoPedido: string | undefined;
+    let notaFiscalFornecedorId: number | undefined;
+    let notaFiscalFornecedorTitulo: string | undefined;
+    let notaFiscalObraId: number | undefined;
+    let notaFiscalStatusInicial: string | undefined;
+    let notaFiscalTipo: string | undefined;
+    let notaFiscalEnviadaContabilidade: string | undefined;
+    let notaFiscalExistenteId: number | undefined;
+    let notaFiscalExistenteTitulo: string | undefined;
 
     if (itemTesteId > 0 && !item) {
       alertas.push({ codigo: leituraItem?.statusHttp === 403 ? 'ERRO_REST_LISTA02' : 'ITEM_TESTE_NAO_ENCONTRADO', mensagem: leituraItem?.erro || `Item ${itemTesteId} nao foi encontrado na Lista 02.` });
@@ -827,9 +916,117 @@ export class SharePointEnacRepository {
       registraraHistorico = true;
     }
 
+    if (acaoPretendida === 'VincularNotaFiscal') {
+      const pedidoTesteId = Number(config.pedidoTesteIdV27A || 0);
+      const numeroNf = String(config.numeroNotaFiscalTesteV27A || '').trim();
+      const valorNf = Number(config.valorNotaFiscalTesteV27A || config.valorTesteOperacionalV27A || 0);
+      const tipoNf = config.tipoNotaFiscalTesteV27A || LISTA_04_NOTAS_FISCAIS_TIPO_INICIAL;
+      const statusNf = config.statusNotaFiscalInicialTesteV27A || LISTA_04_NOTAS_FISCAIS_STATUS_INICIAL;
+      const enviadaContabilidade = config.enviadaContabilidadeTesteV27A || LISTA_04_NOTAS_FISCAIS_CONTABILIDADE_INICIAL;
+      let pedidoOrigem: PedidoOrigemNotaFiscalV27A | undefined;
+
+      notaFiscalPedidoId = pedidoTesteId > 0 ? pedidoTesteId : undefined;
+      notaFiscalNumeroPrevisto = numeroNf;
+      notaFiscalStatusInicial = statusNf;
+      notaFiscalTipo = tipoNf;
+      notaFiscalEnviadaContabilidade = enviadaContabilidade;
+      notaFiscalTituloPrevisto = pedidoTesteId > 0 ? this.criarTituloNotaFiscalV27A(pedidoTesteId, config) : undefined;
+      diagnosticoNotaFiscal = [
+        `Lista 04 por GUID ${LISTAS_ENAC.notasFiscaisRecebidas}.`,
+        `Campo obrigatorio ${LISTA_04_NOTAS_FISCAIS_ENVIADA_CONTABILIDADE_FIELD} confirmado com choices sim/não; valor inicial ${enviadaContabilidade}.`,
+        `Campos previstos: ${LISTA_04_NOTAS_FISCAIS_CAMPOS_PREVISTOS.join(', ')}.`
+      ];
+
+      if (!pedidoTesteId || pedidoTesteId <= 0) {
+        alertas.push({ codigo: 'PEDIDO_TESTE_NAO_ENCONTRADO', mensagem: 'pedidoTesteIdV27A deve informar o item de pedido de teste da Lista 03.' });
+      } else {
+        try {
+          pedidoOrigem = await this.obterPedidoOrigemNotaFiscalV27A(pedidoTesteId);
+          notaFiscalPedidoTitulo = pedidoOrigem.title;
+          notaFiscalVinculoPedido = this.obterVinculoPedidoNotaFiscalV27A(pedidoOrigem);
+          notaFiscalFornecedorId = pedidoOrigem.fornecedorId;
+          notaFiscalFornecedorTitulo = pedidoOrigem.fornecedorLookup || pedidoOrigem.fornecedorTitulo;
+          notaFiscalObraId = pedidoOrigem.obraId;
+        } catch (error) {
+          alertas.push({ codigo: 'ERRO_REST_LISTA03', mensagem: this.getErrorMessage(error) });
+        }
+      }
+
+      if (item && this.normalizarTexto(statusAtual) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A)) {
+        alertas.push({ codigo: 'PEDIDO_STATUS_NAO_ELEGIVEL_PARA_NF', mensagem: 'VincularNotaFiscal exige requisicao origem preservada em Aprovada para compra.' });
+      }
+
+      if (!snapshotExistenteId) {
+        alertas.push({ codigo: 'SNAPSHOT_OBRIGATORIO_AUSENTE', mensagem: 'VincularNotaFiscal exige SnapshotAprovacaoCompra preservado na requisicao origem.' });
+      }
+
+      if (pedidoOrigem) {
+        if (pedidoOrigem.numeroRequisicao !== 'V2.7A-TESTE-001') {
+          alertas.push({ codigo: 'PEDIDO_SEM_VINCULO_REQUISICAO', mensagem: `Pedido ${pedidoTesteId} nao esta vinculado a V2.7A-TESTE-001.` });
+        }
+
+        if (!this.statusPedidoElegivelParaNotaFiscalV27A(pedidoOrigem.status)) {
+          alertas.push({ codigo: 'PEDIDO_STATUS_NAO_ELEGIVEL_PARA_NF', mensagem: `Status do pedido nao elegivel para NF de teste: ${pedidoOrigem.status || '-'}.` });
+        }
+
+        if (!pedidoOrigem.fornecedorId) {
+          alertas.push({ codigo: 'FORNECEDOR_PEDIDO_AUSENTE', mensagem: 'Pedido de origem nao possui Fornecedor0 preenchido.' });
+        }
+
+        if (!pedidoOrigem.obraId) {
+          alertas.push({ codigo: 'OBRA_PEDIDO_AUSENTE', mensagem: 'Pedido de origem nao possui ObraId preenchido.' });
+        }
+
+        if (Math.abs(pedidoOrigem.valor - 6720) > 0.009 || (valorNf > 0 && Math.abs(pedidoOrigem.valor - valorNf) > 0.009)) {
+          alertas.push({ codigo: 'VALOR_NF_TESTE_AUSENTE', mensagem: `Valor do pedido/NF deve ser 6720. Pedido=${pedidoOrigem.valor}; NF=${valorNf || '-'}.` });
+        }
+      }
+
+      if (!numeroNf) {
+        alertas.push({ codigo: 'NUMERO_NF_TESTE_AUSENTE', mensagem: 'numeroNotaFiscalTesteV27A deve ser informado.' });
+      }
+
+      if (!valorNf || valorNf <= 0) {
+        alertas.push({ codigo: 'VALOR_NF_TESTE_AUSENTE', mensagem: 'valorNotaFiscalTesteV27A deve ser maior que zero.' });
+      }
+
+      if (!this.statusNotaFiscalInicialMapeadoV27A(statusNf)) {
+        alertas.push({ codigo: 'STATUS_NF_INICIAL_NAO_MAPEADO', mensagem: `Status inicial da NF "${statusNf}" nao consta nas choices confirmadas da Lista 04.` });
+      }
+
+      if (!this.tipoNotaFiscalMapeadoV27A(tipoNf)) {
+        alertas.push({ codigo: 'TIPO_NF_NAO_MAPEADO', mensagem: `Tipo de NF "${tipoNf}" nao consta nas choices confirmadas da Lista 04.` });
+      }
+
+      if (!this.enviadaContabilidadeMapeadoV27A(enviadaContabilidade)) {
+        alertas.push({ codigo: 'ENVIADA_CONTABILIDADE_CHOICE_NAO_RESOLVIDA', mensagem: `Valor "${enviadaContabilidade}" nao consta nas choices confirmadas de Enviada para Contabilidade?.` });
+      }
+
+      if (!enviadaContabilidade) {
+        alertas.push({ codigo: 'ENVIADA_CONTABILIDADE_OBRIGATORIA_AUSENTE', mensagem: 'Enviada para Contabilidade? e obrigatoria na Lista 04.' });
+      }
+
+      if (pedidoOrigem && numeroNf) {
+        try {
+          const nfExistente = await this.obterNotaFiscalExistenteV27A(this.obterVinculoPedidoNotaFiscalV27A(pedidoOrigem), numeroNf);
+          if (nfExistente) {
+            notaFiscalExistenteId = nfExistente.id;
+            notaFiscalExistenteTitulo = nfExistente.title;
+            alertas.push({ codigo: 'NF_TESTE_JA_EXISTENTE', mensagem: `NF existente encontrada: ${nfExistente.id} / ${nfExistente.title}.` });
+          }
+        } catch (error) {
+          alertas.push({ codigo: 'ERRO_REST_LISTA04', mensagem: this.getErrorMessage(error) });
+        }
+      }
+
+      registraraHistorico = true;
+    }
+
     const podeExecutar = Boolean(alertas.length === 0 && usuarioAtual && item && marcadorEncontrado && transicaoPermitida && camposObrigatoriosPresentes);
     const listaAlterada = acaoPretendida === 'CriarPedidoCompra'
       ? `${LISTA_03_PEDIDOS_COMPRA_TITULO} (${LISTAS_ENAC.pedidosCompra})`
+      : acaoPretendida === 'VincularNotaFiscal'
+        ? `${LISTA_04_NOTAS_FISCAIS_TITULO} (${LISTAS_ENAC.notasFiscaisRecebidas})`
       : acaoPretendida === 'CriarSnapshotAprovacaoOperacional'
         ? 'ENAC Snapshots Regras'
         : LISTA_02_REQUISICOES_COMPRA_TITULO;
@@ -837,11 +1034,15 @@ export class SharePointEnacRepository {
       ? LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD
       : acaoPretendida === 'CriarPedidoCompra'
         ? LISTA_03_PEDIDOS_COMPRA_CAMPOS_PREVISTOS.join(', ')
+        : acaoPretendida === 'VincularNotaFiscal'
+          ? LISTA_04_NOTAS_FISCAIS_CAMPOS_PREVISTOS.join(', ')
         : 'ENAC Snapshots Regras';
     const valorNovoPrevisto = acaoPretendida === 'AtualizarStatusRequisicao' || acaoPretendida === 'AtualizarRequisicaoCompra' || acaoPretendida === 'AprovarCompra'
       ? statusDestino
       : acaoPretendida === 'CriarPedidoCompra'
         ? `POST Lista 03: Title=${pedidoTituloPrevisto || '-'}; ${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD}=${pedidoVinculoTextual || '-'}; ObraId=${item?.ObraId || '-'}; Fornecedor0Id=${pedidoFornecedorId || '-'}; ValordoPedido=${config.valorTesteOperacionalV27A || 0}; StatusdoPedido=${pedidoStatusInicial || '-'}`
+        : acaoPretendida === 'VincularNotaFiscal'
+          ? `POST Lista 04: Title=${notaFiscalTituloPrevisto || '-'}; ${LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD}=${notaFiscalVinculoPedido || '-'}; ${LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD}=${notaFiscalNumeroPrevisto || '-'}; Fornecedor0Id=${notaFiscalFornecedorId || '-'}; ObraId=${notaFiscalObraId || '-'}; ValorBrutodaNF=${config.valorNotaFiscalTesteV27A || config.valorTesteOperacionalV27A || 0}; Status=${notaFiscalStatusInicial || '-'}; Contabilidade=${notaFiscalEnviadaContabilidade || '-'}`
         : `Snapshot V2.7A para ${config.valorTesteOperacionalV27A || 0}`;
 
     return {
@@ -893,6 +1094,20 @@ export class SharePointEnacRepository {
       pedidoStatusInicial,
       pedidoExistenteId,
       pedidoExistenteTitulo,
+      diagnosticoNotaFiscal,
+      notaFiscalTituloPrevisto,
+      notaFiscalNumeroPrevisto,
+      notaFiscalPedidoId,
+      notaFiscalPedidoTitulo,
+      notaFiscalVinculoPedido,
+      notaFiscalFornecedorId,
+      notaFiscalFornecedorTitulo,
+      notaFiscalObraId,
+      notaFiscalStatusInicial,
+      notaFiscalTipo,
+      notaFiscalEnviadaContabilidade,
+      notaFiscalExistenteId,
+      notaFiscalExistenteTitulo,
       snapshotPrevistoTitulo,
       criaraSnapshot,
       vincularaSnapshotAprovacaoCompra,
@@ -1650,37 +1865,163 @@ export class SharePointEnacRepository {
   }
 
   public async vincularNotaFiscalControlada(id: number, payload: NotaFiscalControladaPayload, emailOuLogin: string, flags: FlagsEscritaOperacionalV27A): Promise<ResultadoOperacionalV27A> {
-    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
-    const alertas = this.validarPermissaoAcao('VincularNotaFiscal', { title: `${payload.marcadorTeste} ${payload.numeroNf}`, status: 'Pedido emitido' }, usuario, flags);
+    void id;
+    void payload;
+    void emailOuLogin;
+    void flags;
+    return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', 'Metodo legado bloqueado. Use executarVincularNotaFiscalV27A com schema real da Lista 04.', [
+      { codigo: 'METODO_LEGADO_NF_BLOQUEADO', mensagem: 'A Lista 04 exige Fornecedor0Id, ObraId e EnviadaparaContabilidade_x003f_; o fluxo V2.7A.6B usa schema auditado.' }
+    ]);
+  }
 
-    if (!payload.numeroNf || payload.valor <= 0) {
-      alertas.push({ codigo: 'NF_INCOMPLETA', mensagem: 'Numero e valor da NF sao obrigatorios.' });
+  public async executarVincularNotaFiscalV27A(emailOuLogin: string, flags: FlagsEscritaOperacionalV27A, config: ConfiguracaoTesteOperacionalV27A): Promise<ResultadoOperacionalV27A> {
+    const requisicaoItemId = Number(config.itemTesteOperacionalIdV27A || 0);
+    const pedidoId = Number(config.pedidoTesteIdV27A || 0);
+    const numeroNf = String(config.numeroNotaFiscalTesteV27A || '').trim();
+    const valorNf = Number(config.valorNotaFiscalTesteV27A || config.valorTesteOperacionalV27A || 0);
+    const tipoNf = config.tipoNotaFiscalTesteV27A || LISTA_04_NOTAS_FISCAIS_TIPO_INICIAL;
+    const statusNf = config.statusNotaFiscalInicialTesteV27A || LISTA_04_NOTAS_FISCAIS_STATUS_INICIAL;
+    const enviadaContabilidade = config.enviadaContabilidadeTesteV27A || LISTA_04_NOTAS_FISCAIS_CONTABILIDADE_INICIAL;
+    const preValidacao = await this.preValidarEscritaOperacionalRestritaV27A(emailOuLogin, flags, config);
+    const alertas: AlertaBloqueioEscrita[] = [...preValidacao.alertas];
+
+    if (!preValidacao.podeExecutar) {
+      alertas.push({ codigo: 'EXECUCAO_SEM_PREVALIDACAO_ESPECIFICA', mensagem: 'Pre-validacao especifica do item nao esta aprovada no momento da execucao.' });
+    }
+
+    if (preValidacao.acaoPretendida !== 'VincularNotaFiscal') {
+      alertas.push({ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Esta rotina permite somente VincularNotaFiscal.' });
+    }
+
+    if (preValidacao.itemTesteId !== requisicaoItemId) {
+      alertas.push({ codigo: 'EXECUCAO_ITEM_DIVERGENTE', mensagem: `Requisicao validada ${preValidacao.itemTesteId || '-'} difere da configurada ${requisicaoItemId || '-'}.` });
+    }
+
+    if (!preValidacao.marcadorEncontrado) {
+      alertas.push({ codigo: 'EXECUCAO_MARCADOR_NAO_CONFIRMADO', mensagem: 'Marcador V2.7A-TESTE nao foi confirmado na requisicao origem.' });
+    }
+
+    if (!pedidoId || pedidoId <= 0) {
+      alertas.push({ codigo: 'PEDIDO_TESTE_NAO_ENCONTRADO', mensagem: 'pedidoTesteIdV27A deve ser informado.' });
+    }
+
+    if (!numeroNf) {
+      alertas.push({ codigo: 'NUMERO_NF_TESTE_AUSENTE', mensagem: 'numeroNotaFiscalTesteV27A deve ser informado.' });
+    }
+
+    if (!valorNf || valorNf <= 0) {
+      alertas.push({ codigo: 'VALOR_NF_TESTE_AUSENTE', mensagem: 'valorNotaFiscalTesteV27A deve ser maior que zero.' });
+    }
+
+    if (!this.statusNotaFiscalInicialMapeadoV27A(statusNf)) {
+      alertas.push({ codigo: 'STATUS_NF_INICIAL_NAO_MAPEADO', mensagem: `Status inicial da NF invalido: ${statusNf}.` });
+    }
+
+    if (!this.tipoNotaFiscalMapeadoV27A(tipoNf)) {
+      alertas.push({ codigo: 'TIPO_NF_NAO_MAPEADO', mensagem: `Tipo de NF invalido: ${tipoNf}.` });
+    }
+
+    if (!this.enviadaContabilidadeMapeadoV27A(enviadaContabilidade)) {
+      alertas.push({ codigo: 'ENVIADA_CONTABILIDADE_CHOICE_NAO_RESOLVIDA', mensagem: `Valor invalido para Enviada para Contabilidade?: ${enviadaContabilidade}.` });
+    }
+
+    if (!preValidacao.acoesPermitidas.some((acao) => acao === 'VincularNotaFiscal')) {
+      alertas.push({ codigo: 'EXECUCAO_PERFIL_SEM_PERMISSAO', mensagem: 'Perfil atual nao esta autorizado para VincularNotaFiscal.' });
     }
 
     if (alertas.length > 0) {
-      return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', 'Vinculo de NF bloqueado.', alertas, id);
+      return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', `Vinculo de NF bloqueado: ${alertas.map((alerta) => alerta.codigo).join(', ')}.`, alertas, pedidoId);
+    }
+
+    const leituraItem = await this.obterRequisicaoOperacionalParaPreValidacao(requisicaoItemId);
+    const requisicao = leituraItem.item;
+    const statusRequisicao = String(requisicao?.[LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD] || '');
+    const camposComMarcador = requisicao ? this.obterCamposComMarcadorV27A(requisicao, flags.marcadorTesteOperacionalV27A) : [];
+
+    if (!requisicao || camposComMarcador.length === 0 || this.normalizarTexto(statusRequisicao) !== this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A) || !leituraItem.snapshotExistenteId) {
+      return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', 'Revalidacao imediata da requisicao origem bloqueou a NF.', [
+        { codigo: 'EXECUCAO_REVALIDACAO_REQUISICAO_FALHOU', mensagem: leituraItem.erro || `Status=${statusRequisicao || '-'}; snapshot=${leituraItem.snapshotExistenteId || '-'}.` }
+      ], pedidoId, statusRequisicao);
+    }
+
+    const pedido = await this.obterPedidoOrigemNotaFiscalV27A(pedidoId);
+    const vinculoPedido = this.obterVinculoPedidoNotaFiscalV27A(pedido);
+
+    if (pedido.numeroRequisicao !== 'V2.7A-TESTE-001' || !pedido.fornecedorId || !pedido.obraId || !this.statusPedidoElegivelParaNotaFiscalV27A(pedido.status)) {
+      return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', 'Revalidacao imediata do pedido bloqueou a NF.', [
+        { codigo: 'EXECUCAO_REVALIDACAO_PEDIDO_FALHOU', mensagem: `Requisicao=${pedido.numeroRequisicao || '-'}; status=${pedido.status || '-'}; fornecedor=${pedido.fornecedorId || '-'}; obra=${pedido.obraId || '-'}.` }
+      ], pedidoId, statusRequisicao);
+    }
+
+    const nfExistente = await this.obterNotaFiscalExistenteV27A(vinculoPedido, numeroNf);
+    if (nfExistente) {
+      return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', 'NF de teste ja existente para o pedido.', [
+        { codigo: 'NF_TESTE_JA_EXISTENTE', mensagem: `${nfExistente.id} / ${nfExistente.title}` }
+      ], pedidoId, statusRequisicao);
+    }
+
+    const now = new Date();
+    const dataEmissao = config.dataEmissaoNotaFiscalTesteV27A || now.toISOString();
+    const dataVencimento = config.dataVencimentoNotaFiscalTesteV27A || this.addDays(now, 7).toISOString();
+    const tituloNf = this.criarTituloNotaFiscalV27A(pedidoId, config, now);
+    const body: Record<string, unknown> = {
+      Title: tituloNf,
+      [LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD]: vinculoPedido,
+      [LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD]: numeroNf,
+      [LISTA_04_NOTAS_FISCAIS_SERIE_FIELD]: config.serieNotaFiscalTesteV27A || '1',
+      [LISTA_04_NOTAS_FISCAIS_DATA_EMISSAO_FIELD]: dataEmissao,
+      [LISTA_04_NOTAS_FISCAIS_DATA_VENCIMENTO_FIELD]: dataVencimento,
+      [LISTA_04_NOTAS_FISCAIS_VALOR_FIELD]: valorNf,
+      [LISTA_04_NOTAS_FISCAIS_TIPO_FIELD]: tipoNf,
+      [LISTA_04_NOTAS_FISCAIS_STATUS_FIELD]: statusNf,
+      [LISTA_04_NOTAS_FISCAIS_FORNECEDOR_FIELD]: pedido.fornecedorId,
+      [LISTA_04_NOTAS_FISCAIS_OBRA_FIELD]: pedido.obraId,
+      CentrodeCusto: pedido.centroCusto || '',
+      CNPJFornecedor: pedido.fornecedorLookup || '',
+      [LISTA_04_NOTAS_FISCAIS_ENVIADA_CONTABILIDADE_FIELD]: enviadaContabilidade
+    };
+
+    if (config.linkNotaFiscalTesteV27A) {
+      body[LISTA_04_NOTAS_FISCAIS_LINK_FIELD] = { Url: config.linkNotaFiscalTesteV27A, Description: config.linkNotaFiscalTesteV27A };
     }
 
     const response = await this.spHttpClient.post(
       this.getListItemsEndpoint(LISTAS_ENAC.notasFiscaisRecebidas),
       SPHttpClient.configurations.v1,
-      this.criarPostOptions({
-        Title: `${payload.marcadorTeste} ${payload.numeroNf}`,
-        N_x00ba_daNotaFiscal: payload.numeroNf,
-        ValorBrutodaNF: payload.valor,
-        DatadeEmiss_x00e3_o: payload.dataEmissao,
-        DatadeVencimento: payload.dataVencimento,
-        StatusdaConfer_x00ea_ncia: 'Recebida'
-      })
+      this.criarPostOptions(body)
     );
-    const item = await this.ensureJson(response);
+
+    if (!response.ok) {
+      return this.criarResultadoOperacionalBloqueado('VincularNotaFiscal', `POST de NF retornou ${response.status}: ${response.statusText}.`, [
+        { codigo: 'ERRO_POST_NOTA_FISCAL', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}` }
+      ], pedidoId, statusRequisicao);
+    }
+
+    const nf = await this.ensureJson(response);
+    const nfId = Number(nf.Id || nf.ID);
+    const historico = await this.registrarHistoricoOperacional({
+      origemLista: 'Lista 03',
+      origemItemId: pedidoId,
+      acao: 'VincularNotaFiscal',
+      descricao: `${config.observacaoTesteOperacionalV27A || 'V2.7A-TESTE - vinculacao controlada de nota fiscal'}; NF ${nfId}/${tituloNf}; pedido ${pedidoId}/${vinculoPedido}; numero ${numeroNf}; valor ${valorNf}; status inicial ${statusNf}; enviada contabilidade ${enviadaContabilidade}; origem Webpart V2.7A.6B; sem pagamento; sem Power Automate.`,
+      statusAnterior: pedido.status,
+      statusNovo: pedido.status,
+      marcadorTeste: flags.marcadorTesteOperacionalV27A
+    }, emailOuLogin, flags);
+
     return {
       sucesso: true,
       bloqueado: false,
       acao: 'VincularNotaFiscal',
-      mensagem: 'Nota fiscal V2.7A-TESTE vinculada.',
-      itemId: Number(item.Id || item.ID),
-      alertas: []
+      mensagem: 'Nota fiscal criada na Lista 04 com controle V2.7A.6B e historico registrado.',
+      itemId: nfId,
+      campoAlterado: LISTA_04_NOTAS_FISCAIS_CAMPOS_PREVISTOS.join(', '),
+      statusAnterior: pedido.status,
+      statusNovo: pedido.status,
+      historicoRegistrado: historico.sucesso,
+      historicoItemId: historico.itemId,
+      statusHttpEscrita: response.status,
+      alertas: historico.alertas
     };
   }
 
@@ -2173,7 +2514,7 @@ export class SharePointEnacRepository {
       case 'CriarPedidoCompra':
         return ['aprovadaparacompra', 'aprovada'].indexOf(status) >= 0;
       case 'VincularNotaFiscal':
-        return ['pedidoemitido', 'comprarealizadaaguardandonf'].indexOf(status) >= 0;
+        return ['aprovadaparacompra', 'pedidoemitido', 'comprarealizadaaguardandonf'].indexOf(status) >= 0;
       case 'ProgramarPagamento':
         return ['nfvinculada', 'aguardandoprogramacaofinanceira'].indexOf(status) >= 0;
       default:
@@ -2440,6 +2781,98 @@ export class SharePointEnacRepository {
         vinculoTextual: item[LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD] || ''
       }
       : undefined;
+  }
+
+  private statusNotaFiscalInicialMapeadoV27A(status: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(status || LISTA_04_NOTAS_FISCAIS_STATUS_INICIAL);
+    return LISTA_04_STATUS_CHOICES_CONFIRMADOS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private tipoNotaFiscalMapeadoV27A(tipo: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(tipo || LISTA_04_NOTAS_FISCAIS_TIPO_INICIAL);
+    return LISTA_04_TIPO_NF_CHOICES_CONFIRMADOS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private enviadaContabilidadeMapeadoV27A(valor: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(valor || LISTA_04_NOTAS_FISCAIS_CONTABILIDADE_INICIAL);
+    return LISTA_04_ENVIADA_CONTABILIDADE_CHOICES_CONFIRMADOS
+      .some((choice) => this.normalizarTexto(choice) === normalizado);
+  }
+
+  private statusPedidoElegivelParaNotaFiscalV27A(status: string | undefined): boolean {
+    const normalizado = this.normalizarTexto(status);
+    return [
+      'emelaboracao',
+      'aguardandoaprovacao',
+      'aprovado',
+      'enviadoaofornecedor',
+      'aguardandoentrega',
+      'entregueparcial',
+      'entreguetotal'
+    ].indexOf(normalizado) >= 0;
+  }
+
+  private criarTituloNotaFiscalV27A(pedidoId: number, config: ConfiguracaoTesteOperacionalV27A, dataReferencia: Date = new Date()): string {
+    const configurado = String(config.numeroNotaFiscalTesteV27A || '').trim().replace(/\s+/g, '-');
+    const sufixo = configurado || 'NF-V2.7A-TESTE';
+    return `NF-V2.7A-TESTE-PED-${pedidoId}-${sufixo}-${this.formatTimestampCompacto(dataReferencia)}`;
+  }
+
+  private async obterPedidoOrigemNotaFiscalV27A(pedidoId: number): Promise<PedidoOrigemNotaFiscalV27A> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.pedidosCompra)}(${pedidoId})?$select=Id,Title,${LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD},ValordoPedido,StatusdoPedido,CentrodeCusto,ObraId,Fornecedor0/Id,Fornecedor0/Title&$expand=Fornecedor0`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    if (!response.ok) {
+      throw new Error(`Pedido ${pedidoId} nao resolvido na Lista 03: ${response.status} ${response.statusText}`);
+    }
+
+    const item = await response.json();
+    return {
+      id: Number(item.Id || pedidoId),
+      title: item.Title || '',
+      numeroRequisicao: item[LISTA_03_PEDIDOS_COMPRA_REQUISICAO_FIELD] || '',
+      valor: Number(item.ValordoPedido || 0),
+      status: item.StatusdoPedido || '',
+      fornecedorId: Number(item.Fornecedor0?.Id || 0) || undefined,
+      fornecedorTitulo: item.Fornecedor0?.Title || '',
+      obraId: Number(item.ObraId || 0) || undefined,
+      centroCusto: item.CentrodeCusto || ''
+    };
+  }
+
+  private obterVinculoPedidoNotaFiscalV27A(pedido: PedidoOrigemNotaFiscalV27A): string {
+    return String(pedido.title || `PED-${pedido.id}`).trim();
+  }
+
+  private async obterNotaFiscalExistenteV27A(vinculoPedido: string, numeroNotaFiscal: string): Promise<NotaFiscalExistenteV27A | undefined> {
+    const pedidoEscaped = this.escapeOData(vinculoPedido);
+    const numeroEscaped = this.escapeOData(numeroNotaFiscal);
+    const prefixoTitulo = this.escapeOData('NF-V2.7A-TESTE-PED');
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.notasFiscaisRecebidas)}?$top=1&$select=Id,Title,${LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD},${LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD}&$filter=${LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD} eq '${pedidoEscaped}' or ${LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD} eq '${numeroEscaped}' or substringof('${prefixoTitulo}',Title)`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+
+    if (!response.ok) {
+      throw new Error(`Consulta de NF existente na Lista 04 retornou ${response.status}: ${response.statusText}`);
+    }
+
+    const payload = await response.json();
+    const item = payload.value?.[0];
+    return item
+      ? {
+        id: Number(item.Id),
+        title: item.Title || '',
+        numeroPedido: item[LISTA_04_NOTAS_FISCAIS_PEDIDO_FIELD] || '',
+        numeroNotaFiscal: item[LISTA_04_NOTAS_FISCAIS_NUMERO_FIELD] || ''
+      }
+      : undefined;
+  }
+
+  private addDays(data: Date, dias: number): Date {
+    const novaData = new Date(data.getTime());
+    novaData.setDate(novaData.getDate() + dias);
+    return novaData;
   }
 
   private usuarioCorrespondeAoAprovadorSnapshotV27A(usuario: IUsuarioPerfilEnac, snapshot: ISnapshotRegraEnac): boolean {

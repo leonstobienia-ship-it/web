@@ -237,6 +237,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a5c-validacao-manual-criar-pedido-compra.md`
 - `docs/v2.7a6-teste-vincular-nota-fiscal.md`
 - `docs/v2.7a6a-auditoria-readonly-lista04-notas-fiscais.md`
+- `docs/v2.7a6b-ajuste-vincular-nf-schema-lista04.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -256,6 +257,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a4a-teste-aprovar-compra.md`
 - `tests/roteiro-v2.7a5-teste-criar-pedido-compra.md`
 - `tests/roteiro-v2.7a6-teste-vincular-nota-fiscal.md`
+- `reports/lista04-notas-fiscais-fields-readonly.json`
+- `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`

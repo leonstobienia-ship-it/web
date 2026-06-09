@@ -503,14 +503,14 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
-    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional' && config.acaoTesteOperacionalV27A !== 'AprovarCompra' && config.acaoTesteOperacionalV27A !== 'CriarPedidoCompra') {
+    if (config.acaoTesteOperacionalV27A !== 'AtualizarStatusRequisicao' && config.acaoTesteOperacionalV27A !== 'CriarSnapshotAprovacaoOperacional' && config.acaoTesteOperacionalV27A !== 'AprovarCompra' && config.acaoTesteOperacionalV27A !== 'CriarPedidoCompra' && config.acaoTesteOperacionalV27A !== 'VincularNotaFiscal') {
       setResultadoOperacionalV27A({
         sucesso: false,
         bloqueado: true,
         acao: config.acaoTesteOperacionalV27A,
         mensagem: 'Escrita V2.7A bloqueada: acao ainda nao preparada para teste manual.',
         itemId,
-        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional, AprovarCompra e CriarPedidoCompra estao preparados nesta fase.' }]
+        alertas: [{ codigo: 'EXECUCAO_ACAO_NAO_SUPORTADA', mensagem: 'Somente AtualizarStatusRequisicao, CriarSnapshotAprovacaoOperacional, AprovarCompra, CriarPedidoCompra e VincularNotaFiscal estao preparados nesta fase.' }]
       });
       return;
     }
@@ -535,6 +535,30 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       return;
     }
 
+    if (config.acaoTesteOperacionalV27A === 'VincularNotaFiscal' && (
+      preValidacaoOperacionalV27A.acaoPretendida !== 'VincularNotaFiscal' ||
+      preValidacaoOperacionalV27A.campoAlterado?.indexOf('EnviadaparaContabilidade_x003f_') === -1 ||
+      !preValidacaoOperacionalV27A.snapshotExistenteId ||
+      !preValidacaoOperacionalV27A.notaFiscalPedidoId ||
+      !preValidacaoOperacionalV27A.notaFiscalNumeroPrevisto ||
+      !preValidacaoOperacionalV27A.notaFiscalFornecedorId ||
+      !preValidacaoOperacionalV27A.notaFiscalObraId ||
+      !preValidacaoOperacionalV27A.notaFiscalStatusInicial ||
+      !preValidacaoOperacionalV27A.notaFiscalTipo ||
+      !preValidacaoOperacionalV27A.notaFiscalEnviadaContabilidade ||
+      preValidacaoOperacionalV27A.notaFiscalExistenteId
+    )) {
+      setResultadoOperacionalV27A({
+        sucesso: false,
+        bloqueado: true,
+        acao: config.acaoTesteOperacionalV27A,
+        mensagem: 'Escrita V2.7A bloqueada: VincularNotaFiscal exige pre-validacao completa da Lista 04, pedido, fornecedor, obra e campo obrigatorio de contabilidade.',
+        itemId,
+        alertas: [{ codigo: 'EXECUCAO_NF_PREVALIDACAO_INCOMPLETA', mensagem: 'Revise pedidoTesteIdV27A, numeroNotaFiscalTesteV27A, ValorBrutodaNF, Fornecedor0Id, ObraId, EnviadaparaContabilidade_x003f_ e inexistencia de NF anterior.' }]
+      });
+      return;
+    }
+
     setExecutandoOperacionalV27A(true);
     try {
       const resultado = config.acaoTesteOperacionalV27A === 'CriarSnapshotAprovacaoOperacional'
@@ -543,7 +567,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
           ? await props.repository.executarAprovarCompraV27A(props.currentUserEmail, flags, config)
           : config.acaoTesteOperacionalV27A === 'CriarPedidoCompra'
             ? await props.repository.executarCriarPedidoCompraV27A(props.currentUserEmail, flags, config)
-            : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
+            : config.acaoTesteOperacionalV27A === 'VincularNotaFiscal'
+              ? await props.repository.executarVincularNotaFiscalV27A(props.currentUserEmail, flags, config)
+              : await props.repository.executarAtualizacaoStatusRequisicaoV27A(props.currentUserEmail, flags, config);
 
       setResultadoOperacionalV27A(resultado);
     } catch (error) {
@@ -1016,6 +1042,12 @@ function PainelOperacionalV27A({
           Pedido fornecedor: {preValidacao.pedidoFornecedorId || '-'} / {preValidacao.pedidoFornecedorLookup || preValidacao.pedidoFornecedorTitulo || '-'}<br />
           Pedido status inicial: {preValidacao.pedidoStatusInicial || '-'} / existente {preValidacao.pedidoExistenteId || '-'} {preValidacao.pedidoExistenteTitulo || ''}<br />
           Diagnostico pedido: {preValidacao.diagnosticoPedidoCompra && preValidacao.diagnosticoPedidoCompra.length > 0 ? preValidacao.diagnosticoPedidoCompra.join(' | ') : '-'}<br />
+          NF prevista: {preValidacao.notaFiscalTituloPrevisto || '-'} / numero {preValidacao.notaFiscalNumeroPrevisto || '-'}<br />
+          NF pedido/vinculo: {preValidacao.notaFiscalPedidoId || '-'} / {preValidacao.notaFiscalPedidoTitulo || preValidacao.notaFiscalVinculoPedido || '-'}<br />
+          NF fornecedor/obra: {preValidacao.notaFiscalFornecedorId || '-'} / {preValidacao.notaFiscalFornecedorTitulo || '-'} / obra {preValidacao.notaFiscalObraId || '-'}<br />
+          NF status/tipo/contabilidade: {preValidacao.notaFiscalStatusInicial || '-'} / {preValidacao.notaFiscalTipo || '-'} / {preValidacao.notaFiscalEnviadaContabilidade || '-'}<br />
+          NF existente: {preValidacao.notaFiscalExistenteId || '-'} {preValidacao.notaFiscalExistenteTitulo || ''}<br />
+          Diagnostico NF: {preValidacao.diagnosticoNotaFiscal && preValidacao.diagnosticoNotaFiscal.length > 0 ? preValidacao.diagnosticoNotaFiscal.join(' | ') : '-'}<br />
           Snapshot previsto: {preValidacao.snapshotPrevistoTitulo || '-'}<br />
           Acoes previstas: snapshot {preValidacao.criaraSnapshot ? 'sim' : 'nao'}, vinculo {preValidacao.vincularaSnapshotAprovacaoCompra ? 'sim' : 'nao'}, historico {preValidacao.registraraHistorico ? 'sim' : 'nao'}<br />
           Transicao: {preValidacao.transicaoPermitida ? 'permitida' : 'bloqueada'} / campos {preValidacao.camposObrigatoriosPresentes ? 'presentes' : 'pendentes'}<br />

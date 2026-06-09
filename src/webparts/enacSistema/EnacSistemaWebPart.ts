@@ -40,6 +40,16 @@ export interface IEnacSistemaWebPartProps {
   descricaoPedidoTesteV27A: string;
   condicaoPagamentoTesteV27A: string;
   prazoEntregaTesteV27A: string;
+  pedidoTesteIdV27A: string;
+  numeroNotaFiscalTesteV27A: string;
+  serieNotaFiscalTesteV27A: string;
+  valorNotaFiscalTesteV27A: string;
+  tipoNotaFiscalTesteV27A: string;
+  statusNotaFiscalInicialTesteV27A: string;
+  enviadaContabilidadeTesteV27A: string;
+  dataEmissaoNotaFiscalTesteV27A: string;
+  dataVencimentoNotaFiscalTesteV27A: string;
+  linkNotaFiscalTesteV27A: string;
 }
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
@@ -51,6 +61,11 @@ const STATUS_DESTINO_OPERACIONAL_PADRAO_V27A = 'Aguardando aprovação';
 const OBSERVACAO_OPERACIONAL_PADRAO_V27A = 'V2.7A-TESTE - teste operacional restrito';
 const STATUS_PEDIDO_INICIAL_PADRAO_V27A = 'Em elaboração';
 const DESCRICAO_PEDIDO_PADRAO_V27A = 'V2.7A-TESTE - pedido de compra controlado';
+const NUMERO_NF_PADRAO_V27A = 'NF-V2.7A-TESTE-001';
+const SERIE_NF_PADRAO_V27A = '1';
+const TIPO_NF_PADRAO_V27A = 'Material';
+const STATUS_NF_INICIAL_PADRAO_V27A = 'Recebida';
+const ENVIADA_CONTABILIDADE_PADRAO_V27A = 'não';
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
@@ -115,6 +130,16 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     this.properties.descricaoPedidoTesteV27A = this.properties.descricaoPedidoTesteV27A || DESCRICAO_PEDIDO_PADRAO_V27A;
     this.properties.condicaoPagamentoTesteV27A = this.properties.condicaoPagamentoTesteV27A || '';
     this.properties.prazoEntregaTesteV27A = this.properties.prazoEntregaTesteV27A || '';
+    this.properties.pedidoTesteIdV27A = this.properties.pedidoTesteIdV27A || '';
+    this.properties.numeroNotaFiscalTesteV27A = this.properties.numeroNotaFiscalTesteV27A || NUMERO_NF_PADRAO_V27A;
+    this.properties.serieNotaFiscalTesteV27A = this.properties.serieNotaFiscalTesteV27A || SERIE_NF_PADRAO_V27A;
+    this.properties.valorNotaFiscalTesteV27A = this.properties.valorNotaFiscalTesteV27A || '';
+    this.properties.tipoNotaFiscalTesteV27A = this.properties.tipoNotaFiscalTesteV27A || TIPO_NF_PADRAO_V27A;
+    this.properties.statusNotaFiscalInicialTesteV27A = this.properties.statusNotaFiscalInicialTesteV27A || STATUS_NF_INICIAL_PADRAO_V27A;
+    this.properties.enviadaContabilidadeTesteV27A = this.properties.enviadaContabilidadeTesteV27A || ENVIADA_CONTABILIDADE_PADRAO_V27A;
+    this.properties.dataEmissaoNotaFiscalTesteV27A = this.properties.dataEmissaoNotaFiscalTesteV27A || '';
+    this.properties.dataVencimentoNotaFiscalTesteV27A = this.properties.dataVencimentoNotaFiscalTesteV27A || '';
+    this.properties.linkNotaFiscalTesteV27A = this.properties.linkNotaFiscalTesteV27A || '';
 
     return Promise.resolve();
   }
@@ -178,7 +203,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                     { key: 'AtualizarStatusRequisicao', text: 'Atualizar status da requisicao' },
                     { key: 'CriarSnapshotAprovacaoOperacional', text: 'Criar snapshot operacional' },
                     { key: 'AprovarCompra', text: 'Aprovar compra' },
-                    { key: 'CriarPedidoCompra', text: 'Criar pedido de compra' }
+                    { key: 'CriarPedidoCompra', text: 'Criar pedido de compra' },
+                    { key: 'VincularNotaFiscal', text: 'Vincular nota fiscal' }
                   ]
                 }),
                 PropertyPaneTextField('statusDestinoTesteOperacionalV27A', {
@@ -207,6 +233,36 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                 }),
                 PropertyPaneTextField('prazoEntregaTesteV27A', {
                   label: 'V2.7A - prazo de entrega do pedido, opcional ISO'
+                }),
+                PropertyPaneTextField('pedidoTesteIdV27A', {
+                  label: 'V2.7A - ID do pedido de teste'
+                }),
+                PropertyPaneTextField('numeroNotaFiscalTesteV27A', {
+                  label: 'V2.7A - numero da NF de teste'
+                }),
+                PropertyPaneTextField('serieNotaFiscalTesteV27A', {
+                  label: 'V2.7A - serie da NF de teste'
+                }),
+                PropertyPaneTextField('valorNotaFiscalTesteV27A', {
+                  label: 'V2.7A - valor da NF de teste'
+                }),
+                PropertyPaneTextField('tipoNotaFiscalTesteV27A', {
+                  label: 'V2.7A - tipo da NF'
+                }),
+                PropertyPaneTextField('statusNotaFiscalInicialTesteV27A', {
+                  label: 'V2.7A - status inicial da NF'
+                }),
+                PropertyPaneTextField('enviadaContabilidadeTesteV27A', {
+                  label: 'V2.7A - enviada para contabilidade'
+                }),
+                PropertyPaneTextField('dataEmissaoNotaFiscalTesteV27A', {
+                  label: 'V2.7A - data de emissao NF, opcional ISO'
+                }),
+                PropertyPaneTextField('dataVencimentoNotaFiscalTesteV27A', {
+                  label: 'V2.7A - data de vencimento NF, opcional ISO'
+                }),
+                PropertyPaneTextField('linkNotaFiscalTesteV27A', {
+                  label: 'V2.7A - link da NF, opcional'
                 })
               ]
             }
@@ -252,7 +308,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       'AtualizarStatusRequisicao',
       'CriarSnapshotAprovacaoOperacional',
       'AprovarCompra',
-      'CriarPedidoCompra'
+      'CriarPedidoCompra',
+      'VincularNotaFiscal'
     ];
     const acao = acoesSuportadas.indexOf(this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A) >= 0
       ? this.properties.acaoTesteOperacionalV27A as AcaoOperacionalV27A
@@ -269,7 +326,17 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       tituloPedidoTesteV27A: this.properties.tituloPedidoTesteV27A || '',
       descricaoPedidoTesteV27A: this.properties.descricaoPedidoTesteV27A || DESCRICAO_PEDIDO_PADRAO_V27A,
       condicaoPagamentoTesteV27A: this.properties.condicaoPagamentoTesteV27A || '',
-      prazoEntregaTesteV27A: this.properties.prazoEntregaTesteV27A || ''
+      prazoEntregaTesteV27A: this.properties.prazoEntregaTesteV27A || '',
+      pedidoTesteIdV27A: this.parsePositiveNumber(this.properties.pedidoTesteIdV27A),
+      numeroNotaFiscalTesteV27A: this.properties.numeroNotaFiscalTesteV27A || NUMERO_NF_PADRAO_V27A,
+      serieNotaFiscalTesteV27A: this.properties.serieNotaFiscalTesteV27A || SERIE_NF_PADRAO_V27A,
+      valorNotaFiscalTesteV27A: this.parsePositiveNumber(this.properties.valorNotaFiscalTesteV27A),
+      tipoNotaFiscalTesteV27A: this.properties.tipoNotaFiscalTesteV27A || TIPO_NF_PADRAO_V27A,
+      statusNotaFiscalInicialTesteV27A: this.properties.statusNotaFiscalInicialTesteV27A || STATUS_NF_INICIAL_PADRAO_V27A,
+      enviadaContabilidadeTesteV27A: this.properties.enviadaContabilidadeTesteV27A || ENVIADA_CONTABILIDADE_PADRAO_V27A,
+      dataEmissaoNotaFiscalTesteV27A: this.properties.dataEmissaoNotaFiscalTesteV27A || '',
+      dataVencimentoNotaFiscalTesteV27A: this.properties.dataVencimentoNotaFiscalTesteV27A || '',
+      linkNotaFiscalTesteV27A: this.properties.linkNotaFiscalTesteV27A || ''
     };
   }
 }

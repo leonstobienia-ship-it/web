@@ -22,21 +22,16 @@ Codex nao executa teste no tenant, nao conecta ao SharePoint, nao publica pacote
 - Requisicao origem item `11` preservada em `Aprovada para compra`.
 - Snapshot `3` preservado.
 
-## Primeiro Passo Manual
+## Auditoria Readonly Registrada
 
-Executar auditoria readonly:
-
-```powershell
-pwsh .\scripts\sharepoint\12-auditoria-lista04-notas-fiscais-readonly.ps1 `
-  -Tenant "enaccombr.onmicrosoft.com" `
-  -ClientId "<app-id-autorizado>" `
-  -AuthMode DeviceLogin
-```
-
-Revisar:
+A auditoria readonly da Lista 04 foi executada manualmente por Leon e registrada em:
 
 - `reports/lista04-notas-fiscais-fields-readonly.json`;
 - `reports/lista04-notas-fiscais-fields-readonly.md`.
+
+Campos obrigatorios para criacao inicial: `Fornecedor0Id`, `ObraId`, `EnviadaparaContabilidade_x003f_`.
+
+Choices confirmadas para `EnviadaparaContabilidade_x003f_`: `sim`, `não`.
 
 ## Configuracao Futura Do Property Pane
 
@@ -52,11 +47,16 @@ Somente apos auditoria da Lista 04, avaliar propriedades:
 | `confirmacaoManualV27A` | `CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC` |
 | `acaoTesteOperacionalV27A` | `VincularNotaFiscal` |
 | `pedidoTesteIdV27A` | `3` |
-| `notaFiscalNumeroTesteV27A` | numero de NF de teste, a definir |
-| `notaFiscalValorTesteV27A` | `6720` |
-| `notaFiscalStatusInicialTesteV27A` | conforme choice real da Lista 04 |
-| `notaFiscalDataEmissaoTesteV27A` | opcional |
-| `notaFiscalDataVencimentoTesteV27A` | opcional |
+| `itemTesteOperacionalIdV27A` | `11` |
+| `numeroNotaFiscalTesteV27A` | `NF-V2.7A-TESTE-001` |
+| `serieNotaFiscalTesteV27A` | `1` |
+| `valorNotaFiscalTesteV27A` | `6720` |
+| `tipoNotaFiscalTesteV27A` | `Material` |
+| `statusNotaFiscalInicialTesteV27A` | `Recebida` |
+| `enviadaContabilidadeTesteV27A` | `não` |
+| `dataEmissaoNotaFiscalTesteV27A` | opcional |
+| `dataVencimentoNotaFiscalTesteV27A` | opcional |
+| `linkNotaFiscalTesteV27A` | opcional |
 | `observacaoTesteOperacionalV27A` | `V2.7A-TESTE - vinculação controlada de nota fiscal` |
 
 ## Pre-validacao Futura
@@ -70,10 +70,12 @@ A pre-validacao deve usar somente GET e confirmar:
 - valor do pedido `6720`;
 - Lista 02 item `11` segue aprovado;
 - snapshot `3` segue vinculado;
-- Lista 04 mapeada;
+- Lista 04 mapeada por GUID `25aa4447-193d-418a-8e71-9bfd8e9995da`;
 - campos obrigatorios da NF conhecidos;
-- status inicial da NF definido;
-- documento/anexo nao obrigatorio ou regra documentada;
+- status inicial da NF definido como `Recebida`;
+- tipo da NF definido como `Material`;
+- `EnviadaparaContabilidade_x003f_` definido como `não`;
+- documento/anexo nao obrigatorio para a criacao inicial;
 - NF de teste ainda nao existe;
 - usuario/perfil pode vincular NF;
 - historico previsto.

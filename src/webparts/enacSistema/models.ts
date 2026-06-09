@@ -234,6 +234,16 @@ export interface ConfiguracaoTesteOperacionalV27A {
   descricaoPedidoTesteV27A?: string;
   condicaoPagamentoTesteV27A?: string;
   prazoEntregaTesteV27A?: string;
+  pedidoTesteIdV27A?: number;
+  numeroNotaFiscalTesteV27A?: string;
+  serieNotaFiscalTesteV27A?: string;
+  valorNotaFiscalTesteV27A?: number;
+  tipoNotaFiscalTesteV27A?: string;
+  statusNotaFiscalInicialTesteV27A?: string;
+  enviadaContabilidadeTesteV27A?: string;
+  dataEmissaoNotaFiscalTesteV27A?: string;
+  dataVencimentoNotaFiscalTesteV27A?: string;
+  linkNotaFiscalTesteV27A?: string;
 }
 
 export interface ResultadoOperacionalV27A {
@@ -305,6 +315,20 @@ export interface PreValidacaoOperacionalV27AResultado {
   pedidoStatusInicial?: string;
   pedidoExistenteId?: number;
   pedidoExistenteTitulo?: string;
+  diagnosticoNotaFiscal?: string[];
+  notaFiscalTituloPrevisto?: string;
+  notaFiscalNumeroPrevisto?: string;
+  notaFiscalPedidoId?: number;
+  notaFiscalPedidoTitulo?: string;
+  notaFiscalVinculoPedido?: string;
+  notaFiscalFornecedorId?: number;
+  notaFiscalFornecedorTitulo?: string;
+  notaFiscalObraId?: number;
+  notaFiscalStatusInicial?: string;
+  notaFiscalTipo?: string;
+  notaFiscalEnviadaContabilidade?: string;
+  notaFiscalExistenteId?: number;
+  notaFiscalExistenteTitulo?: string;
   snapshotPrevistoTitulo?: string;
   criaraSnapshot?: boolean;
   vincularaSnapshotAprovacaoCompra?: boolean;
