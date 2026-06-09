@@ -153,6 +153,8 @@ Na V2.8A, o fluxo manual completo foi consolidado documentalmente para preparar 
 
 Na V2.8B, foi preparado o pacote documental para Leon conduzir homologacao assistida com a equipe, ainda sem execucao pelo Codex. A etapa definiu plano de reuniao, checklist executivo, matriz de participantes e responsabilidades, criterios de aprovacao/reprovacao, plano de parada/contingencia, roteiro de equipe e checklist de evidencias. O marcador sugerido para a homologacao e `V2.8B-HOMOLOGACAO`; dados sensiveis reais, pagamento efetivo, comprovante real e Power Automate ficam fora do escopo. A etapa tambem separou pendencias nao bloqueantes para V2.8B das pendencias bloqueantes para producao ampla.
 
+Na V2.8B-UI, a webpart recebeu melhoria visual pre-homologacao com identidade ENAC: logo no cabecalho e menu lateral, titulo institucional, badge de homologacao assistida, navegacao mais clara, cards/tabelas/forms com acabamento corporativo e chips visuais de status. A etapa foi exclusivamente visual/UX: nao alterou regras, fluxos, payloads, chamadas REST, travas V2.6A/V2.7A, `src/prototype/app.js` ou backup V2.2. Power Automate permaneceu fora do escopo.
+
 ## Protótipo
 
 Abra no navegador:
@@ -260,6 +262,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8b-matriz-participantes-responsabilidades.md`
 - `docs/v2.8b-criterios-aprovacao-reprovacao.md`
 - `docs/v2.8b-plano-parada-e-contingencia.md`
+- `docs/v2.8b-ui-melhoria-visual-identidade-enac.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`

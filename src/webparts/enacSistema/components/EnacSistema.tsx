@@ -22,6 +22,21 @@ import { SharePointEnacRepository } from '../services/SharePointEnacRepository';
 import styles from './EnacSistema.module.scss';
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
+const enacLogo = require('../assets/enac-logo.png');
+const views = [
+  { key: 'dashboard', label: 'Visao Geral' },
+  { key: 'nova', label: 'Nova solicitacao' },
+  { key: 'minhas', label: 'Requisicoes' },
+  { key: 'cotacoes', label: 'Cotacoes' },
+  { key: 'aprovacoes', label: 'Aprovacoes' },
+  { key: 'pedido', label: 'Pedidos' },
+  { key: 'financeiro', label: 'Notas e pagamentos' },
+  { key: 'liberacao', label: 'Liberacao' },
+  { key: 'historico', label: 'Historico' },
+  { key: 'adminUsuarios', label: 'Usuarios' },
+  { key: 'adminAlcadas', label: 'Alcadas' },
+  { key: 'adminHistorico', label: 'Auditoria' }
+];
 
 export interface IEnacSistemaProps {
   currentUserName: string;
@@ -722,24 +737,40 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   return (
     <section className={styles.enacSistema}>
       <aside>
-        <strong>ENAC</strong>
-        {['dashboard', 'nova', 'minhas', 'cotacoes', 'aprovacoes', 'pedido', 'financeiro', 'liberacao', 'historico', 'adminUsuarios', 'adminAlcadas', 'adminHistorico'].map((key) => (
-          <button key={key} className={view === key ? styles.active : ''} onClick={() => setView(key)}>{key}</button>
+        <div className={styles.sideBrand}>
+          <img src={enacLogo} alt="ENAC" />
+          <span>Sistema ENAC</span>
+        </div>
+        {views.map((item) => (
+          <button key={item.key} className={view === item.key ? styles.active : ''} onClick={() => setView(item.key)}>{item.label}</button>
         ))}
       </aside>
       <main>
-        <header>
-          <h1>Sistema Operacional ENAC</h1>
-          <select value={perfil} onChange={(event) => setPerfil(event.target.value as PerfilEnac)}>
-            <option value="Campo">Campo / Engenheiro</option>
-            <option value="CotacoesContratos">Cotacoes e Contratos / Kemilly</option>
-            <option value="ComprasFinanceiroOperacional">Compras e Financeiro Operacional / Matheus</option>
-            <option value="Planejamento">Planejamento / Gustavo</option>
-            <option value="Diretoria">Diretoria / Leon</option>
-            <option value="AdministradorSistema">Administrador do Sistema / Leon</option>
-          </select>
+        <header className={styles.appHeader}>
+          <div className={styles.headerIdentity}>
+            <img src={enacLogo} alt="ENAC" />
+            <div>
+              <h1>Sistema ENAC</h1>
+              <p>Obras, compras, notas fiscais e programacao financeira</p>
+            </div>
+          </div>
+          <div className={styles.headerMeta}>
+            <span className={styles.environmentBadge}>Homologacao assistida</span>
+            <label>
+              Perfil atual
+              <select value={perfil} onChange={(event) => setPerfil(event.target.value as PerfilEnac)}>
+                <option value="Campo">Campo / Engenheiro</option>
+                <option value="CotacoesContratos">Cotacoes e Contratos / Kemilly</option>
+                <option value="ComprasFinanceiroOperacional">Compras e Financeiro Operacional / Matheus</option>
+                <option value="Planejamento">Planejamento / Gustavo</option>
+                <option value="Diretoria">Diretoria / Leon</option>
+                <option value="AdministradorSistema">Administrador do Sistema / Leon</option>
+              </select>
+            </label>
+          </div>
         </header>
 
+        <div className={styles.contentPanel}>
         {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} requisicoesResumo={usandoSharePointReadonly ? requisicoesResumoReadonly : []} origemDados={origemDadosEfetiva} />}
         {view === 'nova' && <NovaSolicitacao onSubmit={criarSolicitacao} />}
         {view === 'minhas' && <Tabela solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
@@ -780,6 +811,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             )}
           </>
         )}
+        </div>
       </main>
     </section>
   );
@@ -1168,7 +1200,7 @@ function Tabela({ solicitacoes, onSelect }: { solicitacoes: ISolicitacaoEnac[]; 
           <tr key={item.id}>
             <td>{item.id}<br />{item.titulo}</td>
             <td>{item.obra.nome}<br />{item.obra.centroCusto}</td>
-            <td>{item.status}</td>
+            <td><StatusChip status={item.status} /></td>
             <td>{formatCurrency(item.cotacao?.valorRecomendado)}</td>
             <td><button onClick={() => onSelect(item.id)}>Abrir</button></td>
           </tr>
@@ -1176,6 +1208,28 @@ function Tabela({ solicitacoes, onSelect }: { solicitacoes: ISolicitacaoEnac[]; 
       </tbody>
     </table>
   );
+}
+
+function StatusChip({ status }: { status: string }): JSX.Element {
+  return <span className={`${styles.statusChip} ${statusClassName(status)}`}>{status}</span>;
+}
+
+function statusClassName(status: string): string {
+  const normalizado = normalizarStatusReadonly(status);
+
+  if (['aprovadaparacompra', 'aprovado', 'aprovadoparapagamento', 'pago', 'pagoconcluido', 'entreguetotal'].indexOf(normalizado) >= 0) {
+    return styles.statusSuccess;
+  }
+
+  if (['aguardandoaprovacao', 'aguardandocotacao', 'emcotacao', 'emelaboracao', 'recebida', 'programado', 'aguardandoentrega', 'aguardandoliberacaobancaria'].indexOf(normalizado) >= 0) {
+    return styles.statusWarning;
+  }
+
+  if (['reprovada', 'cancelada', 'cancelado', 'vencido', 'suspenso'].indexOf(normalizado) >= 0) {
+    return styles.statusDanger;
+  }
+
+  return styles.statusNeutral;
 }
 
 function calcularRegra(alcadas: IAlcadaEnac[], valor: number): IAlcadaEnac {
