@@ -987,6 +987,9 @@ function PainelOperacionalV27A({
           Aprovação necessária: campo {preValidacao.aprovacaoNecessariaCampo || '-'} / bruto {preValidacao.aprovacaoNecessariaValorBruto || '-'} / normalizado {preValidacao.aprovacaoNecessariaNormalizada || '-'}<br />
           Valor analisado: {preValidacao.valorAnalisado ? formatCurrency(preValidacao.valorAnalisado) : '-'}<br />
           Regra/aprovadores: {preValidacao.regraInternaId || '-'} / {preValidacao.aprovadorBaseNome || '-'} / {preValidacao.aprovadorEfetivoNome || '-'}<br />
+          Aprovacao compra: previsto {preValidacao.aprovadorPrevistoNome || '-'} / efetivo {preValidacao.aprovadorEfetivoOperacionalNome || '-'} / tipo {preValidacao.tipoAprovacaoCompra || '-'}<br />
+          Diagnostico aprovacao: {preValidacao.diagnosticoAprovacaoCompra || '-'}<br />
+          Justificativa prevista: {preValidacao.justificativaAprovacaoPrevista || '-'}<br />
           Snapshot previsto: {preValidacao.snapshotPrevistoTitulo || '-'}<br />
           Acoes previstas: snapshot {preValidacao.criaraSnapshot ? 'sim' : 'nao'}, vinculo {preValidacao.vincularaSnapshotAprovacaoCompra ? 'sim' : 'nao'}, historico {preValidacao.registraraHistorico ? 'sim' : 'nao'}<br />
           Transicao: {preValidacao.transicaoPermitida ? 'permitida' : 'bloqueada'} / campos {preValidacao.camposObrigatoriosPresentes ? 'presentes' : 'pendentes'}<br />

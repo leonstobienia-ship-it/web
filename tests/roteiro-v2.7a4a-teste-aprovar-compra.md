@@ -56,13 +56,24 @@ A pre-validacao deve exibir:
 - `pode executar = sim`, somente se usuario/perfil forem validos;
 - alertas `-`.
 
-Se aparecer `USUARIO_NAO_E_APROVADOR`, nao executar a escrita. Registrar o resultado e decidir formalmente se o teste sera feito com Gustavo ou se havera outra regra de teste.
+Para aprovacao direta, a pre-validacao deve exibir `APROVADOR_DO_SNAPSHOT_VALIDO`.
+
+Para aprovacao por Leon/Diretoria como alcada superior, a pre-validacao deve exibir:
+
+- tipo `Alçada superior / Diretoria`;
+- diagnostico `DIRETORIA_ALCADA_SUPERIOR_VALIDADA`;
+- aprovador previsto `V2.3B-TESTE - Gustavo`;
+- aprovador efetivo operacional `V2.3B-TESTE - Leon / Diretoria`;
+- justificativa de aprovacao por alcada superior.
+
+Se aparecer `USUARIO_NAO_E_APROVADOR` ou `PERFIL_DIRETORIA_NAO_ATIVO`, nao executar a escrita.
 
 ## Execucao Permitida
 
 Executar somente se:
 
 - pre-validacao passou;
+- em caso de Diretoria, diagnostico `DIRETORIA_ALCADA_SUPERIOR_VALIDADA`;
 - item validado e o item configurado sao `11`;
 - marcador confirmado;
 - status atual ainda e `Aguardando aprovação`;
@@ -78,6 +89,7 @@ Executar somente se:
 - valor anterior: `Aguardando aprovação`;
 - valor novo: `Aprovada para compra`;
 - historico operacional criado;
+- historico registra aprovador previsto, aprovador efetivo e aprovacao por alcada superior quando aplicavel;
 - nenhum pedido criado;
 - nenhuma NF criada;
 - nenhum pagamento programado;

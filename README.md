@@ -129,6 +129,8 @@ Na V2.7A.4, foi analisada a proxima acao `CriarPedidoCompra`. A regra atual do c
 
 Na V2.7A.4A, foi preparada localmente a acao controlada `AprovarCompra`. A choice real confirmada no inventario sanitizado para o status aprovado da Lista 02 e `Aprovada para compra`; `Aprovada` nao consta como choice real da lista. A pre-validacao passa a exigir item `V2.7A-TESTE`, status atual `Aguardando aprovação`, `SnapshotAprovacaoCompra` preenchido, aprovacao necessaria resolvida, valor `6720`, regra/aprovador do snapshot resolvidos, usuario autenticado correspondente ao aprovador do snapshot, perfil permitido e confirmacao manual exata. A execucao futura fica restrita a MERGE somente em `StatusdaRequisi_x00e7__x00e3_o` e registro de historico operacional, sem criar pedido, NF, pagamento ou Power Automate. Codex nao conectou ao SharePoint, nao publicou pacote, nao alterou tenant/listas/dados e nao executou escrita.
 
+Na V2.7A.4B, foi implementada localmente a aprovacao por Diretoria como alcada superior para `AprovarCompra`. A regra vale somente quando o item esta em `Aguardando aprovação`, o destino e `Aprovada para compra`, existe snapshot vinculado, o usuario esta ativo com perfil `Diretoria`, possui permissao de aprovacao, o marcador `V2.7A-TESTE` esta confirmado e o historico registra aprovador previsto, aprovador efetivo e justificativa de alcada superior. O caso esperado para o item `11` e aprovador previsto `V2.3B-TESTE - Gustavo` e aprovador efetivo operacional `V2.3B-TESTE - Leon / Diretoria`, com diagnostico `DIRETORIA_ALCADA_SUPERIOR_VALIDADA`. A regra nao libera bypass amplo, nao cria pedido e mantem Power Automate fora do escopo.
+
 ## Protótipo
 
 Abra no navegador:
@@ -229,6 +231,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a3-teste-snapshot-operacional.md`
 - `tests/roteiro-v2.7a4-teste-criar-pedido-compra.md`
 - `tests/roteiro-v2.7a4a-teste-aprovar-compra.md`
+- `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`

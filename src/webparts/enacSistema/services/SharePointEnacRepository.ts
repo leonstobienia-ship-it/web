@@ -510,6 +510,11 @@ export class SharePointEnacRepository {
     let resumoRegraAplicada: string | undefined;
     let aprovadorBaseNome: string | undefined;
     let aprovadorEfetivoNome: string | undefined;
+    let aprovadorPrevistoNome: string | undefined;
+    let aprovadorEfetivoOperacionalNome: string | undefined;
+    let tipoAprovacaoCompra: 'Aprovador direto' | 'Alçada superior / Diretoria' | undefined;
+    let diagnosticoAprovacaoCompra: 'APROVADOR_DO_SNAPSHOT_VALIDO' | 'DIRETORIA_ALCADA_SUPERIOR_VALIDADA' | undefined;
+    let justificativaAprovacaoPrevista: string | undefined;
     let snapshotPrevistoTitulo: string | undefined;
     let snapshotAprovacao: ISnapshotRegraEnac | undefined;
     let criaraSnapshot = false;
@@ -650,6 +655,8 @@ export class SharePointEnacRepository {
             resumoRegraAplicada = `${flags.marcadorTesteOperacionalV27A}; ${snapshotAprovacao.processo}; ${snapshotAprovacao.faixaValorVigente}; aprovador ${snapshotAprovacao.aprovadorBaseNome}`;
             aprovadorBaseNome = snapshotAprovacao.aprovadorBaseNome;
             aprovadorEfetivoNome = snapshotAprovacao.aprovadorEfetivoNome;
+            aprovadorPrevistoNome = snapshotAprovacao.aprovadorEfetivoNome || snapshotAprovacao.aprovadorBaseNome;
+            aprovadorEfetivoOperacionalNome = usuarioAtual?.nome;
             registraraHistorico = true;
 
             if (!snapshotAprovacao.regraAlcadaUtilizada) {
@@ -660,8 +667,23 @@ export class SharePointEnacRepository {
               alertas.push({ codigo: 'APROVADOR_NAO_RESOLVIDO', mensagem: 'Snapshot vinculado nao possui aprovador base/efetivo resolvido.' });
             }
 
-            if (usuarioAtual && !this.usuarioCorrespondeAoAprovadorSnapshotV27A(usuarioAtual, snapshotAprovacao)) {
-              alertas.push({ codigo: 'USUARIO_NAO_E_APROVADOR', mensagem: `Usuario atual nao corresponde ao aprovador efetivo/base do snapshot (${snapshotAprovacao.aprovadorEfetivoNome || snapshotAprovacao.aprovadorBaseNome || '-'}).` });
+            if (usuarioAtual) {
+              if (this.usuarioCorrespondeAoAprovadorSnapshotV27A(usuarioAtual, snapshotAprovacao)) {
+                tipoAprovacaoCompra = 'Aprovador direto';
+                diagnosticoAprovacaoCompra = 'APROVADOR_DO_SNAPSHOT_VALIDO';
+                aprovadorEfetivoOperacionalNome = usuarioAtual.nome;
+                justificativaAprovacaoPrevista = `Aprovacao pelo aprovador previsto: ${aprovadorPrevistoNome || '-'}.`;
+              } else if (this.usuarioPodeAprovarComoDiretoriaSuperiorV27A(usuarioAtual, statusAtual, statusDestino, snapshotExistenteId)) {
+                tipoAprovacaoCompra = 'Alçada superior / Diretoria';
+                diagnosticoAprovacaoCompra = 'DIRETORIA_ALCADA_SUPERIOR_VALIDADA';
+                aprovadorEfetivoOperacionalNome = `${usuarioAtual.nome} / Diretoria`;
+                justificativaAprovacaoPrevista = `Aprovação por alçada superior: aprovador previsto ${aprovadorPrevistoNome || '-'}; aprovador efetivo ${aprovadorEfetivoOperacionalNome}.`;
+              } else {
+                if (usuarioAtual.perfilPrincipal !== 'Diretoria') {
+                  alertas.push({ codigo: 'PERFIL_DIRETORIA_NAO_ATIVO', mensagem: 'Aprovacao por alcada superior exige usuario ativo com perfil Diretoria.' });
+                }
+                alertas.push({ codigo: 'USUARIO_NAO_E_APROVADOR', mensagem: `Usuario atual nao corresponde ao aprovador efetivo/base do snapshot (${aprovadorPrevistoNome || '-'}).` });
+              }
             }
           }
         } catch (error) {
@@ -707,6 +729,11 @@ export class SharePointEnacRepository {
       resumoRegraAplicada,
       aprovadorBaseNome,
       aprovadorEfetivoNome,
+      aprovadorPrevistoNome,
+      aprovadorEfetivoOperacionalNome,
+      tipoAprovacaoCompra,
+      diagnosticoAprovacaoCompra,
+      justificativaAprovacaoPrevista,
       snapshotPrevistoTitulo,
       criaraSnapshot,
       vincularaSnapshotAprovacaoCompra,
@@ -1196,7 +1223,7 @@ export class SharePointEnacRepository {
         origemLista: 'Lista 02',
         origemItemId: itemId,
         acao: 'AprovarCompra',
-        descricao: `${observacao}; snapshot ${leituraItem.snapshotExistenteId}; regra ${preValidacao.regraInternaId || '-'}; aprovador ${preValidacao.aprovadorEfetivoNome || '-'}; origem Webpart V2.7A.4A; sem Power Automate.`,
+        descricao: `${observacao}; snapshot ${leituraItem.snapshotExistenteId}; regra ${preValidacao.regraInternaId || '-'}; aprovador previsto ${preValidacao.aprovadorPrevistoNome || preValidacao.aprovadorEfetivoNome || '-'}; aprovador efetivo ${preValidacao.aprovadorEfetivoOperacionalNome || preValidacao.aprovadorEfetivoNome || '-'}; tipo ${preValidacao.tipoAprovacaoCompra || 'Aprovador direto'}; ${preValidacao.justificativaAprovacaoPrevista || 'Aprovacao pelo aprovador previsto.'}; origem Webpart V2.7A.4B; sem Power Automate.`,
         statusAnterior: statusAtual,
         statusNovo: statusDestino,
         marcadorTeste: flags.marcadorTesteOperacionalV27A
@@ -2025,6 +2052,17 @@ export class SharePointEnacRepository {
     ].map((value) => this.normalizarTexto(value)).filter(Boolean);
 
     return candidatosSnapshot.some((value) => candidatosUsuario.indexOf(value) >= 0);
+  }
+
+  private usuarioPodeAprovarComoDiretoriaSuperiorV27A(usuario: IUsuarioPerfilEnac, statusAtual: string, statusDestino: string, snapshotExistenteId: number | undefined): boolean {
+    return Boolean(
+      usuario.usuarioAtivo &&
+      usuario.perfilPrincipal === 'Diretoria' &&
+      this.perfilPodeExecutarAcao('AprovarCompra', usuario) &&
+      this.normalizarTexto(statusAtual) === 'aguardandoaprovacao' &&
+      this.normalizarTexto(statusDestino) === this.normalizarTexto(STATUS_APROVADO_COMPRA_V27A) &&
+      snapshotExistenteId
+    );
   }
 
   private normalizarTexto(value: string | undefined): string {

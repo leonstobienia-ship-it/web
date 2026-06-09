@@ -280,6 +280,11 @@ export interface PreValidacaoOperacionalV27AResultado {
   resumoRegraAplicada?: string;
   aprovadorBaseNome?: string;
   aprovadorEfetivoNome?: string;
+  aprovadorPrevistoNome?: string;
+  aprovadorEfetivoOperacionalNome?: string;
+  tipoAprovacaoCompra?: 'Aprovador direto' | 'Alçada superior / Diretoria';
+  diagnosticoAprovacaoCompra?: 'APROVADOR_DO_SNAPSHOT_VALIDO' | 'DIRETORIA_ALCADA_SUPERIOR_VALIDADA';
+  justificativaAprovacaoPrevista?: string;
   snapshotPrevistoTitulo?: string;
   criaraSnapshot?: boolean;
   vincularaSnapshotAprovacaoCompra?: boolean;
