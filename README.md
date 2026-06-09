@@ -125,6 +125,8 @@ Na V2.7A.3A, foi corrigida a normalizacao do campo `Aprovação Necessária?` na
 
 Na V2.7A.3B, Leon validou manualmente o snapshot operacional no tenant. Em 2026-06-09, a acao `CriarSnapshotAprovacaoOperacional` criou o snapshot ID `3`, title `SNAP-V2.7A-TESTE-11-20260609025123`, e vinculou `SnapshotAprovacaoCompra` no item `11` da `Lista 02 — Requisições de Compra`, mantendo o status em `Aguardando aprovação`. O historico operacional foi criado, HTTP escrita `204`, sem `PATCH`/`DELETE`, sem outro item alterado, com flags desligadas e pagina republicada. Power Automate nao foi iniciado. A validacao e restrita a acao controlada de snapshot operacional; pedido, NF e pagamento nao foram testados.
 
+Na V2.7A.4, foi analisada a proxima acao `CriarPedidoCompra`. A regra atual do codigo e da documentacao exige status `Aprovada` ou `Aprovada para compra`; portanto o item `11`, ainda em `Aguardando aprovação`, nao esta elegivel para pedido. A Lista 03 de pedidos esta mapeada como `Lista 03 — Pedidos de Compra`, GUID `18ca132a-c36a-42aa-9968-d87ecd547a79`, mas seus campos obrigatorios reais ainda precisam de pre-validacao readonly antes de qualquer escrita. A acao de pedido nao foi liberada nesta rodada; a recomendacao e preparar antes uma etapa controlada de `AprovarCompra`.
+
 ## Protótipo
 
 Abra no navegador:
@@ -207,6 +209,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a3-teste-snapshot-operacional.md`
 - `docs/v2.7a3a-correcao-aprovacao-necessaria-snapshot.md`
 - `docs/v2.7a3b-validacao-manual-snapshot-operacional.md`
+- `docs/v2.7a4-teste-criar-pedido-compra.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -222,6 +225,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a-escrita-operacional-restrita.md`
 - `tests/roteiro-v2.7a2-teste-funcional-controlado.md`
 - `tests/roteiro-v2.7a3-teste-snapshot-operacional.md`
+- `tests/roteiro-v2.7a4-teste-criar-pedido-compra.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.template.md`
 - `sharepoint/auditoria-manual-grupos-permissoes-v2.6b3c.md`
 - `sharepoint/auditoria-grupos-enac-v2.6b4-prep.template.md`
