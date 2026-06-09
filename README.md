@@ -239,6 +239,8 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.7a6a-auditoria-readonly-lista04-notas-fiscais.md`
 - `docs/v2.7a6b-ajuste-vincular-nf-schema-lista04.md`
 - `docs/v2.7a6c-validacao-manual-vincular-nota-fiscal.md`
+- `docs/v2.7a7-teste-programar-pagamento.md`
+- `docs/v2.7a7a-auditoria-readonly-lista-pagamentos.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -258,6 +260,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/roteiro-v2.7a4a-teste-aprovar-compra.md`
 - `tests/roteiro-v2.7a5-teste-criar-pedido-compra.md`
 - `tests/roteiro-v2.7a6-teste-vincular-nota-fiscal.md`
+- `tests/roteiro-v2.7a7-teste-programar-pagamento.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
@@ -273,6 +276,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `scripts/sharepoint/12-permissoes-finas-v2.6b-readonly-auditoria.ps1`
 - `scripts/sharepoint/11-auditoria-lista03-pedidos-readonly.ps1`
 - `scripts/sharepoint/12-auditoria-lista04-notas-fiscais-readonly.ps1`
+- `scripts/sharepoint/13-auditoria-lista05-contas-pagar-readonly.ps1`
 - `src/prototype/`
 - `src/webparts/enacSistema/`
 - `tests/fluxos-mvp.md`
