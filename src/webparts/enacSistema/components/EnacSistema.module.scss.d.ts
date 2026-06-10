@@ -1,5 +1,8 @@
 declare const styles: {
+  viewport: string;
   enacSistema: string;
+  sideNav: string;
+  mainPanel: string;
   sideBrand: string;
   appHeader: string;
   headerIdentity: string;

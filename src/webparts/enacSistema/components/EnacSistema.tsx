@@ -746,14 +746,15 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   }
 
   return (
+    <div className={styles.viewport}>
     <section className={styles.enacSistema}>
-      <aside>
+      <aside className={styles.sideNav}>
         <div className={styles.sideBrand}>Módulos</div>
         {views.map((item) => (
           <button key={item.key} className={view === item.key ? styles.active : ''} onClick={() => setView(item.key)}>{item.label}</button>
         ))}
       </aside>
-      <main>
+      <main className={styles.mainPanel}>
         <header className={styles.appHeader}>
           <div className={styles.headerIdentity}>
             <img src={enacLogo} alt="ENAC" />
@@ -763,7 +764,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.layoutVersionBadge}>UI V2.8E8</span>
+            <span className={styles.layoutVersionBadge}>UI V2.8E9</span>
             <span className={styles.layoutDiagnosticBadge}>Layout: full viewport ativo</span>
             <span className={styles.environmentBadge}>Homologação assistida</span>
             <label>
@@ -824,6 +825,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         </div>
       </main>
     </section>
+    </div>
   );
 }
 

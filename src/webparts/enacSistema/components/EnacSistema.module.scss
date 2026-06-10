@@ -1,3 +1,16 @@
+.viewport {
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: calc(100vh - 48px);
+  margin: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
 .enacSistema {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -7,6 +20,7 @@
   align-self: stretch;
   justify-self: stretch;
   position: relative;
+  flex: 1 1 auto;
   width: 100%;
   max-width: none;
   min-width: 0;
@@ -21,7 +35,8 @@
   overflow-x: hidden;
   overflow-y: visible;
 
-  aside {
+  aside,
+  .sideNav {
     display: grid;
     align-content: start;
     align-self: stretch;
@@ -37,7 +52,8 @@
     box-sizing: border-box;
   }
 
-  main {
+  main,
+  .mainPanel {
     display: grid;
     align-content: start;
     align-self: stretch;
@@ -49,6 +65,7 @@
     min-height: calc(100vh - 48px);
     padding: 20px;
     min-width: 0;
+    background: #f6f7f9;
     box-sizing: border-box;
     overflow-x: hidden;
   }
@@ -437,6 +454,10 @@
 }
 
 @media (max-width: 980px) {
+  .viewport {
+    min-height: 100vh;
+  }
+
   .enacSistema {
     grid-template-columns: 1fr;
     width: 100%;
@@ -445,7 +466,8 @@
     margin-right: 0;
     min-height: 100vh;
 
-    aside {
+    aside,
+    .sideNav {
       grid-template-columns: repeat(3, minmax(0, 1fr));
       width: 100%;
       min-width: 0;
