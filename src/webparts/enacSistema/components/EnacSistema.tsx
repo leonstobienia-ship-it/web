@@ -763,7 +763,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.layoutVersionBadge}>UI V2.8E6</span>
+            <span className={styles.layoutVersionBadge}>UI V2.8E7</span>
             <span className={styles.layoutDiagnosticBadge}>Layout: full viewport ativo</span>
             <span className={styles.environmentBadge}>Homologação assistida</span>
             <label>

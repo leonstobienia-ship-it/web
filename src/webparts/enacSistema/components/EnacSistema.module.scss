@@ -4,11 +4,10 @@
   align-items: stretch;
   justify-items: stretch;
   position: relative;
-  width: calc(100vw - 16px);
-  max-width: calc(100vw - 16px);
+  width: 100%;
+  max-width: none;
   min-height: calc(100vh - 48px);
-  margin-left: calc(50% - 50vw + 8px);
-  margin-right: calc(50% - 50vw + 8px);
+  margin: 0;
   border: 0;
   border-radius: 0;
   background: #f6f7f9;

@@ -143,6 +143,8 @@ Na V2.8E4, foi aplicado full viewport controlado na classe raiz `.enacSistema`, 
 
 Na V2.8E6, o pacote SPFx foi versionado de `1.0.0.0` para `1.0.0.1` em `config/package-solution.json`, com feature version tambem em `1.0.0.1`, para forcar rastreabilidade no App Catalog e validar cache/site/app instalado. O cabecalho ganhou os marcadores temporarios `UI V2.8E6` e `Layout: full viewport ativo`. O manifest preserva `SharePointWebPart`, `SharePointFullPage` e `supportsFullBleed: true`. Nao houve alteracao de regra, payload, fluxo, chamada REST, status, alçada, trava operacional ou Power Automate.
 
+Na V2.8E7, foi corrigido o corte lateral causado pelo breakout full viewport da V2.8E4/V2.8E6. Como o marcador visual apareceu no tenant, a publicacao/cache estavam carregando; o problema era a margem negativa em `.enacSistema`, que deslocava o root para fora da viewport no WebView. O root voltou para `width: 100%`, `max-width: none` e `margin: 0`, preservando os wrappers internos fluidos. O marcador visual foi atualizado para `UI V2.8E7`. Nao houve hack global SharePoint nem alteracao de regra, payload, fluxo, chamada REST, status, alçada, trava operacional ou Power Automate.
+
 Na V2.7A.4C/V2.7A.4D, a validacao manual de `AprovarCompra` foi registrada como pendente de auditoria porque Leon observou o campo visual `Snapshot da Aprovação de Compra` vazio no formulario do SharePoint. A rotina foi corrigida localmente para confirmar `SnapshotAprovacaoCompra` por GET apos o MERGE de status, registrar historico somente quando o snapshot for preservado e retornar alerta critico se o lookup nao for comprovado. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao executou nova escrita operacional.
 
 Na V2.7A.4E, Leon confirmou manualmente que o campo `Snapshot da Aprovação de Compra` do item `11` permaneceu vinculado ao snapshot `3` / `SNAP-V2.7A-TESTE-11-20260609025123` apos `AprovarCompra`. A acao fica VALIDADA MANUALMENTE para Diretoria como alçada superior, com status `Aguardando aprovação -> Aprovada para compra`, historico criado, HTTP escrita `204`, sem pedido, NF, pagamento ou Power Automate. Isso nao representa liberacao ampla de producao.
@@ -293,6 +295,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8e3-corrigir-painel-interno-largura.md`
 - `docs/v2.8e4-full-viewport-controlado.md`
 - `docs/v2.8e6-versionamento-cache-publicacao-spfx.md`
+- `docs/v2.8e7-corrigir-corte-lateral-full-viewport.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -324,6 +327,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/checklist-v2.8e3-validacao-painel-interno.md`
 - `tests/checklist-v2.8e4-validacao-full-viewport.md`
 - `tests/checklist-v2.8e6-validacao-pacote-carregado.md`
+- `tests/checklist-v2.8e7-validacao-corte-lateral.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`
