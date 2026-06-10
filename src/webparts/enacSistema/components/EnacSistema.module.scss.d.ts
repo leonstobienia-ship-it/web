@@ -5,6 +5,7 @@ declare const styles: {
   headerIdentity: string;
   headerMeta: string;
   environmentBadge: string;
+  layoutVersionBadge: string;
   contentPanel: string;
   adminNotice: string;
   active: string;
