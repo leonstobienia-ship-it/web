@@ -355,6 +355,24 @@ const rangesOverlap = (aMin: number, aMax: number | undefined, bMin: number, bMa
   return aMin <= fimB && bMin <= fimA;
 };
 
+const isSameSharePointItem = (item: IUsuarioPerfilEnac | undefined, targetId: number | undefined): boolean =>
+  Boolean(item && targetId && (Number(item.id) === targetId || String(item.id) === String(targetId)));
+
+const sanitizeEmail = (value: string | undefined): string => {
+  const email = String(value || '').trim();
+  const parts = email.split('@');
+  if (parts.length !== 2) {
+    return email ? `${email.substring(0, 2)}***` : '-';
+  }
+
+  return `${parts[0].substring(0, 2)}***@${parts[1]}`;
+};
+
+const sanitizeM365 = (value: string | number | undefined): string => {
+  const raw = String(value || '').trim();
+  return raw ? `${raw.substring(0, 3)}***` : '-';
+};
+
 const buildPreValidacaoAdministrativaV29C = (
   acao: AcaoAdministrativaV29C,
   flags: FlagsEscritaAdministrativaV29C | undefined,
@@ -386,10 +404,29 @@ const buildPreValidacaoAdministrativaV29C = (
       alertas.push({ codigo: 'PAYLOAD_USUARIO_AUSENTE', mensagem: 'Payload de usuario nao foi montado.' });
     } else {
       itemAlvoId = usuario.itemId;
+      const duplicadoUsuarioInterno = usuario.usuarioInternoId.trim()
+        ? usuariosExistentes.find((item) => normalizeIdentity(item.usuarioInternoId) === normalizeIdentity(usuario.usuarioInternoId))
+        : undefined;
+      const duplicadoEmail = usuario.emailCorporativo.trim()
+        ? usuariosExistentes.find((item) => normalizeIdentity(item.emailCorporativo) === normalizeIdentity(usuario.emailCorporativo))
+        : undefined;
+      const duplicadoContaM365 = usuario.contaMicrosoft365Id
+        ? usuariosExistentes.find((item) => Number(item.contaMicrosoft365Id) === usuario.contaMicrosoft365Id)
+        : undefined;
+      const duplicidadeProprioItemIgnorada = acao === 'AtualizarUsuarioPerfilStatus' && (
+        isSameSharePointItem(duplicadoUsuarioInterno, usuario.itemId) ||
+        isSameSharePointItem(duplicadoEmail, usuario.itemId) ||
+        isSameSharePointItem(duplicadoContaM365, usuario.itemId)
+      );
+
       if (acao === 'AtualizarUsuarioPerfilStatus' && !usuarioExistente) alertas.push({ codigo: 'USUARIO_ALVO_NAO_RESOLVIDO', mensagem: 'Usuario alvo de edicao nao foi encontrado.' });
-      if (acao === 'CriarUsuarioSistema' && usuariosExistentes.some((item) => normalizeIdentity(item.usuarioInternoId) === normalizeIdentity(usuario.usuarioInternoId))) alertas.push({ codigo: 'USUARIO_INTERNO_ID_DUPLICADO', mensagem: `UsuarioInternoId ${usuario.usuarioInternoId} ja existe.` });
-      if (acao === 'CriarUsuarioSistema' && usuariosExistentes.some((item) => normalizeIdentity(item.emailCorporativo) === normalizeIdentity(usuario.emailCorporativo))) alertas.push({ codigo: 'EMAIL_DUPLICADO', mensagem: `Email ${usuario.emailCorporativo} ja existe.` });
-      if (acao === 'CriarUsuarioSistema' && usuario.contaMicrosoft365Id && usuariosExistentes.some((item) => Number(item.contaMicrosoft365Id) === usuario.contaMicrosoft365Id)) alertas.push({ codigo: 'CONTA_M365_DUPLICADA', mensagem: `ContaMicrosoft365Id ${usuario.contaMicrosoft365Id} ja esta vinculada.` });
+      if (acao === 'CriarUsuarioSistema' && duplicadoUsuarioInterno) alertas.push({ codigo: 'USUARIO_INTERNO_ID_DUPLICADO', mensagem: `UsuarioInternoId ${usuario.usuarioInternoId} ja existe.` });
+      if (acao === 'CriarUsuarioSistema' && duplicadoEmail) alertas.push({ codigo: 'EMAIL_DUPLICADO', mensagem: `Email ${sanitizeEmail(usuario.emailCorporativo)} ja existe no cadastro.` });
+      if (acao === 'CriarUsuarioSistema' && duplicadoContaM365) alertas.push({ codigo: 'CONTA_M365_DUPLICADA', mensagem: `ContaMicrosoft365Id ${sanitizeM365(usuario.contaMicrosoft365Id)} ja esta vinculada.` });
+      if (acao === 'AtualizarUsuarioPerfilStatus' && duplicadoUsuarioInterno && !isSameSharePointItem(duplicadoUsuarioInterno, usuario.itemId)) alertas.push({ codigo: 'USUARIO_INTERNO_ID_DUPLICADO', mensagem: 'UsuarioInternoId pertence a outro item.' });
+      if (acao === 'AtualizarUsuarioPerfilStatus' && duplicadoEmail && !isSameSharePointItem(duplicadoEmail, usuario.itemId)) alertas.push({ codigo: 'EMAIL_DUPLICADO', mensagem: 'EmailCorporativo pertence a outro item.' });
+      if (acao === 'AtualizarUsuarioPerfilStatus' && duplicadoContaM365 && !isSameSharePointItem(duplicadoContaM365, usuario.itemId)) alertas.push({ codigo: 'CONTA_M365_DUPLICADA', mensagem: 'ContaMicrosoft365 pertence a outro item.' });
+      if (duplicidadeProprioItemIgnorada) alertas.push({ codigo: 'DUPLICIDADE_PROPRIO_ITEM_IGNORADA', mensagem: 'UsuarioInternoId, EmailCorporativo ou ContaMicrosoft365 encontrados no proprio item alvo; diagnostico nao bloqueante.' });
       if (!usuario.nome.trim()) alertas.push({ codigo: 'NOME_USUARIO_AUSENTE', mensagem: 'Nome completo e obrigatorio.' });
       if (!usuario.usuarioInternoId.trim()) alertas.push({ codigo: 'USUARIO_INTERNO_ID_AUSENTE', mensagem: 'UsuarioInternoId e obrigatorio.' });
       if (!usuario.contaMicrosoft365Id && !usuario.contaMicrosoft365Login?.trim()) alertas.push({ codigo: 'CONTA_M365_AUSENTE', mensagem: 'Informe ContaMicrosoft365Id ou e-mail/login para resolucao controlada.' });
@@ -416,7 +453,20 @@ const buildPreValidacaoAdministrativaV29C = (
         PodeLiberarPagamento: usuario.podeLiberarPagamento,
         PodeProgramarPagamento: usuario.podeProgramarPagamento,
         PodeRegistrarCotacoes: usuario.podeRegistrarCotacoes,
-        PodeVincularNF: usuario.podeVincularNf
+        PodeVincularNF: usuario.podeVincularNf,
+        DiagnosticoPreValidacao: {
+          lista: 'ENAC Usuarios Perfis',
+          itemAlvoId: usuario.itemId || null,
+          itemAlvoNome: usuarioExistente?.nome || usuario.nome,
+          perfilAtual: usuarioExistente?.perfilPrincipal || '-',
+          statusAtual: usuarioExistente ? (usuarioExistente.usuarioAtivo ? 'Ativo' : 'Inativo') : '-',
+          contaMicrosoft365Sanitizada: sanitizeM365(usuario.contaMicrosoft365Id || usuario.contaMicrosoft365Login),
+          emailSanitizado: sanitizeEmail(usuario.emailCorporativo),
+          contaM365DuplicadaReal: Boolean(duplicadoContaM365 && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoContaM365, usuario.itemId))),
+          emailDuplicadoReal: Boolean(duplicadoEmail && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoEmail, usuario.itemId))),
+          usuarioInternoIdDuplicadoReal: Boolean(duplicadoUsuarioInterno && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoUsuarioInterno, usuario.itemId))),
+          duplicidadeProprioItemIgnorada
+        }
       };
     }
   }
@@ -471,7 +521,7 @@ const buildPreValidacaoAdministrativaV29C = (
     }
   }
 
-  const bloqueado = alertas.some((alerta) => alerta.codigo !== 'ALERTA_ADMINISTRADOR_SISTEMA');
+  const bloqueado = alertas.some((alerta) => alerta.codigo !== 'ALERTA_ADMINISTRADOR_SISTEMA' && alerta.codigo !== 'DUPLICIDADE_PROPRIO_ITEM_IGNORADA');
 
   return {
     sucesso: !bloqueado,
@@ -493,6 +543,32 @@ const buildPreValidacaoAdministrativaV29C = (
     itemAlvoId,
     alertas
   };
+};
+
+const formatPreValidacaoUsuarioV29C = (preValidacao: PreValidacaoAdministrativaV29CResultado): string => {
+  const diagnostico = preValidacao.payloadPrevisto?.DiagnosticoPreValidacao as Record<string, unknown> | undefined;
+
+  return [
+    `Resultado: ${preValidacao.mensagem}`,
+    `Escrita admin: ${preValidacao.flagsValidas ? 'flags validas' : 'flags pendentes ou invalidas'}`,
+    `Administrador ativo: ${preValidacao.perfilAdministradorAtivo ? 'sim' : 'nao'}`,
+    `Usuario atual: ${preValidacao.usuarioAtual?.nome || '-'}`,
+    `Perfil ativo: ${preValidacao.usuarioAtual?.perfilPrincipal || '-'}`,
+    `PodeAdministrarConfiguracoes: ${preValidacao.usuarioAtual?.podeAdministrarConfiguracoes ? 'sim' : 'nao'}`,
+    `Lista alvo: ${diagnostico?.lista || 'ENAC Usuarios Perfis'}`,
+    `Item alvo ID: ${diagnostico?.itemAlvoId || preValidacao.itemAlvoId || '-'}`,
+    `Item alvo nome: ${diagnostico?.itemAlvoNome || '-'}`,
+    `Perfil atual: ${diagnostico?.perfilAtual || '-'}`,
+    `Status atual: ${diagnostico?.statusAtual || '-'}`,
+    `Conta M365: ${diagnostico?.contaMicrosoft365Sanitizada || '-'}`,
+    `Email: ${diagnostico?.emailSanitizado || '-'}`,
+    `Conta M365 duplicada real: ${diagnostico?.contaM365DuplicadaReal ? 'sim' : 'nao'}`,
+    `Duplicidade do proprio item ignorada: ${diagnostico?.duplicidadeProprioItemIgnorada ? 'sim' : 'nao'}`,
+    `Email duplicado real: ${diagnostico?.emailDuplicadoReal ? 'sim' : 'nao'}`,
+    `UsuarioInternoId duplicado real: ${diagnostico?.usuarioInternoIdDuplicadoReal ? 'sim' : 'nao'}`,
+    `Pode executar: ${preValidacao.sucesso && !preValidacao.bloqueado ? 'sim' : 'nao'}`,
+    `Alertas: ${preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') || '-'}`
+  ].join('\n');
 };
 
 const alcadasIniciais: IAlcadaEnac[] = [
@@ -1648,7 +1724,7 @@ function AdminUsuarios({
           <label key={key}><input type="checkbox" checked={permissoes[key as keyof typeof permissoes]} onChange={(event) => setPermissoes({ ...permissoes, [key]: event.currentTarget.checked })} />{key}</label>
         ))}
         <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
-        <label>Pré-validação<textarea readOnly value={`${preValidacao.mensagem}\nAlertas: ${preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') || '-'}`} /></label>
+        <label>Pré-validação<textarea readOnly value={formatPreValidacaoUsuarioV29C(preValidacao)} /></label>
         <label>Payload previsto<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
         <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar administração V2.9C</button>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}

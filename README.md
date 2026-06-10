@@ -315,6 +315,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.9c-administracao-pelo-sistema.md`
 - `docs/v2.9c-prevalidacao-escrita-admin.md`
 - `docs/v2.9c-historico-administrativo.md`
+- `docs/v2.9c1-correcao-prevalidacao-duplicidade-usuario.md`
 - `docs/v2.8e-pagina-dedicada-sistema-enac.md`
 - `docs/v2.8e-acesso-permissoes-pagina-sistema.md`
 - `docs/v2.8e1-full-bleed-largura-total-webpart.md`
@@ -357,6 +358,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/checklist-v2.9a-validacao-admin-usuarios-alcadas.md`
 - `tests/checklist-v2.9b-prevalidacao-admin.md`
 - `tests/checklist-v2.9c-escrita-admin-controlada.md`
+- `tests/checklist-v2.9c1-prevalidacao-usuario-existente.md`
 - `tests/checklist-v2.8e-validacao-pagina-app.md`
 - `tests/checklist-v2.8e1-validacao-largura-total.md`
 - `tests/checklist-v2.8e2-validacao-layout-tela-cheia.md`
