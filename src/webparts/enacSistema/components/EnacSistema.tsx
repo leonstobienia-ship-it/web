@@ -1,9 +1,12 @@
 import * as React from 'react';
 import {
+  AcaoAdministrativaV29C,
+  AlcadaAdministrativaV29CPayload,
   ConfiguracaoAdministrativaV29B,
   ConfiguracaoTesteOperacionalV27A,
   IDiagnosticoReadonlyEnac,
   FlagsEscritaAdministrativaV29B,
+  FlagsEscritaAdministrativaV29C,
   FlagsEscritaOperacionalV27A,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
@@ -15,11 +18,14 @@ import {
   OrigemDadosEnac,
   PerfilEnac,
   PreValidacaoAdministrativaV29BResultado,
+  PreValidacaoAdministrativaV29CResultado,
   PreValidacaoOperacionalV27AResultado,
   PreValidacaoTesteControladoSnapshotResultado,
+  ResultadoAdministrativoV29C,
   ResultadoOperacionalV27A,
   SnapshotCriacaoTesteResultado,
-  StatusProcesso
+  StatusProcesso,
+  UsuarioAdministrativoV29CPayload
 } from '../models';
 import { SharePointEnacRepository } from '../services/SharePointEnacRepository';
 import styles from './EnacSistema.module.scss';
@@ -62,6 +68,8 @@ const perfilChoiceSharePoint: Record<PerfilEnac, string> = {
   ConsultaLeitura: 'Consulta / Leitura'
 };
 const CONFIRMACAO_ADMINISTRATIVA_V29B = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9B-ENAC';
+const CONFIRMACAO_ADMINISTRATIVA_V29C = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9C-ENAC';
+const MARCADOR_ADMINISTRATIVO_V29C = 'V2.9C-ADMIN-TESTE';
 
 export interface IEnacSistemaProps {
   currentUserName: string;
@@ -81,6 +89,7 @@ export interface IEnacSistemaProps {
   configuracaoTesteOperacionalV27A?: ConfiguracaoTesteOperacionalV27A;
   flagsEscritaAdministrativaV29B?: FlagsEscritaAdministrativaV29B;
   configuracaoAdministrativaV29B?: ConfiguracaoAdministrativaV29B;
+  flagsEscritaAdministrativaV29C?: FlagsEscritaAdministrativaV29C;
 }
 
 const obras: IObraEnac[] = [
@@ -316,6 +325,172 @@ const buildPreValidacaoAdministrativaV29B = (
     flagsValidas: Boolean(flags?.habilitarEscritaAdministrativaV29B && flags?.modoTesteAdministrativoV29B && flags.confirmacaoAdministrativaV29B === CONFIRMACAO_ADMINISTRATIVA_V29B),
     payloadPrevisto,
     historicoPrevisto,
+    alertas
+  };
+};
+
+const perfilSharePointToInternal = (value: string | undefined): PerfilEnac => {
+  const normalizado = String(value || '').trim();
+  const encontrado = perfilOptions.find((perfilItem) => perfilItem === normalizado || perfilChoiceSharePoint[perfilItem] === normalizado);
+  return encontrado || 'Campo';
+};
+
+const parsePerfisAdicionais = (value: string): PerfilEnac[] =>
+  value
+    .split(';')
+    .filter((item) => item.trim().length > 0)
+    .map((item) => perfilSharePointToInternal(item.trim()))
+    .filter((item, index, array) => array.indexOf(item) === index);
+
+const toSharePointPerfis = (perfis: PerfilEnac[]): string[] => perfis.map((item) => perfilChoiceSharePoint[item]);
+
+const parseNumberField = (value: string | undefined): number | undefined => {
+  const parsed = Number(String(value || '').replace(',', '.').trim());
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const rangesOverlap = (aMin: number, aMax: number | undefined, bMin: number, bMax: number | undefined): boolean => {
+  const fimA = aMax === undefined ? Number.POSITIVE_INFINITY : aMax;
+  const fimB = bMax === undefined ? Number.POSITIVE_INFINITY : bMax;
+  return aMin <= fimB && bMin <= fimA;
+};
+
+const buildPreValidacaoAdministrativaV29C = (
+  acao: AcaoAdministrativaV29C,
+  flags: FlagsEscritaAdministrativaV29C | undefined,
+  usuarioAtual: IUsuarioPerfilEnac | undefined,
+  perfilAdministradorAtivo: boolean,
+  usuariosExistentes: IUsuarioPerfilEnac[],
+  alcadasExistentes: IAlcadaEnac[],
+  payloadUsuario: UsuarioAdministrativoV29CPayload | undefined,
+  payloadAlcada: AlcadaAdministrativaV29CPayload | undefined,
+  justificativa: string
+): PreValidacaoAdministrativaV29CResultado => {
+  const alertas: { codigo: string; mensagem: string }[] = [];
+
+  if (!flags?.habilitarEscritaAdministrativaV29C) alertas.push({ codigo: 'ESCRITA_ADMIN_V29C_DESABILITADA', mensagem: 'habilitarEscritaAdministrativaV29C esta desligada.' });
+  if (!flags?.modoTesteAdministrativoV29C) alertas.push({ codigo: 'MODO_TESTE_ADMIN_V29C_DESLIGADO', mensagem: 'modoTesteAdministrativoV29C deve estar ativo.' });
+  if (flags?.exigirConfirmacaoAdministrativaV29C !== false && flags?.confirmacaoAdministrativaV29C !== CONFIRMACAO_ADMINISTRATIVA_V29C) alertas.push({ codigo: 'CONFIRMACAO_ADMIN_V29C_INVALIDA', mensagem: 'Confirmacao administrativa V2.9C nao confere.' });
+  if (flags?.marcadorAdministrativoV29C !== MARCADOR_ADMINISTRATIVO_V29C) alertas.push({ codigo: 'MARCADOR_ADMIN_V29C_INVALIDO', mensagem: `Marcador administrativo deve ser ${MARCADOR_ADMINISTRATIVO_V29C}.` });
+  if (!usuarioAtual || !usuarioAtual.usuarioAtivo || !perfilAdministradorAtivo || !usuarioAtual.podeAdministrarConfiguracoes) alertas.push({ codigo: 'USUARIO_SEM_ADMINISTRACAO', mensagem: 'Acao exige usuario ativo com Administrador do Sistema e PodeAdministrarConfiguracoes=true.' });
+  if (!justificativa.trim()) alertas.push({ codigo: 'JUSTIFICATIVA_AUSENTE', mensagem: 'Justificativa administrativa e obrigatoria.' });
+
+  let payloadPrevisto: Record<string, unknown> | undefined;
+  let itemAlvoId: number | undefined;
+
+  if (acao === 'CriarUsuarioSistema' || acao === 'AtualizarUsuarioPerfilStatus') {
+    const usuario = payloadUsuario;
+    const usuarioExistente = usuario?.itemId ? usuariosExistentes.find((item) => Number(item.id) === usuario.itemId) : undefined;
+
+    if (!usuario) {
+      alertas.push({ codigo: 'PAYLOAD_USUARIO_AUSENTE', mensagem: 'Payload de usuario nao foi montado.' });
+    } else {
+      itemAlvoId = usuario.itemId;
+      if (acao === 'AtualizarUsuarioPerfilStatus' && !usuarioExistente) alertas.push({ codigo: 'USUARIO_ALVO_NAO_RESOLVIDO', mensagem: 'Usuario alvo de edicao nao foi encontrado.' });
+      if (acao === 'CriarUsuarioSistema' && usuariosExistentes.some((item) => normalizeIdentity(item.usuarioInternoId) === normalizeIdentity(usuario.usuarioInternoId))) alertas.push({ codigo: 'USUARIO_INTERNO_ID_DUPLICADO', mensagem: `UsuarioInternoId ${usuario.usuarioInternoId} ja existe.` });
+      if (acao === 'CriarUsuarioSistema' && usuariosExistentes.some((item) => normalizeIdentity(item.emailCorporativo) === normalizeIdentity(usuario.emailCorporativo))) alertas.push({ codigo: 'EMAIL_DUPLICADO', mensagem: `Email ${usuario.emailCorporativo} ja existe.` });
+      if (acao === 'CriarUsuarioSistema' && usuario.contaMicrosoft365Id && usuariosExistentes.some((item) => Number(item.contaMicrosoft365Id) === usuario.contaMicrosoft365Id)) alertas.push({ codigo: 'CONTA_M365_DUPLICADA', mensagem: `ContaMicrosoft365Id ${usuario.contaMicrosoft365Id} ja esta vinculada.` });
+      if (!usuario.nome.trim()) alertas.push({ codigo: 'NOME_USUARIO_AUSENTE', mensagem: 'Nome completo e obrigatorio.' });
+      if (!usuario.usuarioInternoId.trim()) alertas.push({ codigo: 'USUARIO_INTERNO_ID_AUSENTE', mensagem: 'UsuarioInternoId e obrigatorio.' });
+      if (!usuario.contaMicrosoft365Id && !usuario.contaMicrosoft365Login?.trim()) alertas.push({ codigo: 'CONTA_M365_AUSENTE', mensagem: 'Informe ContaMicrosoft365Id ou e-mail/login para resolucao controlada.' });
+      if (!isValidEmail(usuario.emailCorporativo)) alertas.push({ codigo: 'EMAIL_INVALIDO', mensagem: 'EmailCorporativo deve ser valido.' });
+      if (perfilOptions.indexOf(usuario.perfilPrincipal) < 0) alertas.push({ codigo: 'PERFIL_INVALIDO', mensagem: 'PerfilPrincipal invalido.' });
+      if (usuario.perfisAdicionais.some((perfilItem) => perfilOptions.indexOf(perfilItem) < 0)) alertas.push({ codigo: 'PERFIS_ADICIONAIS_INVALIDOS', mensagem: 'PerfisAdicionais contem choice invalido.' });
+      if (usuario.perfilPrincipal === 'AdministradorSistema') alertas.push({ codigo: 'ALERTA_ADMINISTRADOR_SISTEMA', mensagem: 'Administrador do Sistema exige confirmacao manual forte.' });
+
+      payloadPrevisto = {
+        Title: usuario.nome,
+        UsuarioInternoId: usuario.usuarioInternoId,
+        ContaMicrosoft365Id: usuario.contaMicrosoft365Id || 'resolver via ensureUser',
+        EmailCorporativo: usuario.emailCorporativo,
+        PerfilPrincipal: perfilChoiceSharePoint[usuario.perfilPrincipal],
+        PerfisAdicionais: { results: toSharePointPerfis(usuario.perfisAdicionais) },
+        UsuarioAtivo: usuario.usuarioAtivo,
+        CargoFuncao: usuario.cargoFuncao || '',
+        Observacoes: `${MARCADOR_ADMINISTRATIVO_V29C} - ${usuario.observacoes || justificativa}`,
+        PodeAdministrarConfiguracoes: usuario.podeAdministrarConfiguracoes,
+        PodeAprovarCompras: usuario.podeAprovarCompras,
+        PodeAtualizarStatusFinal: usuario.podeAtualizarStatusFinal,
+        PodeCriarSolicitacao: usuario.podeCriarSolicitacao,
+        PodeEmitirPedido: usuario.podeEmitirPedido,
+        PodeLiberarPagamento: usuario.podeLiberarPagamento,
+        PodeProgramarPagamento: usuario.podeProgramarPagamento,
+        PodeRegistrarCotacoes: usuario.podeRegistrarCotacoes,
+        PodeVincularNF: usuario.podeVincularNf
+      };
+    }
+  }
+
+  if (acao === 'AtualizarAlcadaUsuario') {
+    const alcada = payloadAlcada;
+    const alcadaExistente = alcada?.itemId ? alcadasExistentes.find((item) => Number(item.id) === alcada.itemId) : undefined;
+
+    if (!alcada) {
+      alertas.push({ codigo: 'PAYLOAD_ALCADA_AUSENTE', mensagem: 'Payload de alcada nao foi montado.' });
+    } else {
+      itemAlvoId = alcada.itemId;
+      if (alcada.itemId && !alcadaExistente) alertas.push({ codigo: 'ALCADA_ALVO_NAO_RESOLVIDA', mensagem: 'Alcada alvo de edicao nao foi encontrada.' });
+      if (!alcada.titulo.trim()) alertas.push({ codigo: 'TITULO_ALCADA_AUSENTE', mensagem: 'Title da alcada e obrigatorio.' });
+      if (!alcada.regraInternaId.trim()) alertas.push({ codigo: 'REGRA_INTERNA_ID_AUSENTE', mensagem: 'RegraInternaId e obrigatorio.' });
+      if (alcada.valorMinimo < 0) alertas.push({ codigo: 'VALOR_MINIMO_INVALIDO', mensagem: 'ValorMinimo deve ser maior ou igual a zero.' });
+      if (!alcada.ilimitado && (alcada.valorMaximo === undefined || alcada.valorMaximo < alcada.valorMinimo)) alertas.push({ codigo: 'VALOR_MAXIMO_INVALIDO', mensagem: 'ValorMaximo deve ser maior ou igual ao ValorMinimo.' });
+
+      const aprovadorPrincipal = usuariosExistentes.find((item) => Number(item.id) === alcada.aprovadorPrincipalId);
+      const aprovadorAdicional = alcada.aprovadorAdicionalId ? usuariosExistentes.find((item) => Number(item.id) === alcada.aprovadorAdicionalId) : undefined;
+      if (!aprovadorPrincipal || !aprovadorPrincipal.usuarioAtivo) alertas.push({ codigo: 'APROVADOR_PRINCIPAL_INVALIDO', mensagem: 'AprovadorPrincipalId deve existir e estar ativo.' });
+      if (alcada.aprovadorAdicionalId && (!aprovadorAdicional || !aprovadorAdicional.usuarioAtivo)) alertas.push({ codigo: 'APROVADOR_ADICIONAL_INVALIDO', mensagem: 'AprovadorAdicionalId deve existir e estar ativo.' });
+      if (!alcada.vigenciaInicial.trim()) alertas.push({ codigo: 'VIGENCIA_INICIAL_AUSENTE', mensagem: 'VigenciaInicial e obrigatoria.' });
+
+      const conflito = alcadasExistentes.some((item) =>
+        Number(item.id) !== alcada.itemId &&
+        item.ativa &&
+        item.processo === alcada.processo &&
+        (item.tipoSolicitacao || 'Todos') === (alcada.tipoSolicitacao || 'Todos') &&
+        String(item.obraId || '') === String(alcada.obraId || '') &&
+        rangesOverlap(item.valorMinimo, item.ilimitado ? undefined : item.valorMaximo, alcada.valorMinimo, alcada.ilimitado ? undefined : alcada.valorMaximo)
+      );
+      if (alcada.ativa && conflito) alertas.push({ codigo: 'CONFLITO_ALCADA_ATIVA', mensagem: 'Existe regra ativa com mesma chave e faixa sobreposta.' });
+
+      payloadPrevisto = {
+        Title: alcada.titulo,
+        RegraInternaId: alcada.regraInternaId,
+        Processo: alcada.processo,
+        TipoSolicitacao: alcada.tipoSolicitacao || 'Todos',
+        ValorMinimo: alcada.valorMinimo,
+        ValorMaximo: alcada.ilimitado ? undefined : alcada.valorMaximo,
+        Ilimitado: alcada.ilimitado,
+        AprovadorPrincipalId: alcada.aprovadorPrincipalId,
+        AprovadorAdicionalId: alcada.aprovadorAdicionalId,
+        ExigeAprovacaoAdicional: alcada.exigeAprovacaoAdicional,
+        Ativo: alcada.ativa,
+        VigenciaInicial: alcada.vigenciaInicial,
+        VigenciaFinal: alcada.vigenciaFinal || undefined,
+        ObraId: alcada.obraId,
+        Observacoes: `${MARCADOR_ADMINISTRATIVO_V29C} - ${alcada.observacoes || justificativa}`
+      };
+    }
+  }
+
+  const bloqueado = alertas.some((alerta) => alerta.codigo !== 'ALERTA_ADMINISTRADOR_SISTEMA');
+
+  return {
+    sucesso: !bloqueado,
+    bloqueado,
+    mensagem: bloqueado ? 'Pre-validacao administrativa V2.9C bloqueada.' : 'Pre-validacao administrativa V2.9C concluida; escrita depende da confirmacao final.',
+    acao,
+    usuarioAtual,
+    perfilAdministradorAtivo,
+    flagsValidas: Boolean(flags?.habilitarEscritaAdministrativaV29C && flags.modoTesteAdministrativoV29C && flags.confirmacaoAdministrativaV29C === CONFIRMACAO_ADMINISTRATIVA_V29C),
+    payloadPrevisto,
+    historicoPrevisto: {
+      Title: `${MARCADOR_ADMINISTRATIVO_V29C} ${acao}`,
+      TipoConfiguracao: acao,
+      ValorAnterior: 'Gerado no momento da execucao a partir do item carregado.',
+      ValorNovo: JSON.stringify(payloadPrevisto || {}),
+      Justificativa: justificativa,
+      Resultado: bloqueado ? 'Bloqueado na pre-validacao' : 'Previsto para execucao controlada'
+    },
+    itemAlvoId,
     alertas
   };
 };
@@ -1115,8 +1290,28 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         {view === 'financeiro' && <Financeiro selected={selected} onProgramarPagamento={programarPagamento} />}
         {view === 'liberacao' && <Liberacao solicitacoes={solicitacoes} onConcluir={concluirPagamento} />}
         {view === 'historico' && <Historico selected={selected} />}
-        {view === 'adminUsuarios' && perfilAdministradorAtivo && <AdminUsuarios usuarios={usuariosParaAdmin} origemDados={origemDadosEfetiva} />}
-        {view === 'adminAlcadas' && perfilAdministradorAtivo && <Alcadas alcadas={alcadasParaAdmin} origemDados={origemDadosEfetiva} />}
+        {view === 'adminUsuarios' && perfilAdministradorAtivo && (
+          <AdminUsuarios
+            usuarios={usuariosParaAdmin}
+            alcadas={alcadasParaAdmin}
+            origemDados={origemDadosEfetiva}
+            repository={props.repository}
+            flags={props.flagsEscritaAdministrativaV29C}
+            usuarioAtual={usuarioAtualSistema}
+            perfilAdministradorAtivo={perfilAdministradorAtivo}
+          />
+        )}
+        {view === 'adminAlcadas' && perfilAdministradorAtivo && (
+          <Alcadas
+            alcadas={alcadasParaAdmin}
+            usuarios={usuariosParaAdmin}
+            origemDados={origemDadosEfetiva}
+            repository={props.repository}
+            flags={props.flagsEscritaAdministrativaV29C}
+            usuarioAtual={usuarioAtualSistema}
+            perfilAdministradorAtivo={perfilAdministradorAtivo}
+          />
+        )}
         {view === 'adminHistorico' && (
           <>
             {perfilAdministradorAtivo && <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />}
@@ -1302,21 +1497,161 @@ function Liberacao({ solicitacoes, onConcluir }: { solicitacoes: ISolicitacaoEna
   );
 }
 
-function AdminUsuarios({ usuarios: usuariosExibidos, origemDados }: { usuarios: IUsuarioPerfilEnac[]; origemDados: OrigemDadosEnac }): JSX.Element {
+function AdminUsuarios({
+  usuarios: usuariosExibidos,
+  alcadas,
+  origemDados,
+  repository,
+  flags,
+  usuarioAtual,
+  perfilAdministradorAtivo
+}: {
+  usuarios: IUsuarioPerfilEnac[];
+  alcadas: IAlcadaEnac[];
+  origemDados: OrigemDadosEnac;
+  repository?: SharePointEnacRepository;
+  flags?: FlagsEscritaAdministrativaV29C;
+  usuarioAtual?: IUsuarioPerfilEnac;
+  perfilAdministradorAtivo: boolean;
+}): JSX.Element {
+  const [acao, setAcao] = React.useState<AcaoAdministrativaV29C>('AtualizarUsuarioPerfilStatus');
+  const [usuarioId, setUsuarioId] = React.useState<string>(usuariosExibidos[0]?.id || '');
+  const usuarioSelecionado = usuariosExibidos.find((usuario) => usuario.id === usuarioId) || usuariosExibidos[0];
+  const [nome, setNome] = React.useState<string>(usuarioSelecionado?.nome || '');
+  const [usuarioInternoId, setUsuarioInternoId] = React.useState<string>(usuarioSelecionado?.usuarioInternoId || '');
+  const [contaMicrosoft365, setContaMicrosoft365] = React.useState<string>(usuarioSelecionado?.contaMicrosoft365Id ? String(usuarioSelecionado.contaMicrosoft365Id) : '');
+  const [email, setEmail] = React.useState<string>(usuarioSelecionado?.emailCorporativo || '');
+  const [perfilPrincipal, setPerfilPrincipal] = React.useState<PerfilEnac>(usuarioSelecionado?.perfilPrincipal || 'Campo');
+  const [perfisAdicionais, setPerfisAdicionais] = React.useState<string>((usuarioSelecionado?.perfisAdicionais || []).join(';'));
+  const [usuarioAtivo, setUsuarioAtivo] = React.useState<boolean>(usuarioSelecionado?.usuarioAtivo !== false);
+  const [cargoFuncao, setCargoFuncao] = React.useState<string>(usuarioSelecionado?.cargoFuncao || '');
+  const [observacoes, setObservacoes] = React.useState<string>(usuarioSelecionado?.observacoes || '');
+  const [permissoes, setPermissoes] = React.useState({
+    podeAdministrarConfiguracoes: usuarioSelecionado?.podeAdministrarConfiguracoes === true,
+    podeAprovarCompras: usuarioSelecionado?.podeAprovarCompras === true,
+    podeAtualizarStatusFinal: usuarioSelecionado?.podeAtualizarStatusFinal === true,
+    podeCriarSolicitacao: usuarioSelecionado?.podeCriarSolicitacao === true,
+    podeEmitirPedido: usuarioSelecionado?.podeEmitirPedido === true,
+    podeLiberarPagamento: usuarioSelecionado?.podeLiberarPagamento === true,
+    podeProgramarPagamento: usuarioSelecionado?.podeProgramarPagamento === true,
+    podeRegistrarCotacoes: usuarioSelecionado?.podeRegistrarCotacoes === true,
+    podeVincularNf: usuarioSelecionado?.podeVincularNf === true
+  });
+  const [justificativa, setJustificativa] = React.useState<string>(`${MARCADOR_ADMINISTRATIVO_V29C} - ajuste administrativo controlado`);
+  const [confirmacaoFinal, setConfirmacaoFinal] = React.useState<string>('');
+  const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
+  const [executando, setExecutando] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!usuarioSelecionado || acao === 'CriarUsuarioSistema') {
+      return;
+    }
+
+    setNome(usuarioSelecionado.nome || '');
+    setUsuarioInternoId(usuarioSelecionado.usuarioInternoId || '');
+    setContaMicrosoft365(usuarioSelecionado.contaMicrosoft365Id ? String(usuarioSelecionado.contaMicrosoft365Id) : '');
+    setEmail(usuarioSelecionado.emailCorporativo || '');
+    setPerfilPrincipal(usuarioSelecionado.perfilPrincipal || 'Campo');
+    setPerfisAdicionais((usuarioSelecionado.perfisAdicionais || []).join(';'));
+    setUsuarioAtivo(usuarioSelecionado.usuarioAtivo !== false);
+    setCargoFuncao(usuarioSelecionado.cargoFuncao || '');
+    setObservacoes(usuarioSelecionado.observacoes || '');
+    setPermissoes({
+      podeAdministrarConfiguracoes: usuarioSelecionado.podeAdministrarConfiguracoes === true,
+      podeAprovarCompras: usuarioSelecionado.podeAprovarCompras === true,
+      podeAtualizarStatusFinal: usuarioSelecionado.podeAtualizarStatusFinal === true,
+      podeCriarSolicitacao: usuarioSelecionado.podeCriarSolicitacao === true,
+      podeEmitirPedido: usuarioSelecionado.podeEmitirPedido === true,
+      podeLiberarPagamento: usuarioSelecionado.podeLiberarPagamento === true,
+      podeProgramarPagamento: usuarioSelecionado.podeProgramarPagamento === true,
+      podeRegistrarCotacoes: usuarioSelecionado.podeRegistrarCotacoes === true,
+      podeVincularNf: usuarioSelecionado.podeVincularNf === true
+    });
+  }, [acao, usuarioSelecionado?.id]);
+
+  const contaNumerica = parseNumberField(contaMicrosoft365);
+  const payloadUsuario: UsuarioAdministrativoV29CPayload = {
+    itemId: acao === 'AtualizarUsuarioPerfilStatus' ? Number(usuarioSelecionado?.id || 0) || undefined : undefined,
+    nome,
+    usuarioInternoId,
+    contaMicrosoft365Id: contaNumerica,
+    contaMicrosoft365Login: contaNumerica ? undefined : contaMicrosoft365,
+    emailCorporativo: email,
+    perfilPrincipal,
+    perfisAdicionais: parsePerfisAdicionais(perfisAdicionais),
+    usuarioAtivo,
+    cargoFuncao,
+    observacoes,
+    ...permissoes
+  };
+  const preValidacao = buildPreValidacaoAdministrativaV29C(acao, flags, usuarioAtual, perfilAdministradorAtivo, usuariosExibidos, alcadas, payloadUsuario, undefined, justificativa);
+  const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
+
+  async function executar(): Promise<void> {
+    if (!repository || !usuarioAtual || !flags || !podeSalvar) {
+      setResultado({
+        sucesso: false,
+        bloqueado: true,
+        acao,
+        mensagem: 'Escrita administrativa V2.9C bloqueada: pre-validacao, origem SharePoint ou confirmacao final ausente.',
+        alertas: preValidacao.alertas
+      });
+      return;
+    }
+
+    setExecutando(true);
+    try {
+      setResultado(await repository.executarAdministracaoV29C({
+        acao,
+        flags,
+        usuarioExecutor: usuarioAtual,
+        payloadUsuario,
+        justificativa,
+        confirmacaoFinal,
+        preValidacao,
+        valorAnterior: usuarioSelecionado ? { ...usuarioSelecionado } : undefined
+      }));
+    } catch (error) {
+      setResultado({
+        sucesso: false,
+        bloqueado: true,
+        acao,
+        mensagem: error instanceof Error ? error.message : String(error),
+        alertas: [{ codigo: 'ERRO_EXECUCAO_ADMIN_V29C', mensagem: error instanceof Error ? error.message : String(error) }]
+      });
+    } finally {
+      setExecutando(false);
+    }
+  }
+
   return (
     <>
-      <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint readonly' : 'Fallback local'}</p>
+      <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint' : 'Fallback local'}</p>
       <div className={styles.adminNotice}>
-        Edição administrativa preparada para homologação: criação de usuário, perfil, status e justificativa dependem da auditoria readonly V2.9A, pré-validação, confirmação manual e histórico. Escrita real permanece bloqueada.
+        Administração V2.9C disponível apenas para Administrador do Sistema ativo. A escrita exige flags no Property Pane, token, pré-validação, confirmação final e histórico.
       </div>
       <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
-        <h2>CriarUsuarioSistema</h2>
-        <label>Nome de exibição<input disabled placeholder="Schema de usuários pendente de confirmação" /></label>
-        <label>Usuário Microsoft 365 / e-mail<input disabled placeholder="Pessoa ou Grupo / ContaMicrosoft365" /></label>
-        <label>Perfil/categoria<select disabled>{perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}</select></label>
-        <label>Status<select disabled><option>Ativo</option><option>Inativo</option></select></label>
-        <label>Observações<textarea disabled placeholder="Justificativa obrigatória em rodada futura" /></label>
-        <button type="button" disabled>Criar usuário bloqueado até schema confirmado</button>
+        <h2>Usuários do sistema</h2>
+        <label>Ação<select value={acao} onChange={(event) => setAcao(event.currentTarget.value as AcaoAdministrativaV29C)}><option value="AtualizarUsuarioPerfilStatus">Atualizar usuário</option><option value="CriarUsuarioSistema">Criar usuário</option></select></label>
+        {acao === 'AtualizarUsuarioPerfilStatus' && <label>Usuário alvo<select value={usuarioId} onChange={(event) => setUsuarioId(event.currentTarget.value)}>{usuariosExibidos.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} - {usuario.usuarioInternoId}</option>)}</select></label>}
+        <label>Nome completo<input value={nome} onChange={(event) => setNome(event.currentTarget.value)} /></label>
+        <label>Conta Microsoft 365 ID ou e-mail<input value={contaMicrosoft365} onChange={(event) => setContaMicrosoft365(event.currentTarget.value)} /></label>
+        <label>E-mail corporativo<input value={email} onChange={(event) => setEmail(event.currentTarget.value)} /></label>
+        <label>ID interno<input value={usuarioInternoId} onChange={(event) => setUsuarioInternoId(event.currentTarget.value)} /></label>
+        <label>Perfil principal<select value={perfilPrincipal} onChange={(event) => setPerfilPrincipal(event.currentTarget.value as PerfilEnac)}>{perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}</select></label>
+        <label>Perfis adicionais (; separados)<input value={perfisAdicionais} onChange={(event) => setPerfisAdicionais(event.currentTarget.value)} /></label>
+        <label>Status<select value={usuarioAtivo ? 'Ativo' : 'Inativo'} onChange={(event) => setUsuarioAtivo(event.currentTarget.value === 'Ativo')}><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select></label>
+        <label>Cargo/Função<input value={cargoFuncao} onChange={(event) => setCargoFuncao(event.currentTarget.value)} /></label>
+        <label>Observações<textarea value={observacoes} onChange={(event) => setObservacoes(event.currentTarget.value)} /></label>
+        <label>Justificativa<textarea value={justificativa} onChange={(event) => setJustificativa(event.currentTarget.value)} /></label>
+        {Object.keys(permissoes).map((key) => (
+          <label key={key}><input type="checkbox" checked={permissoes[key as keyof typeof permissoes]} onChange={(event) => setPermissoes({ ...permissoes, [key]: event.currentTarget.checked })} />{key}</label>
+        ))}
+        <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
+        <label>Pré-validação<textarea readOnly value={`${preValidacao.mensagem}\nAlertas: ${preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') || '-'}`} /></label>
+        <label>Payload previsto<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
+        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar administração V2.9C</button>
+        {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
         <thead><tr><th>Nome</th><th>Usuário interno</th><th>Categoria/perfis</th><th>Alterar perfil</th><th>Cargo/Função</th><th>Status</th><th>Alterar status</th></tr></thead>
@@ -1538,21 +1873,151 @@ function PainelAdministrativoV29B({ preValidacao }: { preValidacao: PreValidacao
   );
 }
 
-function Alcadas({ alcadas, origemDados }: { alcadas: IAlcadaEnac[]; origemDados: OrigemDadosEnac }): JSX.Element {
+function Alcadas({
+  alcadas,
+  usuarios,
+  origemDados,
+  repository,
+  flags,
+  usuarioAtual,
+  perfilAdministradorAtivo
+}: {
+  alcadas: IAlcadaEnac[];
+  usuarios: IUsuarioPerfilEnac[];
+  origemDados: OrigemDadosEnac;
+  repository?: SharePointEnacRepository;
+  flags?: FlagsEscritaAdministrativaV29C;
+  usuarioAtual?: IUsuarioPerfilEnac;
+  perfilAdministradorAtivo: boolean;
+}): JSX.Element {
+  const [alcadaId, setAlcadaId] = React.useState<string>(alcadas[0]?.id || '');
+  const alcadaSelecionada = alcadas.find((item) => item.id === alcadaId) || alcadas[0];
+  const [titulo, setTitulo] = React.useState<string>(alcadaSelecionada?.regraInternaId || '');
+  const [regraInternaId, setRegraInternaId] = React.useState<string>(alcadaSelecionada?.regraInternaId || '');
+  const [processo, setProcesso] = React.useState<AlcadaAdministrativaV29CPayload['processo']>('Compra');
+  const [tipoSolicitacao, setTipoSolicitacao] = React.useState<string>(alcadaSelecionada?.tipoSolicitacao || 'Todos');
+  const [valorMinimo, setValorMinimo] = React.useState<string>(String(alcadaSelecionada?.valorMinimo || 0));
+  const [valorMaximo, setValorMaximo] = React.useState<string>(alcadaSelecionada?.valorMaximo ? String(alcadaSelecionada.valorMaximo) : '');
+  const [ilimitado, setIlimitado] = React.useState<boolean>(alcadaSelecionada?.ilimitado === true);
+  const [aprovadorPrincipalId, setAprovadorPrincipalId] = React.useState<string>(String(alcadaSelecionada?.aprovadorPrincipalId || ''));
+  const [aprovadorAdicionalId, setAprovadorAdicionalId] = React.useState<string>(String(alcadaSelecionada?.aprovadorAdicionalId || ''));
+  const [exigeAprovacaoAdicional, setExigeAprovacaoAdicional] = React.useState<boolean>(alcadaSelecionada?.exigeAprovacaoAdicional === true);
+  const [ativa, setAtiva] = React.useState<boolean>(alcadaSelecionada?.ativa !== false);
+  const [vigenciaInicial, setVigenciaInicial] = React.useState<string>(alcadaSelecionada?.vigenciaInicial || '');
+  const [vigenciaFinal, setVigenciaFinal] = React.useState<string>(alcadaSelecionada?.vigenciaFinal || '');
+  const [observacoes, setObservacoes] = React.useState<string>(alcadaSelecionada?.observacoes || '');
+  const [justificativa, setJustificativa] = React.useState<string>(`${MARCADOR_ADMINISTRATIVO_V29C} - ajuste de alcada controlado`);
+  const [confirmacaoFinal, setConfirmacaoFinal] = React.useState<string>('');
+  const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
+  const [executando, setExecutando] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!alcadaSelecionada) {
+      return;
+    }
+
+    setTitulo(alcadaSelecionada.regraInternaId || '');
+    setRegraInternaId(alcadaSelecionada.regraInternaId || '');
+    setProcesso(alcadaSelecionada.processo === 'LiberacaoBancaria' ? 'Liberação Bancária' : alcadaSelecionada.processo as AlcadaAdministrativaV29CPayload['processo']);
+    setTipoSolicitacao(alcadaSelecionada.tipoSolicitacao || 'Todos');
+    setValorMinimo(String(alcadaSelecionada.valorMinimo || 0));
+    setValorMaximo(alcadaSelecionada.valorMaximo ? String(alcadaSelecionada.valorMaximo) : '');
+    setIlimitado(alcadaSelecionada.ilimitado === true);
+    setAprovadorPrincipalId(String(alcadaSelecionada.aprovadorPrincipalId || ''));
+    setAprovadorAdicionalId(String(alcadaSelecionada.aprovadorAdicionalId || ''));
+    setExigeAprovacaoAdicional(alcadaSelecionada.exigeAprovacaoAdicional === true);
+    setAtiva(alcadaSelecionada.ativa !== false);
+    setVigenciaInicial(alcadaSelecionada.vigenciaInicial || '');
+    setVigenciaFinal(alcadaSelecionada.vigenciaFinal || '');
+    setObservacoes(alcadaSelecionada.observacoes || '');
+  }, [alcadaSelecionada?.id]);
+
+  const payloadAlcada: AlcadaAdministrativaV29CPayload = {
+    itemId: Number(alcadaSelecionada?.id || 0) || undefined,
+    titulo,
+    regraInternaId,
+    processo,
+    tipoSolicitacao,
+    valorMinimo: parseNumberField(valorMinimo) || 0,
+    valorMaximo: ilimitado ? undefined : parseNumberField(valorMaximo),
+    ilimitado,
+    aprovadorPrincipalId: Number(aprovadorPrincipalId || 0),
+    aprovadorAdicionalId: Number(aprovadorAdicionalId || 0) || undefined,
+    exigeAprovacaoAdicional,
+    ativa,
+    vigenciaInicial,
+    vigenciaFinal,
+    observacoes
+  };
+  const preValidacao = buildPreValidacaoAdministrativaV29C('AtualizarAlcadaUsuario', flags, usuarioAtual, perfilAdministradorAtivo, usuarios, alcadas, undefined, payloadAlcada, justificativa);
+  const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
+
+  async function executar(): Promise<void> {
+    if (!repository || !usuarioAtual || !flags || !podeSalvar) {
+      setResultado({
+        sucesso: false,
+        bloqueado: true,
+        acao: 'AtualizarAlcadaUsuario',
+        mensagem: 'Escrita administrativa V2.9C bloqueada: pre-validacao, origem SharePoint ou confirmacao final ausente.',
+        alertas: preValidacao.alertas
+      });
+      return;
+    }
+
+    setExecutando(true);
+    try {
+      setResultado(await repository.executarAdministracaoV29C({
+        acao: 'AtualizarAlcadaUsuario',
+        flags,
+        usuarioExecutor: usuarioAtual,
+        payloadAlcada,
+        justificativa,
+        confirmacaoFinal,
+        preValidacao,
+        valorAnterior: alcadaSelecionada ? { ...alcadaSelecionada } : undefined
+      }));
+    } catch (error) {
+      setResultado({
+        sucesso: false,
+        bloqueado: true,
+        acao: 'AtualizarAlcadaUsuario',
+        mensagem: error instanceof Error ? error.message : String(error),
+        alertas: [{ codigo: 'ERRO_EXECUCAO_ALCADA_V29C', mensagem: error instanceof Error ? error.message : String(error) }]
+      });
+    } finally {
+      setExecutando(false);
+    }
+  }
+
   return (
     <>
-      <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint readonly' : 'Fallback local'}</p>
+      <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint' : 'Fallback local'}</p>
       <div className={styles.adminNotice}>
-        Alteração de alçadas por usuário preparada como ação controlada futura: depende de schema confirmado, pré-validação, confirmação manual e histórico.
+        Alteração de alçadas V2.9C não retroage snapshots já criados e sempre registra histórico administrativo.
       </div>
       <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
         <h2>AtualizarAlcadaUsuario</h2>
-        <label>Usuário ou perfil vinculado<input disabled placeholder="Campo real pendente de auditoria readonly" /></label>
-        <label>Processo<select disabled><option>Compra</option><option>Pagamento</option><option>NF</option><option>Contrato</option></select></label>
-        <label>Limite mínimo<input disabled placeholder="Valor mínimo" /></label>
-        <label>Limite máximo<input disabled placeholder="Valor máximo ou ilimitado" /></label>
-        <label>Observação/justificativa<textarea disabled placeholder="Histórico obrigatório em rodada futura" /></label>
-        <button type="button" disabled>Atualizar alçada bloqueado até schema confirmado</button>
+        <label>Regra alvo<select value={alcadaId} onChange={(event) => setAlcadaId(event.currentTarget.value)}>{alcadas.map((item) => <option key={item.id} value={item.id}>{item.regraInternaId || item.id}</option>)}</select></label>
+        <label>Título<input value={titulo} onChange={(event) => setTitulo(event.currentTarget.value)} /></label>
+        <label>RegraInternaId<input value={regraInternaId} onChange={(event) => setRegraInternaId(event.currentTarget.value)} /></label>
+        <label>Processo<select value={processo} onChange={(event) => setProcesso(event.currentTarget.value as AlcadaAdministrativaV29CPayload['processo'])}><option>Compra</option><option>Liberação Bancária</option><option>Medição</option><option>Pagamento</option><option>Outro</option></select></label>
+        <label>TipoSolicitacao<input value={tipoSolicitacao} onChange={(event) => setTipoSolicitacao(event.currentTarget.value)} /></label>
+        <label>ValorMinimo<input value={valorMinimo} onChange={(event) => setValorMinimo(event.currentTarget.value)} /></label>
+        <label>ValorMaximo<input value={valorMaximo} disabled={ilimitado} onChange={(event) => setValorMaximo(event.currentTarget.value)} /></label>
+        <label><input type="checkbox" checked={ilimitado} onChange={(event) => setIlimitado(event.currentTarget.checked)} />Ilimitado</label>
+        <label>AprovadorPrincipal<select value={aprovadorPrincipalId} onChange={(event) => setAprovadorPrincipalId(event.currentTarget.value)}><option value="">Selecione</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
+        <label>AprovadorAdicional<select value={aprovadorAdicionalId} onChange={(event) => setAprovadorAdicionalId(event.currentTarget.value)}><option value="">Nenhum</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
+        <label><input type="checkbox" checked={exigeAprovacaoAdicional} onChange={(event) => setExigeAprovacaoAdicional(event.currentTarget.checked)} />Exige aprovação adicional</label>
+        <label><input type="checkbox" checked={ativa} onChange={(event) => setAtiva(event.currentTarget.checked)} />Regra ativa</label>
+        <label>VigenciaInicial<input type="date" value={vigenciaInicial ? vigenciaInicial.substring(0, 10) : ''} onChange={(event) => setVigenciaInicial(event.currentTarget.value)} /></label>
+        <label>VigenciaFinal<input type="date" value={vigenciaFinal ? vigenciaFinal.substring(0, 10) : ''} onChange={(event) => setVigenciaFinal(event.currentTarget.value)} /></label>
+        <label>Observações<textarea value={observacoes} onChange={(event) => setObservacoes(event.currentTarget.value)} /></label>
+        <label>Justificativa<textarea value={justificativa} onChange={(event) => setJustificativa(event.currentTarget.value)} /></label>
+        <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
+        <label>Pré-validação<textarea readOnly value={`${preValidacao.mensagem}\nAlertas: ${preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') || '-'}`} /></label>
+        <label>Payload previsto<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
+        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar alçada V2.9C</button>
+        {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
         <thead><tr><th>Regra</th><th>Processo</th><th>Tipo</th><th>Faixa</th><th>Aprovador</th><th>Prévia de limite</th><th>Status</th></tr></thead>

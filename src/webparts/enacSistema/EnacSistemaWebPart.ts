@@ -13,7 +13,7 @@ import * as strings from 'EnacSistemaWebPartStrings';
 import { EnacSistema } from './components/EnacSistema';
 import { IEnacSistemaProps } from './components/EnacSistema';
 import { SharePointEnacRepository } from './services/SharePointEnacRepository';
-import { AcaoAdministrativaV29B, AcaoOperacionalV27A, ConfiguracaoAdministrativaV29B, ConfiguracaoTesteOperacionalV27A, FlagsEscritaAdministrativaV29B, FlagsEscritaOperacionalV27A, MarcadorTesteEscritaEnac, MarcadorTesteOperacionalEnac, PerfilEnac } from './models';
+import { AcaoAdministrativaV29B, AcaoOperacionalV27A, ConfiguracaoAdministrativaV29B, ConfiguracaoTesteOperacionalV27A, FlagsEscritaAdministrativaV29B, FlagsEscritaAdministrativaV29C, FlagsEscritaOperacionalV27A, MarcadorTesteEscritaEnac, MarcadorTesteOperacionalEnac, PerfilEnac } from './models';
 
 export interface IEnacSistemaWebPartProps {
   description: string;
@@ -88,6 +88,11 @@ export interface IEnacSistemaWebPartProps {
   alcadaAtivaAdminTesteV29B: boolean;
   vigenciaInicialAdminTesteV29B: string;
   vigenciaFinalAdminTesteV29B: string;
+  habilitarEscritaAdministrativaV29C: boolean;
+  modoTesteAdministrativoV29C: boolean;
+  exigirConfirmacaoAdministrativaV29C: boolean;
+  confirmacaoAdministrativaV29C: string;
+  marcadorAdministrativoV29C: string;
 }
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
@@ -111,6 +116,8 @@ const PAGAMENTO_CATEGORIA_PADRAO_V27A = 'Material de Obra';
 const PAGAMENTO_ORIGEM_PADRAO_V27A = 'Compra de Material';
 const CONFIRMACAO_ADMINISTRATIVA_V29B = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9B-ENAC';
 const MARCADOR_ADMINISTRATIVO_V29B = 'V2.9B-ADMIN-TESTE';
+const CONFIRMACAO_ADMINISTRATIVA_V29C = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9C-ENAC';
+const MARCADOR_ADMINISTRATIVO_V29C = 'V2.9C-ADMIN-TESTE';
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
@@ -138,7 +145,8 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
         flagsEscritaOperacionalV27A: this.getFlagsOperacionaisV27A(),
         configuracaoTesteOperacionalV27A: this.getConfiguracaoTesteOperacionalV27A(),
         flagsEscritaAdministrativaV29B: this.getFlagsAdministrativasV29B(),
-        configuracaoAdministrativaV29B: this.getConfiguracaoAdministrativaV29B()
+        configuracaoAdministrativaV29B: this.getConfiguracaoAdministrativaV29B(),
+        flagsEscritaAdministrativaV29C: this.getFlagsAdministrativasV29C()
       }
     );
 
@@ -225,6 +233,11 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     this.properties.alcadaAtivaAdminTesteV29B = this.properties.alcadaAtivaAdminTesteV29B !== false;
     this.properties.vigenciaInicialAdminTesteV29B = this.properties.vigenciaInicialAdminTesteV29B || '';
     this.properties.vigenciaFinalAdminTesteV29B = this.properties.vigenciaFinalAdminTesteV29B || '';
+    this.properties.habilitarEscritaAdministrativaV29C = this.properties.habilitarEscritaAdministrativaV29C === true;
+    this.properties.modoTesteAdministrativoV29C = this.properties.modoTesteAdministrativoV29C === true;
+    this.properties.exigirConfirmacaoAdministrativaV29C = this.properties.exigirConfirmacaoAdministrativaV29C !== false;
+    this.properties.confirmacaoAdministrativaV29C = this.properties.confirmacaoAdministrativaV29C || '';
+    this.properties.marcadorAdministrativoV29C = this.properties.marcadorAdministrativoV29C || MARCADOR_ADMINISTRATIVO_V29C;
 
     return Promise.resolve();
   }
@@ -483,6 +496,21 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                 }),
                 PropertyPaneTextField('vigenciaFinalAdminTesteV29B', {
                   label: 'V2.9B - vigencia final ISO, opcional'
+                }),
+                PropertyPaneCheckbox('habilitarEscritaAdministrativaV29C', {
+                  text: 'V2.9C - habilitar administração pelo sistema'
+                }),
+                PropertyPaneCheckbox('modoTesteAdministrativoV29C', {
+                  text: 'V2.9C - manter modo teste administrativo'
+                }),
+                PropertyPaneCheckbox('exigirConfirmacaoAdministrativaV29C', {
+                  text: 'V2.9C - exigir confirmação manual'
+                }),
+                PropertyPaneTextField('confirmacaoAdministrativaV29C', {
+                  label: `Confirmação V2.9C (${CONFIRMACAO_ADMINISTRATIVA_V29C})`
+                }),
+                PropertyPaneTextField('marcadorAdministrativoV29C', {
+                  label: `Marcador V2.9C (${MARCADOR_ADMINISTRATIVO_V29C})`
                 })
               ]
             }
@@ -576,6 +604,16 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       exigirConfirmacaoAdministrativaV29B: this.properties.exigirConfirmacaoAdministrativaV29B !== false,
       confirmacaoAdministrativaV29B: this.properties.confirmacaoAdministrativaV29B || '',
       marcadorAdministrativoV29B: MARCADOR_ADMINISTRATIVO_V29B
+    };
+  }
+
+  private getFlagsAdministrativasV29C(): FlagsEscritaAdministrativaV29C {
+    return {
+      habilitarEscritaAdministrativaV29C: this.properties.habilitarEscritaAdministrativaV29C === true,
+      modoTesteAdministrativoV29C: this.properties.modoTesteAdministrativoV29C === true,
+      exigirConfirmacaoAdministrativaV29C: this.properties.exigirConfirmacaoAdministrativaV29C !== false,
+      confirmacaoAdministrativaV29C: this.properties.confirmacaoAdministrativaV29C || '',
+      marcadorAdministrativoV29C: MARCADOR_ADMINISTRATIVO_V29C
     };
   }
 

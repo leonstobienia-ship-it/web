@@ -1,9 +1,11 @@
 import { ISPHttpClientOptions, SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import {
   AcaoOperacionalV27A,
+  AlcadaAdministrativaV29CPayload,
   AlertaBloqueioEscrita,
   AtualizacaoRequisicaoCompraControladaPayload,
   ConfiguracaoTesteOperacionalV27A,
+  ExecucaoAdministrativaV29CInput,
   FlagsEscritaOperacionalV27A,
   HistoricoOperacionalPayload,
   IDiagnosticoReadonlyEnac,
@@ -22,13 +24,15 @@ import {
   PreValidacaoOperacionalV27AResultado,
   ProgramacaoPagamentoControladaPayload,
   RequisicaoCompraControladaPayload,
+  ResultadoAdministrativoV29C,
   ResultadoOperacionalV27A,
   ResultadoHistoricoConfiguracao,
   ResultadoVinculoSnapshot,
   SnapshotAprovacaoOperacionalPayload,
   SnapshotCriacaoTesteInput,
   SnapshotCriacaoTesteResultado,
-  TipoSolicitacaoEnac
+  TipoSolicitacaoEnac,
+  UsuarioAdministrativoV29CPayload
 } from '../models';
 
 const LISTAS_ENAC = {
@@ -49,6 +53,8 @@ const CONFIRMACAO_ESCRITA_TESTE = 'TESTAR-ESCRITA-V2.6A-ENAC';
 const MARCADORES_TESTE_PERMITIDOS = ['V2.3B-TESTE', 'V2.6A-TESTE'];
 const CONFIRMACAO_OPERACIONAL_V27A = 'CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC';
 const MARCADOR_OPERACIONAL_V27A = 'V2.7A-TESTE';
+const CONFIRMACAO_ADMINISTRATIVA_V29C = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9C-ENAC';
+const MARCADOR_ADMINISTRATIVO_V29C = 'V2.9C-ADMIN-TESTE';
 const LISTA_02_REQUISICOES_COMPRA_TITULO = 'Lista 02 — Requisições de Compra';
 const LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD = 'StatusdaRequisi_x00e7__x00e3_o';
 const LISTA_02_REQUISICOES_COMPRA_SELECT_PREVALIDACAO = [
@@ -2814,6 +2820,67 @@ export class SharePointEnacRepository {
     };
   }
 
+  public async executarAdministracaoV29C(input: ExecucaoAdministrativaV29CInput): Promise<ResultadoAdministrativoV29C> {
+    const alertas = this.validarControleAdministrativoV29C(input);
+    if (alertas.length > 0) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        acao: input.acao,
+        mensagem: 'Escrita administrativa V2.9C bloqueada por controle de seguranca.',
+        alertas
+      };
+    }
+
+    const listaAlvo = input.acao === 'AtualizarAlcadaUsuario' ? 'ENAC Alcadas' : 'ENAC Usuarios Perfis';
+    const endpointLista = input.acao === 'AtualizarAlcadaUsuario'
+      ? this.getListItemsEndpoint(LISTAS_ENAC.alcadas)
+      : this.getListItemsEndpoint(LISTAS_ENAC.usuariosPerfis);
+    const itemId = input.acao === 'AtualizarAlcadaUsuario'
+      ? input.payloadAlcada?.itemId
+      : input.payloadUsuario?.itemId;
+    const body = input.acao === 'AtualizarAlcadaUsuario'
+      ? this.criarPayloadAlcadaAdministrativaV29C(input.payloadAlcada!)
+      : await this.criarPayloadUsuarioAdministrativoV29C(input.payloadUsuario!);
+
+    const response = await this.spHttpClient.post(
+      itemId ? `${endpointLista}(${itemId})` : endpointLista,
+      SPHttpClient.configurations.v1,
+      itemId ? this.criarMergeOptions(body) : this.criarPostOptions(body)
+    );
+
+    if (!response.ok) {
+      return {
+        sucesso: false,
+        bloqueado: true,
+        acao: input.acao,
+        listaAlvo,
+        itemId,
+        statusHttpEscrita: response.status,
+        mensagem: `SharePoint retornou ${response.status}: ${response.statusText}.`,
+        alertas: [{ codigo: 'ERRO_ESCRITA_ADMIN_V29C', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}` }]
+      };
+    }
+
+    const payloadResposta = itemId ? { Id: itemId } : await this.ensureJson(response);
+    const itemAfetadoId = Number(payloadResposta.Id || payloadResposta.ID || itemId || 0);
+    await this.obterItemAdministrativoV29C(input.acao, itemAfetadoId);
+    const historicoId = await this.registrarHistoricoAdministrativoV29C(input, listaAlvo, itemAfetadoId, body);
+
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: input.acao,
+      listaAlvo,
+      itemId: itemAfetadoId,
+      historicoRegistrado: true,
+      historicoItemId: historicoId,
+      statusHttpEscrita: response.status,
+      mensagem: `${input.acao} executada com historico administrativo V2.9C.`,
+      alertas: []
+    };
+  }
+
   public async listarHistoricoConfiguracoes(): Promise<IHistoricoConfiguracaoEnac[]> {
     const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes)}?$select=TipoConfiguracao,ValorAnterior,ValorNovo,Justificativa,Created,Author/Title&$expand=Author`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
@@ -2827,6 +2894,147 @@ export class SharePointEnacRepository {
       dataHora: item.Created,
       justificativa: item.Justificativa
     }));
+  }
+
+  private validarControleAdministrativoV29C(input: ExecucaoAdministrativaV29CInput): AlertaBloqueioEscrita[] {
+    const alertas: AlertaBloqueioEscrita[] = [];
+
+    if (!input.flags.habilitarEscritaAdministrativaV29C) alertas.push({ codigo: 'ESCRITA_ADMIN_V29C_DESABILITADA', mensagem: 'habilitarEscritaAdministrativaV29C deve ser true.' });
+    if (!input.flags.modoTesteAdministrativoV29C) alertas.push({ codigo: 'MODO_TESTE_ADMIN_V29C_DESLIGADO', mensagem: 'modoTesteAdministrativoV29C deve ser true.' });
+    if (input.flags.exigirConfirmacaoAdministrativaV29C !== false && input.flags.confirmacaoAdministrativaV29C !== CONFIRMACAO_ADMINISTRATIVA_V29C) alertas.push({ codigo: 'CONFIRMACAO_PROPERTY_PANE_INVALIDA', mensagem: 'Confirmacao V2.9C do Property Pane invalida.' });
+    if (input.confirmacaoFinal !== CONFIRMACAO_ADMINISTRATIVA_V29C) alertas.push({ codigo: 'CONFIRMACAO_FINAL_INVALIDA', mensagem: 'Confirmacao final V2.9C invalida.' });
+    if (input.flags.marcadorAdministrativoV29C !== MARCADOR_ADMINISTRATIVO_V29C) alertas.push({ codigo: 'MARCADOR_ADMIN_V29C_INVALIDO', mensagem: 'Marcador administrativo V2.9C invalido.' });
+    const executorTemPerfilAdmin = input.usuarioExecutor.perfilPrincipal === 'AdministradorSistema' || input.usuarioExecutor.perfisAdicionais.indexOf('AdministradorSistema') >= 0;
+    if (!input.usuarioExecutor.usuarioAtivo || !executorTemPerfilAdmin || !input.usuarioExecutor.podeAdministrarConfiguracoes) alertas.push({ codigo: 'EXECUTOR_NAO_ADMINISTRADOR', mensagem: 'Executor deve ter Administrador do Sistema ativo com PodeAdministrarConfiguracoes=true.' });
+    if (!input.preValidacao.sucesso || input.preValidacao.bloqueado) alertas.push({ codigo: 'PRE_VALIDACAO_REPROVADA', mensagem: 'Pre-validacao V2.9C nao aprovou a escrita.' });
+    if (!input.justificativa.trim()) alertas.push({ codigo: 'JUSTIFICATIVA_AUSENTE', mensagem: 'Justificativa e obrigatoria.' });
+    if ((input.acao === 'CriarUsuarioSistema' || input.acao === 'AtualizarUsuarioPerfilStatus') && !input.payloadUsuario) alertas.push({ codigo: 'PAYLOAD_USUARIO_AUSENTE', mensagem: 'Payload de usuario ausente.' });
+    if (input.acao === 'AtualizarAlcadaUsuario' && !input.payloadAlcada) alertas.push({ codigo: 'PAYLOAD_ALCADA_AUSENTE', mensagem: 'Payload de alcada ausente.' });
+
+    return alertas;
+  }
+
+  private async criarPayloadUsuarioAdministrativoV29C(input: UsuarioAdministrativoV29CPayload): Promise<Record<string, unknown>> {
+    const contaMicrosoft365Id = input.contaMicrosoft365Id || (input.contaMicrosoft365Login ? await this.ensureSharePointUserId(input.contaMicrosoft365Login) : undefined);
+
+    return {
+      Title: input.nome,
+      UsuarioInternoId: input.usuarioInternoId,
+      ContaMicrosoft365Id: contaMicrosoft365Id,
+      EmailCorporativo: input.emailCorporativo,
+      PerfilPrincipal: this.mapPerfilParaChoiceSharePoint(input.perfilPrincipal),
+      PerfisAdicionais: { results: input.perfisAdicionais.map((item) => this.mapPerfilParaChoiceSharePoint(item)) },
+      UsuarioAtivo: input.usuarioAtivo,
+      CargoFuncao: input.cargoFuncao || '',
+      Observacoes: `${MARCADOR_ADMINISTRATIVO_V29C} - ${input.observacoes || ''}`,
+      PodeAdministrarConfiguracoes: input.podeAdministrarConfiguracoes,
+      PodeAprovarCompras: input.podeAprovarCompras,
+      PodeAtualizarStatusFinal: input.podeAtualizarStatusFinal,
+      PodeCriarSolicitacao: input.podeCriarSolicitacao,
+      PodeEmitirPedido: input.podeEmitirPedido,
+      PodeLiberarPagamento: input.podeLiberarPagamento,
+      PodeProgramarPagamento: input.podeProgramarPagamento,
+      PodeRegistrarCotacoes: input.podeRegistrarCotacoes,
+      PodeVincularNF: input.podeVincularNf
+    };
+  }
+
+  private criarPayloadAlcadaAdministrativaV29C(input: AlcadaAdministrativaV29CPayload): Record<string, unknown> {
+    return {
+      Title: input.titulo,
+      RegraInternaId: input.regraInternaId,
+      Processo: input.processo,
+      TipoSolicitacao: input.tipoSolicitacao || 'Todos',
+      ValorMinimo: input.valorMinimo,
+      ValorMaximo: input.ilimitado ? null : input.valorMaximo,
+      Ilimitado: input.ilimitado,
+      AprovadorPrincipalId: input.aprovadorPrincipalId,
+      AprovadorAdicionalId: input.aprovadorAdicionalId || null,
+      ExigeAprovacaoAdicional: input.exigeAprovacaoAdicional,
+      Ativo: input.ativa,
+      VigenciaInicial: input.vigenciaInicial,
+      VigenciaFinal: input.vigenciaFinal || null,
+      ObraId: input.obraId || null,
+      Observacoes: `${MARCADOR_ADMINISTRATIVO_V29C} - ${input.observacoes || ''}`
+    };
+  }
+
+  private async registrarHistoricoAdministrativoV29C(input: ExecucaoAdministrativaV29CInput, listaAlvo: string, itemId: number, valorNovo: Record<string, unknown>): Promise<number> {
+    const body = {
+      Title: `${MARCADOR_ADMINISTRATIVO_V29C} ${input.acao} ${listaAlvo} ${itemId}`,
+      TipoConfiguracao: input.acao,
+      AcaoRealizada: input.acao,
+      ItemConfiguracaoId: `${listaAlvo}:${itemId}`,
+      ValorAnterior: JSON.stringify(input.valorAnterior || {}),
+      ValorNovo: JSON.stringify(valorNovo),
+      Justificativa: `${input.justificativa}; executor ${input.usuarioExecutor.nome}; perfil ${input.usuarioExecutor.perfilPrincipal}; resultado executado; alteracao de alcada nao retroage snapshots.`
+    };
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions(body)
+    );
+    const payload = await this.ensureJson(response);
+    return Number(payload.Id || payload.ID || 0);
+  }
+
+  private async obterItemAdministrativoV29C(acao: ExecucaoAdministrativaV29CInput['acao'], itemId: number): Promise<void> {
+    const listId = acao === 'AtualizarAlcadaUsuario' ? LISTAS_ENAC.alcadas : LISTAS_ENAC.usuariosPerfis;
+    const response = await this.spHttpClient.get(`${this.getListItemsEndpoint(listId)}(${itemId})?$select=Id,Title`, SPHttpClient.configurations.v1);
+    await this.ensureJson(response);
+  }
+
+  private async ensureSharePointUserId(loginOrEmail: string): Promise<number> {
+    const response = await this.spHttpClient.post(
+      `${this.siteUrl}/_api/web/ensureuser`,
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions({ logonName: loginOrEmail })
+    );
+    const payload = await this.ensureJson(response);
+    return Number(payload.Id || payload.ID || 0);
+  }
+
+  private mapPerfilParaChoiceSharePoint(perfil: PerfilEnac): string {
+    switch (perfil) {
+      case 'Campo':
+        return 'Campo / Engenheiro';
+      case 'CotacoesContratos':
+        return 'Cotações e Contratos';
+      case 'ComprasFinanceiroOperacional':
+        return 'Compras e Financeiro Operacional';
+      case 'AdministradorSistema':
+        return 'Administrador do Sistema';
+      case 'ConsultaLeitura':
+        return 'Consulta / Leitura';
+      default:
+        return perfil;
+    }
+  }
+
+  private mapPerfilChoiceParaInternal(perfil: string | undefined): PerfilEnac {
+    switch (perfil) {
+      case 'Campo / Engenheiro':
+      case 'Campo':
+        return 'Campo';
+      case 'Cotações e Contratos':
+      case 'CotacoesContratos':
+        return 'CotacoesContratos';
+      case 'Compras e Financeiro Operacional':
+      case 'ComprasFinanceiroOperacional':
+        return 'ComprasFinanceiroOperacional';
+      case 'Administrador do Sistema':
+      case 'AdministradorSistema':
+        return 'AdministradorSistema';
+      case 'Consulta / Leitura':
+      case 'ConsultaLeitura':
+        return 'ConsultaLeitura';
+      case 'Diretoria':
+        return 'Diretoria';
+      case 'Planejamento':
+        return 'Planejamento';
+      default:
+        return 'Campo';
+    }
   }
 
   private validarFlagsOperacionaisV27A(flags: FlagsEscritaOperacionalV27A): AlertaBloqueioEscrita[] {
@@ -3531,8 +3739,8 @@ export class SharePointEnacRepository {
       contaMicrosoft365Email: item.ContaMicrosoft365?.EMail || '',
       contaMicrosoft365Login: item.ContaMicrosoft365?.Name,
       cargoFuncao: item.CargoFuncao || '',
-      perfilPrincipal: item.PerfilPrincipal,
-      perfisAdicionais: item.PerfisAdicionais ? String(item.PerfisAdicionais).split(';').filter(Boolean) as PerfilEnac[] : [],
+      perfilPrincipal: this.mapPerfilChoiceParaInternal(item.PerfilPrincipal),
+      perfisAdicionais: item.PerfisAdicionais ? String(item.PerfisAdicionais).split(';').filter(Boolean).map((perfil: string) => this.mapPerfilChoiceParaInternal(perfil)) : [],
       podeCriarSolicitacao: Boolean(item.PodeCriarSolicitacao),
       podeRegistrarCotacoes: Boolean(item.PodeRegistrarCotacoes),
       podeAprovarCompras: Boolean(item.PodeAprovarCompras),

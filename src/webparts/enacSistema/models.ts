@@ -193,12 +193,25 @@ export type AcaoAdministrativaV29B =
   | 'AtualizarUsuarioPerfilStatus'
   | 'AtualizarAlcadaUsuario';
 
+export type AcaoAdministrativaV29C =
+  | 'CriarUsuarioSistema'
+  | 'AtualizarUsuarioPerfilStatus'
+  | 'AtualizarAlcadaUsuario';
+
 export interface FlagsEscritaAdministrativaV29B {
   habilitarEscritaAdministrativaV29B: boolean;
   modoTesteAdministrativoV29B: boolean;
   exigirConfirmacaoAdministrativaV29B: boolean;
   confirmacaoAdministrativaV29B: string;
   marcadorAdministrativoV29B: 'V2.9B-ADMIN-TESTE';
+}
+
+export interface FlagsEscritaAdministrativaV29C {
+  habilitarEscritaAdministrativaV29C: boolean;
+  modoTesteAdministrativoV29C: boolean;
+  exigirConfirmacaoAdministrativaV29C: boolean;
+  confirmacaoAdministrativaV29C: string;
+  marcadorAdministrativoV29C: 'V2.9C-ADMIN-TESTE';
 }
 
 export interface ConfiguracaoAdministrativaV29B {
@@ -239,6 +252,87 @@ export interface PreValidacaoAdministrativaV29BResultado {
   flagsValidas: boolean;
   payloadPrevisto?: Record<string, unknown>;
   historicoPrevisto?: Record<string, unknown>;
+  alertas: AlertaBloqueioEscrita[];
+}
+
+export interface UsuarioAdministrativoV29CPayload {
+  itemId?: number;
+  nome: string;
+  usuarioInternoId: string;
+  contaMicrosoft365Id?: number;
+  contaMicrosoft365Login?: string;
+  emailCorporativo: string;
+  perfilPrincipal: PerfilEnac;
+  perfisAdicionais: PerfilEnac[];
+  usuarioAtivo: boolean;
+  cargoFuncao?: string;
+  observacoes?: string;
+  podeAdministrarConfiguracoes: boolean;
+  podeAprovarCompras: boolean;
+  podeAtualizarStatusFinal: boolean;
+  podeCriarSolicitacao: boolean;
+  podeEmitirPedido: boolean;
+  podeLiberarPagamento: boolean;
+  podeProgramarPagamento: boolean;
+  podeRegistrarCotacoes: boolean;
+  podeVincularNf: boolean;
+}
+
+export interface AlcadaAdministrativaV29CPayload {
+  itemId?: number;
+  titulo: string;
+  regraInternaId: string;
+  processo: 'Compra' | 'Liberação Bancária' | 'Medição' | 'Pagamento' | 'Outro';
+  tipoSolicitacao?: string;
+  valorMinimo: number;
+  valorMaximo?: number;
+  ilimitado: boolean;
+  aprovadorPrincipalId: number;
+  aprovadorAdicionalId?: number;
+  exigeAprovacaoAdicional: boolean;
+  ativa: boolean;
+  vigenciaInicial: string;
+  vigenciaFinal?: string;
+  obraId?: number;
+  observacoes?: string;
+}
+
+export interface PreValidacaoAdministrativaV29CResultado {
+  sucesso: boolean;
+  bloqueado: boolean;
+  mensagem: string;
+  acao: AcaoAdministrativaV29C;
+  usuarioAtual?: IUsuarioPerfilEnac;
+  perfilAdministradorAtivo: boolean;
+  flagsValidas: boolean;
+  payloadPrevisto?: Record<string, unknown>;
+  historicoPrevisto?: Record<string, unknown>;
+  itemAlvoId?: number;
+  alertas: AlertaBloqueioEscrita[];
+}
+
+export interface ExecucaoAdministrativaV29CInput {
+  acao: AcaoAdministrativaV29C;
+  flags: FlagsEscritaAdministrativaV29C;
+  usuarioExecutor: IUsuarioPerfilEnac;
+  payloadUsuario?: UsuarioAdministrativoV29CPayload;
+  payloadAlcada?: AlcadaAdministrativaV29CPayload;
+  justificativa: string;
+  confirmacaoFinal: string;
+  preValidacao: PreValidacaoAdministrativaV29CResultado;
+  valorAnterior?: Record<string, unknown>;
+}
+
+export interface ResultadoAdministrativoV29C {
+  sucesso: boolean;
+  bloqueado: boolean;
+  acao: AcaoAdministrativaV29C;
+  mensagem: string;
+  listaAlvo?: string;
+  itemId?: number;
+  historicoRegistrado?: boolean;
+  historicoItemId?: number;
+  statusHttpEscrita?: number;
   alertas: AlertaBloqueioEscrita[];
 }
 
