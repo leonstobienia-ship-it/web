@@ -149,6 +149,8 @@ Na V2.8E8, o painel branco interno foi reforcado para ocupar a largura util disp
 
 Na V2.8E9, o grid principal foi separado em uma estrutura visual explicita com `.viewport` envolvendo `.enacSistema`, e classes proprias `.sideNav` e `.mainPanel` para o menu e painel. O wrapper externo passou a usar flex com stretch e o grid recebeu `flex: 1 1 auto`, garantindo que o conjunto menu lateral + painel branco tente ocupar 100% da largura disponivel do fundo. O marcador visual foi atualizado para `UI V2.8E9`. Nao foi reintroduzida margem negativa, `100vw` deslocado, corte lateral, hack global SharePoint ou alteracao de regra, payload, fluxo, chamada REST, status, alçada, trava operacional ou Power Automate.
 
+Na V2.8E10, foi aplicado breakout medido em runtime no wrapper `.viewport`: o componente mede `getBoundingClientRect().left` e a largura real do viewport, grava `--enac-breakout-left` e `--enac-viewport-width` no proprio elemento, e o CSS usa essas variaveis para deslocar somente o necessario. Isso evita a margem negativa fixa que cortava a esquerda e supera o `width: 100%` preso ao canvas estreito. O marcador visual foi atualizado para `UI V2.8E10` e `Breakout medido ativo`. Nao houve hack global SharePoint nem alteracao de regra, payload, fluxo, chamada REST, status, alçada, trava operacional ou Power Automate.
+
 Na V2.7A.4C/V2.7A.4D, a validacao manual de `AprovarCompra` foi registrada como pendente de auditoria porque Leon observou o campo visual `Snapshot da Aprovação de Compra` vazio no formulario do SharePoint. A rotina foi corrigida localmente para confirmar `SnapshotAprovacaoCompra` por GET apos o MERGE de status, registrar historico somente quando o snapshot for preservado e retornar alerta critico se o lookup nao for comprovado. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao executou nova escrita operacional.
 
 Na V2.7A.4E, Leon confirmou manualmente que o campo `Snapshot da Aprovação de Compra` do item `11` permaneceu vinculado ao snapshot `3` / `SNAP-V2.7A-TESTE-11-20260609025123` apos `AprovarCompra`. A acao fica VALIDADA MANUALMENTE para Diretoria como alçada superior, com status `Aguardando aprovação -> Aprovada para compra`, historico criado, HTTP escrita `204`, sem pedido, NF, pagamento ou Power Automate. Isso nao representa liberacao ampla de producao.
@@ -302,6 +304,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8e7-corrigir-corte-lateral-full-viewport.md`
 - `docs/v2.8e8-painel-branco-largura-total.md`
 - `docs/v2.8e9-forcar-grid-principal-largura-total.md`
+- `docs/v2.8e10-breakout-medido-viewport.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -336,6 +339,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/checklist-v2.8e7-validacao-corte-lateral.md`
 - `tests/checklist-v2.8e8-validacao-painel-branco.md`
 - `tests/checklist-v2.8e9-validacao-grid-principal.md`
+- `tests/checklist-v2.8e10-validacao-breakout-medido.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`

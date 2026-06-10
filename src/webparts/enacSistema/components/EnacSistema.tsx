@@ -155,6 +155,43 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [confirmacaoFinalOperacionalV27A, setConfirmacaoFinalOperacionalV27A] = React.useState<string>('');
   const [resultadoOperacionalV27A, setResultadoOperacionalV27A] = React.useState<ResultadoOperacionalV27A | null>(null);
   const [executandoOperacionalV27A, setExecutandoOperacionalV27A] = React.useState<boolean>(false);
+  const viewportRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    let frameId = 0;
+
+    const updateViewportVars = (): void => {
+      const el = viewportRef.current;
+      if (!el) {
+        return;
+      }
+
+      window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(() => {
+        el.style.setProperty('--enac-breakout-left', '0px');
+        el.style.setProperty('--enac-viewport-width', '100%');
+
+        const rect = el.getBoundingClientRect();
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || rect.width;
+        const measuredLeft = Math.max(0, Math.round(rect.left));
+
+        el.style.setProperty('--enac-breakout-left', `${measuredLeft}px`);
+        el.style.setProperty('--enac-viewport-width', `${Math.round(viewportWidth)}px`);
+      });
+    };
+
+    updateViewportVars();
+    window.addEventListener('resize', updateViewportVars);
+    window.addEventListener('orientationchange', updateViewportVars);
+    const timerId = window.setTimeout(updateViewportVars, 250);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timerId);
+      window.removeEventListener('resize', updateViewportVars);
+      window.removeEventListener('orientationchange', updateViewportVars);
+    };
+  }, []);
 
   React.useEffect(() => {
     if (props.origemDados !== 'sharepoint' || !props.repository) {
@@ -746,7 +783,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   }
 
   return (
-    <div className={styles.viewport}>
+    <div ref={viewportRef} className={styles.viewport}>
     <section className={styles.enacSistema}>
       <aside className={styles.sideNav}>
         <div className={styles.sideBrand}>Módulos</div>
@@ -764,8 +801,8 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.layoutVersionBadge}>UI V2.8E9</span>
-            <span className={styles.layoutDiagnosticBadge}>Layout: full viewport ativo</span>
+            <span className={styles.layoutVersionBadge}>UI V2.8E10</span>
+            <span className={styles.layoutDiagnosticBadge}>Breakout medido ativo</span>
             <span className={styles.environmentBadge}>Homologação assistida</span>
             <label>
               Perfil atual
