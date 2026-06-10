@@ -137,6 +137,8 @@ Na V2.8E1, foi habilitado `supportsFullBleed` no manifest da webpart e o SCSS do
 
 Na V2.8E2, o layout interno foi ajustado para comportamento de tela cheia: o shell principal passou a usar `min-height: calc(100vh - 48px)`, menu lateral e painel principal foram esticados para a altura util, o shell deixou de parecer um card estreito com borda/radius, e os cards do dashboard passaram a usar grid responsivo com `auto-fit`. Nao foi usado `100vw` global e nenhuma regra, payload, fluxo, chamada REST, status, alçada, trava ou Power Automate foi alterado.
 
+Na V2.8E3, foi corrigido o painel branco interno que ainda ficava estreito mesmo com o fundo da webpart ocupando a pagina. O diagnostico apontou falta de stretch/largura explicita nos wrappers internos `.appHeader`, `.contentPanel`, `.metrics`, `.split`, `.row`, `form` e `table`. O SCSS agora força `justify-self: stretch`, `width: 100%` e `max-width: none` nesses elementos, sem hack global no SharePoint e sem alterar regras, payloads, fluxos, chamadas REST ou travas.
+
 Na V2.7A.4C/V2.7A.4D, a validacao manual de `AprovarCompra` foi registrada como pendente de auditoria porque Leon observou o campo visual `Snapshot da Aprovação de Compra` vazio no formulario do SharePoint. A rotina foi corrigida localmente para confirmar `SnapshotAprovacaoCompra` por GET apos o MERGE de status, registrar historico somente quando o snapshot for preservado e retornar alerta critico se o lookup nao for comprovado. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao executou nova escrita operacional.
 
 Na V2.7A.4E, Leon confirmou manualmente que o campo `Snapshot da Aprovação de Compra` do item `11` permaneceu vinculado ao snapshot `3` / `SNAP-V2.7A-TESTE-11-20260609025123` apos `AprovarCompra`. A acao fica VALIDADA MANUALMENTE para Diretoria como alçada superior, com status `Aguardando aprovação -> Aprovada para compra`, historico criado, HTTP escrita `204`, sem pedido, NF, pagamento ou Power Automate. Isso nao representa liberacao ampla de producao.
@@ -284,6 +286,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8e-acesso-permissoes-pagina-sistema.md`
 - `docs/v2.8e1-full-bleed-largura-total-webpart.md`
 - `docs/v2.8e2-ajuste-layout-tela-cheia.md`
+- `docs/v2.8e3-corrigir-painel-interno-largura.md`
 - `sharepoint/plano-permissoes-finas-v2.6b.md`
 - `sharepoint/auditoria-permissoes-finas-v2.6b3.md`
 - `sharepoint/listas-existentes.md`
@@ -312,6 +315,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/checklist-v2.8e-validacao-pagina-app.md`
 - `tests/checklist-v2.8e1-validacao-largura-total.md`
 - `tests/checklist-v2.8e2-validacao-layout-tela-cheia.md`
+- `tests/checklist-v2.8e3-validacao-painel-interno.md`
 - `reports/lista04-notas-fiscais-fields-readonly.json`
 - `reports/lista04-notas-fiscais-fields-readonly.md`
 - `docs/v2.7a4b-aprovacao-diretoria-alcada-superior.md`

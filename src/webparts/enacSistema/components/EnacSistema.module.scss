@@ -2,6 +2,7 @@
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   align-items: stretch;
+  justify-items: stretch;
   width: 100%;
   max-width: none;
   min-height: calc(100vh - 48px);
@@ -29,6 +30,7 @@
   main {
     display: grid;
     align-content: start;
+    justify-items: stretch;
     gap: 18px;
     width: 100%;
     max-width: none;
@@ -146,6 +148,9 @@
 
   form,
   table {
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     background: #ffffff;
@@ -203,7 +208,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  justify-self: stretch;
   gap: 18px;
+  width: 100%;
+  max-width: none;
   min-width: 0;
   border-top: 3px solid #e52420;
   border-radius: 8px;
@@ -267,6 +275,7 @@
 
 .contentPanel {
   display: grid;
+  justify-items: stretch;
   gap: 18px;
   width: 100%;
   max-width: none;
@@ -277,8 +286,10 @@
 .metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  justify-self: stretch;
   gap: 14px;
   width: 100%;
+  max-width: none;
 
   div {
     display: grid;
@@ -315,12 +326,18 @@
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  justify-self: stretch;
   gap: 16px;
+  width: 100%;
+  max-width: none;
 }
 
 .row {
   display: grid;
+  justify-self: stretch;
   gap: 8px;
+  width: 100%;
+  max-width: none;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #ffffff;
