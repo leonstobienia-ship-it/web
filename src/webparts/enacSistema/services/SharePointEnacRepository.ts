@@ -2841,7 +2841,7 @@ export class SharePointEnacRepository {
       : input.payloadUsuario?.itemId;
     const body = input.acao === 'AtualizarAlcadaUsuario'
       ? this.criarPayloadAlcadaAdministrativaV29C(input.payloadAlcada!)
-      : await this.criarPayloadUsuarioAdministrativoV29C(input.payloadUsuario!);
+      : await this.criarPayloadUsuarioPerfilSharePointV29C(input.payloadUsuario!);
 
     const response = await this.spHttpClient.post(
       itemId ? `${endpointLista}(${itemId})` : endpointLista,
@@ -2850,6 +2850,7 @@ export class SharePointEnacRepository {
     );
 
     if (!response.ok) {
+      const detalheErro = await this.lerErroSharePointSanitizado(response);
       return {
         sucesso: false,
         bloqueado: true,
@@ -2857,8 +2858,8 @@ export class SharePointEnacRepository {
         listaAlvo,
         itemId,
         statusHttpEscrita: response.status,
-        mensagem: `SharePoint retornou ${response.status}: ${response.statusText}.`,
-        alertas: [{ codigo: 'ERRO_ESCRITA_ADMIN_V29C', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}` }]
+        mensagem: `SharePoint retornou ${response.status}: ${response.statusText}. ${detalheErro}`,
+        alertas: [{ codigo: 'ERRO_ESCRITA_ADMIN_V29C', mensagem: `SharePoint retornou ${response.status}: ${response.statusText}. ${detalheErro}` }]
       };
     }
 
@@ -2914,10 +2915,10 @@ export class SharePointEnacRepository {
     return alertas;
   }
 
-  private async criarPayloadUsuarioAdministrativoV29C(input: UsuarioAdministrativoV29CPayload): Promise<Record<string, unknown>> {
+  private async criarPayloadUsuarioPerfilSharePointV29C(input: UsuarioAdministrativoV29CPayload): Promise<Record<string, unknown>> {
     const contaMicrosoft365Id = input.contaMicrosoft365Id || (input.contaMicrosoft365Login ? await this.ensureSharePointUserId(input.contaMicrosoft365Login) : undefined);
 
-    return {
+    const payload: Record<string, unknown> = {
       Title: input.nome,
       UsuarioInternoId: input.usuarioInternoId,
       ContaMicrosoft365Id: contaMicrosoft365Id,
@@ -2937,10 +2938,12 @@ export class SharePointEnacRepository {
       PodeRegistrarCotacoes: input.podeRegistrarCotacoes,
       PodeVincularNF: input.podeVincularNf
     };
+
+    return this.removerUndefined(payload);
   }
 
   private criarPayloadAlcadaAdministrativaV29C(input: AlcadaAdministrativaV29CPayload): Record<string, unknown> {
-    return {
+    return this.removerUndefined({
       Title: input.titulo,
       RegraInternaId: input.regraInternaId,
       Processo: input.processo,
@@ -2956,7 +2959,42 @@ export class SharePointEnacRepository {
       VigenciaFinal: input.vigenciaFinal || null,
       ObraId: input.obraId || null,
       Observacoes: `${MARCADOR_ADMINISTRATIVO_V29C} - ${input.observacoes || ''}`
-    };
+    });
+  }
+
+  private removerUndefined(payload: Record<string, unknown>): Record<string, unknown> {
+    return Object.keys(payload).reduce((acc, key) => {
+      if (payload[key] !== undefined) {
+        acc[key] = payload[key];
+      }
+
+      return acc;
+    }, {} as Record<string, unknown>);
+  }
+
+  private async lerErroSharePointSanitizado(response: SPHttpClientResponse): Promise<string> {
+    try {
+      const payload = await response.json();
+      const mensagem = payload?.error?.message?.value || payload?.error?.message || JSON.stringify(payload);
+      return this.sanitizarMensagemTecnica(String(mensagem || 'Corpo de erro vazio.'));
+    } catch (jsonError) {
+      void jsonError;
+      try {
+        const texto = await response.text();
+        return this.sanitizarMensagemTecnica(texto || 'Corpo de erro vazio.');
+      } catch (textError) {
+        void textError;
+        return 'Nao foi possivel ler o corpo do erro SharePoint.';
+      }
+    }
+  }
+
+  private sanitizarMensagemTecnica(value: string): string {
+    return value
+      .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[email-sanitizado]')
+      .replace(/CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2\.9C-ENAC/g, '[confirmacao-sanitizada]')
+      .replace(/Bearer\s+[A-Za-z0-9._-]+/g, 'Bearer [token-sanitizado]')
+      .substring(0, 1200);
   }
 
   private async registrarHistoricoAdministrativoV29C(input: ExecucaoAdministrativaV29CInput, listaAlvo: string, itemId: number, valorNovo: Record<string, unknown>): Promise<number> {

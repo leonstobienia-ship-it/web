@@ -395,6 +395,7 @@ const buildPreValidacaoAdministrativaV29C = (
 
   let payloadPrevisto: Record<string, unknown> | undefined;
   let itemAlvoId: number | undefined;
+  let diagnosticoUsuarioPreValidacao: Record<string, unknown> | undefined;
 
   if (acao === 'CriarUsuarioSistema' || acao === 'AtualizarUsuarioPerfilStatus') {
     const usuario = payloadUsuario;
@@ -435,6 +436,20 @@ const buildPreValidacaoAdministrativaV29C = (
       if (usuario.perfisAdicionais.some((perfilItem) => perfilOptions.indexOf(perfilItem) < 0)) alertas.push({ codigo: 'PERFIS_ADICIONAIS_INVALIDOS', mensagem: 'PerfisAdicionais contem choice invalido.' });
       if (usuario.perfilPrincipal === 'AdministradorSistema') alertas.push({ codigo: 'ALERTA_ADMINISTRADOR_SISTEMA', mensagem: 'Administrador do Sistema exige confirmacao manual forte.' });
 
+      diagnosticoUsuarioPreValidacao = {
+        lista: 'ENAC Usuarios Perfis',
+        itemAlvoId: usuario.itemId || null,
+        itemAlvoNome: usuarioExistente?.nome || usuario.nome,
+        perfilAtual: usuarioExistente?.perfilPrincipal || '-',
+        statusAtual: usuarioExistente ? (usuarioExistente.usuarioAtivo ? 'Ativo' : 'Inativo') : '-',
+        contaMicrosoft365Sanitizada: sanitizeM365(usuario.contaMicrosoft365Id || usuario.contaMicrosoft365Login),
+        emailSanitizado: sanitizeEmail(usuario.emailCorporativo),
+        contaM365DuplicadaReal: Boolean(duplicadoContaM365 && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoContaM365, usuario.itemId))),
+        emailDuplicadoReal: Boolean(duplicadoEmail && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoEmail, usuario.itemId))),
+        usuarioInternoIdDuplicadoReal: Boolean(duplicadoUsuarioInterno && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoUsuarioInterno, usuario.itemId))),
+        duplicidadeProprioItemIgnorada
+      };
+
       payloadPrevisto = {
         Title: usuario.nome,
         UsuarioInternoId: usuario.usuarioInternoId,
@@ -453,21 +468,9 @@ const buildPreValidacaoAdministrativaV29C = (
         PodeLiberarPagamento: usuario.podeLiberarPagamento,
         PodeProgramarPagamento: usuario.podeProgramarPagamento,
         PodeRegistrarCotacoes: usuario.podeRegistrarCotacoes,
-        PodeVincularNF: usuario.podeVincularNf,
-        DiagnosticoPreValidacao: {
-          lista: 'ENAC Usuarios Perfis',
-          itemAlvoId: usuario.itemId || null,
-          itemAlvoNome: usuarioExistente?.nome || usuario.nome,
-          perfilAtual: usuarioExistente?.perfilPrincipal || '-',
-          statusAtual: usuarioExistente ? (usuarioExistente.usuarioAtivo ? 'Ativo' : 'Inativo') : '-',
-          contaMicrosoft365Sanitizada: sanitizeM365(usuario.contaMicrosoft365Id || usuario.contaMicrosoft365Login),
-          emailSanitizado: sanitizeEmail(usuario.emailCorporativo),
-          contaM365DuplicadaReal: Boolean(duplicadoContaM365 && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoContaM365, usuario.itemId))),
-          emailDuplicadoReal: Boolean(duplicadoEmail && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoEmail, usuario.itemId))),
-          usuarioInternoIdDuplicadoReal: Boolean(duplicadoUsuarioInterno && (acao === 'CriarUsuarioSistema' || !isSameSharePointItem(duplicadoUsuarioInterno, usuario.itemId))),
-          duplicidadeProprioItemIgnorada
-        }
+        PodeVincularNF: usuario.podeVincularNf
       };
+      itemAlvoId = usuario.itemId;
     }
   }
 
@@ -538,7 +541,8 @@ const buildPreValidacaoAdministrativaV29C = (
       ValorAnterior: 'Gerado no momento da execucao a partir do item carregado.',
       ValorNovo: JSON.stringify(payloadPrevisto || {}),
       Justificativa: justificativa,
-      Resultado: bloqueado ? 'Bloqueado na pre-validacao' : 'Previsto para execucao controlada'
+      Resultado: bloqueado ? 'Bloqueado na pre-validacao' : 'Previsto para execucao controlada',
+      DiagnosticoPreValidacao: diagnosticoUsuarioPreValidacao
     },
     itemAlvoId,
     alertas
@@ -546,7 +550,7 @@ const buildPreValidacaoAdministrativaV29C = (
 };
 
 const formatPreValidacaoUsuarioV29C = (preValidacao: PreValidacaoAdministrativaV29CResultado): string => {
-  const diagnostico = preValidacao.payloadPrevisto?.DiagnosticoPreValidacao as Record<string, unknown> | undefined;
+  const diagnostico = preValidacao.historicoPrevisto?.DiagnosticoPreValidacao as Record<string, unknown> | undefined;
 
   return [
     `Resultado: ${preValidacao.mensagem}`,
@@ -1725,7 +1729,8 @@ function AdminUsuarios({
         ))}
         <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
         <label>Pré-validação<textarea readOnly value={formatPreValidacaoUsuarioV29C(preValidacao)} /></label>
-        <label>Payload previsto<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
+        <label>Payload SharePoint<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
+        <label>Diagnóstico<textarea readOnly value={JSON.stringify(preValidacao.historicoPrevisto?.DiagnosticoPreValidacao || {}, null, 2)} /></label>
         <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar administração V2.9C</button>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
