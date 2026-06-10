@@ -3,13 +3,12 @@ declare const styles: {
   enacSistema: string;
   sideNav: string;
   mainPanel: string;
-  sideBrand: string;
+  sideNavBrand: string;
+  sideNavLogo: string;
   appHeader: string;
   headerIdentity: string;
   headerMeta: string;
   environmentBadge: string;
-  layoutVersionBadge: string;
-  layoutDiagnosticBadge: string;
   titleBlock: string;
   appTitle: string;
   contentPanel: string;

@@ -788,7 +788,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     <div ref={viewportRef} className={styles.viewport}>
     <section className={styles.enacSistema}>
       <aside className={styles.sideNav}>
-        <div className={styles.sideBrand}>Módulos</div>
+        <div className={styles.sideNavBrand}>
+          <img src={enacLogo} alt="ENAC" className={styles.sideNavLogo} />
+        </div>
         {views.map((item) => (
           <button key={item.key} className={view === item.key ? styles.active : ''} onClick={() => setView(item.key)}>{item.label}</button>
         ))}
@@ -796,16 +798,12 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       <main className={styles.mainPanel}>
         <header className={styles.appHeader}>
           <div className={styles.headerIdentity}>
-            <img src={enacLogo} alt="ENAC" />
             <div className={styles.titleBlock}>
               <h1 className={styles.appTitle}>Sistema ENAC</h1>
               <p>Obras, compras, NF e financeiro</p>
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.layoutVersionBadge}>UI V2.8E11</span>
-            <span className={styles.layoutDiagnosticBadge}>Breakout medido ativo</span>
-            <span className={styles.layoutDiagnosticBadge}>Ajuste fino de largura ativo</span>
             <span className={styles.environmentBadge}>Homologação assistida</span>
             <label>
               Perfil atual
