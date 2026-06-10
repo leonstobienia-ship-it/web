@@ -188,6 +188,60 @@ export type AcaoAdministrativaV29A =
   | 'AtualizarAlcadaUsuario'
   | 'RegistrarHistoricoAdministrativo';
 
+export type AcaoAdministrativaV29B =
+  | 'CriarUsuarioSistema'
+  | 'AtualizarUsuarioPerfilStatus'
+  | 'AtualizarAlcadaUsuario';
+
+export interface FlagsEscritaAdministrativaV29B {
+  habilitarEscritaAdministrativaV29B: boolean;
+  modoTesteAdministrativoV29B: boolean;
+  exigirConfirmacaoAdministrativaV29B: boolean;
+  confirmacaoAdministrativaV29B: string;
+  marcadorAdministrativoV29B: 'V2.9B-ADMIN-TESTE';
+}
+
+export interface ConfiguracaoAdministrativaV29B {
+  acaoAdministrativaV29B: AcaoAdministrativaV29B;
+  usuarioAdminTesteIdV29B?: number;
+  alcadaAdminTesteIdV29B?: number;
+  nomeUsuarioAdminTesteV29B?: string;
+  usuarioInternoIdAdminTesteV29B?: string;
+  contaMicrosoft365IdAdminTesteV29B?: number;
+  emailUsuarioAdminTesteV29B?: string;
+  perfilPrincipalAdminTesteV29B?: PerfilEnac;
+  perfisAdicionaisAdminTesteV29B?: PerfilEnac[];
+  usuarioAtivoAdminTesteV29B?: boolean;
+  cargoFuncaoAdminTesteV29B?: string;
+  observacaoAdminTesteV29B?: string;
+  tituloAlcadaAdminTesteV29B?: string;
+  regraInternaIdAdminTesteV29B?: string;
+  processoAlcadaAdminTesteV29B?: 'Compra' | 'Liberação Bancária' | 'Medição' | 'Pagamento' | 'Outro';
+  tipoSolicitacaoAlcadaAdminTesteV29B?: string;
+  valorMinimoAlcadaAdminTesteV29B?: number;
+  valorMaximoAlcadaAdminTesteV29B?: number;
+  ilimitadoAlcadaAdminTesteV29B?: boolean;
+  aprovadorPrincipalIdAdminTesteV29B?: number;
+  aprovadorAdicionalIdAdminTesteV29B?: number;
+  exigeAprovacaoAdicionalAdminTesteV29B?: boolean;
+  alcadaAtivaAdminTesteV29B?: boolean;
+  vigenciaInicialAdminTesteV29B?: string;
+  vigenciaFinalAdminTesteV29B?: string;
+}
+
+export interface PreValidacaoAdministrativaV29BResultado {
+  sucesso: boolean;
+  bloqueado: boolean;
+  mensagem: string;
+  acao: AcaoAdministrativaV29B;
+  usuarioAtual?: IUsuarioPerfilEnac;
+  perfilAdministradorAtivo: boolean;
+  flagsValidas: boolean;
+  payloadPrevisto?: Record<string, unknown>;
+  historicoPrevisto?: Record<string, unknown>;
+  alertas: AlertaBloqueioEscrita[];
+}
+
 export interface IAcaoAdministrativaPreparadaV29A {
   acao: AcaoAdministrativaV29A;
   exigeAdministradorSistema: boolean;

@@ -1,7 +1,9 @@
 import * as React from 'react';
 import {
+  ConfiguracaoAdministrativaV29B,
   ConfiguracaoTesteOperacionalV27A,
   IDiagnosticoReadonlyEnac,
+  FlagsEscritaAdministrativaV29B,
   FlagsEscritaOperacionalV27A,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
@@ -12,6 +14,7 @@ import {
   MarcadorTesteEscritaEnac,
   OrigemDadosEnac,
   PerfilEnac,
+  PreValidacaoAdministrativaV29BResultado,
   PreValidacaoOperacionalV27AResultado,
   PreValidacaoTesteControladoSnapshotResultado,
   ResultadoOperacionalV27A,
@@ -49,6 +52,16 @@ const perfilLabels: Record<PerfilEnac, string> = {
   AdministradorSistema: 'Administrador do Sistema',
   ConsultaLeitura: 'Consulta / Leitura'
 };
+const perfilChoiceSharePoint: Record<PerfilEnac, string> = {
+  Campo: 'Campo / Engenheiro',
+  CotacoesContratos: 'Cotações e Contratos',
+  ComprasFinanceiroOperacional: 'Compras e Financeiro Operacional',
+  Planejamento: 'Planejamento',
+  Diretoria: 'Diretoria',
+  AdministradorSistema: 'Administrador do Sistema',
+  ConsultaLeitura: 'Consulta / Leitura'
+};
+const CONFIRMACAO_ADMINISTRATIVA_V29B = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9B-ENAC';
 
 export interface IEnacSistemaProps {
   currentUserName: string;
@@ -66,6 +79,8 @@ export interface IEnacSistemaProps {
   escritaTesteMarcador?: MarcadorTesteEscritaEnac;
   flagsEscritaOperacionalV27A?: FlagsEscritaOperacionalV27A;
   configuracaoTesteOperacionalV27A?: ConfiguracaoTesteOperacionalV27A;
+  flagsEscritaAdministrativaV29B?: FlagsEscritaAdministrativaV29B;
+  configuracaoAdministrativaV29B?: ConfiguracaoAdministrativaV29B;
 }
 
 const obras: IObraEnac[] = [
@@ -135,6 +150,174 @@ const findUsuarioAtual = (
   }
 
   return undefined;
+};
+
+const isValidEmail = (value: string | undefined): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+
+const buildPreValidacaoAdministrativaV29B = (
+  flags: FlagsEscritaAdministrativaV29B | undefined,
+  config: ConfiguracaoAdministrativaV29B | undefined,
+  usuarioAtual: IUsuarioPerfilEnac | undefined,
+  perfilAdministradorAtivo: boolean,
+  usuariosExistentes: IUsuarioPerfilEnac[],
+  alcadasExistentes: IAlcadaEnac[]
+): PreValidacaoAdministrativaV29BResultado => {
+  const acao = config?.acaoAdministrativaV29B || 'CriarUsuarioSistema';
+  const alertas: { codigo: string; mensagem: string }[] = [];
+
+  if (!flags?.habilitarEscritaAdministrativaV29B) {
+    alertas.push({ codigo: 'ESCRITA_ADMIN_DESABILITADA', mensagem: 'habilitarEscritaAdministrativaV29B esta desligada.' });
+  }
+
+  if (!flags?.modoTesteAdministrativoV29B) {
+    alertas.push({ codigo: 'MODO_TESTE_ADMIN_DESLIGADO', mensagem: 'modoTesteAdministrativoV29B deve estar ativo para homologacao.' });
+  }
+
+  if (flags?.exigirConfirmacaoAdministrativaV29B !== false && flags?.confirmacaoAdministrativaV29B !== CONFIRMACAO_ADMINISTRATIVA_V29B) {
+    alertas.push({ codigo: 'CONFIRMACAO_ADMIN_INVALIDA', mensagem: 'Confirmacao administrativa V2.9B nao confere.' });
+  }
+
+  if (flags?.marcadorAdministrativoV29B !== 'V2.9B-ADMIN-TESTE') {
+    alertas.push({ codigo: 'MARCADOR_ADMIN_INVALIDO', mensagem: 'Marcador administrativo deve ser V2.9B-ADMIN-TESTE.' });
+  }
+
+  if (!usuarioAtual || !usuarioAtual.usuarioAtivo || !perfilAdministradorAtivo) {
+    alertas.push({ codigo: 'USUARIO_NAO_ADMINISTRADOR', mensagem: 'Acao administrativa exige usuario ativo com perfil Administrador do Sistema.' });
+  }
+
+  const observacao = `${flags?.marcadorAdministrativoV29B || 'V2.9B-ADMIN-TESTE'} - ${config?.observacaoAdminTesteV29B || 'pre-validacao administrativa sem escrita real'}`;
+  let payloadPrevisto: Record<string, unknown> | undefined;
+
+  if (acao === 'CriarUsuarioSistema' || acao === 'AtualizarUsuarioPerfilStatus') {
+    const usuarioInternoId = String(config?.usuarioInternoIdAdminTesteV29B || '').trim();
+    const email = String(config?.emailUsuarioAdminTesteV29B || '').trim();
+    const perfil = config?.perfilPrincipalAdminTesteV29B || 'Campo';
+    const usuarioExistente = config?.usuarioAdminTesteIdV29B
+      ? usuariosExistentes.find((item) => Number(item.id) === config.usuarioAdminTesteIdV29B || Number(item.contaMicrosoft365Id) === config.usuarioAdminTesteIdV29B)
+      : undefined;
+
+    if (acao === 'CriarUsuarioSistema') {
+      if (!config?.nomeUsuarioAdminTesteV29B) alertas.push({ codigo: 'NOME_USUARIO_AUSENTE', mensagem: 'Nome de exibicao e obrigatorio.' });
+      if (!usuarioInternoId) alertas.push({ codigo: 'USUARIO_INTERNO_ID_AUSENTE', mensagem: 'UsuarioInternoId e obrigatorio.' });
+      if (!config?.contaMicrosoft365IdAdminTesteV29B) alertas.push({ codigo: 'CONTA_M365_ID_AUSENTE', mensagem: 'ContaMicrosoft365Id e obrigatorio.' });
+      if (!isValidEmail(email)) alertas.push({ codigo: 'EMAIL_INVALIDO', mensagem: 'Email corporativo deve ser valido.' });
+      if (usuariosExistentes.some((item) => normalizeIdentity(item.usuarioInternoId) === normalizeIdentity(usuarioInternoId))) {
+        alertas.push({ codigo: 'USUARIO_INTERNO_ID_DUPLICADO', mensagem: `UsuarioInternoId ${usuarioInternoId} ja existe.` });
+      }
+      if (usuariosExistentes.some((item) => normalizeIdentity(item.emailCorporativo) === normalizeIdentity(email))) {
+        alertas.push({ codigo: 'EMAIL_DUPLICADO', mensagem: `Email ${email} ja existe no cadastro.` });
+      }
+    }
+
+    if (acao === 'AtualizarUsuarioPerfilStatus' && !config?.usuarioAdminTesteIdV29B) {
+      alertas.push({ codigo: 'USUARIO_ITEM_ID_AUSENTE', mensagem: 'usuarioAdminTesteIdV29B e obrigatorio para atualizar usuario.' });
+    }
+
+    if (acao === 'AtualizarUsuarioPerfilStatus' && config?.usuarioAdminTesteIdV29B && !usuarioExistente) {
+      alertas.push({ codigo: 'USUARIO_ITEM_NAO_RESOLVIDO', mensagem: 'Item de usuario informado nao foi resolvido no conjunto carregado.' });
+    }
+
+    payloadPrevisto = acao === 'CriarUsuarioSistema'
+      ? {
+        Title: config?.nomeUsuarioAdminTesteV29B || '',
+        UsuarioInternoId: usuarioInternoId,
+        ContaMicrosoft365Id: config?.contaMicrosoft365IdAdminTesteV29B,
+        EmailCorporativo: email,
+        PerfilPrincipal: perfilChoiceSharePoint[perfil],
+        PerfisAdicionais: { results: (config?.perfisAdicionaisAdminTesteV29B || []).map((item) => perfilChoiceSharePoint[item]) },
+        UsuarioAtivo: config?.usuarioAtivoAdminTesteV29B !== false,
+        CargoFuncao: config?.cargoFuncaoAdminTesteV29B || '',
+        PodeAdministrarConfiguracoes: perfil === 'AdministradorSistema',
+        PodeAprovarCompras: perfil === 'Diretoria' || perfil === 'Planejamento',
+        PodeAtualizarStatusFinal: perfil === 'Diretoria',
+        PodeCriarSolicitacao: perfil === 'Campo',
+        PodeEmitirPedido: perfil === 'ComprasFinanceiroOperacional',
+        PodeLiberarPagamento: perfil === 'Diretoria',
+        PodeProgramarPagamento: perfil === 'ComprasFinanceiroOperacional',
+        PodeRegistrarCotacoes: perfil === 'CotacoesContratos',
+        PodeVincularNF: perfil === 'ComprasFinanceiroOperacional',
+        Observacoes: observacao
+      }
+      : {
+        PerfilPrincipal: perfilChoiceSharePoint[perfil],
+        PerfisAdicionais: { results: (config?.perfisAdicionaisAdminTesteV29B || []).map((item) => perfilChoiceSharePoint[item]) },
+        UsuarioAtivo: config?.usuarioAtivoAdminTesteV29B !== false,
+        CargoFuncao: config?.cargoFuncaoAdminTesteV29B || '',
+        Observacoes: observacao
+      };
+  }
+
+  if (acao === 'AtualizarAlcadaUsuario') {
+    const minimo = config?.valorMinimoAlcadaAdminTesteV29B;
+    const maximo = config?.valorMaximoAlcadaAdminTesteV29B;
+    const ilimitado = config?.ilimitadoAlcadaAdminTesteV29B === true;
+    const aprovador = usuariosExistentes.find((item) => Number(item.id) === config?.aprovadorPrincipalIdAdminTesteV29B);
+
+    if (!config?.tituloAlcadaAdminTesteV29B) alertas.push({ codigo: 'TITULO_ALCADA_AUSENTE', mensagem: 'Title/Regra e obrigatorio.' });
+    if (!config?.regraInternaIdAdminTesteV29B) alertas.push({ codigo: 'REGRA_INTERNA_ID_AUSENTE', mensagem: 'RegraInternaId e obrigatorio.' });
+    if (minimo === undefined || minimo < 0) alertas.push({ codigo: 'VALOR_MINIMO_INVALIDO', mensagem: 'ValorMinimo deve ser maior ou igual a zero.' });
+    if (!ilimitado && (maximo === undefined || maximo < Number(minimo || 0))) alertas.push({ codigo: 'VALOR_MAXIMO_INVALIDO', mensagem: 'ValorMaximo deve ser maior ou igual ao ValorMinimo quando a regra nao for ilimitada.' });
+    if (!config?.aprovadorPrincipalIdAdminTesteV29B) alertas.push({ codigo: 'APROVADOR_PRINCIPAL_AUSENTE', mensagem: 'AprovadorPrincipalId e obrigatorio.' });
+    if (config?.aprovadorPrincipalIdAdminTesteV29B && !aprovador) alertas.push({ codigo: 'APROVADOR_NAO_RESOLVIDO', mensagem: 'AprovadorPrincipalId nao foi resolvido nos usuarios carregados.' });
+    if (aprovador && !aprovador.usuarioAtivo) alertas.push({ codigo: 'APROVADOR_INATIVO', mensagem: 'Usuarios inativos nao podem ser selecionados para novas alcadas.' });
+    if (!config?.vigenciaInicialAdminTesteV29B) alertas.push({ codigo: 'VIGENCIA_INICIAL_AUSENTE', mensagem: 'VigenciaInicial e obrigatoria.' });
+
+    const conflito = alcadasExistentes.some((item) =>
+      item.ativa &&
+      item.processo === 'Compra' &&
+      item.tipoSolicitacao === 'Material' &&
+      minimo !== undefined &&
+      Number(item.valorMinimo) <= (ilimitado ? Number.MAX_SAFE_INTEGER : Number(maximo || 0)) &&
+      (item.ilimitado || Number(item.valorMaximo || 0) >= minimo)
+    );
+    if (conflito) {
+      alertas.push({ codigo: 'POSSIVEL_SOBREPOSICAO_ALCADA', mensagem: 'Existe regra ativa potencialmente sobreposta; revisar antes de qualquer escrita.' });
+    }
+
+    payloadPrevisto = {
+      Title: config?.tituloAlcadaAdminTesteV29B || '',
+      RegraInternaId: config?.regraInternaIdAdminTesteV29B || '',
+      Processo: config?.processoAlcadaAdminTesteV29B || 'Compra',
+      TipoSolicitacao: config?.tipoSolicitacaoAlcadaAdminTesteV29B || 'Material',
+      ValorMinimo: minimo,
+      ValorMaximo: ilimitado ? undefined : maximo,
+      Ilimitado: ilimitado,
+      AprovadorPrincipalId: config?.aprovadorPrincipalIdAdminTesteV29B,
+      AprovadorAdicionalId: config?.aprovadorAdicionalIdAdminTesteV29B,
+      ExigeAprovacaoAdicional: config?.exigeAprovacaoAdicionalAdminTesteV29B === true,
+      Ativo: config?.alcadaAtivaAdminTesteV29B !== false,
+      VigenciaInicial: config?.vigenciaInicialAdminTesteV29B || '',
+      VigenciaFinal: config?.vigenciaFinalAdminTesteV29B || undefined,
+      Observacoes: observacao
+    };
+  }
+
+  const historicoPrevisto = {
+    Title: `${flags?.marcadorAdministrativoV29B || 'V2.9B-ADMIN-TESTE'} ${acao}`,
+    TipoConfiguracao: acao.indexOf('Alcada') >= 0 ? 'Alcada' : 'UsuarioPerfil',
+    AcaoRealizada: acao,
+    UsuarioAlteracao: usuarioAtual?.nome || '-',
+    ValorAnterior: 'A resolver antes da escrita real',
+    ValorNovo: JSON.stringify(payloadPrevisto || {}),
+    Justificativa: observacao
+  };
+  const sucesso = alertas.length === 0;
+
+  return {
+    sucesso,
+    bloqueado: !sucesso,
+    mensagem: sucesso
+      ? 'Pre-validacao administrativa concluida. Payload e historico previstos; execucao real deve ocorrer somente em rodada autorizada.'
+      : 'Pre-validacao administrativa bloqueada. Nenhuma escrita administrativa deve ser executada.',
+    acao,
+    usuarioAtual,
+    perfilAdministradorAtivo,
+    flagsValidas: Boolean(flags?.habilitarEscritaAdministrativaV29B && flags?.modoTesteAdministrativoV29B && flags.confirmacaoAdministrativaV29B === CONFIRMACAO_ADMINISTRATIVA_V29B),
+    payloadPrevisto,
+    historicoPrevisto,
+    alertas
+  };
 };
 
 const alcadasIniciais: IAlcadaEnac[] = [
@@ -410,6 +593,16 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const viewsPermitidas = views.filter((item) => adminViewKeys.indexOf(item.key) === -1 || perfilAdministradorAtivo);
   const perfilSelectDesabilitado = acessoOperacionalBloqueado || perfisAutorizados.length <= 1;
   const nomeUsuarioBanner = formatDisplayName(usuarioAtualSistema?.nome || props.currentUserName || 'Usuario nao cadastrado');
+  const preValidacaoAdministrativaV29B = props.flagsEscritaAdministrativaV29B?.habilitarEscritaAdministrativaV29B && props.configuracaoAdministrativaV29B
+    ? buildPreValidacaoAdministrativaV29B(
+      props.flagsEscritaAdministrativaV29B,
+      props.configuracaoAdministrativaV29B,
+      usuarioAtualSistema,
+      perfilAdministradorAtivo,
+      usuariosParaAdmin,
+      alcadasParaAdmin
+    )
+    : null;
   const escritaTesteConfigurada = Boolean(
     props.escritaTesteHabilitada &&
     props.modoEscritaTeste &&
@@ -951,6 +1144,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
                 onExecutar={executarOperacionalV27A}
               />
             )}
+            {perfilAdministradorAtivo && props.flagsEscritaAdministrativaV29B?.habilitarEscritaAdministrativaV29B && (
+              <PainelAdministrativoV29B preValidacao={preValidacaoAdministrativaV29B} />
+            )}
           </>
         )}
         </div>
@@ -1313,6 +1509,30 @@ function PainelOperacionalV27A({
           Historico criado: {resultado.historicoRegistrado ? 'sim' : 'nao'} / HTTP escrita {resultado.statusHttpEscrita || '-'}<br />
           Alertas execucao: {resultado.alertas.length > 0 ? resultado.alertas.map((alerta) => alerta.codigo).join(', ') : '-'}
         </span>
+      )}
+    </div>
+  );
+}
+
+function PainelAdministrativoV29B({ preValidacao }: { preValidacao: PreValidacaoAdministrativaV29BResultado | null }): JSX.Element {
+  return (
+    <div className={styles.row}>
+      <strong>V2.9B - escrita administrativa controlada</strong>
+      <span>Pré-validação de usuário/perfil/alçada. Nenhuma escrita administrativa é executada nesta versão pelo painel.</span>
+      {!preValidacao && <span>Flags administrativas desligadas ou configuração ausente.</span>}
+      {preValidacao && (
+        <>
+          <span>
+            Ação: {preValidacao.acao}<br />
+            Administrador ativo: {preValidacao.perfilAdministradorAtivo ? 'sim' : 'não'}<br />
+            Flags válidas: {preValidacao.flagsValidas ? 'sim' : 'não'}<br />
+            Pode prosseguir em etapa futura: {preValidacao.sucesso ? 'sim, após autorização específica' : 'não'}<br />
+            Alertas: {preValidacao.alertas.length > 0 ? preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') : '-'}
+          </span>
+          <label>Payload previsto<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
+          <label>Histórico previsto<textarea readOnly value={JSON.stringify(preValidacao.historicoPrevisto || {}, null, 2)} /></label>
+          <button type="button" disabled>Execução real bloqueada na V2.9B</button>
+        </>
       )}
     </div>
   );

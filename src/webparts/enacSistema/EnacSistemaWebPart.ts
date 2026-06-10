@@ -13,7 +13,7 @@ import * as strings from 'EnacSistemaWebPartStrings';
 import { EnacSistema } from './components/EnacSistema';
 import { IEnacSistemaProps } from './components/EnacSistema';
 import { SharePointEnacRepository } from './services/SharePointEnacRepository';
-import { AcaoOperacionalV27A, ConfiguracaoTesteOperacionalV27A, FlagsEscritaOperacionalV27A, MarcadorTesteEscritaEnac, MarcadorTesteOperacionalEnac } from './models';
+import { AcaoAdministrativaV29B, AcaoOperacionalV27A, ConfiguracaoAdministrativaV29B, ConfiguracaoTesteOperacionalV27A, FlagsEscritaAdministrativaV29B, FlagsEscritaOperacionalV27A, MarcadorTesteEscritaEnac, MarcadorTesteOperacionalEnac, PerfilEnac } from './models';
 
 export interface IEnacSistemaWebPartProps {
   description: string;
@@ -58,6 +58,36 @@ export interface IEnacSistemaWebPartProps {
   pagamentoCategoriaTesteV27A: string;
   pagamentoOrigemTesteV27A: string;
   pagamentoDataProgramadaTesteV27A: string;
+  habilitarEscritaAdministrativaV29B: boolean;
+  modoTesteAdministrativoV29B: boolean;
+  exigirConfirmacaoAdministrativaV29B: boolean;
+  confirmacaoAdministrativaV29B: string;
+  acaoAdministrativaV29B: string;
+  usuarioAdminTesteIdV29B: string;
+  alcadaAdminTesteIdV29B: string;
+  marcadorAdministrativoV29B: string;
+  nomeUsuarioAdminTesteV29B: string;
+  usuarioInternoIdAdminTesteV29B: string;
+  contaMicrosoft365IdAdminTesteV29B: string;
+  emailUsuarioAdminTesteV29B: string;
+  perfilPrincipalAdminTesteV29B: string;
+  perfisAdicionaisAdminTesteV29B: string;
+  usuarioAtivoAdminTesteV29B: boolean;
+  cargoFuncaoAdminTesteV29B: string;
+  observacaoAdminTesteV29B: string;
+  tituloAlcadaAdminTesteV29B: string;
+  regraInternaIdAdminTesteV29B: string;
+  processoAlcadaAdminTesteV29B: string;
+  tipoSolicitacaoAlcadaAdminTesteV29B: string;
+  valorMinimoAlcadaAdminTesteV29B: string;
+  valorMaximoAlcadaAdminTesteV29B: string;
+  ilimitadoAlcadaAdminTesteV29B: boolean;
+  aprovadorPrincipalIdAdminTesteV29B: string;
+  aprovadorAdicionalIdAdminTesteV29B: string;
+  exigeAprovacaoAdicionalAdminTesteV29B: boolean;
+  alcadaAtivaAdminTesteV29B: boolean;
+  vigenciaInicialAdminTesteV29B: string;
+  vigenciaFinalAdminTesteV29B: string;
 }
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
@@ -79,6 +109,8 @@ const PAGAMENTO_FORMA_PADRAO_V27A = 'Pix';
 const PAGAMENTO_CONTA_PADRAO_V27A = 'Itaú ENAC';
 const PAGAMENTO_CATEGORIA_PADRAO_V27A = 'Material de Obra';
 const PAGAMENTO_ORIGEM_PADRAO_V27A = 'Compra de Material';
+const CONFIRMACAO_ADMINISTRATIVA_V29B = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9B-ENAC';
+const MARCADOR_ADMINISTRATIVO_V29B = 'V2.9B-ADMIN-TESTE';
 
 export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSistemaWebPartProps> {
   public render(): void {
@@ -104,7 +136,9 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
         escritaTesteValorAnalisado: this.parsePositiveNumber(this.properties.valorAnalisadoTesteV26A),
         escritaTesteMarcador: this.resolveMarcadorTeste(this.properties.marcadorTesteObrigatorioV26A),
         flagsEscritaOperacionalV27A: this.getFlagsOperacionaisV27A(),
-        configuracaoTesteOperacionalV27A: this.getConfiguracaoTesteOperacionalV27A()
+        configuracaoTesteOperacionalV27A: this.getConfiguracaoTesteOperacionalV27A(),
+        flagsEscritaAdministrativaV29B: this.getFlagsAdministrativasV29B(),
+        configuracaoAdministrativaV29B: this.getConfiguracaoAdministrativaV29B()
       }
     );
 
@@ -161,6 +195,36 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
     this.properties.pagamentoCategoriaTesteV27A = this.properties.pagamentoCategoriaTesteV27A || PAGAMENTO_CATEGORIA_PADRAO_V27A;
     this.properties.pagamentoOrigemTesteV27A = this.properties.pagamentoOrigemTesteV27A || PAGAMENTO_ORIGEM_PADRAO_V27A;
     this.properties.pagamentoDataProgramadaTesteV27A = this.properties.pagamentoDataProgramadaTesteV27A || '';
+    this.properties.habilitarEscritaAdministrativaV29B = this.properties.habilitarEscritaAdministrativaV29B === true;
+    this.properties.modoTesteAdministrativoV29B = this.properties.modoTesteAdministrativoV29B === true;
+    this.properties.exigirConfirmacaoAdministrativaV29B = this.properties.exigirConfirmacaoAdministrativaV29B !== false;
+    this.properties.confirmacaoAdministrativaV29B = this.properties.confirmacaoAdministrativaV29B || '';
+    this.properties.acaoAdministrativaV29B = this.properties.acaoAdministrativaV29B || 'CriarUsuarioSistema';
+    this.properties.usuarioAdminTesteIdV29B = this.properties.usuarioAdminTesteIdV29B || '';
+    this.properties.alcadaAdminTesteIdV29B = this.properties.alcadaAdminTesteIdV29B || '';
+    this.properties.marcadorAdministrativoV29B = this.properties.marcadorAdministrativoV29B || MARCADOR_ADMINISTRATIVO_V29B;
+    this.properties.nomeUsuarioAdminTesteV29B = this.properties.nomeUsuarioAdminTesteV29B || '';
+    this.properties.usuarioInternoIdAdminTesteV29B = this.properties.usuarioInternoIdAdminTesteV29B || '';
+    this.properties.contaMicrosoft365IdAdminTesteV29B = this.properties.contaMicrosoft365IdAdminTesteV29B || '';
+    this.properties.emailUsuarioAdminTesteV29B = this.properties.emailUsuarioAdminTesteV29B || '';
+    this.properties.perfilPrincipalAdminTesteV29B = this.properties.perfilPrincipalAdminTesteV29B || 'Campo';
+    this.properties.perfisAdicionaisAdminTesteV29B = this.properties.perfisAdicionaisAdminTesteV29B || '';
+    this.properties.usuarioAtivoAdminTesteV29B = this.properties.usuarioAtivoAdminTesteV29B !== false;
+    this.properties.cargoFuncaoAdminTesteV29B = this.properties.cargoFuncaoAdminTesteV29B || '';
+    this.properties.observacaoAdminTesteV29B = this.properties.observacaoAdminTesteV29B || '';
+    this.properties.tituloAlcadaAdminTesteV29B = this.properties.tituloAlcadaAdminTesteV29B || '';
+    this.properties.regraInternaIdAdminTesteV29B = this.properties.regraInternaIdAdminTesteV29B || '';
+    this.properties.processoAlcadaAdminTesteV29B = this.properties.processoAlcadaAdminTesteV29B || 'Compra';
+    this.properties.tipoSolicitacaoAlcadaAdminTesteV29B = this.properties.tipoSolicitacaoAlcadaAdminTesteV29B || 'Material';
+    this.properties.valorMinimoAlcadaAdminTesteV29B = this.properties.valorMinimoAlcadaAdminTesteV29B || '';
+    this.properties.valorMaximoAlcadaAdminTesteV29B = this.properties.valorMaximoAlcadaAdminTesteV29B || '';
+    this.properties.ilimitadoAlcadaAdminTesteV29B = this.properties.ilimitadoAlcadaAdminTesteV29B === true;
+    this.properties.aprovadorPrincipalIdAdminTesteV29B = this.properties.aprovadorPrincipalIdAdminTesteV29B || '';
+    this.properties.aprovadorAdicionalIdAdminTesteV29B = this.properties.aprovadorAdicionalIdAdminTesteV29B || '';
+    this.properties.exigeAprovacaoAdicionalAdminTesteV29B = this.properties.exigeAprovacaoAdicionalAdminTesteV29B === true;
+    this.properties.alcadaAtivaAdminTesteV29B = this.properties.alcadaAtivaAdminTesteV29B !== false;
+    this.properties.vigenciaInicialAdminTesteV29B = this.properties.vigenciaInicialAdminTesteV29B || '';
+    this.properties.vigenciaFinalAdminTesteV29B = this.properties.vigenciaFinalAdminTesteV29B || '';
 
     return Promise.resolve();
   }
@@ -309,6 +373,116 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
                 }),
                 PropertyPaneTextField('pagamentoDataProgramadaTesteV27A', {
                   label: 'V2.7A - data programada, opcional ISO'
+                }),
+                PropertyPaneCheckbox('habilitarEscritaAdministrativaV29B', {
+                  text: 'V2.9B - habilitar painel de escrita administrativa'
+                }),
+                PropertyPaneCheckbox('modoTesteAdministrativoV29B', {
+                  text: 'V2.9B - manter modo teste administrativo'
+                }),
+                PropertyPaneCheckbox('exigirConfirmacaoAdministrativaV29B', {
+                  text: 'V2.9B - exigir confirmacao manual'
+                }),
+                PropertyPaneTextField('confirmacaoAdministrativaV29B', {
+                  label: `Confirmacao V2.9B (${CONFIRMACAO_ADMINISTRATIVA_V29B})`
+                }),
+                PropertyPaneDropdown('acaoAdministrativaV29B', {
+                  label: 'V2.9B - acao administrativa',
+                  options: [
+                    { key: 'CriarUsuarioSistema', text: 'Criar usuario no sistema' },
+                    { key: 'AtualizarUsuarioPerfilStatus', text: 'Atualizar perfil/status de usuario' },
+                    { key: 'AtualizarAlcadaUsuario', text: 'Atualizar alcada de usuario' }
+                  ]
+                }),
+                PropertyPaneTextField('marcadorAdministrativoV29B', {
+                  label: `Marcador administrativo (${MARCADOR_ADMINISTRATIVO_V29B})`
+                }),
+                PropertyPaneTextField('usuarioAdminTesteIdV29B', {
+                  label: 'V2.9B - ID do usuario existente, se aplicavel'
+                }),
+                PropertyPaneTextField('nomeUsuarioAdminTesteV29B', {
+                  label: 'V2.9B - nome do usuario'
+                }),
+                PropertyPaneTextField('usuarioInternoIdAdminTesteV29B', {
+                  label: 'V2.9B - UsuarioInternoId'
+                }),
+                PropertyPaneTextField('contaMicrosoft365IdAdminTesteV29B', {
+                  label: 'V2.9B - ContaMicrosoft365Id'
+                }),
+                PropertyPaneTextField('emailUsuarioAdminTesteV29B', {
+                  label: 'V2.9B - email corporativo'
+                }),
+                PropertyPaneDropdown('perfilPrincipalAdminTesteV29B', {
+                  label: 'V2.9B - perfil principal',
+                  options: [
+                    { key: 'Campo', text: 'Campo / Engenheiro' },
+                    { key: 'CotacoesContratos', text: 'Cotações e Contratos' },
+                    { key: 'ComprasFinanceiroOperacional', text: 'Compras e Financeiro Operacional' },
+                    { key: 'Planejamento', text: 'Planejamento' },
+                    { key: 'Diretoria', text: 'Diretoria' },
+                    { key: 'AdministradorSistema', text: 'Administrador do Sistema' }
+                  ]
+                }),
+                PropertyPaneTextField('perfisAdicionaisAdminTesteV29B', {
+                  label: 'V2.9B - perfis adicionais, separados por ;'
+                }),
+                PropertyPaneCheckbox('usuarioAtivoAdminTesteV29B', {
+                  text: 'V2.9B - usuario ativo'
+                }),
+                PropertyPaneTextField('cargoFuncaoAdminTesteV29B', {
+                  label: 'V2.9B - cargo/funcao'
+                }),
+                PropertyPaneTextField('observacaoAdminTesteV29B', {
+                  label: 'V2.9B - observacao/justificativa'
+                }),
+                PropertyPaneTextField('alcadaAdminTesteIdV29B', {
+                  label: 'V2.9B - ID da alcada existente, se aplicavel'
+                }),
+                PropertyPaneTextField('tituloAlcadaAdminTesteV29B', {
+                  label: 'V2.9B - titulo da alcada'
+                }),
+                PropertyPaneTextField('regraInternaIdAdminTesteV29B', {
+                  label: 'V2.9B - RegraInternaId'
+                }),
+                PropertyPaneDropdown('processoAlcadaAdminTesteV29B', {
+                  label: 'V2.9B - processo da alcada',
+                  options: [
+                    { key: 'Compra', text: 'Compra' },
+                    { key: 'Liberação Bancária', text: 'Liberação Bancária' },
+                    { key: 'Medição', text: 'Medição' },
+                    { key: 'Pagamento', text: 'Pagamento' },
+                    { key: 'Outro', text: 'Outro' }
+                  ]
+                }),
+                PropertyPaneTextField('tipoSolicitacaoAlcadaAdminTesteV29B', {
+                  label: 'V2.9B - tipo de solicitacao da alcada'
+                }),
+                PropertyPaneTextField('valorMinimoAlcadaAdminTesteV29B', {
+                  label: 'V2.9B - valor minimo'
+                }),
+                PropertyPaneTextField('valorMaximoAlcadaAdminTesteV29B', {
+                  label: 'V2.9B - valor maximo'
+                }),
+                PropertyPaneCheckbox('ilimitadoAlcadaAdminTesteV29B', {
+                  text: 'V2.9B - alcada sem limite maximo'
+                }),
+                PropertyPaneTextField('aprovadorPrincipalIdAdminTesteV29B', {
+                  label: 'V2.9B - AprovadorPrincipalId'
+                }),
+                PropertyPaneTextField('aprovadorAdicionalIdAdminTesteV29B', {
+                  label: 'V2.9B - AprovadorAdicionalId'
+                }),
+                PropertyPaneCheckbox('exigeAprovacaoAdicionalAdminTesteV29B', {
+                  text: 'V2.9B - exige aprovacao adicional'
+                }),
+                PropertyPaneCheckbox('alcadaAtivaAdminTesteV29B', {
+                  text: 'V2.9B - alcada ativa'
+                }),
+                PropertyPaneTextField('vigenciaInicialAdminTesteV29B', {
+                  label: 'V2.9B - vigencia inicial ISO'
+                }),
+                PropertyPaneTextField('vigenciaFinalAdminTesteV29B', {
+                  label: 'V2.9B - vigencia final ISO, opcional'
                 })
               ]
             }
@@ -393,5 +567,79 @@ export default class EnacSistemaWebPart extends BaseClientSideWebPart<IEnacSiste
       pagamentoOrigemTesteV27A: this.properties.pagamentoOrigemTesteV27A || PAGAMENTO_ORIGEM_PADRAO_V27A,
       pagamentoDataProgramadaTesteV27A: this.properties.pagamentoDataProgramadaTesteV27A || ''
     };
+  }
+
+  private getFlagsAdministrativasV29B(): FlagsEscritaAdministrativaV29B {
+    return {
+      habilitarEscritaAdministrativaV29B: this.properties.habilitarEscritaAdministrativaV29B === true,
+      modoTesteAdministrativoV29B: this.properties.modoTesteAdministrativoV29B === true,
+      exigirConfirmacaoAdministrativaV29B: this.properties.exigirConfirmacaoAdministrativaV29B !== false,
+      confirmacaoAdministrativaV29B: this.properties.confirmacaoAdministrativaV29B || '',
+      marcadorAdministrativoV29B: MARCADOR_ADMINISTRATIVO_V29B
+    };
+  }
+
+  private getConfiguracaoAdministrativaV29B(): ConfiguracaoAdministrativaV29B {
+    const acoes: AcaoAdministrativaV29B[] = ['CriarUsuarioSistema', 'AtualizarUsuarioPerfilStatus', 'AtualizarAlcadaUsuario'];
+    const acao = acoes.indexOf(this.properties.acaoAdministrativaV29B as AcaoAdministrativaV29B) >= 0
+      ? this.properties.acaoAdministrativaV29B as AcaoAdministrativaV29B
+      : 'CriarUsuarioSistema';
+
+    return {
+      acaoAdministrativaV29B: acao,
+      usuarioAdminTesteIdV29B: this.parsePositiveNumber(this.properties.usuarioAdminTesteIdV29B),
+      alcadaAdminTesteIdV29B: this.parsePositiveNumber(this.properties.alcadaAdminTesteIdV29B),
+      nomeUsuarioAdminTesteV29B: this.properties.nomeUsuarioAdminTesteV29B || '',
+      usuarioInternoIdAdminTesteV29B: this.properties.usuarioInternoIdAdminTesteV29B || '',
+      contaMicrosoft365IdAdminTesteV29B: this.parsePositiveNumber(this.properties.contaMicrosoft365IdAdminTesteV29B),
+      emailUsuarioAdminTesteV29B: this.properties.emailUsuarioAdminTesteV29B || '',
+      perfilPrincipalAdminTesteV29B: this.resolvePerfilAdministrativo(this.properties.perfilPrincipalAdminTesteV29B),
+      perfisAdicionaisAdminTesteV29B: this.resolvePerfisAdicionaisAdministrativos(this.properties.perfisAdicionaisAdminTesteV29B),
+      usuarioAtivoAdminTesteV29B: this.properties.usuarioAtivoAdminTesteV29B !== false,
+      cargoFuncaoAdminTesteV29B: this.properties.cargoFuncaoAdminTesteV29B || '',
+      observacaoAdminTesteV29B: this.properties.observacaoAdminTesteV29B || '',
+      tituloAlcadaAdminTesteV29B: this.properties.tituloAlcadaAdminTesteV29B || '',
+      regraInternaIdAdminTesteV29B: this.properties.regraInternaIdAdminTesteV29B || '',
+      processoAlcadaAdminTesteV29B: this.properties.processoAlcadaAdminTesteV29B as ConfiguracaoAdministrativaV29B['processoAlcadaAdminTesteV29B'] || 'Compra',
+      tipoSolicitacaoAlcadaAdminTesteV29B: this.properties.tipoSolicitacaoAlcadaAdminTesteV29B || 'Material',
+      valorMinimoAlcadaAdminTesteV29B: this.parseNumberOrUndefined(this.properties.valorMinimoAlcadaAdminTesteV29B),
+      valorMaximoAlcadaAdminTesteV29B: this.parseNumberOrUndefined(this.properties.valorMaximoAlcadaAdminTesteV29B),
+      ilimitadoAlcadaAdminTesteV29B: this.properties.ilimitadoAlcadaAdminTesteV29B === true,
+      aprovadorPrincipalIdAdminTesteV29B: this.parsePositiveNumber(this.properties.aprovadorPrincipalIdAdminTesteV29B),
+      aprovadorAdicionalIdAdminTesteV29B: this.parsePositiveNumber(this.properties.aprovadorAdicionalIdAdminTesteV29B),
+      exigeAprovacaoAdicionalAdminTesteV29B: this.properties.exigeAprovacaoAdicionalAdminTesteV29B === true,
+      alcadaAtivaAdminTesteV29B: this.properties.alcadaAtivaAdminTesteV29B !== false,
+      vigenciaInicialAdminTesteV29B: this.properties.vigenciaInicialAdminTesteV29B || '',
+      vigenciaFinalAdminTesteV29B: this.properties.vigenciaFinalAdminTesteV29B || ''
+    };
+  }
+
+  private parseNumberOrUndefined(value: string | undefined): number | undefined {
+    const normalized = String(value || '').replace(',', '.').trim();
+    if (!normalized) {
+      return undefined;
+    }
+
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  private resolvePerfilAdministrativo(value: string | undefined): PerfilEnac {
+    const perfis: PerfilEnac[] = ['Campo', 'CotacoesContratos', 'ComprasFinanceiroOperacional', 'Planejamento', 'Diretoria', 'AdministradorSistema', 'ConsultaLeitura'];
+    return perfis.indexOf(value as PerfilEnac) >= 0 ? value as PerfilEnac : 'Campo';
+  }
+
+  private resolvePerfisAdicionaisAdministrativos(value: string | undefined): PerfilEnac[] {
+    const perfisValidos: PerfilEnac[] = ['Campo', 'CotacoesContratos', 'ComprasFinanceiroOperacional', 'Planejamento', 'Diretoria', 'AdministradorSistema', 'ConsultaLeitura'];
+    const resolvidos: PerfilEnac[] = [];
+
+    String(value || '').split(';').forEach((item) => {
+      const trimmed = item.trim() as PerfilEnac;
+      if (perfisValidos.indexOf(trimmed) >= 0 && resolvidos.indexOf(trimmed) < 0) {
+        resolvidos.push(trimmed);
+      }
+    });
+
+    return resolvidos;
   }
 }
