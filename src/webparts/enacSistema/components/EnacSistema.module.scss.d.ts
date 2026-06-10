@@ -7,6 +7,8 @@ declare const styles: {
   environmentBadge: string;
   layoutVersionBadge: string;
   layoutDiagnosticBadge: string;
+  titleBlock: string;
+  appTitle: string;
   contentPanel: string;
   adminNotice: string;
   active: string;

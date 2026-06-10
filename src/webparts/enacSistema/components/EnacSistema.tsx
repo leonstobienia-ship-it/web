@@ -757,13 +757,13 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         <header className={styles.appHeader}>
           <div className={styles.headerIdentity}>
             <img src={enacLogo} alt="ENAC" />
-            <div>
-              <h1>Sistema ENAC</h1>
+            <div className={styles.titleBlock}>
+              <h1 className={styles.appTitle}>Sistema ENAC</h1>
               <p>Obras, compras, NF e financeiro</p>
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.layoutVersionBadge}>UI V2.8E7</span>
+            <span className={styles.layoutVersionBadge}>UI V2.8E8</span>
             <span className={styles.layoutDiagnosticBadge}>Layout: full viewport ativo</span>
             <span className={styles.environmentBadge}>Homologação assistida</span>
             <label>
