@@ -174,9 +174,11 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         const rect = el.getBoundingClientRect();
         const viewportWidth = window.innerWidth || document.documentElement.clientWidth || rect.width;
         const measuredLeft = Math.max(0, Math.round(rect.left));
+        const safetyGap = 16;
+        const safeViewportWidth = Math.max(320, Math.round(viewportWidth - measuredLeft - safetyGap));
 
         el.style.setProperty('--enac-breakout-left', `${measuredLeft}px`);
-        el.style.setProperty('--enac-viewport-width', `${Math.round(viewportWidth)}px`);
+        el.style.setProperty('--enac-viewport-width', `${safeViewportWidth}px`);
       });
     };
 
@@ -801,8 +803,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             </div>
           </div>
           <div className={styles.headerMeta}>
-            <span className={styles.layoutVersionBadge}>UI V2.8E10</span>
+            <span className={styles.layoutVersionBadge}>UI V2.8E11</span>
             <span className={styles.layoutDiagnosticBadge}>Breakout medido ativo</span>
+            <span className={styles.layoutDiagnosticBadge}>Ajuste fino de largura ativo</span>
             <span className={styles.environmentBadge}>Homologação assistida</span>
             <label>
               Perfil atual
