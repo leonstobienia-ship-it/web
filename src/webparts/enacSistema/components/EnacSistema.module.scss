@@ -303,6 +303,34 @@
   }
 }
 
+.userAccessBox {
+  display: grid;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 220px;
+  color: #111827;
+
+  strong {
+    overflow: hidden;
+    color: #111827;
+    font-size: 13px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.userAccessLabel {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.profileAccessField {
+  width: 240px;
+}
+
 .environmentBadge {
   display: inline-flex;
   align-items: center;
@@ -324,6 +352,21 @@
   padding: 12px 14px;
   font-size: 13px;
   font-weight: 600;
+}
+
+.adminForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+
+  h2 {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+  }
+
+  button {
+    align-self: end;
+  }
 }
 
 .contentPanel {
@@ -475,8 +518,16 @@
   }
 
   .headerMeta {
+    display: grid;
     justify-items: stretch;
     min-width: 0;
+  }
+
+  .userAccessBox,
+  .profileAccessField,
+  .headerMeta label {
+    width: 100%;
+    max-width: none;
   }
 
   .titleBlock {

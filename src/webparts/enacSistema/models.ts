@@ -4,7 +4,8 @@ export type PerfilEnac =
   | 'ComprasFinanceiroOperacional'
   | 'Planejamento'
   | 'Diretoria'
-  | 'AdministradorSistema';
+  | 'AdministradorSistema'
+  | 'ConsultaLeitura';
 
 export type StatusProcesso =
   | 'SolicitacaoCriada'
@@ -179,6 +180,22 @@ export interface IUsuarioPerfilEnac {
   criadoEm?: string;
   alteradoPor?: string;
   alteradoEm?: string;
+}
+
+export type AcaoAdministrativaV29A =
+  | 'CriarUsuarioSistema'
+  | 'AtualizarUsuarioPerfilStatus'
+  | 'AtualizarAlcadaUsuario'
+  | 'RegistrarHistoricoAdministrativo';
+
+export interface IAcaoAdministrativaPreparadaV29A {
+  acao: AcaoAdministrativaV29A;
+  exigeAdministradorSistema: boolean;
+  exigeSchemaConfirmado: boolean;
+  exigePreValidacao: boolean;
+  exigeConfirmacaoManual: boolean;
+  exigeHistorico: boolean;
+  escritaBloqueadaNestaVersao: boolean;
 }
 
 export interface ISnapshotRegraEnac {

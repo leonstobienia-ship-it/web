@@ -8,11 +8,15 @@ declare const styles: {
   appHeader: string;
   headerIdentity: string;
   headerMeta: string;
+  userAccessBox: string;
+  userAccessLabel: string;
+  profileAccessField: string;
   environmentBadge: string;
   titleBlock: string;
   appTitle: string;
   contentPanel: string;
   adminNotice: string;
+  adminForm: string;
   active: string;
   metrics: string;
   split: string;

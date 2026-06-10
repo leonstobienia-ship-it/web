@@ -38,6 +38,18 @@ const views = [
   { key: 'adminHistorico', label: 'Auditoria' }
 ];
 
+const adminViewKeys = ['adminUsuarios', 'adminAlcadas', 'adminHistorico'];
+const perfilOptions: PerfilEnac[] = ['Campo', 'CotacoesContratos', 'ComprasFinanceiroOperacional', 'Planejamento', 'Diretoria', 'AdministradorSistema', 'ConsultaLeitura'];
+const perfilLabels: Record<PerfilEnac, string> = {
+  Campo: 'Campo / Engenharia',
+  CotacoesContratos: 'Cotações e Contratos',
+  ComprasFinanceiroOperacional: 'Compras / Financeiro',
+  Planejamento: 'Planejamento / Aprovação',
+  Diretoria: 'Diretoria',
+  AdministradorSistema: 'Administrador do Sistema',
+  ConsultaLeitura: 'Consulta / Leitura'
+};
+
 export interface IEnacSistemaProps {
   currentUserName: string;
   currentUserEmail?: string;
@@ -75,6 +87,56 @@ const formatUserInternalId = (value: string | undefined): string => {
   return cleaned === '-' ? '-' : cleaned;
 };
 
+const normalizeIdentity = (value: string | undefined): string =>
+  String(value || '').trim().toLowerCase();
+
+const getPerfisAutorizados = (usuario: IUsuarioPerfilEnac | undefined, fallback: PerfilEnac): PerfilEnac[] => {
+  if (!usuario || !usuario.usuarioAtivo) {
+    return [fallback];
+  }
+
+  const perfis = [usuario.perfilPrincipal, ...(usuario.perfisAdicionais || [])]
+    .filter((item, index, array) => array.indexOf(item) === index);
+
+  return perfis.length > 0 ? perfis : [fallback];
+};
+
+const findUsuarioAtual = (
+  candidatos: IUsuarioPerfilEnac[],
+  currentUserEmail: string | undefined,
+  currentUserName: string | undefined,
+  fallbackPerfil: PerfilEnac,
+  allowFallbackByPerfil: boolean
+): IUsuarioPerfilEnac | undefined => {
+  const email = normalizeIdentity(currentUserEmail);
+  const name = normalizeIdentity(currentUserName);
+
+  const byEmail = candidatos.find((usuario) => {
+    const emails = [
+      usuario.emailCorporativo,
+      usuario.contaMicrosoft365Email,
+      usuario.contaMicrosoft365Login
+    ].map(normalizeIdentity);
+
+    return email.length > 0 && emails.indexOf(email) >= 0;
+  });
+
+  if (byEmail) {
+    return byEmail;
+  }
+
+  const byName = candidatos.find((usuario) => name.length > 0 && normalizeIdentity(usuario.nome) === name);
+  if (byName) {
+    return byName;
+  }
+
+  if (allowFallbackByPerfil) {
+    return candidatos.find((usuario) => usuario.perfilPrincipal === fallbackPerfil && usuario.usuarioAtivo) || candidatos[0];
+  }
+
+  return undefined;
+};
+
 const alcadasIniciais: IAlcadaEnac[] = [
   { id: '1', regraInternaId: 'ALC-COMPRA-GUSTAVO-0001', processo: 'Compra', tipoSolicitacao: 'Todos', obra: 'Todas', valorMinimo: 0, valorMaximo: 20000, ilimitado: false, aprovadorPrincipalId: 'usr-gustavo', aprovadorPrincipalNome: 'Gustavo', aprovadorPrincipalEmail: 'gustavo@example.invalid', exigeAprovacaoAdicional: false, vigenciaInicial: '2026-06-02', ativa: true, observacoes: 'Parametro inicial editavel.' },
   { id: '2', regraInternaId: 'ALC-COMPRA-LEON-0001', processo: 'Compra', tipoSolicitacao: 'Todos', obra: 'Todas', valorMinimo: 20000.01, ilimitado: true, aprovadorPrincipalId: 'usr-leon', aprovadorPrincipalNome: 'Leon', aprovadorPrincipalEmail: 'leon@example.invalid', exigeAprovacaoAdicional: false, vigenciaInicial: '2026-06-02', ativa: true, observacoes: 'Parametro inicial editavel.' },
@@ -86,7 +148,8 @@ const usuarios: IUsuarioPerfilEnac[] = [
   { id: 'usr-gustavo', usuarioInternoId: 'USR-GUSTAVO-0001', nome: 'Gustavo', emailCorporativo: 'gustavo@example.invalid', contaMicrosoft365Id: 2, contaMicrosoft365Nome: 'Gustavo', contaMicrosoft365Email: 'gustavo@example.invalid', cargoFuncao: 'Planejamento', perfilPrincipal: 'Planejamento', perfisAdicionais: [], podeCriarSolicitacao: false, podeRegistrarCotacoes: false, podeAprovarCompras: true, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true },
   { id: 'usr-matheus', usuarioInternoId: 'USR-MATHEUS-0001', nome: 'Matheus', emailCorporativo: 'matheus@example.invalid', contaMicrosoft365Id: 3, contaMicrosoft365Nome: 'Matheus', contaMicrosoft365Email: 'matheus@example.invalid', cargoFuncao: 'Compras e financeiro operacional', perfilPrincipal: 'ComprasFinanceiroOperacional', perfisAdicionais: [], podeCriarSolicitacao: false, podeRegistrarCotacoes: false, podeAprovarCompras: false, podeEmitirPedido: true, podeVincularNf: true, podeProgramarPagamento: true, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true },
   { id: 'usr-kemilly', usuarioInternoId: 'USR-KEMILLY-0001', nome: 'Kemilly', emailCorporativo: 'kemilly@example.invalid', contaMicrosoft365Id: 4, contaMicrosoft365Nome: 'Kemilly', contaMicrosoft365Email: 'kemilly@example.invalid', cargoFuncao: 'Cotacoes e contratos', perfilPrincipal: 'CotacoesContratos', perfisAdicionais: [], podeCriarSolicitacao: false, podeRegistrarCotacoes: true, podeAprovarCompras: false, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true },
-  { id: 'usr-campo', usuarioInternoId: 'USR-CAMPO-0001', nome: 'Engenheiro Teste', emailCorporativo: 'campo@example.invalid', contaMicrosoft365Id: 5, contaMicrosoft365Nome: 'Engenheiro Teste', contaMicrosoft365Email: 'campo@example.invalid', cargoFuncao: 'Engenheiro de campo', perfilPrincipal: 'Campo', perfisAdicionais: [], podeCriarSolicitacao: true, podeRegistrarCotacoes: false, podeAprovarCompras: false, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true }
+  { id: 'usr-campo', usuarioInternoId: 'USR-CAMPO-0001', nome: 'Engenheiro Teste', emailCorporativo: 'campo@example.invalid', contaMicrosoft365Id: 5, contaMicrosoft365Nome: 'Engenheiro Teste', contaMicrosoft365Email: 'campo@example.invalid', cargoFuncao: 'Engenheiro de campo', perfilPrincipal: 'Campo', perfisAdicionais: [], podeCriarSolicitacao: true, podeRegistrarCotacoes: false, podeAprovarCompras: false, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true },
+  { id: 'usr-consulta', usuarioInternoId: 'USR-CONSULTA-0001', nome: 'Consulta', emailCorporativo: 'consulta@example.invalid', contaMicrosoft365Id: 6, contaMicrosoft365Nome: 'Consulta', contaMicrosoft365Email: 'consulta@example.invalid', cargoFuncao: 'Consulta / leitura', perfilPrincipal: 'ConsultaLeitura', perfisAdicionais: [], podeCriarSolicitacao: false, podeRegistrarCotacoes: false, podeAprovarCompras: false, podeEmitirPedido: false, podeVincularNf: false, podeProgramarPagamento: false, podeLiberarPagamento: false, podeAtualizarStatusFinal: false, podeAdministrarConfiguracoes: false, usuarioAtivo: true }
 ];
 
 const historicoConfiguracoes: IHistoricoConfiguracaoEnac[] = [
@@ -337,6 +400,16 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const usuariosParaAdmin = usandoSharePointReadonly ? usuariosPerfisReadonly : usuarios;
   const alcadasParaAdmin = usandoSharePointReadonly ? alcadasReadonly : alcadas;
   const historicoParaAdmin = usandoSharePointReadonly && historicoConfiguracoesReadonly.length > 0 ? historicoConfiguracoesReadonly : historicoConfiguracoes;
+  const usuarioAtualSistema = findUsuarioAtual(usuariosParaAdmin, props.currentUserEmail, props.currentUserName, props.currentUserPerfil || 'Campo', !usandoSharePointReadonly);
+  const usuarioCadastrado = Boolean(usuarioAtualSistema);
+  const usuarioAtivo = Boolean(usuarioAtualSistema?.usuarioAtivo);
+  const perfisAutorizados = getPerfisAutorizados(usuarioAtualSistema, props.currentUserPerfil || 'Campo');
+  const perfilSelecionadoAutorizado = perfisAutorizados.indexOf(perfil) >= 0;
+  const perfilAdministradorAtivo = usuarioAtivo && perfil === 'AdministradorSistema' && perfisAutorizados.indexOf('AdministradorSistema') >= 0;
+  const acessoOperacionalBloqueado = usandoSharePointReadonly && (!usuarioCadastrado || !usuarioAtivo || !perfilSelecionadoAutorizado);
+  const viewsPermitidas = views.filter((item) => adminViewKeys.indexOf(item.key) === -1 || perfilAdministradorAtivo);
+  const perfilSelectDesabilitado = acessoOperacionalBloqueado || perfisAutorizados.length <= 1;
+  const nomeUsuarioBanner = formatDisplayName(usuarioAtualSistema?.nome || props.currentUserName || 'Usuario nao cadastrado');
   const escritaTesteConfigurada = Boolean(
     props.escritaTesteHabilitada &&
     props.modoEscritaTeste &&
@@ -345,6 +418,18 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     props.escritaTesteValorAnalisado &&
     props.escritaTesteMarcador
   );
+
+  React.useEffect(() => {
+    if (perfisAutorizados.length > 0 && perfisAutorizados.indexOf(perfil) === -1) {
+      setPerfil(perfisAutorizados[0]);
+    }
+  }, [perfil, perfisAutorizados.join('|')]);
+
+  React.useEffect(() => {
+    if (!perfilAdministradorAtivo && adminViewKeys.indexOf(view) >= 0) {
+      setView('dashboard');
+    }
+  }, [perfilAdministradorAtivo, view]);
 
   React.useEffect(() => {
     if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !escritaTesteConfigurada) {
@@ -791,7 +876,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         <div className={styles.sideNavBrand}>
           <img src={enacLogo} alt="ENAC" className={styles.sideNavLogo} />
         </div>
-        {views.map((item) => (
+        {viewsPermitidas.map((item) => (
           <button key={item.key} className={view === item.key ? styles.active : ''} onClick={() => setView(item.key)}>{item.label}</button>
         ))}
       </aside>
@@ -805,21 +890,29 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
           </div>
           <div className={styles.headerMeta}>
             <span className={styles.environmentBadge}>Homologação assistida</span>
-            <label>
-              Perfil atual
-              <select value={perfil} onChange={(event) => setPerfil(event.target.value as PerfilEnac)}>
-                <option value="Campo">Campo / Engenheiro</option>
-                <option value="CotacoesContratos">Cotações e Contratos / Kemilly</option>
-                <option value="ComprasFinanceiroOperacional">Compras e Financeiro Operacional / Matheus</option>
-                <option value="Planejamento">Planejamento / Gustavo</option>
-                <option value="Diretoria">Diretoria / Leon</option>
-                <option value="AdministradorSistema">Administrador do Sistema / Leon</option>
+            <div className={styles.userAccessBox}>
+              <span className={styles.userAccessLabel}>Usuário</span>
+              <strong>{nomeUsuarioBanner}</strong>
+            </div>
+            <label className={styles.profileAccessField}>
+              Perfil de acesso
+              <select value={perfil} disabled={perfilSelectDesabilitado} onChange={(event) => setPerfil(event.target.value as PerfilEnac)}>
+                {(perfisAutorizados.length > 0 ? perfisAutorizados : perfilOptions).map((item) => (
+                  <option key={item} value={item}>{perfilLabels[item]}</option>
+                ))}
               </select>
             </label>
           </div>
         </header>
 
         <div className={styles.contentPanel}>
+        {acessoOperacionalBloqueado && (
+          <div className={styles.adminNotice}>
+            {!usuarioCadastrado && 'Usuário não cadastrado no Sistema ENAC. Ações operacionais e administrativas permanecem bloqueadas.'}
+            {usuarioCadastrado && !usuarioAtivo && 'Usuário inativo no Sistema ENAC. Ações operacionais e administrativas permanecem bloqueadas.'}
+            {usuarioCadastrado && usuarioAtivo && !perfilSelecionadoAutorizado && 'Perfil selecionado não autorizado para o usuário atual.'}
+          </div>
+        )}
         {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} requisicoesResumo={usandoSharePointReadonly ? requisicoesResumoReadonly : []} origemDados={origemDadosEfetiva} />}
         {view === 'nova' && <NovaSolicitacao onSubmit={criarSolicitacao} />}
         {view === 'minhas' && <Tabela solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
@@ -829,12 +922,12 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         {view === 'financeiro' && <Financeiro selected={selected} onProgramarPagamento={programarPagamento} />}
         {view === 'liberacao' && <Liberacao solicitacoes={solicitacoes} onConcluir={concluirPagamento} />}
         {view === 'historico' && <Historico selected={selected} />}
-        {view === 'adminUsuarios' && <AdminUsuarios usuarios={usuariosParaAdmin} origemDados={origemDadosEfetiva} />}
-        {view === 'adminAlcadas' && <Alcadas alcadas={alcadasParaAdmin} origemDados={origemDadosEfetiva} />}
+        {view === 'adminUsuarios' && perfilAdministradorAtivo && <AdminUsuarios usuarios={usuariosParaAdmin} origemDados={origemDadosEfetiva} />}
+        {view === 'adminAlcadas' && perfilAdministradorAtivo && <Alcadas alcadas={alcadasParaAdmin} origemDados={origemDadosEfetiva} />}
         {view === 'adminHistorico' && (
           <>
-            <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />
-            {perfil === 'AdministradorSistema' && escritaTesteConfigurada && (
+            {perfilAdministradorAtivo && <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />}
+            {perfilAdministradorAtivo && escritaTesteConfigurada && (
               <TesteEscritaSnapshot
                 disabled={executandoEscritaTeste || confirmacaoFinalEscritaTeste !== CONFIRMACAO_ESCRITA_TESTE_V26A || !preValidacaoEscritaTeste?.sucesso || preValidacaoEscritaTeste.bloqueado}
                 preValidacao={preValidacaoEscritaTeste}
@@ -845,7 +938,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
                 onExecutar={executarEscritaTesteSnapshot}
               />
             )}
-            {perfil === 'AdministradorSistema' && props.flagsEscritaOperacionalV27A?.habilitarEscritaOperacionalV27A && (
+            {perfilAdministradorAtivo && props.flagsEscritaOperacionalV27A?.habilitarEscritaOperacionalV27A && (
               <PainelOperacionalV27A
                 flags={props.flagsEscritaOperacionalV27A}
                 config={props.configuracaoTesteOperacionalV27A}
@@ -1018,24 +1111,28 @@ function AdminUsuarios({ usuarios: usuariosExibidos, origemDados }: { usuarios: 
     <>
       <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint readonly' : 'Fallback local'}</p>
       <div className={styles.adminNotice}>
-        Edição administrativa preparada para homologação: perfil, status e justificativa devem passar por auditoria readonly, pré-validação e confirmação manual antes de qualquer escrita real.
+        Edição administrativa preparada para homologação: criação de usuário, perfil, status e justificativa dependem da auditoria readonly V2.9A, pré-validação, confirmação manual e histórico. Escrita real permanece bloqueada.
       </div>
+      <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
+        <h2>CriarUsuarioSistema</h2>
+        <label>Nome de exibição<input disabled placeholder="Schema de usuários pendente de confirmação" /></label>
+        <label>Usuário Microsoft 365 / e-mail<input disabled placeholder="Pessoa ou Grupo / ContaMicrosoft365" /></label>
+        <label>Perfil/categoria<select disabled>{perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}</select></label>
+        <label>Status<select disabled><option>Ativo</option><option>Inativo</option></select></label>
+        <label>Observações<textarea disabled placeholder="Justificativa obrigatória em rodada futura" /></label>
+        <button type="button" disabled>Criar usuário bloqueado até schema confirmado</button>
+      </form>
       <table>
-        <thead><tr><th>Nome</th><th>Usuário interno</th><th>Perfil atual</th><th>Alterar perfil</th><th>Cargo/Função</th><th>Status</th><th>Alterar status</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Usuário interno</th><th>Categoria/perfis</th><th>Alterar perfil</th><th>Cargo/Função</th><th>Status</th><th>Alterar status</th></tr></thead>
         <tbody>
           {usuariosExibidos.map((usuario) => (
             <tr key={usuario.usuarioInternoId || usuario.id}>
               <td>{formatDisplayName(usuario.nome)}</td>
               <td>{formatUserInternalId(usuario.usuarioInternoId || usuario.id)}</td>
-              <td>{usuario.perfilPrincipal}</td>
+              <td>{perfilLabels[usuario.perfilPrincipal]}{(usuario.perfisAdicionais || []).length > 0 ? ` + ${(usuario.perfisAdicionais || []).map((item) => perfilLabels[item]).join(', ')}` : ''}</td>
               <td>
                 <select value={usuario.perfilPrincipal} disabled aria-label={`Perfil técnico de ${formatDisplayName(usuario.nome)}`}>
-                  <option value="Campo">Campo</option>
-                  <option value="CotacoesContratos">Cotações e Contratos</option>
-                  <option value="ComprasFinanceiroOperacional">Compras / Financeiro</option>
-                  <option value="Planejamento">Planejamento</option>
-                  <option value="Diretoria">Diretoria</option>
-                  <option value="AdministradorSistema">Administrador do Sistema</option>
+                  {perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}
                 </select>
               </td>
               <td>{usuario.cargoFuncao || '-'}</td>
@@ -1228,6 +1325,15 @@ function Alcadas({ alcadas, origemDados }: { alcadas: IAlcadaEnac[]; origemDados
       <div className={styles.adminNotice}>
         Alteração de alçadas por usuário preparada como ação controlada futura: depende de schema confirmado, pré-validação, confirmação manual e histórico.
       </div>
+      <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
+        <h2>AtualizarAlcadaUsuario</h2>
+        <label>Usuário ou perfil vinculado<input disabled placeholder="Campo real pendente de auditoria readonly" /></label>
+        <label>Processo<select disabled><option>Compra</option><option>Pagamento</option><option>NF</option><option>Contrato</option></select></label>
+        <label>Limite mínimo<input disabled placeholder="Valor mínimo" /></label>
+        <label>Limite máximo<input disabled placeholder="Valor máximo ou ilimitado" /></label>
+        <label>Observação/justificativa<textarea disabled placeholder="Histórico obrigatório em rodada futura" /></label>
+        <button type="button" disabled>Atualizar alçada bloqueado até schema confirmado</button>
+      </form>
       <table>
         <thead><tr><th>Regra</th><th>Processo</th><th>Tipo</th><th>Faixa</th><th>Aprovador</th><th>Prévia de limite</th><th>Status</th></tr></thead>
         <tbody>
