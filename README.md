@@ -155,6 +155,8 @@ Na V2.8E11, foi feito ajuste fino do breakout medido para evitar excesso lateral
 
 Na V2.8E12, foi feito acabamento final do cabecalho: o logo ENAC saiu do banner e passou para o topo do menu lateral no lugar de `Módulos`; o banner manteve `Sistema ENAC`, subtitulo, perfil atual e `Homologação assistida`; e os marcadores tecnicos `UI V2.8E11`, `Breakout medido ativo` e `Ajuste fino de largura ativo` foram removidos da interface. A alteracao foi somente visual, sem alterar regras, payloads, fluxos, chamadas REST, status, alçadas, travas operacionais ou Power Automate.
 
+Na V2.8E13, foi removido o fundo branco aplicado por CSS ao logo do menu lateral. O PNG foi mantido intacto e confirmado com canal alpha; o ajuste removeu `background`, `border-radius` e `padding` que criavam o efeito de card/pill branco em `.sideNavLogo`, preservando o banner sem logo e sem marcadores tecnicos. A alteracao foi somente visual, sem alterar regras, payloads, fluxos, chamadas REST, status, alçadas, travas operacionais ou Power Automate.
+
 Na V2.7A.4C/V2.7A.4D, a validacao manual de `AprovarCompra` foi registrada como pendente de auditoria porque Leon observou o campo visual `Snapshot da Aprovação de Compra` vazio no formulario do SharePoint. A rotina foi corrigida localmente para confirmar `SnapshotAprovacaoCompra` por GET apos o MERGE de status, registrar historico somente quando o snapshot for preservado e retornar alerta critico se o lookup nao for comprovado. Codex nao conectou ao SharePoint, nao alterou tenant/listas/dados e nao executou nova escrita operacional.
 
 Na V2.7A.4E, Leon confirmou manualmente que o campo `Snapshot da Aprovação de Compra` do item `11` permaneceu vinculado ao snapshot `3` / `SNAP-V2.7A-TESTE-11-20260609025123` apos `AprovarCompra`. A acao fica VALIDADA MANUALMENTE para Diretoria como alçada superior, com status `Aguardando aprovação -> Aprovada para compra`, historico criado, HTTP escrita `204`, sem pedido, NF, pagamento ou Power Automate. Isso nao representa liberacao ampla de producao.
@@ -299,6 +301,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `docs/v2.8d-plano-limpeza-controlada-dados-teste.md`
 - `docs/v2.8d1-correcao-dryrun-limpeza-controlada.md`
 - `docs/v2.8e12-ajuste-final-cabecalho-logo.md`
+- `docs/v2.8e13-remover-fundo-logo-menu.md`
 - `docs/v2.8e-pagina-dedicada-sistema-enac.md`
 - `docs/v2.8e-acesso-permissoes-pagina-sistema.md`
 - `docs/v2.8e1-full-bleed-largura-total-webpart.md`
@@ -337,6 +340,7 @@ No protótipo, usuários podem ser cadastrados, editados, ativados/desativados e
 - `tests/checklist-v2.8c-validacao-visual-admin.md`
 - `tests/checklist-v2.8d-limpeza-controlada.md`
 - `tests/checklist-v2.8e12-validacao-cabecalho-logo.md`
+- `tests/checklist-v2.8e13-validacao-logo-menu.md`
 - `tests/checklist-v2.8e-validacao-pagina-app.md`
 - `tests/checklist-v2.8e1-validacao-largura-total.md`
 - `tests/checklist-v2.8e2-validacao-layout-tela-cheia.md`
