@@ -120,7 +120,11 @@ const getPerfisAutorizados = (usuario: IUsuarioPerfilEnac | undefined, fallback:
     return [fallback];
   }
 
-  const perfis = [usuario.perfilPrincipal, ...(usuario.perfisAdicionais || [])]
+  const perfis = [
+    usuario.perfilPrincipal,
+    ...(usuario.perfisAdicionais || []),
+    ...(usuario.podeAdministrarConfiguracoes ? ['AdministradorSistema' as PerfilEnac] : [])
+  ]
     .filter((item, index, array) => array.indexOf(item) === index);
 
   return perfis.length > 0 ? perfis : [fallback];

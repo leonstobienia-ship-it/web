@@ -3052,12 +3052,14 @@ export class SharePointEnacRepository {
   private mapPerfilChoiceParaInternal(perfil: string | undefined): PerfilEnac {
     switch (perfil) {
       case 'Campo / Engenheiro':
+      case 'Campo / Engenharia':
       case 'Campo':
         return 'Campo';
       case 'Cotações e Contratos':
       case 'CotacoesContratos':
         return 'CotacoesContratos';
       case 'Compras e Financeiro Operacional':
+      case 'Compras / Financeiro':
       case 'ComprasFinanceiroOperacional':
         return 'ComprasFinanceiroOperacional';
       case 'Administrador do Sistema':
@@ -3068,11 +3070,28 @@ export class SharePointEnacRepository {
         return 'ConsultaLeitura';
       case 'Diretoria':
         return 'Diretoria';
+      case 'Planejamento / Aprovação':
       case 'Planejamento':
         return 'Planejamento';
       default:
         return 'Campo';
     }
+  }
+
+  private mapPerfisAdicionaisChoiceParaInternal(perfis: unknown): PerfilEnac[] {
+    const valores = Array.isArray(perfis)
+      ? perfis
+      : Array.isArray((perfis as { results?: unknown[] } | undefined)?.results)
+        ? (perfis as { results: unknown[] }).results
+        : typeof perfis === 'string'
+          ? perfis.split(';')
+          : [];
+
+    return valores
+      .map((perfil) => String(perfil || '').trim())
+      .filter(Boolean)
+      .map((perfil) => this.mapPerfilChoiceParaInternal(perfil))
+      .filter((perfil, index, array) => array.indexOf(perfil) === index);
   }
 
   private validarFlagsOperacionaisV27A(flags: FlagsEscritaOperacionalV27A): AlertaBloqueioEscrita[] {
@@ -3778,7 +3797,7 @@ export class SharePointEnacRepository {
       contaMicrosoft365Login: item.ContaMicrosoft365?.Name,
       cargoFuncao: item.CargoFuncao || '',
       perfilPrincipal: this.mapPerfilChoiceParaInternal(item.PerfilPrincipal),
-      perfisAdicionais: item.PerfisAdicionais ? String(item.PerfisAdicionais).split(';').filter(Boolean).map((perfil: string) => this.mapPerfilChoiceParaInternal(perfil)) : [],
+      perfisAdicionais: this.mapPerfisAdicionaisChoiceParaInternal(item.PerfisAdicionais),
       podeCriarSolicitacao: Boolean(item.PodeCriarSolicitacao),
       podeRegistrarCotacoes: Boolean(item.PodeRegistrarCotacoes),
       podeAprovarCompras: Boolean(item.PodeAprovarCompras),
