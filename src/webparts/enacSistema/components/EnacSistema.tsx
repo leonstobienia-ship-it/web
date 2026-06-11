@@ -39,7 +39,6 @@ const views = [
   { key: 'cotacoes', label: 'Cotações' },
   { key: 'aprovacoes', label: 'Aprovações' },
   { key: 'pedido', label: 'Pedidos' },
-  { key: 'financeiro', label: 'Notas e pagamentos' },
   { key: 'liberacao', label: 'Liberação' },
   { key: 'historico', label: 'Histórico' },
   { key: 'adminUsuarios', label: 'Usuários' },
@@ -69,9 +68,45 @@ const perfilChoiceSharePoint: Record<PerfilEnac, string> = {
   ConsultaLeitura: 'Consulta / Leitura'
 };
 const tipoSolicitacaoAlcadaOptions = ['Todos', 'Material', 'Serviço', 'Equipamento', 'Ferramenta', 'Locação', 'Terceiro/Prestador', 'EPI', 'Documento/Taxa', 'Outro'];
+const unidadeSolicitacaoOptions = ['un', 'm', 'm²', 'm³', 'Kg', 'L', 'Cx', 'Pç', 'Sc', 'Dia', 'hr', 'Serviço', 'Verba', 'Outro'];
 const CONFIRMACAO_ADMINISTRATIVA_V29B = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9B-ENAC';
 const CONFIRMACAO_ADMINISTRATIVA_V29C = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9C-ENAC';
 const MARCADOR_ADMINISTRATIVO_V29C = 'V2.9C-ADMIN-TESTE';
+
+type FormaPagamentoPedido = 'Pix' | 'Depósito bancário' | 'Boleto';
+
+interface IDadosPedidoCompraForm {
+  anexoNotaFiscal?: string;
+  semNota: boolean;
+  formaPagamento: FormaPagamentoPedido;
+  anexoBoleto?: string;
+}
+
+interface IDadosCotacaoForm {
+  fornecedor: string;
+  valor: number;
+  prazoEntrega: string;
+  frete: string;
+  condicaoPagamento: string;
+  anexoProposta?: string;
+  recomendada: boolean;
+  justificativaRecomendacao?: string;
+}
+
+const dadosPagamentoFornecedores: Record<string, { pix: string; contaBancaria: string }> = {
+  'Fornecedor Concreto Base': {
+    pix: 'financeiro@fornecedorconcretobase.example',
+    contaBancaria: 'Banco 001 / Ag. 1234 / Cc. 56789-0'
+  },
+  'Concreto Rapido': {
+    pix: 'contas@concretorapido.example',
+    contaBancaria: 'Banco 237 / Ag. 4321 / Cc. 98765-4'
+  },
+  'Mix Forte': {
+    pix: 'mixforte-pagamentos@example',
+    contaBancaria: 'Banco 341 / Ag. 1111 / Cc. 22222-3'
+  }
+};
 
 export interface IEnacSistemaProps {
   currentUserName: string;
@@ -112,6 +147,17 @@ const formatUserInternalId = (value: string | undefined): string => {
   const cleaned = formatDisplayName(value).replace(/^USR-/i, '');
   return cleaned === '-' ? '-' : cleaned;
 };
+
+const getFormFileName = (form: FormData, fieldName: string): string => {
+  const value = form.get(fieldName);
+  return value instanceof File ? value.name : String(value || '');
+};
+
+const getDadosPagamentoFornecedor = (fornecedor: string | undefined): { pix: string; contaBancaria: string } =>
+  dadosPagamentoFornecedores[String(fornecedor || '')] || {
+    pix: 'Chave Pix não cadastrada',
+    contaBancaria: 'Dados bancários não cadastrados'
+  };
 
 const normalizeTipoSolicitacaoAlcada = (value: string | undefined): string => {
   switch (String(value || 'Todos').trim()) {
@@ -1293,7 +1339,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       titulo: String(form.get('titulo')),
       obra,
       tipo: String(form.get('tipo')) as ISolicitacaoEnac['tipo'],
-      descricao: String(form.get('descricao')),
+      descricao: String(form.get('titulo')),
       especificacaoTecnica: String(form.get('especificacaoTecnica')),
       quantidade: Number(form.get('quantidade') || 0),
       unidade: String(form.get('unidade') || ''),
@@ -1301,8 +1347,8 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       dataNecessaria: String(form.get('dataNecessaria')),
       prioridade: String(form.get('prioridade')) as ISolicitacaoEnac['prioridade'],
       justificativaUrgencia: String(form.get('justificativaUrgencia') || ''),
-      anexoReferencia: String(form.get('anexoReferencia') || ''),
-      observacoes: String(form.get('observacoes') || ''),
+      anexoReferencia: getFormFileName(form, 'anexoReferencia'),
+      observacoes: '',
       solicitante: props.currentUserName,
       dataHoraSolicitacao: new Date().toISOString(),
       status: 'AguardandoCotacao',
@@ -1318,38 +1364,84 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     setView('minhas');
   }
 
-  function registrarCotacao(id: string, valor: number, fornecedor: string): void {
-    const regra = calcularRegra(alcadas, valor);
-    const aprovador = usuarios.find((usuario) => usuario.id === regra.aprovadorPrincipalId);
-    setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
-      ...item,
-      status: 'AguardandoAprovacao',
-      aprovadorExigido: aprovador?.nome || regra.aprovadorPrincipalNome,
-      cotacao: {
-        propostas: [{ fornecedor, valor, prazoEntrega: item.dataNecessaria, frete: 'A confirmar', condicaoPagamento: 'A confirmar' }],
-        fornecedorRecomendado: fornecedor,
-        valorRecomendado: valor,
-        prazoRecomendado: item.dataNecessaria,
-        condicaoPagamentoRecomendada: 'A confirmar',
-        justificativaRecomendacao: 'Recomendacao inicial registrada no MVP.'
-      },
-      snapshotAprovacaoCompra: {
-        regraAlcadaUtilizada: regra.regraInternaId,
-        processo: regra.processo,
-        faixaValorVigente: `${regra.valorMinimo} ate ${regra.ilimitado ? 'ilimitado' : regra.valorMaximo}`,
-        valorAnalisado: valor,
-        aprovadorBaseId: regra.aprovadorPrincipalId,
-        aprovadorBaseNome: aprovador?.nome || regra.aprovadorPrincipalNome || '',
-        aprovadorBaseEmail: aprovador?.emailCorporativo || regra.aprovadorPrincipalEmail || '',
-        aprovadorEfetivoId: regra.aprovadorPrincipalId,
-        aprovadorEfetivoNome: aprovador?.nome || regra.aprovadorPrincipalNome || '',
-        aprovadorEfetivoEmail: aprovador?.emailCorporativo || regra.aprovadorPrincipalEmail || '',
-        substituicaoAplicada: false,
-        motivoResolucaoAprovador: 'Sem substituicao temporaria vigente.',
-        dataHoraAplicacao: new Date().toISOString()
-      },
-      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Kemilly', perfil: 'CotacoesContratos', descricao: 'Cotacao registrada e enviada para aprovacao', statusNovo: 'AguardandoAprovacao' }]
-    } : item));
+  function registrarCotacao(id: string, dadosCotacao: IDadosCotacaoForm): void {
+    const regrasAlcada = alcadasParaAdmin.length > 0 ? alcadasParaAdmin : alcadas;
+    const regra = calcularRegra(regrasAlcada, dadosCotacao.valor);
+    const aprovador = usuariosParaAdmin.find((usuario) =>
+      usuario.id === regra.aprovadorPrincipalId || usuario.usuarioInternoId === regra.aprovadorPrincipalId
+    );
+
+    setSolicitacoes(solicitacoes.map((item) => {
+      if (item.id !== id) {
+        return item;
+      }
+
+      const propostas = item.cotacao?.propostas || [];
+      const fornecedorRecomendado = dadosCotacao.recomendada
+        ? dadosCotacao.fornecedor
+        : item.cotacao?.fornecedorRecomendado || dadosCotacao.fornecedor;
+      const valorRecomendado = dadosCotacao.recomendada
+        ? dadosCotacao.valor
+        : item.cotacao?.valorRecomendado || dadosCotacao.valor;
+      const prazoRecomendado = dadosCotacao.recomendada
+        ? dadosCotacao.prazoEntrega
+        : item.cotacao?.prazoRecomendado || dadosCotacao.prazoEntrega;
+      const condicaoPagamentoRecomendada = dadosCotacao.recomendada
+        ? dadosCotacao.condicaoPagamento
+        : item.cotacao?.condicaoPagamentoRecomendada || dadosCotacao.condicaoPagamento;
+      const justificativaRecomendacao = dadosCotacao.recomendada
+        ? dadosCotacao.justificativaRecomendacao || 'Cotação escolhida para aprovação.'
+        : item.cotacao?.justificativaRecomendacao || '';
+
+      return {
+        ...item,
+        status: dadosCotacao.recomendada ? 'AguardandoAprovacao' : 'EmCotacao',
+        aprovadorExigido: dadosCotacao.recomendada ? (aprovador?.nome || regra.aprovadorPrincipalNome) : item.aprovadorExigido,
+        cotacao: {
+          propostas: [
+            ...propostas,
+            {
+              fornecedor: dadosCotacao.fornecedor,
+              valor: dadosCotacao.valor,
+              prazoEntrega: dadosCotacao.prazoEntrega,
+              frete: dadosCotacao.frete,
+              condicaoPagamento: dadosCotacao.condicaoPagamento,
+              anexoProposta: dadosCotacao.anexoProposta
+            }
+          ],
+          fornecedorRecomendado,
+          valorRecomendado,
+          prazoRecomendado,
+          condicaoPagamentoRecomendada,
+          justificativaRecomendacao
+        },
+        snapshotAprovacaoCompra: dadosCotacao.recomendada ? {
+          regraAlcadaUtilizada: regra.regraInternaId,
+          processo: regra.processo,
+          faixaValorVigente: `${regra.valorMinimo} ate ${regra.ilimitado ? 'ilimitado' : regra.valorMaximo}`,
+          valorAnalisado: dadosCotacao.valor,
+          aprovadorBaseId: regra.aprovadorPrincipalId,
+          aprovadorBaseNome: aprovador?.nome || regra.aprovadorPrincipalNome || '',
+          aprovadorBaseEmail: aprovador?.emailCorporativo || regra.aprovadorPrincipalEmail || '',
+          aprovadorEfetivoId: regra.aprovadorPrincipalId,
+          aprovadorEfetivoNome: aprovador?.nome || regra.aprovadorPrincipalNome || '',
+          aprovadorEfetivoEmail: aprovador?.emailCorporativo || regra.aprovadorPrincipalEmail || '',
+          substituicaoAplicada: false,
+          motivoResolucaoAprovador: 'Sem substituicao temporaria vigente.',
+          dataHoraAplicacao: new Date().toISOString()
+        } : item.snapshotAprovacaoCompra,
+        historico: [
+          ...item.historico,
+          {
+            data: new Date().toISOString(),
+            autor: 'Kemilly',
+            perfil: 'CotacoesContratos',
+            descricao: dadosCotacao.recomendada ? 'Cotacao registrada e enviada para aprovacao' : 'Cotacao registrada na requisicao',
+            statusNovo: dadosCotacao.recomendada ? 'AguardandoAprovacao' : 'EmCotacao'
+          }
+        ]
+      };
+    }));
   }
 
   function aprovar(id: string): void {
@@ -1361,22 +1453,44 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     } : item));
   }
 
-  function emitirPedido(id: string, numeroPedido: string): void {
-    setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
-      ...item,
-      status: 'PedidoEmitido',
-      pedidoCompra: { numeroPedido, prazoEntregaConfirmado: item.cotacao?.prazoRecomendado || item.dataNecessaria, enderecoEntrega: item.obra.enderecoEntrega || '', observacoes: 'Pedido emitido no MVP.' },
-      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Matheus', perfil: 'ComprasFinanceiroOperacional', descricao: 'Pedido de compra emitido', statusNovo: 'PedidoEmitido' }]
-    } : item));
-  }
-
-  function programarPagamento(id: string): void {
+  function emitirPedido(id: string, dadosPedido: IDadosPedidoCompraForm): void {
     setSolicitacoes(solicitacoes.map((item) => item.id === id ? {
       ...item,
       status: 'AguardandoLiberacaoBancaria',
-      notaFiscal: { numero: 'NF-0001', dataEmissao: new Date().toISOString().slice(0, 10), dataVencimento: item.dataNecessaria, valorBruto: item.cotacao?.valorRecomendado || 0, retencoesDescontos: 0, valorLiquido: item.cotacao?.valorRecomendado || 0 },
-      programacaoBancaria: { bancoContaPagamento: 'Banco principal', formaPagamento: 'Boleto', dataProgramada: item.dataNecessaria, valorProgramado: item.cotacao?.valorRecomendado || 0 },
-      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Matheus', perfil: 'ComprasFinanceiroOperacional', descricao: 'NF vinculada e pagamento programado no banco', statusNovo: 'AguardandoLiberacaoBancaria' }]
+      pedidoCompra: {
+        numeroPedido: `PC-${new Date().getFullYear()}-${(`0000${1000 + solicitacoes.length}`).slice(-4)}`,
+        prazoEntregaConfirmado: item.cotacao?.prazoRecomendado || item.dataNecessaria,
+        enderecoEntrega: item.obra.enderecoEntrega || '',
+        anexoPedidoEnviado: dadosPedido.anexoBoleto || dadosPedido.anexoNotaFiscal || undefined,
+        observacoes: dadosPedido.semNota ? 'Pedido emitido sem nota fiscal anexada.' : 'Pedido emitido com dados fiscais/pagamento.'
+      },
+      notaFiscal: dadosPedido.semNota ? undefined : {
+        numero: dadosPedido.anexoNotaFiscal || 'NF anexada',
+        dataEmissao: new Date().toISOString().slice(0, 10),
+        dataVencimento: item.dataNecessaria,
+        valorBruto: item.cotacao?.valorRecomendado || 0,
+        retencoesDescontos: 0,
+        valorLiquido: item.cotacao?.valorRecomendado || 0,
+        anexoNf: dadosPedido.anexoNotaFiscal,
+        boletoOuDadosPagamento: dadosPedido.formaPagamento === 'Boleto'
+          ? dadosPedido.anexoBoleto
+          : dadosPedido.formaPagamento === 'Pix'
+            ? getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).pix
+            : getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).contaBancaria
+      },
+      programacaoBancaria: {
+        bancoContaPagamento: dadosPedido.formaPagamento === 'Boleto'
+          ? (dadosPedido.anexoBoleto || 'Boleto não anexado')
+          : dadosPedido.formaPagamento === 'Pix'
+            ? getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).pix
+            : getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).contaBancaria,
+        formaPagamento: dadosPedido.formaPagamento,
+        dataProgramada: item.dataNecessaria,
+        valorProgramado: item.cotacao?.valorRecomendado || 0,
+        comprovanteAgendamento: dadosPedido.anexoBoleto,
+        observacoes: dadosPedido.semNota ? 'Sem nota fiscal.' : undefined
+      },
+      historico: [...item.historico, { data: new Date().toISOString(), autor: 'Matheus', perfil: 'ComprasFinanceiroOperacional', descricao: 'Pedido emitido e enviado para liberação com dados de pagamento', statusNovo: 'AguardandoLiberacaoBancaria' }]
     } : item));
   }
 
@@ -1434,11 +1548,10 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         )}
         {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} requisicoesResumo={usandoSharePointReadonly ? requisicoesResumoReadonly : []} origemDados={origemDadosEfetiva} />}
         {view === 'nova' && <NovaSolicitacao onSubmit={criarSolicitacao} />}
-        {view === 'minhas' && <Tabela solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
-        {view === 'cotacoes' && <Cotacoes solicitacoes={solicitacoes} onSelect={setSelectedId} selected={selected} onRegistrarCotacao={registrarCotacao} />}
+        {view === 'minhas' && <Requisicoes solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
+        {view === 'cotacoes' && <Cotacoes solicitacoes={solicitacoes} onSelect={setSelectedId} onRegistrarCotacao={registrarCotacao} />}
         {view === 'aprovacoes' && <Aprovacoes solicitacoes={solicitacoes} perfil={perfil} onApprove={aprovar} />}
         {view === 'pedido' && <Pedido selected={selected} onEmitirPedido={emitirPedido} />}
-        {view === 'financeiro' && <Financeiro selected={selected} onProgramarPagamento={programarPagamento} />}
         {view === 'liberacao' && <Liberacao solicitacoes={solicitacoes} onConcluir={concluirPagamento} />}
         {view === 'historico' && <Historico selected={selected} />}
         {view === 'adminUsuarios' && perfilAdministradorAtivo && (
@@ -1566,39 +1679,108 @@ function normalizarStatusReadonly(value: string | undefined): string {
 }
 
 function NovaSolicitacao({ onSubmit }: { onSubmit: (form: FormData) => void }): JSX.Element {
+  const clientes = uniqueStrings(obras.map((obra) => obra.cliente));
+  const [clienteSelecionado, setClienteSelecionado] = React.useState<string>(clientes[0] || '');
+  const obrasDoCliente = obras.filter((obra) => obra.cliente === clienteSelecionado);
+  const [obraSelecionada, setObraSelecionada] = React.useState<string>(obrasDoCliente[0]?.id || obras[0]?.id || '');
+  const [prioridade, setPrioridade] = React.useState<ISolicitacaoEnac['prioridade']>('Normal');
+
+  React.useEffect(() => {
+    const primeiraObra = obras.find((obra) => obra.cliente === clienteSelecionado);
+    if (primeiraObra && !obrasDoCliente.some((obra) => obra.id === obraSelecionada)) {
+      setObraSelecionada(primeiraObra.id);
+    }
+  }, [clienteSelecionado, obraSelecionada, obrasDoCliente]);
+
   return (
     <form onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); }}>
-      <label>Obra<select name="obra">{obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.nome}</option>)}</select></label>
+      <label>Cliente<select name="cliente" value={clienteSelecionado} onChange={(event) => setClienteSelecionado(event.currentTarget.value)}>{clientes.map((cliente) => <option key={cliente} value={cliente}>{cliente}</option>)}</select></label>
+      <label>Obra<select name="obra" value={obraSelecionada} onChange={(event) => setObraSelecionada(event.currentTarget.value)}>{obrasDoCliente.map((obra) => <option key={obra.id} value={obra.id}>{obra.nome}</option>)}</select></label>
       <label>Tipo<select name="tipo"><option value="Material">Material</option><option value="Servico">Serviço</option><option value="Locacao">Locação</option><option value="Equipamento">Equipamento</option></select></label>
       <label>Descrição do item/serviço<input name="titulo" required /></label>
-      <label>Descrição complementar<textarea name="descricao" required /></label>
       <label>Especificação técnica<textarea name="especificacaoTecnica" required /></label>
       <label>Quantidade<input name="quantidade" type="number" step="0.01" /></label>
-      <label>Unidade<input name="unidade" /></label>
+      <label>Unidade<select name="unidade">{unidadeSolicitacaoOptions.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
       <label>Frente de serviço/local<input name="frenteServico" required /></label>
       <label>Data necessária<input name="dataNecessaria" type="date" required /></label>
-      <label>Prioridade<select name="prioridade"><option>Normal</option><option>Alta</option><option>Emergencial</option></select></label>
-      <label>Justificativa de urgência<textarea name="justificativaUrgencia" /></label>
-      <label>Anexo/foto/projeto/referencia<input name="anexoReferencia" /></label>
-      <label>Observações<textarea name="observacoes" /></label>
+      <label>Prioridade<select name="prioridade" value={prioridade} onChange={(event) => setPrioridade(event.currentTarget.value as ISolicitacaoEnac['prioridade'])}><option>Normal</option><option>Alta</option><option>Emergencial</option></select></label>
+      {prioridade === 'Emergencial' && <label>Justificativa de urgência<textarea name="justificativaUrgencia" required /></label>}
+      <label>Anexo/foto/projeto/referência<input name="anexoReferencia" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.dwg" /></label>
       <button type="submit">Enviar para cotação</button>
     </form>
   );
 }
 
-function Cotacoes({ solicitacoes, selected, onSelect, onRegistrarCotacao }: { solicitacoes: ISolicitacaoEnac[]; selected: ISolicitacaoEnac; onSelect: (id: string) => void; onRegistrarCotacao: (id: string, valor: number, fornecedor: string) => void }): JSX.Element {
+function Cotacoes({
+  solicitacoes,
+  onSelect,
+  onRegistrarCotacao
+}: {
+  solicitacoes: ISolicitacaoEnac[];
+  onSelect: (id: string) => void;
+  onRegistrarCotacao: (id: string, dadosCotacao: IDadosCotacaoForm) => void;
+}): JSX.Element {
   return (
-    <div className={styles.split}>
-      <Tabela solicitacoes={solicitacoes.filter((item) => item.status === 'AguardandoCotacao' || item.status === 'EmCotacao')} onSelect={onSelect} />
-      <form onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); onRegistrarCotacao(selected.id, Number(form.get('valor')), String(form.get('fornecedor'))); }}>
-        <h2>Cotação por Kemilly</h2>
-        <p>{selected.id} - {selected.titulo}</p>
-        <label>Fornecedor recomendado<input name="fornecedor" defaultValue={selected.cotacao?.fornecedorRecomendado} required /></label>
-        <label>Valor recomendado<input name="valor" type="number" step="0.01" defaultValue={selected.cotacao?.valorRecomendado || 0} required /></label>
-        <label>Justificativa<textarea name="justificativa" defaultValue={selected.cotacao?.justificativaRecomendacao} /></label>
-        <button type="submit">Enviar para aprovação</button>
-      </form>
-    </div>
+    <>
+      <h2>Cotações por requisição</h2>
+      {solicitacoes.map((item) => (
+        <section className={styles.adminFieldGroup} key={item.id}>
+          <strong>{item.id} - {item.titulo}</strong>
+          <span>{item.obra.cliente} / {item.obra.nome}</span>
+          <table>
+            <thead><tr><th>Fornecedor</th><th>Valor</th><th>Prazo</th><th>Frete</th><th>Pagamento</th><th>Proposta</th></tr></thead>
+            <tbody>
+              {(item.cotacao?.propostas || []).map((proposta, index) => {
+                const recomendada = proposta.fornecedor === item.cotacao?.fornecedorRecomendado;
+                return (
+                  <tr key={`${item.id}-${proposta.fornecedor}-${index}`}>
+                    <td>{recomendada ? 'Escolhida: ' : ''}{proposta.fornecedor}</td>
+                    <td>{formatCurrency(proposta.valor)}</td>
+                    <td>{proposta.prazoEntrega}</td>
+                    <td>{proposta.frete}</td>
+                    <td>{proposta.condicaoPagamento}</td>
+                    <td>{proposta.anexoProposta || '-'}</td>
+                  </tr>
+                );
+              })}
+              {(!item.cotacao?.propostas || item.cotacao.propostas.length === 0) && (
+                <tr>
+                  <td colSpan={6}>Nenhuma cotação registrada para esta requisição.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <span>Fornecedor escolhido: {item.cotacao?.fornecedorRecomendado || '-'} / {formatCurrency(item.cotacao?.valorRecomendado)}</span>
+          <span>Justificativa: {item.cotacao?.justificativaRecomendacao || '-'}</span>
+          <button type="button" onClick={() => onSelect(item.id)}>Selecionar requisição</button>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            onRegistrarCotacao(item.id, {
+              fornecedor: String(form.get('fornecedor') || ''),
+              valor: Number(form.get('valor') || 0),
+              prazoEntrega: String(form.get('prazoEntrega') || item.dataNecessaria),
+              frete: String(form.get('frete') || ''),
+              condicaoPagamento: String(form.get('condicaoPagamento') || ''),
+              anexoProposta: getFormFileName(form, 'anexoProposta'),
+              recomendada: form.get('recomendada') === 'on',
+              justificativaRecomendacao: String(form.get('justificativaRecomendacao') || '')
+            });
+            event.currentTarget.reset();
+          }}>
+            <label>Fornecedor<input name="fornecedor" required /></label>
+            <label>Valor (R$)<input name="valor" type="number" step="0.01" min="0" required /></label>
+            <label>Prazo de entrega<input name="prazoEntrega" type="date" defaultValue={item.dataNecessaria} required /></label>
+            <label>Frete<input name="frete" placeholder="CIF, FOB ou valor do frete" /></label>
+            <label>Condição de pagamento<input name="condicaoPagamento" placeholder="Pix, boleto, 28 dias..." required /></label>
+            <label>Anexo da proposta<input name="anexoProposta" type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" /></label>
+            <label><input name="recomendada" type="checkbox" />Cotação escolhida para aprovação</label>
+            <label>Justificativa da escolha<textarea name="justificativaRecomendacao" /></label>
+            <button type="submit">Salvar cotação</button>
+          </form>
+        </section>
+      ))}
+    </>
   );
 }
 
@@ -1609,7 +1791,14 @@ function Aprovacoes({ solicitacoes, perfil, onApprove }: { solicitacoes: ISolici
       <h2>Aprovações pendentes</h2>
       {solicitacoes.filter((item) => item.status === 'AguardandoAprovacao' && (!aprovador || item.aprovadorExigido === aprovador)).map((item) => (
         <div className={styles.row} key={item.id}>
-          <span>{item.id} - {item.titulo}<br />{item.snapshotAprovacaoCompra?.faixaValorVigente}</span>
+          <span>
+            Cliente: {item.obra.cliente}<br />
+            Obra: {item.obra.nome}<br />
+            Requisição: {item.id} - {item.titulo}<br />
+            Cotações: {(item.cotacao?.propostas || []).map((proposta) => `${proposta.fornecedor}: ${formatCurrency(proposta.valor)}`).join(' | ') || '-'}<br />
+            Fornecedor escolhido: {item.cotacao?.fornecedorRecomendado || '-'} / {formatCurrency(item.cotacao?.valorRecomendado)}<br />
+            Justificativa: {item.cotacao?.justificativaRecomendacao || '-'}
+          </span>
           <strong>{formatCurrency(item.cotacao?.valorRecomendado)}</strong>
           <button onClick={() => onApprove(item.id)}>Aprovar</button>
         </div>
@@ -1618,28 +1807,37 @@ function Aprovacoes({ solicitacoes, perfil, onApprove }: { solicitacoes: ISolici
   );
 }
 
-function Pedido({ selected, onEmitirPedido }: { selected: ISolicitacaoEnac; onEmitirPedido: (id: string, numeroPedido: string) => void }): JSX.Element {
-  return (
-    <form onSubmit={(event) => { event.preventDefault(); onEmitirPedido(selected.id, String(new FormData(event.currentTarget).get('numeroPedido'))); }}>
-      <h2>Pedido de Compra por Matheus</h2>
-      <p>{selected.id} - {selected.titulo}</p>
-      <p>Fornecedor aprovado: {selected.cotacao?.fornecedorRecomendado || '-'}</p>
-        <p>Valor aprovado: {formatCurrency(selected.cotacao?.valorRecomendado)}</p>
-      <label>Numero do pedido<input name="numeroPedido" defaultValue={selected.pedidoCompra?.numeroPedido} required /></label>
-      <button type="submit">Emitir pedido</button>
-    </form>
-  );
-}
+function Pedido({ selected, onEmitirPedido }: { selected: ISolicitacaoEnac; onEmitirPedido: (id: string, dadosPedido: IDadosPedidoCompraForm) => void }): JSX.Element {
+  const [formaPagamento, setFormaPagamento] = React.useState<FormaPagamentoPedido>('Pix');
+  const [semNota, setSemNota] = React.useState<boolean>(false);
+  const fornecedor = selected.cotacao?.fornecedorRecomendado || '';
+  const dadosPagamento = getDadosPagamentoFornecedor(fornecedor);
 
-function Financeiro({ selected, onProgramarPagamento }: { selected: ISolicitacaoEnac; onProgramarPagamento: (id: string) => void }): JSX.Element {
   return (
-    <form onSubmit={(event) => { event.preventDefault(); onProgramarPagamento(selected.id); }}>
-      <h2>NF e programação bancária por Matheus</h2>
-      <p>{selected.id} - {selected.titulo}</p>
-      <label>Numero da NF<input /></label>
-      <label>Boleto ou dados de pagamento<input /></label>
-      <label>Data programada<input type="date" /></label>
-      <button type="submit">Programar pagamento no banco</button>
+    <form onSubmit={(event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      onEmitirPedido(selected.id, {
+        anexoNotaFiscal: getFormFileName(form, 'anexoNotaFiscal'),
+        semNota,
+        formaPagamento,
+        anexoBoleto: getFormFileName(form, 'anexoBoleto')
+      });
+    }}>
+      <h2>Pedido de Compra por Matheus</h2>
+      <p>Cliente: {selected.obra.cliente}</p>
+      <p>Obra: {selected.obra.nome}</p>
+      <p>Requerente: {formatDisplayName(selected.solicitante)}</p>
+      <p>Requisição: {selected.id} - {selected.titulo}</p>
+      <p>Fornecedor: {fornecedor || '-'}</p>
+      <p>Valor: {formatCurrency(selected.cotacao?.valorRecomendado)}</p>
+      <label>Anexar nota fiscal<input name="anexoNotaFiscal" type="file" disabled={semNota} accept="image/*,.pdf,.xml" /></label>
+      <label><input type="checkbox" checked={semNota} onChange={(event) => setSemNota(event.currentTarget.checked)} />Sem nota</label>
+      <label>Forma de pagamento<select value={formaPagamento} onChange={(event) => setFormaPagamento(event.currentTarget.value as FormaPagamentoPedido)}><option>Pix</option><option>Depósito bancário</option><option>Boleto</option></select></label>
+      {formaPagamento === 'Pix' && <p>Chave Pix do fornecedor: {dadosPagamento.pix}</p>}
+      {formaPagamento === 'Depósito bancário' && <p>Dados bancários do fornecedor: {dadosPagamento.contaBancaria}</p>}
+      {formaPagamento === 'Boleto' && <label>Anexar boleto<input name="anexoBoleto" type="file" accept="image/*,.pdf" required /></label>}
+      <button type="submit">Enviar para liberação</button>
     </form>
   );
 }
@@ -1650,7 +1848,14 @@ function Liberacao({ solicitacoes, onConcluir }: { solicitacoes: ISolicitacaoEna
       <h2>Liberação bancária por Leon</h2>
       {solicitacoes.filter((item) => item.status === 'AguardandoLiberacaoBancaria').map((item) => (
         <div className={styles.row} key={item.id}>
-          <span>{item.id} - {item.titulo}<br />{item.programacaoBancaria?.dataProgramada}</span>
+          <span>
+            Cliente: {item.obra.cliente}<br />
+            Obra: {item.obra.nome}<br />
+            Requerente: {formatDisplayName(item.solicitante)}<br />
+            Requisição: {item.id} - {item.titulo}<br />
+            Nota fiscal: {item.notaFiscal?.anexoNf || item.notaFiscal?.numero || item.programacaoBancaria?.observacoes || '-'}<br />
+            Pagamento: {item.programacaoBancaria?.formaPagamento || '-'} / {item.programacaoBancaria?.bancoContaPagamento || item.notaFiscal?.boletoOuDadosPagamento || '-'}
+          </span>
           <strong>{formatCurrency(item.programacaoBancaria?.valorProgramado)}</strong>
           <button onClick={() => onConcluir(item.id)}>Liberar e concluir</button>
         </div>
@@ -2330,22 +2535,32 @@ function Historico({ selected }: { selected: ISolicitacaoEnac }): JSX.Element {
   );
 }
 
-function Tabela({ solicitacoes, onSelect }: { solicitacoes: ISolicitacaoEnac[]; onSelect: (id: string) => void }): JSX.Element {
+function Requisicoes({ solicitacoes, onSelect }: { solicitacoes: ISolicitacaoEnac[]; onSelect: (id: string) => void }): JSX.Element {
+  const clientes = uniqueStrings(solicitacoes.map((item) => item.obra.cliente || 'Cliente não informado'));
+
   return (
-    <table>
-      <thead><tr><th>Processo</th><th>Obra</th><th>Status</th><th>Valor</th><th /></tr></thead>
-      <tbody>
-        {solicitacoes.map((item) => (
-          <tr key={item.id}>
-            <td>{item.id}<br />{item.titulo}</td>
-            <td>{item.obra.nome}<br />{item.obra.centroCusto}</td>
-            <td><StatusChip status={item.status} /></td>
-            <td>{formatCurrency(item.cotacao?.valorRecomendado)}</td>
-            <td><button onClick={() => onSelect(item.id)}>Abrir</button></td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <>
+      <h2>Requisições por cliente</h2>
+      {clientes.map((cliente) => (
+        <section className={styles.adminFieldGroup} key={cliente}>
+          <h3>{cliente}</h3>
+          <table>
+            <thead><tr><th>Requisição</th><th>Obra</th><th>Status</th><th>Valor</th><th /></tr></thead>
+            <tbody>
+              {solicitacoes.filter((item) => (item.obra.cliente || 'Cliente não informado') === cliente).map((item) => (
+                <tr key={item.id}>
+                  <td>{item.id}<br />{item.titulo}</td>
+                  <td>{item.obra.nome}<br />{item.obra.centroCusto}</td>
+                  <td><StatusChip status={item.status} /></td>
+                  <td>{formatCurrency(item.cotacao?.valorRecomendado)}</td>
+                  <td><button onClick={() => onSelect(item.id)}>Abrir</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      ))}
+    </>
   );
 }
 
@@ -2371,6 +2586,15 @@ function statusClassName(status: string): string {
   return styles.statusNeutral;
 }
 
+function uniqueStrings(values: string[]): string[] {
+  return values.filter((value, index) => values.indexOf(value) === index);
+}
+
 function calcularRegra(alcadas: IAlcadaEnac[], valor: number): IAlcadaEnac {
-  return alcadas.find((item) => item.processo === 'Compra' && item.ativa && valor >= item.valorMinimo && (item.ilimitado || !item.valorMaximo || valor <= item.valorMaximo)) || alcadas[0];
+  return alcadas.find((item) =>
+    item.processo === 'Compra' &&
+    item.ativa &&
+    valor >= item.valorMinimo &&
+    (item.ilimitado || !item.valorMaximo || valor <= item.valorMaximo)
+  ) || alcadas[0];
 }
