@@ -3,7 +3,7 @@
   "solution": {
     "name": "enac-sistema-spfx-client-side-solution",
     "id": "4f9e4f62-08d9-4440-971e-025d4b54c243",
-    "version": "1.0.0.6",
+    "version": "1.0.0.7",
     "includeClientSideAssets": true,
     "skipFeatureDeployment": false,
     "isDomainIsolated": false,
@@ -30,7 +30,7 @@
         "title": "enac-sistema-spfx Feature",
         "description": "The feature that activates elements of the enac-sistema-spfx solution.",
         "id": "9089933d-8886-42b8-9fcf-4bd2dc2389a6",
-        "version": "1.0.0.6"
+        "version": "1.0.0.7"
       }
     ]
   },

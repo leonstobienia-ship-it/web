@@ -1671,9 +1671,8 @@ function AdminUsuarios({
   const [perfilPrincipal, setPerfilPrincipal] = React.useState<PerfilEnac>(usuarioSelecionado?.perfilPrincipal || 'Campo');
   const [usuarioAtivo, setUsuarioAtivo] = React.useState<boolean>(usuarioSelecionado?.usuarioAtivo !== false);
   const [cargoFuncao, setCargoFuncao] = React.useState<string>(usuarioSelecionado?.cargoFuncao || '');
-  const [observacoes, setObservacoes] = React.useState<string>(usuarioSelecionado?.observacoes || '');
-  const [justificativa, setJustificativa] = React.useState<string>(`${MARCADOR_ADMINISTRATIVO_V29C} - ajuste administrativo controlado`);
-  const [confirmacaoFinal, setConfirmacaoFinal] = React.useState<string>('');
+  const justificativa = `${MARCADOR_ADMINISTRATIVO_V29C} - cadastro de usuario pelo Sistema ENAC`;
+  const confirmacaoFinal = CONFIRMACAO_ADMINISTRATIVA_V29C;
   const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
   const [executando, setExecutando] = React.useState<boolean>(false);
 
@@ -1689,7 +1688,6 @@ function AdminUsuarios({
     setPerfilPrincipal(usuarioSelecionado.perfilPrincipal || 'Campo');
     setUsuarioAtivo(usuarioSelecionado.usuarioAtivo !== false);
     setCargoFuncao(usuarioSelecionado.cargoFuncao || '');
-    setObservacoes(usuarioSelecionado.observacoes || '');
   }, [acao, usuarioSelecionado?.id]);
 
   const contaNumerica = parseNumberField(contaMicrosoft365);
@@ -1705,7 +1703,7 @@ function AdminUsuarios({
     perfisAdicionais: acao === 'AtualizarUsuarioPerfilStatus' ? (usuarioSelecionado?.perfisAdicionais || []) : [],
     usuarioAtivo,
     cargoFuncao,
-    observacoes,
+    observacoes: usuarioSelecionado?.observacoes || '',
     ...permissoesBase
   };
   const preValidacao = buildPreValidacaoAdministrativaV29C(acao, flags, usuarioAtual, perfilAdministradorAtivo, usuariosExibidos, alcadas, payloadUsuario, undefined, justificativa);
@@ -1765,13 +1763,7 @@ function AdminUsuarios({
         <label>Perfil principal<select value={perfilPrincipal} onChange={(event) => setPerfilPrincipal(event.currentTarget.value as PerfilEnac)}>{perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}</select></label>
         <label>Status<select value={usuarioAtivo ? 'Ativo' : 'Inativo'} onChange={(event) => setUsuarioAtivo(event.currentTarget.value === 'Ativo')}><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select></label>
         <label>Cargo/Função<input value={cargoFuncao} onChange={(event) => setCargoFuncao(event.currentTarget.value)} /></label>
-        <label>Observações<textarea value={observacoes} onChange={(event) => setObservacoes(event.currentTarget.value)} /></label>
-        <label>Justificativa<textarea value={justificativa} onChange={(event) => setJustificativa(event.currentTarget.value)} /></label>
-        <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
-        <label>Pré-validação<textarea readOnly value={formatPreValidacaoUsuarioV29C(preValidacao)} /></label>
-        <label>Payload SharePoint<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
-        <label>Diagnóstico<textarea readOnly value={JSON.stringify(preValidacao.historicoPrevisto?.DiagnosticoPreValidacao || {}, null, 2)} /></label>
-        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar usuário V2.9C</button>
+        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar</button>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
