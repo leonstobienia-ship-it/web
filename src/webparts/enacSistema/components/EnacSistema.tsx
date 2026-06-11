@@ -43,11 +43,12 @@ const views = [
   { key: 'liberacao', label: 'Liberação' },
   { key: 'historico', label: 'Histórico' },
   { key: 'adminUsuarios', label: 'Usuários' },
+  { key: 'adminPerfis', label: 'Perfis' },
   { key: 'adminAlcadas', label: 'Alçadas' },
   { key: 'adminHistorico', label: 'Auditoria' }
 ];
 
-const adminViewKeys = ['adminUsuarios', 'adminAlcadas', 'adminHistorico'];
+const adminViewKeys = ['adminUsuarios', 'adminPerfis', 'adminAlcadas', 'adminHistorico'];
 const perfilOptions: PerfilEnac[] = ['Campo', 'CotacoesContratos', 'ComprasFinanceiroOperacional', 'Planejamento', 'Diretoria', 'AdministradorSistema', 'ConsultaLeitura'];
 const perfilLabels: Record<PerfilEnac, string> = {
   Campo: 'Campo / Engenharia',
@@ -329,19 +330,6 @@ const buildPreValidacaoAdministrativaV29B = (
   };
 };
 
-const perfilSharePointToInternal = (value: string | undefined): PerfilEnac => {
-  const normalizado = String(value || '').trim();
-  const encontrado = perfilOptions.find((perfilItem) => perfilItem === normalizado || perfilChoiceSharePoint[perfilItem] === normalizado);
-  return encontrado || 'Campo';
-};
-
-const parsePerfisAdicionais = (value: string): PerfilEnac[] =>
-  value
-    .split(';')
-    .filter((item) => item.trim().length > 0)
-    .map((item) => perfilSharePointToInternal(item.trim()))
-    .filter((item, index, array) => array.indexOf(item) === index);
-
 const toSharePointPerfis = (perfis: PerfilEnac[]): string[] => perfis.map((item) => perfilChoiceSharePoint[item]);
 
 const parseNumberField = (value: string | undefined): number | undefined => {
@@ -573,6 +561,73 @@ const formatPreValidacaoUsuarioV29C = (preValidacao: PreValidacaoAdministrativaV
     `Pode executar: ${preValidacao.sucesso && !preValidacao.bloqueado ? 'sim' : 'nao'}`,
     `Alertas: ${preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') || '-'}`
   ].join('\n');
+};
+
+type PermissoesUsuarioV29C = Pick<UsuarioAdministrativoV29CPayload,
+  'podeAdministrarConfiguracoes' |
+  'podeAprovarCompras' |
+  'podeAtualizarStatusFinal' |
+  'podeCriarSolicitacao' |
+  'podeEmitirPedido' |
+  'podeLiberarPagamento' |
+  'podeProgramarPagamento' |
+  'podeRegistrarCotacoes' |
+  'podeVincularNf'
+>;
+
+const permissoesVaziasV29C: PermissoesUsuarioV29C = {
+  podeAdministrarConfiguracoes: false,
+  podeAprovarCompras: false,
+  podeAtualizarStatusFinal: false,
+  podeCriarSolicitacao: false,
+  podeEmitirPedido: false,
+  podeLiberarPagamento: false,
+  podeProgramarPagamento: false,
+  podeRegistrarCotacoes: false,
+  podeVincularNf: false
+};
+
+const permissoesPadraoPorPerfilV29C = (perfil: PerfilEnac): PermissoesUsuarioV29C => ({
+  ...permissoesVaziasV29C,
+  podeAdministrarConfiguracoes: perfil === 'AdministradorSistema',
+  podeAprovarCompras: perfil === 'Diretoria' || perfil === 'Planejamento',
+  podeAtualizarStatusFinal: perfil === 'Diretoria',
+  podeCriarSolicitacao: perfil === 'Campo',
+  podeEmitirPedido: perfil === 'ComprasFinanceiroOperacional',
+  podeLiberarPagamento: perfil === 'Diretoria',
+  podeProgramarPagamento: perfil === 'ComprasFinanceiroOperacional',
+  podeRegistrarCotacoes: perfil === 'CotacoesContratos',
+  podeVincularNf: perfil === 'ComprasFinanceiroOperacional'
+});
+
+const permissoesDoUsuarioV29C = (usuario: IUsuarioPerfilEnac | undefined, fallbackPerfil: PerfilEnac): PermissoesUsuarioV29C => {
+  if (!usuario) {
+    return permissoesPadraoPorPerfilV29C(fallbackPerfil);
+  }
+
+  return {
+    podeAdministrarConfiguracoes: usuario.podeAdministrarConfiguracoes === true,
+    podeAprovarCompras: usuario.podeAprovarCompras === true,
+    podeAtualizarStatusFinal: usuario.podeAtualizarStatusFinal === true,
+    podeCriarSolicitacao: usuario.podeCriarSolicitacao === true,
+    podeEmitirPedido: usuario.podeEmitirPedido === true,
+    podeLiberarPagamento: usuario.podeLiberarPagamento === true,
+    podeProgramarPagamento: usuario.podeProgramarPagamento === true,
+    podeRegistrarCotacoes: usuario.podeRegistrarCotacoes === true,
+    podeVincularNf: usuario.podeVincularNf === true
+  };
+};
+
+const permissaoLabelsV29C: Record<keyof PermissoesUsuarioV29C, string> = {
+  podeAdministrarConfiguracoes: 'Administrar configurações',
+  podeAprovarCompras: 'Aprovar compras',
+  podeAtualizarStatusFinal: 'Atualizar status final',
+  podeCriarSolicitacao: 'Criar solicitações',
+  podeEmitirPedido: 'Emitir pedido',
+  podeLiberarPagamento: 'Liberar pagamento',
+  podeProgramarPagamento: 'Programar pagamento',
+  podeRegistrarCotacoes: 'Registrar cotações',
+  podeVincularNf: 'Vincular NF'
 };
 
 const alcadasIniciais: IAlcadaEnac[] = [
@@ -1382,6 +1437,17 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             perfilAdministradorAtivo={perfilAdministradorAtivo}
           />
         )}
+        {view === 'adminPerfis' && perfilAdministradorAtivo && (
+          <AdminPerfis
+            usuarios={usuariosParaAdmin}
+            alcadas={alcadasParaAdmin}
+            origemDados={origemDadosEfetiva}
+            repository={props.repository}
+            flags={props.flagsEscritaAdministrativaV29C}
+            usuarioAtual={usuarioAtualSistema}
+            perfilAdministradorAtivo={perfilAdministradorAtivo}
+          />
+        )}
         {view === 'adminAlcadas' && perfilAdministradorAtivo && (
           <Alcadas
             alcadas={alcadasParaAdmin}
@@ -1603,21 +1669,9 @@ function AdminUsuarios({
   const [contaMicrosoft365, setContaMicrosoft365] = React.useState<string>(usuarioSelecionado?.contaMicrosoft365Id ? String(usuarioSelecionado.contaMicrosoft365Id) : '');
   const [email, setEmail] = React.useState<string>(usuarioSelecionado?.emailCorporativo || '');
   const [perfilPrincipal, setPerfilPrincipal] = React.useState<PerfilEnac>(usuarioSelecionado?.perfilPrincipal || 'Campo');
-  const [perfisAdicionais, setPerfisAdicionais] = React.useState<string>((usuarioSelecionado?.perfisAdicionais || []).join(';'));
   const [usuarioAtivo, setUsuarioAtivo] = React.useState<boolean>(usuarioSelecionado?.usuarioAtivo !== false);
   const [cargoFuncao, setCargoFuncao] = React.useState<string>(usuarioSelecionado?.cargoFuncao || '');
   const [observacoes, setObservacoes] = React.useState<string>(usuarioSelecionado?.observacoes || '');
-  const [permissoes, setPermissoes] = React.useState({
-    podeAdministrarConfiguracoes: usuarioSelecionado?.podeAdministrarConfiguracoes === true,
-    podeAprovarCompras: usuarioSelecionado?.podeAprovarCompras === true,
-    podeAtualizarStatusFinal: usuarioSelecionado?.podeAtualizarStatusFinal === true,
-    podeCriarSolicitacao: usuarioSelecionado?.podeCriarSolicitacao === true,
-    podeEmitirPedido: usuarioSelecionado?.podeEmitirPedido === true,
-    podeLiberarPagamento: usuarioSelecionado?.podeLiberarPagamento === true,
-    podeProgramarPagamento: usuarioSelecionado?.podeProgramarPagamento === true,
-    podeRegistrarCotacoes: usuarioSelecionado?.podeRegistrarCotacoes === true,
-    podeVincularNf: usuarioSelecionado?.podeVincularNf === true
-  });
   const [justificativa, setJustificativa] = React.useState<string>(`${MARCADOR_ADMINISTRATIVO_V29C} - ajuste administrativo controlado`);
   const [confirmacaoFinal, setConfirmacaoFinal] = React.useState<string>('');
   const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
@@ -1633,24 +1687,13 @@ function AdminUsuarios({
     setContaMicrosoft365(usuarioSelecionado.contaMicrosoft365Id ? String(usuarioSelecionado.contaMicrosoft365Id) : '');
     setEmail(usuarioSelecionado.emailCorporativo || '');
     setPerfilPrincipal(usuarioSelecionado.perfilPrincipal || 'Campo');
-    setPerfisAdicionais((usuarioSelecionado.perfisAdicionais || []).join(';'));
     setUsuarioAtivo(usuarioSelecionado.usuarioAtivo !== false);
     setCargoFuncao(usuarioSelecionado.cargoFuncao || '');
     setObservacoes(usuarioSelecionado.observacoes || '');
-    setPermissoes({
-      podeAdministrarConfiguracoes: usuarioSelecionado.podeAdministrarConfiguracoes === true,
-      podeAprovarCompras: usuarioSelecionado.podeAprovarCompras === true,
-      podeAtualizarStatusFinal: usuarioSelecionado.podeAtualizarStatusFinal === true,
-      podeCriarSolicitacao: usuarioSelecionado.podeCriarSolicitacao === true,
-      podeEmitirPedido: usuarioSelecionado.podeEmitirPedido === true,
-      podeLiberarPagamento: usuarioSelecionado.podeLiberarPagamento === true,
-      podeProgramarPagamento: usuarioSelecionado.podeProgramarPagamento === true,
-      podeRegistrarCotacoes: usuarioSelecionado.podeRegistrarCotacoes === true,
-      podeVincularNf: usuarioSelecionado.podeVincularNf === true
-    });
   }, [acao, usuarioSelecionado?.id]);
 
   const contaNumerica = parseNumberField(contaMicrosoft365);
+  const permissoesBase = permissoesPadraoPorPerfilV29C(perfilPrincipal);
   const payloadUsuario: UsuarioAdministrativoV29CPayload = {
     itemId: acao === 'AtualizarUsuarioPerfilStatus' ? Number(usuarioSelecionado?.id || 0) || undefined : undefined,
     nome,
@@ -1659,11 +1702,11 @@ function AdminUsuarios({
     contaMicrosoft365Login: contaNumerica ? undefined : contaMicrosoft365,
     emailCorporativo: email,
     perfilPrincipal,
-    perfisAdicionais: parsePerfisAdicionais(perfisAdicionais),
+    perfisAdicionais: acao === 'AtualizarUsuarioPerfilStatus' ? (usuarioSelecionado?.perfisAdicionais || []) : [],
     usuarioAtivo,
     cargoFuncao,
     observacoes,
-    ...permissoes
+    ...permissoesBase
   };
   const preValidacao = buildPreValidacaoAdministrativaV29C(acao, flags, usuarioAtual, perfilAdministradorAtivo, usuariosExibidos, alcadas, payloadUsuario, undefined, justificativa);
   const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
@@ -1712,7 +1755,7 @@ function AdminUsuarios({
         Administração V2.9C disponível apenas para Administrador do Sistema ativo. A escrita exige flags no Property Pane, token, pré-validação, confirmação final e histórico.
       </div>
       <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
-        <h2>Usuários do sistema</h2>
+        <h2>Cadastro de usuários</h2>
         <label>Ação<select value={acao} onChange={(event) => setAcao(event.currentTarget.value as AcaoAdministrativaV29C)}><option value="AtualizarUsuarioPerfilStatus">Atualizar usuário</option><option value="CriarUsuarioSistema">Criar usuário</option></select></label>
         {acao === 'AtualizarUsuarioPerfilStatus' && <label>Usuário alvo<select value={usuarioId} onChange={(event) => setUsuarioId(event.currentTarget.value)}>{usuariosExibidos.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} - {usuario.usuarioInternoId}</option>)}</select></label>}
         <label>Nome completo<input value={nome} onChange={(event) => setNome(event.currentTarget.value)} /></label>
@@ -1720,43 +1763,181 @@ function AdminUsuarios({
         <label>E-mail corporativo<input value={email} onChange={(event) => setEmail(event.currentTarget.value)} /></label>
         <label>ID interno<input value={usuarioInternoId} onChange={(event) => setUsuarioInternoId(event.currentTarget.value)} /></label>
         <label>Perfil principal<select value={perfilPrincipal} onChange={(event) => setPerfilPrincipal(event.currentTarget.value as PerfilEnac)}>{perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}</select></label>
-        <label>Perfis adicionais (; separados)<input value={perfisAdicionais} onChange={(event) => setPerfisAdicionais(event.currentTarget.value)} /></label>
         <label>Status<select value={usuarioAtivo ? 'Ativo' : 'Inativo'} onChange={(event) => setUsuarioAtivo(event.currentTarget.value === 'Ativo')}><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select></label>
         <label>Cargo/Função<input value={cargoFuncao} onChange={(event) => setCargoFuncao(event.currentTarget.value)} /></label>
         <label>Observações<textarea value={observacoes} onChange={(event) => setObservacoes(event.currentTarget.value)} /></label>
         <label>Justificativa<textarea value={justificativa} onChange={(event) => setJustificativa(event.currentTarget.value)} /></label>
-        {Object.keys(permissoes).map((key) => (
-          <label key={key}><input type="checkbox" checked={permissoes[key as keyof typeof permissoes]} onChange={(event) => setPermissoes({ ...permissoes, [key]: event.currentTarget.checked })} />{key}</label>
-        ))}
         <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
         <label>Pré-validação<textarea readOnly value={formatPreValidacaoUsuarioV29C(preValidacao)} /></label>
         <label>Payload SharePoint<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
         <label>Diagnóstico<textarea readOnly value={JSON.stringify(preValidacao.historicoPrevisto?.DiagnosticoPreValidacao || {}, null, 2)} /></label>
-        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar administração V2.9C</button>
+        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar usuário V2.9C</button>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
-        <thead><tr><th>Nome</th><th>Usuário interno</th><th>Categoria/perfis</th><th>Alterar perfil</th><th>Cargo/Função</th><th>Status</th><th>Alterar status</th></tr></thead>
+        <thead><tr><th>Nome</th><th>Usuário interno</th><th>Perfil principal</th><th>Perfis adicionais</th><th>Cargo/Função</th><th>Status</th></tr></thead>
         <tbody>
           {usuariosExibidos.map((usuario) => (
             <tr key={usuario.usuarioInternoId || usuario.id}>
               <td>{formatDisplayName(usuario.nome)}</td>
               <td>{formatUserInternalId(usuario.usuarioInternoId || usuario.id)}</td>
-              <td>{perfilLabels[usuario.perfilPrincipal]}{(usuario.perfisAdicionais || []).length > 0 ? ` + ${(usuario.perfisAdicionais || []).map((item) => perfilLabels[item]).join(', ')}` : ''}</td>
-              <td>
-                <select value={usuario.perfilPrincipal} disabled aria-label={`Perfil técnico de ${formatDisplayName(usuario.nome)}`}>
-                  {perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}
-                </select>
-              </td>
+              <td>{perfilLabels[usuario.perfilPrincipal]}</td>
+              <td>{(usuario.perfisAdicionais || []).length > 0 ? (usuario.perfisAdicionais || []).map((item) => perfilLabels[item]).join(', ') : '-'}</td>
               <td>{usuario.cargoFuncao || '-'}</td>
-              <td>
-                <select value={usuario.usuarioAtivo ? 'Ativo' : 'Inativo'} disabled aria-label={`Status técnico de ${formatDisplayName(usuario.nome)}`}>
-                  <option value="Ativo">Ativo</option>
-                  <option value="Inativo">Inativo</option>
-                </select>
-              </td>
+              <td>{usuario.usuarioAtivo ? 'Ativo' : 'Inativo'}</td>
             </tr>
           ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function AdminPerfis({
+  usuarios: usuariosExibidos,
+  alcadas,
+  origemDados,
+  repository,
+  flags,
+  usuarioAtual,
+  perfilAdministradorAtivo
+}: {
+  usuarios: IUsuarioPerfilEnac[];
+  alcadas: IAlcadaEnac[];
+  origemDados: OrigemDadosEnac;
+  repository?: SharePointEnacRepository;
+  flags?: FlagsEscritaAdministrativaV29C;
+  usuarioAtual?: IUsuarioPerfilEnac;
+  perfilAdministradorAtivo: boolean;
+}): JSX.Element {
+  const [usuarioId, setUsuarioId] = React.useState<string>(usuariosExibidos[0]?.id || '');
+  const usuarioSelecionado = usuariosExibidos.find((usuario) => usuario.id === usuarioId) || usuariosExibidos[0];
+  const [perfilPrincipal, setPerfilPrincipal] = React.useState<PerfilEnac>(usuarioSelecionado?.perfilPrincipal || 'Campo');
+  const [perfisAdicionais, setPerfisAdicionais] = React.useState<PerfilEnac[]>(usuarioSelecionado?.perfisAdicionais || []);
+  const [permissoes, setPermissoes] = React.useState<PermissoesUsuarioV29C>(permissoesDoUsuarioV29C(usuarioSelecionado, perfilPrincipal));
+  const [justificativa, setJustificativa] = React.useState<string>(`${MARCADOR_ADMINISTRATIVO_V29C} - configuracao de perfil controlada`);
+  const [confirmacaoFinal, setConfirmacaoFinal] = React.useState<string>('');
+  const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
+  const [executando, setExecutando] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!usuarioSelecionado) {
+      return;
+    }
+
+    setPerfilPrincipal(usuarioSelecionado.perfilPrincipal || 'Campo');
+    setPerfisAdicionais(usuarioSelecionado.perfisAdicionais || []);
+    setPermissoes(permissoesDoUsuarioV29C(usuarioSelecionado, usuarioSelecionado.perfilPrincipal || 'Campo'));
+  }, [usuarioSelecionado?.id]);
+
+  const payloadUsuario: UsuarioAdministrativoV29CPayload = {
+    itemId: Number(usuarioSelecionado?.id || 0) || undefined,
+    nome: usuarioSelecionado?.nome || '',
+    usuarioInternoId: usuarioSelecionado?.usuarioInternoId || '',
+    contaMicrosoft365Id: usuarioSelecionado?.contaMicrosoft365Id,
+    contaMicrosoft365Login: usuarioSelecionado?.contaMicrosoft365Login,
+    emailCorporativo: usuarioSelecionado?.emailCorporativo || '',
+    perfilPrincipal,
+    perfisAdicionais,
+    usuarioAtivo: usuarioSelecionado?.usuarioAtivo !== false,
+    cargoFuncao: usuarioSelecionado?.cargoFuncao || '',
+    observacoes: usuarioSelecionado?.observacoes || '',
+    ...permissoes
+  };
+  const preValidacao = buildPreValidacaoAdministrativaV29C('AtualizarUsuarioPerfilStatus', flags, usuarioAtual, perfilAdministradorAtivo, usuariosExibidos, alcadas, payloadUsuario, undefined, justificativa);
+  const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && usuarioSelecionado && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
+  const permissoesSugeridas = permissoesPadraoPorPerfilV29C(perfilPrincipal);
+
+  function togglePerfilAdicional(perfilItem: PerfilEnac, checked: boolean): void {
+    const semPerfil = perfisAdicionais.filter((item) => item !== perfilItem);
+    setPerfisAdicionais(checked ? [...semPerfil, perfilItem] : semPerfil);
+  }
+
+  async function executar(): Promise<void> {
+    if (!repository || !usuarioAtual || !flags || !podeSalvar) {
+      setResultado({
+        sucesso: false,
+        bloqueado: true,
+        acao: 'AtualizarUsuarioPerfilStatus',
+        mensagem: 'Escrita administrativa V2.9C bloqueada: pre-validacao, origem SharePoint ou confirmacao final ausente.',
+        alertas: preValidacao.alertas
+      });
+      return;
+    }
+
+    setExecutando(true);
+    try {
+      setResultado(await repository.executarAdministracaoV29C({
+        acao: 'AtualizarUsuarioPerfilStatus',
+        flags,
+        usuarioExecutor: usuarioAtual,
+        payloadUsuario,
+        justificativa,
+        confirmacaoFinal,
+        preValidacao,
+        valorAnterior: usuarioSelecionado ? { ...usuarioSelecionado } : undefined
+      }));
+    } catch (error) {
+      setResultado({
+        sucesso: false,
+        bloqueado: true,
+        acao: 'AtualizarUsuarioPerfilStatus',
+        mensagem: error instanceof Error ? error.message : String(error),
+        alertas: [{ codigo: 'ERRO_EXECUCAO_PERFIL_V29C', mensagem: error instanceof Error ? error.message : String(error) }]
+      });
+    } finally {
+      setExecutando(false);
+    }
+  }
+
+  return (
+    <>
+      <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint' : 'Fallback local'}</p>
+      <div className={styles.adminNotice}>
+        Perfis V2.9C configuram permissões de usuários existentes. Criar uma nova categoria de perfil ainda exige mudança controlada de schema/lista SharePoint.
+      </div>
+      <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
+        <h2>Perfis e permissões</h2>
+        <label>Usuário<select value={usuarioId} onChange={(event) => setUsuarioId(event.currentTarget.value)}>{usuariosExibidos.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} - {usuario.usuarioInternoId}</option>)}</select></label>
+        <label>Perfil principal<select value={perfilPrincipal} onChange={(event) => setPerfilPrincipal(event.currentTarget.value as PerfilEnac)}>{perfilOptions.map((item) => <option key={item} value={item}>{perfilLabels[item]}</option>)}</select></label>
+        <div className={styles.adminFieldGroup}>
+          <strong>Perfis adicionais</strong>
+          {perfilOptions.filter((item) => item !== perfilPrincipal).map((item) => (
+            <label key={item}><input type="checkbox" checked={perfisAdicionais.indexOf(item) >= 0} onChange={(event) => togglePerfilAdicional(item, event.currentTarget.checked)} />{perfilLabels[item]}</label>
+          ))}
+        </div>
+        <div className={styles.adminFieldGroup}>
+          <strong>Permissões operacionais</strong>
+          <button type="button" onClick={() => setPermissoes(permissoesSugeridas)}>Aplicar padrão do perfil</button>
+          {(Object.keys(permissoes) as Array<keyof PermissoesUsuarioV29C>).map((key) => (
+            <label key={key}><input type="checkbox" checked={permissoes[key]} onChange={(event) => setPermissoes({ ...permissoes, [key]: event.currentTarget.checked })} />{permissaoLabelsV29C[key]}</label>
+          ))}
+        </div>
+        <label>Justificativa<textarea value={justificativa} onChange={(event) => setJustificativa(event.currentTarget.value)} /></label>
+        <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
+        <label>Pré-validação<textarea readOnly value={formatPreValidacaoUsuarioV29C(preValidacao)} /></label>
+        <label>Payload SharePoint<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
+        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar perfil V2.9C</button>
+        {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
+      </form>
+      <table>
+        <thead><tr><th>Usuário</th><th>Perfil principal</th><th>Perfis adicionais</th><th>Permissões ativas</th><th>Status</th></tr></thead>
+        <tbody>
+          {usuariosExibidos.map((usuario) => {
+            const permissoesAtivas = (Object.keys(permissaoLabelsV29C) as Array<keyof PermissoesUsuarioV29C>)
+              .filter((key) => permissoesDoUsuarioV29C(usuario, usuario.perfilPrincipal)[key])
+              .map((key) => permissaoLabelsV29C[key]);
+
+            return (
+              <tr key={usuario.usuarioInternoId || usuario.id}>
+                <td>{formatDisplayName(usuario.nome)}<br />{formatUserInternalId(usuario.usuarioInternoId || usuario.id)}</td>
+                <td>{perfilLabels[usuario.perfilPrincipal]}</td>
+                <td>{(usuario.perfisAdicionais || []).length > 0 ? (usuario.perfisAdicionais || []).map((item) => perfilLabels[item]).join(', ') : '-'}</td>
+                <td>{permissoesAtivas.length > 0 ? permissoesAtivas.join(', ') : '-'}</td>
+                <td>{usuario.usuarioAtivo ? 'Ativo' : 'Inativo'}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </>

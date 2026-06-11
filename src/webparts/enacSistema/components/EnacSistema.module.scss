@@ -369,6 +369,37 @@
   }
 }
 
+.adminFieldGroup {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 12px;
+
+  strong {
+    color: #111827;
+    font-size: 13px;
+  }
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+
+  input[type="checkbox"] {
+    display: inline-block;
+    width: 18px;
+    min-height: 18px;
+    margin-top: 0;
+  }
+}
+
 .contentPanel {
   display: grid;
   justify-items: stretch;

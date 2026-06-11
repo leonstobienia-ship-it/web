@@ -17,6 +17,7 @@ declare const styles: {
   contentPanel: string;
   adminNotice: string;
   adminForm: string;
+  adminFieldGroup: string;
   active: string;
   metrics: string;
   split: string;
