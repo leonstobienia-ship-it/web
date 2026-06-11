@@ -2924,7 +2924,7 @@ export class SharePointEnacRepository {
       ContaMicrosoft365Id: contaMicrosoft365Id,
       EmailCorporativo: input.emailCorporativo,
       PerfilPrincipal: this.mapPerfilParaChoiceSharePoint(input.perfilPrincipal),
-      PerfisAdicionais: { results: input.perfisAdicionais.map((item) => this.mapPerfilParaChoiceSharePoint(item)) },
+      PerfisAdicionais: input.perfisAdicionais.map((item) => this.mapPerfilParaChoiceSharePoint(item)),
       UsuarioAtivo: input.usuarioAtivo,
       CargoFuncao: input.cargoFuncao || '',
       Observacoes: `${MARCADOR_ADMINISTRATIVO_V29C} - ${input.observacoes || ''}`,

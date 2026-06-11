@@ -456,7 +456,7 @@ const buildPreValidacaoAdministrativaV29C = (
         ContaMicrosoft365Id: usuario.contaMicrosoft365Id || 'resolver via ensureUser',
         EmailCorporativo: usuario.emailCorporativo,
         PerfilPrincipal: perfilChoiceSharePoint[usuario.perfilPrincipal],
-        PerfisAdicionais: { results: toSharePointPerfis(usuario.perfisAdicionais) },
+        PerfisAdicionais: toSharePointPerfis(usuario.perfisAdicionais),
         UsuarioAtivo: usuario.usuarioAtivo,
         CargoFuncao: usuario.cargoFuncao || '',
         Observacoes: `${MARCADOR_ADMINISTRATIVO_V29C} - ${usuario.observacoes || justificativa}`,
@@ -678,7 +678,8 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         const safetyGap = 16;
         const safeViewportWidth = Math.max(320, Math.round(viewportWidth - measuredLeft - safetyGap));
 
-        el.style.setProperty('--enac-breakout-left', `${measuredLeft}px`);
+        // Keep the webpart anchored inside the SharePoint canvas; shifting left hides the ENAC menu under site navigation.
+        el.style.setProperty('--enac-breakout-left', '0px');
         el.style.setProperty('--enac-viewport-width', `${safeViewportWidth}px`);
       });
     };
