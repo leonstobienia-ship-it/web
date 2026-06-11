@@ -2161,8 +2161,8 @@ function Alcadas({
   const [vigenciaInicial, setVigenciaInicial] = React.useState<string>(alcadaSelecionada?.vigenciaInicial || '');
   const [vigenciaFinal, setVigenciaFinal] = React.useState<string>(alcadaSelecionada?.vigenciaFinal || '');
   const [observacoes, setObservacoes] = React.useState<string>(alcadaSelecionada?.observacoes || '');
-  const [justificativa, setJustificativa] = React.useState<string>(`${MARCADOR_ADMINISTRATIVO_V29C} - ajuste de alcada controlado`);
-  const [confirmacaoFinal, setConfirmacaoFinal] = React.useState<string>('');
+  const justificativa = `${MARCADOR_ADMINISTRATIVO_V29C} - configuracao de alcada pelo Sistema ENAC`;
+  const confirmacaoFinal = CONFIRMACAO_ADMINISTRATIVA_V29C;
   const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
   const [executando, setExecutando] = React.useState<boolean>(false);
 
@@ -2206,6 +2206,10 @@ function Alcadas({
   };
   const preValidacao = buildPreValidacaoAdministrativaV29C('AtualizarAlcadaUsuario', flags, usuarioAtual, perfilAdministradorAtivo, usuarios, alcadas, undefined, payloadAlcada, justificativa);
   const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
+  const alertaBloqueante = preValidacao.alertas.find((alerta) => alerta.codigo !== 'ALERTA_ADMINISTRADOR_SISTEMA' && alerta.codigo !== 'DUPLICIDADE_PROPRIO_ITEM_IGNORADA');
+  const mensagemSalvar = podeSalvar
+    ? 'Pronto para salvar.'
+    : alertaBloqueante?.mensagem || 'Revise a regra de alçada e a permissão administrativa antes de salvar.';
 
   async function executar(): Promise<void> {
     if (!repository || !usuarioAtual || !flags || !podeSalvar) {
@@ -2251,7 +2255,7 @@ function Alcadas({
         Alteração de alçadas V2.9C não retroage snapshots já criados e sempre registra histórico administrativo.
       </div>
       <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
-        <h2>AtualizarAlcadaUsuario</h2>
+        <h2>Alçadas</h2>
         <label>Regra alvo<select value={alcadaId} onChange={(event) => setAlcadaId(event.currentTarget.value)}>{alcadas.map((item) => <option key={item.id} value={item.id}>{item.regraInternaId || item.id}</option>)}</select></label>
         <label>Título<input value={titulo} onChange={(event) => setTitulo(event.currentTarget.value)} /></label>
         <label>RegraInternaId<input value={regraInternaId} onChange={(event) => setRegraInternaId(event.currentTarget.value)} /></label>
@@ -2267,11 +2271,8 @@ function Alcadas({
         <label>VigenciaInicial<input type="date" value={vigenciaInicial ? vigenciaInicial.substring(0, 10) : ''} onChange={(event) => setVigenciaInicial(event.currentTarget.value)} /></label>
         <label>VigenciaFinal<input type="date" value={vigenciaFinal ? vigenciaFinal.substring(0, 10) : ''} onChange={(event) => setVigenciaFinal(event.currentTarget.value)} /></label>
         <label>Observações<textarea value={observacoes} onChange={(event) => setObservacoes(event.currentTarget.value)} /></label>
-        <label>Justificativa<textarea value={justificativa} onChange={(event) => setJustificativa(event.currentTarget.value)} /></label>
-        <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
-        <label>Pré-validação<textarea readOnly value={`${preValidacao.mensagem}\nAlertas: ${preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') || '-'}`} /></label>
-        <label>Payload previsto<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
-        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar alçada V2.9C</button>
+        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar</button>
+        <span>{mensagemSalvar}</span>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
