@@ -146,6 +146,21 @@ function Find-EnacApp {
     return $null
 }
 
+function Copy-PackageToPublishTemp {
+    param(
+        [System.IO.FileInfo]$Package
+    )
+
+    $publishTempDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "enac-spfx-publicacao"
+    if (-not (Test-Path -LiteralPath $publishTempDirectory)) {
+        New-Item -ItemType Directory -Path $publishTempDirectory | Out-Null
+    }
+
+    $publishTempPath = Join-Path $publishTempDirectory $Package.Name
+    Copy-Item -LiteralPath $Package.FullName -Destination $publishTempPath -Force
+    return (Get-Item -LiteralPath $publishTempPath)
+}
+
 if (-not (Test-Path -LiteralPath $OutputDirectory)) {
     New-Item -ItemType Directory -Path $OutputDirectory | Out-Null
 }
@@ -204,8 +219,11 @@ try {
     $appCatalogWeb = Get-PnPWeb -Connection $appCatalogConnection -ErrorAction Stop
     Add-ReportLine $report "- Conectado: $($appCatalogWeb.Title) / $($appCatalogWeb.Url)"
 
-    $publishedApp = Add-PnPApp -Connection $appCatalogConnection -Path $preflight.Package.FullName -Scope Tenant -Overwrite -Publish -ErrorAction Stop
-    Add-ReportLine $report "- Add-PnPApp executado com -Overwrite -Publish."
+    $publishPackage = Copy-PackageToPublishTemp -Package $preflight.Package
+    Add-ReportLine $report "- Pacote copiado para caminho temporario de publicacao: $($publishPackage.FullName)"
+
+    $publishedApp = Add-PnPApp -Connection $appCatalogConnection -Path $publishPackage.FullName -Scope Tenant -Overwrite -Publish -Force -ErrorAction Stop
+    Add-ReportLine $report "- Add-PnPApp executado com -Overwrite -Publish -Force."
     Add-ReportLine $report "- Retorno: $(ConvertTo-SafeText ($publishedApp | Out-String).Trim())"
     Add-ReportLine $report
 
