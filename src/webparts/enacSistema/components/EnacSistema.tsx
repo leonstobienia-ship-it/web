@@ -112,6 +112,27 @@ const formatUserInternalId = (value: string | undefined): string => {
   return cleaned === '-' ? '-' : cleaned;
 };
 
+const formatAlcadaProcesso = (value: string | undefined): string =>
+  value === 'LiberacaoBancaria' ? 'Liberação Bancária' : String(value || 'Compra');
+
+const formatAlcadaTipo = (value: string | undefined): string => {
+  const tipo = String(value || 'Todos').trim();
+  return tipo === 'Todos' ? 'Todos os tipos' : tipo;
+};
+
+const formatAlcadaFaixa = (item: Pick<IAlcadaEnac, 'valorMinimo' | 'valorMaximo' | 'ilimitado'>): string => {
+  const minimo = formatCurrency(item.valorMinimo);
+  return item.ilimitado ? `Acima de ${minimo}` : `${minimo} até ${formatCurrency(item.valorMaximo)}`;
+};
+
+const formatAlcadaNome = (item: IAlcadaEnac | undefined): string => {
+  if (!item) {
+    return 'Regra não selecionada';
+  }
+
+  return `${formatAlcadaProcesso(item.processo)} - ${formatAlcadaTipo(item.tipoSolicitacao)} - ${formatAlcadaFaixa(item)} - ${formatDisplayName(item.aprovadorPrincipalNome || item.aprovadorPrincipalId || '-')}`;
+};
+
 const normalizeIdentity = (value: string | undefined): string =>
   String(value || '').trim().toLowerCase();
 
@@ -2147,7 +2168,6 @@ function Alcadas({
 }): JSX.Element {
   const [alcadaId, setAlcadaId] = React.useState<string>(alcadas[0]?.id || '');
   const alcadaSelecionada = alcadas.find((item) => item.id === alcadaId) || alcadas[0];
-  const [titulo, setTitulo] = React.useState<string>(alcadaSelecionada?.regraInternaId || '');
   const [regraInternaId, setRegraInternaId] = React.useState<string>(alcadaSelecionada?.regraInternaId || '');
   const [processo, setProcesso] = React.useState<AlcadaAdministrativaV29CPayload['processo']>('Compra');
   const [tipoSolicitacao, setTipoSolicitacao] = React.useState<string>(alcadaSelecionada?.tipoSolicitacao || 'Todos');
@@ -2160,7 +2180,6 @@ function Alcadas({
   const [ativa, setAtiva] = React.useState<boolean>(alcadaSelecionada?.ativa !== false);
   const [vigenciaInicial, setVigenciaInicial] = React.useState<string>(alcadaSelecionada?.vigenciaInicial || '');
   const [vigenciaFinal, setVigenciaFinal] = React.useState<string>(alcadaSelecionada?.vigenciaFinal || '');
-  const [observacoes, setObservacoes] = React.useState<string>(alcadaSelecionada?.observacoes || '');
   const justificativa = `${MARCADOR_ADMINISTRATIVO_V29C} - configuracao de alcada pelo Sistema ENAC`;
   const confirmacaoFinal = CONFIRMACAO_ADMINISTRATIVA_V29C;
   const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
@@ -2171,7 +2190,6 @@ function Alcadas({
       return;
     }
 
-    setTitulo(alcadaSelecionada.regraInternaId || '');
     setRegraInternaId(alcadaSelecionada.regraInternaId || '');
     setProcesso(alcadaSelecionada.processo === 'LiberacaoBancaria' ? 'Liberação Bancária' : alcadaSelecionada.processo as AlcadaAdministrativaV29CPayload['processo']);
     setTipoSolicitacao(alcadaSelecionada.tipoSolicitacao || 'Todos');
@@ -2184,12 +2202,11 @@ function Alcadas({
     setAtiva(alcadaSelecionada.ativa !== false);
     setVigenciaInicial(alcadaSelecionada.vigenciaInicial || '');
     setVigenciaFinal(alcadaSelecionada.vigenciaFinal || '');
-    setObservacoes(alcadaSelecionada.observacoes || '');
   }, [alcadaSelecionada?.id]);
 
   const payloadAlcada: AlcadaAdministrativaV29CPayload = {
     itemId: Number(alcadaSelecionada?.id || 0) || undefined,
-    titulo,
+    titulo: regraInternaId,
     regraInternaId,
     processo,
     tipoSolicitacao,
@@ -2202,7 +2219,7 @@ function Alcadas({
     ativa,
     vigenciaInicial,
     vigenciaFinal,
-    observacoes
+    observacoes: alcadaSelecionada?.observacoes || ''
   };
   const preValidacao = buildPreValidacaoAdministrativaV29C('AtualizarAlcadaUsuario', flags, usuarioAtual, perfilAdministradorAtivo, usuarios, alcadas, undefined, payloadAlcada, justificativa);
   const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
@@ -2252,42 +2269,36 @@ function Alcadas({
     <>
       <p>Fonte: {origemDados === 'sharepoint' ? 'SharePoint' : 'Fallback local'}</p>
       <div className={styles.adminNotice}>
-        Alteração de alçadas V2.9C não retroage snapshots já criados e sempre registra histórico administrativo.
+        Alçadas definem quem aprova cada faixa de valor. Mudanças valem apenas para novas solicitações e não alteram snapshots já criados.
       </div>
       <form className={styles.adminForm} onSubmit={(event) => event.preventDefault()}>
         <h2>Alçadas</h2>
-        <label>Regra alvo<select value={alcadaId} onChange={(event) => setAlcadaId(event.currentTarget.value)}>{alcadas.map((item) => <option key={item.id} value={item.id}>{item.regraInternaId || item.id}</option>)}</select></label>
-        <label>Título<input value={titulo} onChange={(event) => setTitulo(event.currentTarget.value)} /></label>
-        <label>RegraInternaId<input value={regraInternaId} onChange={(event) => setRegraInternaId(event.currentTarget.value)} /></label>
+        <label>Regra<select value={alcadaId} onChange={(event) => setAlcadaId(event.currentTarget.value)}>{alcadas.map((item) => <option key={item.id} value={item.id}>{formatAlcadaNome(item)}</option>)}</select></label>
         <label>Processo<select value={processo} onChange={(event) => setProcesso(event.currentTarget.value as AlcadaAdministrativaV29CPayload['processo'])}><option>Compra</option><option>Liberação Bancária</option><option>Medição</option><option>Pagamento</option><option>Outro</option></select></label>
-        <label>TipoSolicitacao<input value={tipoSolicitacao} onChange={(event) => setTipoSolicitacao(event.currentTarget.value)} /></label>
-        <label>ValorMinimo<input value={valorMinimo} onChange={(event) => setValorMinimo(event.currentTarget.value)} /></label>
-        <label>ValorMaximo<input value={valorMaximo} disabled={ilimitado} onChange={(event) => setValorMaximo(event.currentTarget.value)} /></label>
+        <label>Tipo de solicitação<input value={tipoSolicitacao} onChange={(event) => setTipoSolicitacao(event.currentTarget.value)} /></label>
+        <label>Valor mínimo<input value={valorMinimo} onChange={(event) => setValorMinimo(event.currentTarget.value)} /></label>
+        <label>Valor máximo<input value={valorMaximo} disabled={ilimitado} onChange={(event) => setValorMaximo(event.currentTarget.value)} /></label>
         <label><input type="checkbox" checked={ilimitado} onChange={(event) => setIlimitado(event.currentTarget.checked)} />Ilimitado</label>
-        <label>AprovadorPrincipal<select value={aprovadorPrincipalId} onChange={(event) => setAprovadorPrincipalId(event.currentTarget.value)}><option value="">Selecione</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
-        <label>AprovadorAdicional<select value={aprovadorAdicionalId} onChange={(event) => setAprovadorAdicionalId(event.currentTarget.value)}><option value="">Nenhum</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
+        <label>Aprovador principal<select value={aprovadorPrincipalId} onChange={(event) => setAprovadorPrincipalId(event.currentTarget.value)}><option value="">Selecione</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
+        <label>Aprovador adicional<select value={aprovadorAdicionalId} onChange={(event) => setAprovadorAdicionalId(event.currentTarget.value)}><option value="">Nenhum</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
         <label><input type="checkbox" checked={exigeAprovacaoAdicional} onChange={(event) => setExigeAprovacaoAdicional(event.currentTarget.checked)} />Exige aprovação adicional</label>
         <label><input type="checkbox" checked={ativa} onChange={(event) => setAtiva(event.currentTarget.checked)} />Regra ativa</label>
-        <label>VigenciaInicial<input type="date" value={vigenciaInicial ? vigenciaInicial.substring(0, 10) : ''} onChange={(event) => setVigenciaInicial(event.currentTarget.value)} /></label>
-        <label>VigenciaFinal<input type="date" value={vigenciaFinal ? vigenciaFinal.substring(0, 10) : ''} onChange={(event) => setVigenciaFinal(event.currentTarget.value)} /></label>
-        <label>Observações<textarea value={observacoes} onChange={(event) => setObservacoes(event.currentTarget.value)} /></label>
+        <label>Início da vigência<input type="date" value={vigenciaInicial ? vigenciaInicial.substring(0, 10) : ''} onChange={(event) => setVigenciaInicial(event.currentTarget.value)} /></label>
+        <label>Fim da vigência<input type="date" value={vigenciaFinal ? vigenciaFinal.substring(0, 10) : ''} onChange={(event) => setVigenciaFinal(event.currentTarget.value)} /></label>
         <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar</button>
         <span>{mensagemSalvar}</span>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
-        <thead><tr><th>Regra</th><th>Processo</th><th>Tipo</th><th>Faixa</th><th>Aprovador</th><th>Prévia de limite</th><th>Status</th></tr></thead>
+        <thead><tr><th>Regra</th><th>Processo</th><th>Tipo</th><th>Faixa de valor</th><th>Aprovador</th><th>Status</th></tr></thead>
         <tbody>
           {alcadas.map((item) => (
             <tr key={item.id}>
-              <td>{item.regraInternaId || item.id}</td>
-              <td>{item.processo}</td>
-              <td>{item.tipoSolicitacao}</td>
-              <td>{formatCurrency(item.valorMinimo)}<br />{item.ilimitado ? 'Ilimitado' : formatCurrency(item.valorMaximo)}</td>
+              <td>{formatAlcadaNome(item)}</td>
+              <td>{formatAlcadaProcesso(item.processo)}</td>
+              <td>{formatAlcadaTipo(item.tipoSolicitacao)}</td>
+              <td>{formatAlcadaFaixa(item)}</td>
               <td>{formatDisplayName(item.aprovadorPrincipalNome || item.aprovadorPrincipalId || '-')}</td>
-              <td>
-                <input value={item.ilimitado ? 'Ilimitado' : String(item.valorMaximo || '')} disabled aria-label={`Limite técnico de ${item.regraInternaId || item.id}`} />
-              </td>
               <td>{item.ativa ? 'Ativa' : 'Inativa'}</td>
             </tr>
           ))}
