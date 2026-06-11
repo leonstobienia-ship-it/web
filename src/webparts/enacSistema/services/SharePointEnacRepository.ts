@@ -2906,7 +2906,7 @@ export class SharePointEnacRepository {
     if (input.confirmacaoFinal !== CONFIRMACAO_ADMINISTRATIVA_V29C) alertas.push({ codigo: 'CONFIRMACAO_FINAL_INVALIDA', mensagem: 'Confirmacao final V2.9C invalida.' });
     if (input.flags.marcadorAdministrativoV29C !== MARCADOR_ADMINISTRATIVO_V29C) alertas.push({ codigo: 'MARCADOR_ADMIN_V29C_INVALIDO', mensagem: 'Marcador administrativo V2.9C invalido.' });
     const executorTemPerfilAdmin = input.usuarioExecutor.perfilPrincipal === 'AdministradorSistema' || input.usuarioExecutor.perfisAdicionais.indexOf('AdministradorSistema') >= 0;
-    if (!input.usuarioExecutor.usuarioAtivo || !executorTemPerfilAdmin || !input.usuarioExecutor.podeAdministrarConfiguracoes) alertas.push({ codigo: 'EXECUTOR_NAO_ADMINISTRADOR', mensagem: 'Executor deve ter Administrador do Sistema ativo com PodeAdministrarConfiguracoes=true.' });
+    if (!input.usuarioExecutor.usuarioAtivo || !executorTemPerfilAdmin || !input.preValidacao.perfilAdministradorAtivo) alertas.push({ codigo: 'EXECUTOR_NAO_ADMINISTRADOR', mensagem: 'Executor deve ter Administrador do Sistema ativo e selecionado.' });
     if (!input.preValidacao.sucesso || input.preValidacao.bloqueado) alertas.push({ codigo: 'PRE_VALIDACAO_REPROVADA', mensagem: 'Pre-validacao V2.9C nao aprovou a escrita.' });
     if (!input.justificativa.trim()) alertas.push({ codigo: 'JUSTIFICATIVA_AUSENTE', mensagem: 'Justificativa e obrigatoria.' });
     if ((input.acao === 'CriarUsuarioSistema' || input.acao === 'AtualizarUsuarioPerfilStatus') && !input.payloadUsuario) alertas.push({ codigo: 'PAYLOAD_USUARIO_AUSENTE', mensagem: 'Payload de usuario ausente.' });

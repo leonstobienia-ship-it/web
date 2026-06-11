@@ -378,7 +378,7 @@ const buildPreValidacaoAdministrativaV29C = (
   if (!flags?.modoTesteAdministrativoV29C) alertas.push({ codigo: 'MODO_TESTE_ADMIN_V29C_DESLIGADO', mensagem: 'modoTesteAdministrativoV29C deve estar ativo.' });
   if (flags?.exigirConfirmacaoAdministrativaV29C !== false && flags?.confirmacaoAdministrativaV29C !== CONFIRMACAO_ADMINISTRATIVA_V29C) alertas.push({ codigo: 'CONFIRMACAO_ADMIN_V29C_INVALIDA', mensagem: 'Confirmacao administrativa V2.9C nao confere.' });
   if (flags?.marcadorAdministrativoV29C !== MARCADOR_ADMINISTRATIVO_V29C) alertas.push({ codigo: 'MARCADOR_ADMIN_V29C_INVALIDO', mensagem: `Marcador administrativo deve ser ${MARCADOR_ADMINISTRATIVO_V29C}.` });
-  if (!usuarioAtual || !usuarioAtual.usuarioAtivo || !perfilAdministradorAtivo || !usuarioAtual.podeAdministrarConfiguracoes) alertas.push({ codigo: 'USUARIO_SEM_ADMINISTRACAO', mensagem: 'Acao exige usuario ativo com Administrador do Sistema e PodeAdministrarConfiguracoes=true.' });
+  if (!usuarioAtual || !usuarioAtual.usuarioAtivo || !perfilAdministradorAtivo) alertas.push({ codigo: 'USUARIO_SEM_ADMINISTRACAO', mensagem: 'Ação exige usuário ativo com perfil Administrador do Sistema selecionado.' });
   if (!justificativa.trim()) alertas.push({ codigo: 'JUSTIFICATIVA_AUSENTE', mensagem: 'Justificativa administrativa e obrigatoria.' });
 
   let payloadPrevisto: Record<string, unknown> | undefined;
@@ -1690,6 +1690,22 @@ function AdminUsuarios({
     setCargoFuncao(usuarioSelecionado.cargoFuncao || '');
   }, [acao, usuarioSelecionado?.id]);
 
+  React.useEffect(() => {
+    if (acao !== 'CriarUsuarioSistema') {
+      return;
+    }
+
+    setUsuarioId('');
+    setNome('');
+    setUsuarioInternoId('');
+    setContaMicrosoft365('');
+    setEmail('');
+    setPerfilPrincipal('Campo');
+    setUsuarioAtivo(true);
+    setCargoFuncao('');
+    setResultado(null);
+  }, [acao]);
+
   const contaNumerica = parseNumberField(contaMicrosoft365);
   const permissoesBase = permissoesPadraoPorPerfilV29C(perfilPrincipal);
   const payloadUsuario: UsuarioAdministrativoV29CPayload = {
@@ -1708,6 +1724,10 @@ function AdminUsuarios({
   };
   const preValidacao = buildPreValidacaoAdministrativaV29C(acao, flags, usuarioAtual, perfilAdministradorAtivo, usuariosExibidos, alcadas, payloadUsuario, undefined, justificativa);
   const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
+  const alertaBloqueante = preValidacao.alertas.find((alerta) => alerta.codigo !== 'ALERTA_ADMINISTRADOR_SISTEMA' && alerta.codigo !== 'DUPLICIDADE_PROPRIO_ITEM_IGNORADA');
+  const mensagemSalvar = podeSalvar
+    ? 'Pronto para salvar.'
+    : alertaBloqueante?.mensagem || 'Revise os campos obrigatórios e a permissão administrativa antes de salvar.';
 
   async function executar(): Promise<void> {
     if (!repository || !usuarioAtual || !flags || !podeSalvar) {
@@ -1764,6 +1784,7 @@ function AdminUsuarios({
         <label>Status<select value={usuarioAtivo ? 'Ativo' : 'Inativo'} onChange={(event) => setUsuarioAtivo(event.currentTarget.value === 'Ativo')}><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select></label>
         <label>Cargo/Função<input value={cargoFuncao} onChange={(event) => setCargoFuncao(event.currentTarget.value)} /></label>
         <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar</button>
+        <span>{mensagemSalvar}</span>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
