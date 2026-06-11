@@ -1,4 +1,3 @@
-import { ISPHttpClientOptions, SPHttpClient, SPHttpClientResponse } from '@microsoft/sp-http';
 import {
   AcaoOperacionalV27A,
   AlcadaAdministrativaV29CPayload,
@@ -34,6 +33,31 @@ import {
   TipoSolicitacaoEnac,
   UsuarioAdministrativoV29CPayload
 } from '../models';
+import { IEnacRepository } from './IEnacRepository';
+
+export interface ISPHttpClientOptions {
+  headers?: Record<string, string>;
+  body?: string;
+}
+
+export interface ISPHttpClientResponse {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  json(): Promise<any>;
+  text(): Promise<string>;
+}
+
+export interface ISharePointRestClient {
+  get(url: string, configuration?: unknown): Promise<ISPHttpClientResponse>;
+  post(url: string, configuration: unknown, options: ISPHttpClientOptions): Promise<ISPHttpClientResponse>;
+}
+
+const SPHttpClient = {
+  configurations: {
+    v1: {}
+  }
+};
 
 const LISTAS_ENAC = {
   obras: 'a9afadc1-f843-45c0-a628-4f49a8716832',
@@ -231,7 +255,7 @@ const LISTA_10_PAGAMENTO_CAMPOS_PREVISTOS = [
 
 export interface ISharePointEnacRepositoryOptions {
   siteUrl: string;
-  spHttpClient: SPHttpClient;
+  spHttpClient: ISharePointRestClient;
 }
 
 export interface IResolverAlcadaCompraOptions {
@@ -310,9 +334,9 @@ interface PagamentoExistenteV27A {
  * V2.3: camada real de integracao SharePoint.
  * A interface V2.2 homologada permanece fora desta classe.
  */
-export class SharePointEnacRepository {
+export class SharePointEnacRepository implements IEnacRepository {
   private readonly siteUrl: string;
-  private readonly spHttpClient: SPHttpClient;
+  private readonly spHttpClient: ISharePointRestClient;
 
   public constructor(options: ISharePointEnacRepositoryOptions) {
     this.siteUrl = options.siteUrl;
@@ -2972,7 +2996,7 @@ export class SharePointEnacRepository {
     }, {} as Record<string, unknown>);
   }
 
-  private async lerErroSharePointSanitizado(response: SPHttpClientResponse): Promise<string> {
+  private async lerErroSharePointSanitizado(response: ISPHttpClientResponse): Promise<string> {
     try {
       const payload = await response.json();
       const mensagem = payload?.error?.message?.value || payload?.error?.message || JSON.stringify(payload);
@@ -3948,7 +3972,7 @@ export class SharePointEnacRepository {
     return error instanceof Error ? error.message : String(error);
   }
 
-  private async ensureJson(response: SPHttpClientResponse): Promise<any> {
+  private async ensureJson(response: ISPHttpClientResponse): Promise<any> {
     if (!response.ok) {
       throw new Error(`SharePoint retornou ${response.status}: ${response.statusText}`);
     }

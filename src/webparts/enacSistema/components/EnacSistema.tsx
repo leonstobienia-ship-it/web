@@ -27,14 +27,16 @@ import {
   StatusProcesso,
   UsuarioAdministrativoV29CPayload
 } from '../models';
-import { SharePointEnacRepository } from '../services/SharePointEnacRepository';
+import { IEnacRepository } from '../services/IEnacRepository';
+import enacLogo from '../assets/enac-logo.png';
 import styles from './EnacSistema.module.scss';
 
 const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
-const enacLogo = require('../assets/enac-logo.png');
 const views = [
   { key: 'dashboard', label: 'Visão geral' },
-  { key: 'tutorial', label: 'Tutorial' },
+  { key: 'cadastroClientes', label: 'Clientes' },
+  { key: 'cadastroObras', label: 'Obras' },
+  { key: 'cadastroFornecedores', label: 'Fornecedores' },
   { key: 'nova', label: 'Nova solicitação' },
   { key: 'minhas', label: 'Requisições' },
   { key: 'cotacoes', label: 'Cotações' },
@@ -45,10 +47,19 @@ const views = [
   { key: 'adminUsuarios', label: 'Usuários' },
   { key: 'adminPerfis', label: 'Perfis' },
   { key: 'adminAlcadas', label: 'Alçadas' },
-  { key: 'adminHistorico', label: 'Auditoria' }
+  { key: 'adminHistorico', label: 'Auditoria' },
+  { key: 'tutorial', label: 'Tutorial' }
 ];
 
-const adminViewKeys = ['adminUsuarios', 'adminPerfis', 'adminAlcadas', 'adminHistorico'];
+const viewsPorPerfil: Record<PerfilEnac, string[]> = {
+  Campo: ['dashboard', 'nova', 'minhas', 'historico', 'tutorial'],
+  CotacoesContratos: ['dashboard', 'cadastroFornecedores', 'minhas', 'cotacoes', 'historico', 'tutorial'],
+  ComprasFinanceiroOperacional: ['dashboard', 'cadastroFornecedores', 'minhas', 'pedido', 'historico', 'tutorial'],
+  Planejamento: ['dashboard', 'minhas', 'aprovacoes', 'historico', 'tutorial'],
+  Diretoria: views.map((item) => item.key),
+  AdministradorSistema: views.map((item) => item.key),
+  ConsultaLeitura: ['dashboard', 'minhas', 'historico', 'tutorial']
+};
 const perfilOptions: PerfilEnac[] = ['Campo', 'CotacoesContratos', 'ComprasFinanceiroOperacional', 'Planejamento', 'Diretoria', 'AdministradorSistema', 'ConsultaLeitura'];
 const perfilLabels: Record<PerfilEnac, string> = {
   Campo: 'Campo / Engenharia',
@@ -100,6 +111,28 @@ interface ITutorialPerfilEnac {
   fluxo: string[];
   preenchimentos: string[];
   conferencias: string[];
+}
+
+interface IClienteCadastroEnac {
+  id: string;
+  nome: string;
+  cnpj?: string;
+  responsavel?: string;
+  email?: string;
+  telefone?: string;
+  ativo: boolean;
+}
+
+interface IFornecedorCadastroEnac {
+  id: string;
+  nome: string;
+  cnpj?: string;
+  contato?: string;
+  email?: string;
+  telefone?: string;
+  pix?: string;
+  contaBancaria?: string;
+  ativo: boolean;
 }
 
 const dadosPagamentoFornecedores: Record<string, { pix: string; contaBancaria: string }> = {
@@ -291,7 +324,7 @@ export interface IEnacSistemaProps {
   currentUserPerfil: PerfilEnac;
   origemDados?: OrigemDadosEnac;
   diagnosticoReadonly?: boolean;
-  repository?: SharePointEnacRepository;
+  repository?: IEnacRepository;
   siteUrl?: string;
   escritaTesteHabilitada?: boolean;
   modoEscritaTeste?: boolean;
@@ -309,6 +342,17 @@ export interface IEnacSistemaProps {
 const obras: IObraEnac[] = [
   { id: '1', nome: 'Obra Alpha', codigoObra: 'OBR-001', cliente: 'Cliente Alpha', centroCusto: 'CC-1101', enderecoEntrega: 'Canteiro Alpha - Portaria 2' },
   { id: '2', nome: 'Retrofit Galpao Sul', codigoObra: 'OBR-014', cliente: 'Industria Sul', centroCusto: 'CC-2214', enderecoEntrega: 'Galpao Sul - Docas' }
+];
+
+const clientesIniciais: IClienteCadastroEnac[] = [
+  { id: 'cli-1', nome: 'Cliente Alpha', cnpj: '00.000.000/0001-01', responsavel: 'Responsavel Alpha', email: 'cliente.alpha@example.invalid', telefone: '(00) 0000-0000', ativo: true },
+  { id: 'cli-2', nome: 'Industria Sul', cnpj: '00.000.000/0001-02', responsavel: 'Responsavel Industria Sul', email: 'industria.sul@example.invalid', telefone: '(00) 0000-0000', ativo: true }
+];
+
+const fornecedoresIniciais: IFornecedorCadastroEnac[] = [
+  { id: 'for-1', nome: 'Fornecedor Concreto Base', cnpj: '00.000.000/0001-11', contato: 'Financeiro', email: 'financeiro@fornecedorconcretobase.example', telefone: '(00) 0000-0000', pix: 'financeiro@fornecedorconcretobase.example', contaBancaria: 'Banco 001 / Ag. 1234 / Cc. 56789-0', ativo: true },
+  { id: 'for-2', nome: 'Concreto Rapido', cnpj: '00.000.000/0001-12', contato: 'Contas', email: 'contas@concretorapido.example', telefone: '(00) 0000-0000', pix: 'contas@concretorapido.example', contaBancaria: 'Banco 237 / Ag. 4321 / Cc. 98765-4', ativo: true },
+  { id: 'for-3', nome: 'Mix Forte', cnpj: '00.000.000/0001-13', contato: 'Pagamentos', email: 'mixforte-pagamentos@example', telefone: '(00) 0000-0000', pix: 'mixforte-pagamentos@example', contaBancaria: 'Banco 341 / Ag. 1111 / Cc. 22222-3', ativo: true }
 ];
 
 const formatCurrency = (value: number | undefined): string =>
@@ -330,11 +374,22 @@ const getFormFileName = (form: FormData, fieldName: string): string => {
   return value instanceof File ? value.name : String(value || '');
 };
 
-const getDadosPagamentoFornecedor = (fornecedor: string | undefined): { pix: string; contaBancaria: string } =>
-  dadosPagamentoFornecedores[String(fornecedor || '')] || {
+const getDadosPagamentoFornecedor = (fornecedor: string | undefined, fornecedoresCadastrados?: IFornecedorCadastroEnac[]): { pix: string; contaBancaria: string } => {
+  const nomeFornecedor = String(fornecedor || '');
+  const fornecedorCadastrado = fornecedoresCadastrados?.find((item) => item.nome === nomeFornecedor && item.ativo);
+
+  if (fornecedorCadastrado) {
+    return {
+      pix: fornecedorCadastrado.pix || 'Chave Pix não cadastrada',
+      contaBancaria: fornecedorCadastrado.contaBancaria || 'Dados bancários não cadastrados'
+    };
+  }
+
+  return dadosPagamentoFornecedores[nomeFornecedor] || {
     pix: 'Chave Pix não cadastrada',
     contaBancaria: 'Dados bancários não cadastrados'
   };
+};
 
 const normalizeTipoSolicitacaoAlcada = (value: string | undefined): string => {
   switch (String(value || 'Todos').trim()) {
@@ -389,6 +444,15 @@ const getPerfisAutorizados = (usuario: IUsuarioPerfilEnac | undefined, fallback:
 
   return perfis.length > 0 ? perfis : [fallback];
 };
+
+function getViewsPermitidas(perfil: PerfilEnac, visaoTotal: boolean): { key: string; label: string }[] {
+  if (visaoTotal) {
+    return views;
+  }
+
+  const permitidas = viewsPorPerfil[perfil] || ['dashboard', 'tutorial'];
+  return views.filter((item) => permitidas.indexOf(item.key) >= 0);
+}
 
 const findUsuarioAtual = (
   candidatos: IUsuarioPerfilEnac[],
@@ -929,6 +993,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [perfil, setPerfil] = React.useState<PerfilEnac>(props.currentUserPerfil || 'Campo');
   const [view, setView] = React.useState('dashboard');
   const [solicitacoes, setSolicitacoes] = React.useState<ISolicitacaoEnac[]>(initialSolicitacoes);
+  const [clientes, setClientes] = React.useState<IClienteCadastroEnac[]>(clientesIniciais);
+  const [obrasCadastradas, setObrasCadastradas] = React.useState<IObraEnac[]>(obras);
+  const [fornecedores, setFornecedores] = React.useState<IFornecedorCadastroEnac[]>(fornecedoresIniciais);
   const [alcadas] = React.useState<IAlcadaEnac[]>(alcadasIniciais);
   const [selectedId, setSelectedId] = React.useState(initialSolicitacoes[0].id);
   const [usuariosPerfisReadonly, setUsuariosPerfisReadonly] = React.useState<IUsuarioPerfilEnac[]>([]);
@@ -1138,8 +1205,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const perfisAutorizados = getPerfisAutorizados(usuarioAtualSistema, props.currentUserPerfil || 'Campo');
   const perfilSelecionadoAutorizado = perfisAutorizados.indexOf(perfil) >= 0;
   const perfilAdministradorAtivo = usuarioAtivo && perfil === 'AdministradorSistema' && perfisAutorizados.indexOf('AdministradorSistema') >= 0;
+  const perfilComVisaoTotal = usuarioAtivo && perfilSelecionadoAutorizado && (perfil === 'Diretoria' || perfilAdministradorAtivo);
   const acessoOperacionalBloqueado = usandoSharePointReadonly && (!usuarioCadastrado || !usuarioAtivo || !perfilSelecionadoAutorizado);
-  const viewsPermitidas = views.filter((item) => adminViewKeys.indexOf(item.key) === -1 || perfilAdministradorAtivo);
+  const viewsPermitidas = getViewsPermitidas(perfil, perfilComVisaoTotal);
   const perfilSelectDesabilitado = acessoOperacionalBloqueado || perfisAutorizados.length <= 1;
   const nomeUsuarioBanner = formatDisplayName(usuarioAtualSistema?.nome || props.currentUserName || 'Usuario nao cadastrado');
   const preValidacaoAdministrativaV29B = props.flagsEscritaAdministrativaV29B?.habilitarEscritaAdministrativaV29B && props.configuracaoAdministrativaV29B
@@ -1168,10 +1236,10 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   }, [perfil, perfisAutorizados.join('|')]);
 
   React.useEffect(() => {
-    if (!perfilAdministradorAtivo && adminViewKeys.indexOf(view) >= 0) {
-      setView('dashboard');
+    if (viewsPermitidas.length > 0 && !viewsPermitidas.some((item) => item.key === view)) {
+      setView(viewsPermitidas[0].key);
     }
-  }, [perfilAdministradorAtivo, view]);
+  }, [view, viewsPermitidas.map((item) => item.key).join('|')]);
 
   React.useEffect(() => {
     if (!props.repository || origemDadosEfetiva !== 'sharepoint' || !escritaTesteConfigurada) {
@@ -1510,7 +1578,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   }
 
   function criarSolicitacao(form: FormData): void {
-    const obra = obras.find((item) => item.id === String(form.get('obra'))) || obras[0];
+    const obra = obrasCadastradas.find((item) => item.id === String(form.get('obra'))) || obrasCadastradas[0] || obras[0];
     const next: ISolicitacaoEnac = {
       id: `REQ-${1001 + solicitacoes.length}`,
       titulo: String(form.get('titulo')),
@@ -1652,15 +1720,15 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         boletoOuDadosPagamento: dadosPedido.formaPagamento === 'Boleto'
           ? dadosPedido.anexoBoleto
           : dadosPedido.formaPagamento === 'Pix'
-            ? getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).pix
-            : getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).contaBancaria
+            ? getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado, fornecedores).pix
+            : getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado, fornecedores).contaBancaria
       },
       programacaoBancaria: {
         bancoContaPagamento: dadosPedido.formaPagamento === 'Boleto'
           ? (dadosPedido.anexoBoleto || 'Boleto não anexado')
           : dadosPedido.formaPagamento === 'Pix'
-            ? getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).pix
-            : getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado).contaBancaria,
+            ? getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado, fornecedores).pix
+            : getDadosPagamentoFornecedor(item.cotacao?.fornecedorRecomendado, fornecedores).contaBancaria,
         formaPagamento: dadosPedido.formaPagamento,
         dataProgramada: item.dataNecessaria,
         valorProgramado: item.cotacao?.valorRecomendado || 0,
@@ -1677,6 +1745,68 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       status: 'PagoConcluido',
       historico: [...item.historico, { data: new Date().toISOString(), autor: 'Leon', perfil: 'Diretoria', descricao: 'Pagamento liberado, confirmado e status final atualizado', statusNovo: 'PagoConcluido' }]
     } : item));
+  }
+
+  function cadastrarCliente(form: FormData): void {
+    const nome = String(form.get('nome') || '').trim();
+    if (!nome) {
+      return;
+    }
+
+    setClientes([
+      ...clientes,
+      {
+        id: `cli-${1001 + clientes.length}`,
+        nome,
+        cnpj: String(form.get('cnpj') || ''),
+        responsavel: String(form.get('responsavel') || ''),
+        email: String(form.get('email') || ''),
+        telefone: String(form.get('telefone') || ''),
+        ativo: String(form.get('status') || 'Ativo') === 'Ativo'
+      }
+    ]);
+  }
+
+  function cadastrarObra(form: FormData): void {
+    const nome = String(form.get('nome') || '').trim();
+    const cliente = String(form.get('cliente') || '').trim();
+    if (!nome || !cliente) {
+      return;
+    }
+
+    setObrasCadastradas([
+      ...obrasCadastradas,
+      {
+        id: `obra-${1001 + obrasCadastradas.length}`,
+        nome,
+        codigoObra: String(form.get('codigoObra') || ''),
+        cliente,
+        centroCusto: String(form.get('centroCusto') || ''),
+        enderecoEntrega: String(form.get('enderecoEntrega') || '')
+      }
+    ]);
+  }
+
+  function cadastrarFornecedor(form: FormData): void {
+    const nome = String(form.get('nome') || '').trim();
+    if (!nome) {
+      return;
+    }
+
+    setFornecedores([
+      ...fornecedores,
+      {
+        id: `for-${1001 + fornecedores.length}`,
+        nome,
+        cnpj: String(form.get('cnpj') || ''),
+        contato: String(form.get('contato') || ''),
+        email: String(form.get('email') || ''),
+        telefone: String(form.get('telefone') || ''),
+        pix: String(form.get('pix') || ''),
+        contaBancaria: String(form.get('contaBancaria') || ''),
+        ativo: String(form.get('status') || 'Ativo') === 'Ativo'
+      }
+    ]);
   }
 
   return (
@@ -1724,15 +1854,17 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
           </div>
         )}
         {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} requisicoesResumo={usandoSharePointReadonly ? requisicoesResumoReadonly : []} origemDados={origemDadosEfetiva} />}
-        {view === 'tutorial' && <TutorialPerfil perfil={perfil} usuarioNome={nomeUsuarioBanner} />}
-        {view === 'nova' && <NovaSolicitacao onSubmit={criarSolicitacao} />}
+        {view === 'cadastroClientes' && <CadastroClientes clientes={clientes} onSubmit={cadastrarCliente} />}
+        {view === 'cadastroObras' && <CadastroObras clientes={clientes} obras={obrasCadastradas} onSubmit={cadastrarObra} />}
+        {view === 'cadastroFornecedores' && <CadastroFornecedores fornecedores={fornecedores} onSubmit={cadastrarFornecedor} />}
+        {view === 'nova' && <NovaSolicitacao obrasDisponiveis={obrasCadastradas} onSubmit={criarSolicitacao} />}
         {view === 'minhas' && <Requisicoes solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
         {view === 'cotacoes' && <Cotacoes solicitacoes={solicitacoes} onSelect={setSelectedId} onRegistrarCotacao={registrarCotacao} />}
         {view === 'aprovacoes' && <Aprovacoes solicitacoes={solicitacoes} perfil={perfil} onApprove={aprovar} />}
-        {view === 'pedido' && <Pedido selected={selected} onEmitirPedido={emitirPedido} />}
+        {view === 'pedido' && <Pedido selected={selected} fornecedores={fornecedores} onEmitirPedido={emitirPedido} />}
         {view === 'liberacao' && <Liberacao solicitacoes={solicitacoes} onConcluir={concluirPagamento} />}
         {view === 'historico' && <Historico selected={selected} />}
-        {view === 'adminUsuarios' && perfilAdministradorAtivo && (
+        {view === 'adminUsuarios' && perfilComVisaoTotal && (
           <AdminUsuarios
             usuarios={usuariosParaAdmin}
             alcadas={alcadasParaAdmin}
@@ -1743,7 +1875,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             perfilAdministradorAtivo={perfilAdministradorAtivo}
           />
         )}
-        {view === 'adminPerfis' && perfilAdministradorAtivo && (
+        {view === 'adminPerfis' && perfilComVisaoTotal && (
           <AdminPerfis
             usuarios={usuariosParaAdmin}
             alcadas={alcadasParaAdmin}
@@ -1754,7 +1886,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             perfilAdministradorAtivo={perfilAdministradorAtivo}
           />
         )}
-        {view === 'adminAlcadas' && perfilAdministradorAtivo && (
+        {view === 'adminAlcadas' && perfilComVisaoTotal && (
           <Alcadas
             alcadas={alcadasParaAdmin}
             usuarios={usuariosParaAdmin}
@@ -1767,7 +1899,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         )}
         {view === 'adminHistorico' && (
           <>
-            {perfilAdministradorAtivo && <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />}
+            {perfilComVisaoTotal && <AdminHistorico historico={historicoParaAdmin} origemDados={origemDadosEfetiva} />}
             {perfilAdministradorAtivo && escritaTesteConfigurada && (
               <TesteEscritaSnapshot
                 disabled={executandoEscritaTeste || confirmacaoFinalEscritaTeste !== CONFIRMACAO_ESCRITA_TESTE_V26A || !preValidacaoEscritaTeste?.sucesso || preValidacaoEscritaTeste.bloqueado}
@@ -1797,6 +1929,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
             )}
           </>
         )}
+        {view === 'tutorial' && <TutorialPerfil perfil={perfil} usuarioNome={nomeUsuarioBanner} />}
         </div>
       </main>
     </section>
@@ -1887,19 +2020,116 @@ function normalizarStatusReadonly(value: string | undefined): string {
     .toLowerCase();
 }
 
-function NovaSolicitacao({ onSubmit }: { onSubmit: (form: FormData) => void }): JSX.Element {
-  const clientes = uniqueStrings(obras.map((obra) => obra.cliente));
+function CadastroClientes({ clientes, onSubmit }: { clientes: IClienteCadastroEnac[]; onSubmit: (form: FormData) => void }): JSX.Element {
+  return (
+    <>
+      <h2>Cadastro de clientes</h2>
+      <form className={styles.adminForm} onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); event.currentTarget.reset(); }}>
+        <label>Nome do cliente<input name="nome" required /></label>
+        <label>CNPJ<input name="cnpj" /></label>
+        <label>Responsável<input name="responsavel" /></label>
+        <label>E-mail<input name="email" type="email" /></label>
+        <label>Telefone<input name="telefone" /></label>
+        <label>Status<select name="status" defaultValue="Ativo"><option>Ativo</option><option>Inativo</option></select></label>
+        <button type="submit">Salvar cliente</button>
+      </form>
+      <table>
+        <thead><tr><th>Cliente</th><th>CNPJ</th><th>Responsável</th><th>Contato</th><th>Status</th></tr></thead>
+        <tbody>
+          {clientes.map((cliente) => (
+            <tr key={cliente.id}>
+              <td>{cliente.nome}</td>
+              <td>{cliente.cnpj || '-'}</td>
+              <td>{cliente.responsavel || '-'}</td>
+              <td>{cliente.email || '-'}<br />{cliente.telefone || '-'}</td>
+              <td>{cliente.ativo ? 'Ativo' : 'Inativo'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function CadastroObras({ clientes, obras, onSubmit }: { clientes: IClienteCadastroEnac[]; obras: IObraEnac[]; onSubmit: (form: FormData) => void }): JSX.Element {
+  const clientesAtivos = clientes.filter((cliente) => cliente.ativo);
+
+  return (
+    <>
+      <h2>Cadastro de obras</h2>
+      <form className={styles.adminForm} onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); event.currentTarget.reset(); }}>
+        <label>Cliente<select name="cliente" required>{clientesAtivos.map((cliente) => <option key={cliente.id} value={cliente.nome}>{cliente.nome}</option>)}</select></label>
+        <label>Nome da obra<input name="nome" required /></label>
+        <label>Código da obra<input name="codigoObra" required /></label>
+        <label>Centro de custo<input name="centroCusto" required /></label>
+        <label>Endereço de entrega<input name="enderecoEntrega" /></label>
+        <button type="submit">Salvar obra</button>
+      </form>
+      <table>
+        <thead><tr><th>Cliente</th><th>Obra</th><th>Código</th><th>Centro de custo</th><th>Entrega</th></tr></thead>
+        <tbody>
+          {obras.map((obra) => (
+            <tr key={obra.id}>
+              <td>{obra.cliente}</td>
+              <td>{obra.nome}</td>
+              <td>{obra.codigoObra}</td>
+              <td>{obra.centroCusto}</td>
+              <td>{obra.enderecoEntrega || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function CadastroFornecedores({ fornecedores, onSubmit }: { fornecedores: IFornecedorCadastroEnac[]; onSubmit: (form: FormData) => void }): JSX.Element {
+  return (
+    <>
+      <h2>Cadastro de fornecedores</h2>
+      <form className={styles.adminForm} onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); event.currentTarget.reset(); }}>
+        <label>Nome do fornecedor<input name="nome" required /></label>
+        <label>CNPJ<input name="cnpj" /></label>
+        <label>Contato<input name="contato" /></label>
+        <label>E-mail<input name="email" type="email" /></label>
+        <label>Telefone<input name="telefone" /></label>
+        <label>Chave Pix<input name="pix" /></label>
+        <label>Dados bancários<input name="contaBancaria" /></label>
+        <label>Status<select name="status" defaultValue="Ativo"><option>Ativo</option><option>Inativo</option></select></label>
+        <button type="submit">Salvar fornecedor</button>
+      </form>
+      <table>
+        <thead><tr><th>Fornecedor</th><th>CNPJ</th><th>Contato</th><th>Pix</th><th>Conta bancária</th><th>Status</th></tr></thead>
+        <tbody>
+          {fornecedores.map((fornecedor) => (
+            <tr key={fornecedor.id}>
+              <td>{fornecedor.nome}</td>
+              <td>{fornecedor.cnpj || '-'}</td>
+              <td>{fornecedor.contato || '-'}<br />{fornecedor.email || '-'}<br />{fornecedor.telefone || '-'}</td>
+              <td>{fornecedor.pix || '-'}</td>
+              <td>{fornecedor.contaBancaria || '-'}</td>
+              <td>{fornecedor.ativo ? 'Ativo' : 'Inativo'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
+function NovaSolicitacao({ obrasDisponiveis, onSubmit }: { obrasDisponiveis: IObraEnac[]; onSubmit: (form: FormData) => void }): JSX.Element {
+  const clientes = uniqueStrings(obrasDisponiveis.map((obra) => obra.cliente));
   const [clienteSelecionado, setClienteSelecionado] = React.useState<string>(clientes[0] || '');
-  const obrasDoCliente = obras.filter((obra) => obra.cliente === clienteSelecionado);
-  const [obraSelecionada, setObraSelecionada] = React.useState<string>(obrasDoCliente[0]?.id || obras[0]?.id || '');
+  const obrasDoCliente = obrasDisponiveis.filter((obra) => obra.cliente === clienteSelecionado);
+  const [obraSelecionada, setObraSelecionada] = React.useState<string>(obrasDoCliente[0]?.id || obrasDisponiveis[0]?.id || '');
   const [prioridade, setPrioridade] = React.useState<ISolicitacaoEnac['prioridade']>('Normal');
 
   React.useEffect(() => {
-    const primeiraObra = obras.find((obra) => obra.cliente === clienteSelecionado);
+    const primeiraObra = obrasDisponiveis.find((obra) => obra.cliente === clienteSelecionado);
     if (primeiraObra && !obrasDoCliente.some((obra) => obra.id === obraSelecionada)) {
       setObraSelecionada(primeiraObra.id);
     }
-  }, [clienteSelecionado, obraSelecionada, obrasDoCliente]);
+  }, [clienteSelecionado, obraSelecionada, obrasDisponiveis, obrasDoCliente]);
 
   return (
     <form onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); }}>
@@ -2016,11 +2246,19 @@ function Aprovacoes({ solicitacoes, perfil, onApprove }: { solicitacoes: ISolici
   );
 }
 
-function Pedido({ selected, onEmitirPedido }: { selected: ISolicitacaoEnac; onEmitirPedido: (id: string, dadosPedido: IDadosPedidoCompraForm) => void }): JSX.Element {
+function Pedido({
+  selected,
+  fornecedores,
+  onEmitirPedido
+}: {
+  selected: ISolicitacaoEnac;
+  fornecedores: IFornecedorCadastroEnac[];
+  onEmitirPedido: (id: string, dadosPedido: IDadosPedidoCompraForm) => void;
+}): JSX.Element {
   const [formaPagamento, setFormaPagamento] = React.useState<FormaPagamentoPedido>('Pix');
   const [semNota, setSemNota] = React.useState<boolean>(false);
   const fornecedor = selected.cotacao?.fornecedorRecomendado || '';
-  const dadosPagamento = getDadosPagamentoFornecedor(fornecedor);
+  const dadosPagamento = getDadosPagamentoFornecedor(fornecedor, fornecedores);
 
   return (
     <form onSubmit={(event) => {
@@ -2085,7 +2323,7 @@ function AdminUsuarios({
   usuarios: IUsuarioPerfilEnac[];
   alcadas: IAlcadaEnac[];
   origemDados: OrigemDadosEnac;
-  repository?: SharePointEnacRepository;
+  repository?: IEnacRepository;
   flags?: FlagsEscritaAdministrativaV29C;
   usuarioAtual?: IUsuarioPerfilEnac;
   perfilAdministradorAtivo: boolean;
@@ -2247,7 +2485,7 @@ function AdminPerfis({
   usuarios: IUsuarioPerfilEnac[];
   alcadas: IAlcadaEnac[];
   origemDados: OrigemDadosEnac;
-  repository?: SharePointEnacRepository;
+  repository?: IEnacRepository;
   flags?: FlagsEscritaAdministrativaV29C;
   usuarioAtual?: IUsuarioPerfilEnac;
   perfilAdministradorAtivo: boolean;
@@ -2591,7 +2829,7 @@ function Alcadas({
   alcadas: IAlcadaEnac[];
   usuarios: IUsuarioPerfilEnac[];
   origemDados: OrigemDadosEnac;
-  repository?: SharePointEnacRepository;
+  repository?: IEnacRepository;
   flags?: FlagsEscritaAdministrativaV29C;
   usuarioAtual?: IUsuarioPerfilEnac;
   perfilAdministradorAtivo: boolean;
