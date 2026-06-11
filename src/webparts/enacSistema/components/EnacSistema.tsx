@@ -68,6 +68,7 @@ const perfilChoiceSharePoint: Record<PerfilEnac, string> = {
   AdministradorSistema: 'Administrador do Sistema',
   ConsultaLeitura: 'Consulta / Leitura'
 };
+const tipoSolicitacaoAlcadaOptions = ['Todos', 'Material', 'Serviço', 'Equipamento', 'Ferramenta', 'Locação', 'Terceiro/Prestador', 'EPI', 'Documento/Taxa', 'Outro'];
 const CONFIRMACAO_ADMINISTRATIVA_V29B = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9B-ENAC';
 const CONFIRMACAO_ADMINISTRATIVA_V29C = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9C-ENAC';
 const MARCADOR_ADMINISTRATIVO_V29C = 'V2.9C-ADMIN-TESTE';
@@ -112,11 +113,26 @@ const formatUserInternalId = (value: string | undefined): string => {
   return cleaned === '-' ? '-' : cleaned;
 };
 
+const normalizeTipoSolicitacaoAlcada = (value: string | undefined): string => {
+  switch (String(value || 'Todos').trim()) {
+    case 'Servico':
+      return 'Serviço';
+    case 'Locacao':
+      return 'Locação';
+    case 'Terceiro / Prestador':
+      return 'Terceiro/Prestador';
+    case 'Taxa / Documento':
+      return 'Documento/Taxa';
+    default:
+      return String(value || 'Todos').trim() || 'Todos';
+  }
+};
+
 const formatAlcadaProcesso = (value: string | undefined): string =>
   value === 'LiberacaoBancaria' ? 'Liberação Bancária' : String(value || 'Compra');
 
 const formatAlcadaTipo = (value: string | undefined): string => {
-  const tipo = String(value || 'Todos').trim();
+  const tipo = normalizeTipoSolicitacaoAlcada(value);
   return tipo === 'Todos' ? 'Todos os tipos' : tipo;
 };
 
@@ -2170,16 +2186,13 @@ function Alcadas({
   const alcadaSelecionada = alcadas.find((item) => item.id === alcadaId) || alcadas[0];
   const [regraInternaId, setRegraInternaId] = React.useState<string>(alcadaSelecionada?.regraInternaId || '');
   const [processo, setProcesso] = React.useState<AlcadaAdministrativaV29CPayload['processo']>('Compra');
-  const [tipoSolicitacao, setTipoSolicitacao] = React.useState<string>(alcadaSelecionada?.tipoSolicitacao || 'Todos');
-  const [valorMinimo, setValorMinimo] = React.useState<string>(String(alcadaSelecionada?.valorMinimo || 0));
+  const [tipoSolicitacao, setTipoSolicitacao] = React.useState<string>(normalizeTipoSolicitacaoAlcada(alcadaSelecionada?.tipoSolicitacao));
   const [valorMaximo, setValorMaximo] = React.useState<string>(alcadaSelecionada?.valorMaximo ? String(alcadaSelecionada.valorMaximo) : '');
   const [ilimitado, setIlimitado] = React.useState<boolean>(alcadaSelecionada?.ilimitado === true);
   const [aprovadorPrincipalId, setAprovadorPrincipalId] = React.useState<string>(String(alcadaSelecionada?.aprovadorPrincipalId || ''));
   const [aprovadorAdicionalId, setAprovadorAdicionalId] = React.useState<string>(String(alcadaSelecionada?.aprovadorAdicionalId || ''));
   const [exigeAprovacaoAdicional, setExigeAprovacaoAdicional] = React.useState<boolean>(alcadaSelecionada?.exigeAprovacaoAdicional === true);
   const [ativa, setAtiva] = React.useState<boolean>(alcadaSelecionada?.ativa !== false);
-  const [vigenciaInicial, setVigenciaInicial] = React.useState<string>(alcadaSelecionada?.vigenciaInicial || '');
-  const [vigenciaFinal, setVigenciaFinal] = React.useState<string>(alcadaSelecionada?.vigenciaFinal || '');
   const justificativa = `${MARCADOR_ADMINISTRATIVO_V29C} - configuracao de alcada pelo Sistema ENAC`;
   const confirmacaoFinal = CONFIRMACAO_ADMINISTRATIVA_V29C;
   const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
@@ -2192,16 +2205,13 @@ function Alcadas({
 
     setRegraInternaId(alcadaSelecionada.regraInternaId || '');
     setProcesso(alcadaSelecionada.processo === 'LiberacaoBancaria' ? 'Liberação Bancária' : alcadaSelecionada.processo as AlcadaAdministrativaV29CPayload['processo']);
-    setTipoSolicitacao(alcadaSelecionada.tipoSolicitacao || 'Todos');
-    setValorMinimo(String(alcadaSelecionada.valorMinimo || 0));
+    setTipoSolicitacao(normalizeTipoSolicitacaoAlcada(alcadaSelecionada.tipoSolicitacao));
     setValorMaximo(alcadaSelecionada.valorMaximo ? String(alcadaSelecionada.valorMaximo) : '');
     setIlimitado(alcadaSelecionada.ilimitado === true);
     setAprovadorPrincipalId(String(alcadaSelecionada.aprovadorPrincipalId || ''));
     setAprovadorAdicionalId(String(alcadaSelecionada.aprovadorAdicionalId || ''));
     setExigeAprovacaoAdicional(alcadaSelecionada.exigeAprovacaoAdicional === true);
     setAtiva(alcadaSelecionada.ativa !== false);
-    setVigenciaInicial(alcadaSelecionada.vigenciaInicial || '');
-    setVigenciaFinal(alcadaSelecionada.vigenciaFinal || '');
   }, [alcadaSelecionada?.id]);
 
   const payloadAlcada: AlcadaAdministrativaV29CPayload = {
@@ -2210,15 +2220,15 @@ function Alcadas({
     regraInternaId,
     processo,
     tipoSolicitacao,
-    valorMinimo: parseNumberField(valorMinimo) || 0,
+    valorMinimo: Number(alcadaSelecionada?.valorMinimo || 0),
     valorMaximo: ilimitado ? undefined : parseNumberField(valorMaximo),
     ilimitado,
     aprovadorPrincipalId: Number(aprovadorPrincipalId || 0),
     aprovadorAdicionalId: Number(aprovadorAdicionalId || 0) || undefined,
     exigeAprovacaoAdicional,
     ativa,
-    vigenciaInicial,
-    vigenciaFinal,
+    vigenciaInicial: alcadaSelecionada?.vigenciaInicial || new Date().toISOString().slice(0, 10),
+    vigenciaFinal: alcadaSelecionada?.vigenciaFinal || undefined,
     observacoes: alcadaSelecionada?.observacoes || ''
   };
   const preValidacao = buildPreValidacaoAdministrativaV29C('AtualizarAlcadaUsuario', flags, usuarioAtual, perfilAdministradorAtivo, usuarios, alcadas, undefined, payloadAlcada, justificativa);
@@ -2275,16 +2285,13 @@ function Alcadas({
         <h2>Alçadas</h2>
         <label>Regra<select value={alcadaId} onChange={(event) => setAlcadaId(event.currentTarget.value)}>{alcadas.map((item) => <option key={item.id} value={item.id}>{formatAlcadaNome(item)}</option>)}</select></label>
         <label>Processo<select value={processo} onChange={(event) => setProcesso(event.currentTarget.value as AlcadaAdministrativaV29CPayload['processo'])}><option>Compra</option><option>Liberação Bancária</option><option>Medição</option><option>Pagamento</option><option>Outro</option></select></label>
-        <label>Tipo de solicitação<input value={tipoSolicitacao} onChange={(event) => setTipoSolicitacao(event.currentTarget.value)} /></label>
-        <label>Valor mínimo<input value={valorMinimo} onChange={(event) => setValorMinimo(event.currentTarget.value)} /></label>
+        <label>Tipo de solicitação<select value={tipoSolicitacao} onChange={(event) => setTipoSolicitacao(event.currentTarget.value)}>{tipoSolicitacaoAlcadaOptions.map((item) => <option key={item} value={item}>{item === 'Todos' ? 'Todos os tipos' : item}</option>)}</select></label>
         <label>Valor máximo<input value={valorMaximo} disabled={ilimitado} onChange={(event) => setValorMaximo(event.currentTarget.value)} /></label>
         <label><input type="checkbox" checked={ilimitado} onChange={(event) => setIlimitado(event.currentTarget.checked)} />Ilimitado</label>
         <label>Aprovador principal<select value={aprovadorPrincipalId} onChange={(event) => setAprovadorPrincipalId(event.currentTarget.value)}><option value="">Selecione</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
         <label>Aprovador adicional<select value={aprovadorAdicionalId} onChange={(event) => setAprovadorAdicionalId(event.currentTarget.value)}><option value="">Nenhum</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{formatDisplayName(usuario.nome)} {usuario.usuarioAtivo ? '' : '(inativo)'}</option>)}</select></label>
         <label><input type="checkbox" checked={exigeAprovacaoAdicional} onChange={(event) => setExigeAprovacaoAdicional(event.currentTarget.checked)} />Exige aprovação adicional</label>
         <label><input type="checkbox" checked={ativa} onChange={(event) => setAtiva(event.currentTarget.checked)} />Regra ativa</label>
-        <label>Início da vigência<input type="date" value={vigenciaInicial ? vigenciaInicial.substring(0, 10) : ''} onChange={(event) => setVigenciaInicial(event.currentTarget.value)} /></label>
-        <label>Fim da vigência<input type="date" value={vigenciaFinal ? vigenciaFinal.substring(0, 10) : ''} onChange={(event) => setVigenciaFinal(event.currentTarget.value)} /></label>
         <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar</button>
         <span>{mensagemSalvar}</span>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
