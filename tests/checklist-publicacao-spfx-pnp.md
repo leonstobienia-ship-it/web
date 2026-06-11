@@ -23,7 +23,7 @@
 - [ ] Abrir o App Catalog e confirmar que o pacote foi atualizado.
 - [ ] Abrir o site `https://enaccombr.sharepoint.com/sites/Equipe.Obras`.
 - [ ] Confirmar que o app Sistema ENAC esta instalado/atualizado.
-- [ ] Abrir a pagina de homologacao do Sistema ENAC.
+- [ ] Abrir a pagina de homologacao do Sistema ENAC: `https://enaccombr.sharepoint.com/sites/Equipe.Obras/SitePages/Sistema-ENAC---Homologação.aspx?env=WebView`.
 - [ ] Validar em cache novo que o asset SPFx carregado corresponde ao build atual.
 - [ ] Confirmar que a tela inicial abre sem erro.
 - [ ] Confirmar que nenhuma lista ou dado operacional foi alterado durante a publicacao.
