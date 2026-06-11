@@ -537,32 +537,6 @@ const buildPreValidacaoAdministrativaV29C = (
   };
 };
 
-const formatPreValidacaoUsuarioV29C = (preValidacao: PreValidacaoAdministrativaV29CResultado): string => {
-  const diagnostico = preValidacao.historicoPrevisto?.DiagnosticoPreValidacao as Record<string, unknown> | undefined;
-
-  return [
-    `Resultado: ${preValidacao.mensagem}`,
-    `Escrita admin: ${preValidacao.flagsValidas ? 'flags validas' : 'flags pendentes ou invalidas'}`,
-    `Administrador ativo: ${preValidacao.perfilAdministradorAtivo ? 'sim' : 'nao'}`,
-    `Usuario atual: ${preValidacao.usuarioAtual?.nome || '-'}`,
-    `Perfil ativo: ${preValidacao.usuarioAtual?.perfilPrincipal || '-'}`,
-    `PodeAdministrarConfiguracoes: ${preValidacao.usuarioAtual?.podeAdministrarConfiguracoes ? 'sim' : 'nao'}`,
-    `Lista alvo: ${diagnostico?.lista || 'ENAC Usuarios Perfis'}`,
-    `Item alvo ID: ${diagnostico?.itemAlvoId || preValidacao.itemAlvoId || '-'}`,
-    `Item alvo nome: ${diagnostico?.itemAlvoNome || '-'}`,
-    `Perfil atual: ${diagnostico?.perfilAtual || '-'}`,
-    `Status atual: ${diagnostico?.statusAtual || '-'}`,
-    `Conta M365: ${diagnostico?.contaMicrosoft365Sanitizada || '-'}`,
-    `Email: ${diagnostico?.emailSanitizado || '-'}`,
-    `Conta M365 duplicada real: ${diagnostico?.contaM365DuplicadaReal ? 'sim' : 'nao'}`,
-    `Duplicidade do proprio item ignorada: ${diagnostico?.duplicidadeProprioItemIgnorada ? 'sim' : 'nao'}`,
-    `Email duplicado real: ${diagnostico?.emailDuplicadoReal ? 'sim' : 'nao'}`,
-    `UsuarioInternoId duplicado real: ${diagnostico?.usuarioInternoIdDuplicadoReal ? 'sim' : 'nao'}`,
-    `Pode executar: ${preValidacao.sucesso && !preValidacao.bloqueado ? 'sim' : 'nao'}`,
-    `Alertas: ${preValidacao.alertas.map((alerta) => alerta.codigo).join(', ') || '-'}`
-  ].join('\n');
-};
-
 type PermissoesUsuarioV29C = Pick<UsuarioAdministrativoV29CPayload,
   'podeAdministrarConfiguracoes' |
   'podeAprovarCompras' |
@@ -1828,8 +1802,8 @@ function AdminPerfis({
   const [perfilPrincipal, setPerfilPrincipal] = React.useState<PerfilEnac>(usuarioSelecionado?.perfilPrincipal || 'Campo');
   const [perfisAdicionais, setPerfisAdicionais] = React.useState<PerfilEnac[]>(usuarioSelecionado?.perfisAdicionais || []);
   const [permissoes, setPermissoes] = React.useState<PermissoesUsuarioV29C>(permissoesDoUsuarioV29C(usuarioSelecionado, perfilPrincipal));
-  const [justificativa, setJustificativa] = React.useState<string>(`${MARCADOR_ADMINISTRATIVO_V29C} - configuracao de perfil controlada`);
-  const [confirmacaoFinal, setConfirmacaoFinal] = React.useState<string>('');
+  const justificativa = `${MARCADOR_ADMINISTRATIVO_V29C} - configuracao de perfil pelo Sistema ENAC`;
+  const confirmacaoFinal = CONFIRMACAO_ADMINISTRATIVA_V29C;
   const [resultado, setResultado] = React.useState<ResultadoAdministrativoV29C | null>(null);
   const [executando, setExecutando] = React.useState<boolean>(false);
 
@@ -1859,6 +1833,10 @@ function AdminPerfis({
   };
   const preValidacao = buildPreValidacaoAdministrativaV29C('AtualizarUsuarioPerfilStatus', flags, usuarioAtual, perfilAdministradorAtivo, usuariosExibidos, alcadas, payloadUsuario, undefined, justificativa);
   const podeSalvar = Boolean(repository && origemDados === 'sharepoint' && usuarioSelecionado && preValidacao.sucesso && !preValidacao.bloqueado && confirmacaoFinal === CONFIRMACAO_ADMINISTRATIVA_V29C);
+  const alertaBloqueante = preValidacao.alertas.find((alerta) => alerta.codigo !== 'ALERTA_ADMINISTRADOR_SISTEMA' && alerta.codigo !== 'DUPLICIDADE_PROPRIO_ITEM_IGNORADA');
+  const mensagemSalvar = podeSalvar
+    ? 'Pronto para salvar.'
+    : alertaBloqueante?.mensagem || 'Revise o usuário, perfil e permissão administrativa antes de salvar.';
   const permissoesSugeridas = permissoesPadraoPorPerfilV29C(perfilPrincipal);
 
   function togglePerfilAdicional(perfilItem: PerfilEnac, checked: boolean): void {
@@ -1926,11 +1904,8 @@ function AdminPerfis({
             <label key={key}><input type="checkbox" checked={permissoes[key]} onChange={(event) => setPermissoes({ ...permissoes, [key]: event.currentTarget.checked })} />{permissaoLabelsV29C[key]}</label>
           ))}
         </div>
-        <label>Justificativa<textarea value={justificativa} onChange={(event) => setJustificativa(event.currentTarget.value)} /></label>
-        <label>Confirmação final<input value={confirmacaoFinal} onChange={(event) => setConfirmacaoFinal(event.currentTarget.value)} /></label>
-        <label>Pré-validação<textarea readOnly value={formatPreValidacaoUsuarioV29C(preValidacao)} /></label>
-        <label>Payload SharePoint<textarea readOnly value={JSON.stringify(preValidacao.payloadPrevisto || {}, null, 2)} /></label>
-        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar perfil V2.9C</button>
+        <button type="button" disabled={!podeSalvar || executando} onClick={executar}>Salvar</button>
+        <span>{mensagemSalvar}</span>
         {resultado && <span>{resultado.bloqueado ? 'Bloqueada' : 'Executada'}: {resultado.mensagem}</span>}
       </form>
       <table>
