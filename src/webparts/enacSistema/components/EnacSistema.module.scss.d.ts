@@ -20,6 +20,10 @@ declare const styles: {
   adminFieldGroup: string;
   active: string;
   metrics: string;
+  tutorialPanel: string;
+  tutorialHeader: string;
+  tutorialGrid: string;
+  tutorialCard: string;
   split: string;
   row: string;
   statusChip: string;

@@ -34,6 +34,7 @@ const CONFIRMACAO_ESCRITA_TESTE_V26A = 'TESTAR-ESCRITA-V2.6A-ENAC';
 const enacLogo = require('../assets/enac-logo.png');
 const views = [
   { key: 'dashboard', label: 'Visão geral' },
+  { key: 'tutorial', label: 'Tutorial' },
   { key: 'nova', label: 'Nova solicitação' },
   { key: 'minhas', label: 'Requisições' },
   { key: 'cotacoes', label: 'Cotações' },
@@ -93,6 +94,14 @@ interface IDadosCotacaoForm {
   justificativaRecomendacao?: string;
 }
 
+interface ITutorialPerfilEnac {
+  titulo: string;
+  resumo: string;
+  fluxo: string[];
+  preenchimentos: string[];
+  conferencias: string[];
+}
+
 const dadosPagamentoFornecedores: Record<string, { pix: string; contaBancaria: string }> = {
   'Fornecedor Concreto Base': {
     pix: 'financeiro@fornecedorconcretobase.example',
@@ -105,6 +114,174 @@ const dadosPagamentoFornecedores: Record<string, { pix: string; contaBancaria: s
   'Mix Forte': {
     pix: 'mixforte-pagamentos@example',
     contaBancaria: 'Banco 341 / Ag. 1111 / Cc. 22222-3'
+  }
+};
+
+const tutoriaisPorPerfil: Record<PerfilEnac, ITutorialPerfilEnac> = {
+  Campo: {
+    titulo: 'Tutorial do Campo / Engenharia',
+    resumo: 'Use este roteiro para abrir solicitações de material, serviço, locação ou equipamento sem precisar entrar nas listas do SharePoint.',
+    fluxo: [
+      'Abra Nova solicitação.',
+      'Escolha o cliente e depois selecione somente uma obra vinculada a esse cliente.',
+      'Preencha item, especificação, quantidade, unidade, local de aplicação e data necessária.',
+      'Acompanhe o andamento em Requisições e consulte o Histórico quando precisar rastrear o processo.'
+    ],
+    preenchimentos: [
+      'Cliente: selecione antes da obra.',
+      'Obra: escolha a obra filtrada pelo cliente.',
+      'Tipo: material, serviço, locação ou equipamento.',
+      'Descrição do item/serviço: escreva o pedido principal de forma objetiva.',
+      'Especificação técnica: informe medidas, marca de referência, norma, local ou desempenho esperado.',
+      'Unidade: use uma das opções disponíveis.',
+      'Prioridade: se for Emergencial, preencha a justificativa de urgência.',
+      'Anexo/foto/projeto/referência: anexe o arquivo complementar quando houver.'
+    ],
+    conferencias: [
+      'Confirme se a obra pertence ao cliente selecionado.',
+      'Evite pedidos genéricos sem especificação técnica.',
+      'Use prioridade Emergencial somente quando houver impacto real em prazo, segurança ou produção.',
+      'Depois de enviar, acompanhe o status sem editar diretamente a lista.'
+    ]
+  },
+  CotacoesContratos: {
+    titulo: 'Tutorial de Cotações e Contratos',
+    resumo: 'Use este roteiro para registrar propostas por requisição, comparar fornecedores e enviar a cotação escolhida para aprovação.',
+    fluxo: [
+      'Abra Cotações.',
+      'Localize a requisição agrupada pelo código e descrição do pedido.',
+      'Registre uma ou mais propostas com fornecedor, valor, prazo, frete e condição de pagamento.',
+      'Marque a proposta escolhida para aprovação quando a recomendação estiver definida.'
+    ],
+    preenchimentos: [
+      'Fornecedor: nome do fornecedor cotado.',
+      'Valor (R$): valor total da proposta em moeda brasileira.',
+      'Prazo de entrega: data ou prazo combinado.',
+      'Frete: informe CIF, FOB, incluso ou valor do frete.',
+      'Condição de pagamento: Pix, boleto, prazo ou outra condição negociada.',
+      'Anexo da proposta: inclua proposta, orçamento ou e-mail quando houver.',
+      'Cotação escolhida para aprovação: marque somente a proposta recomendada.',
+      'Justificativa da escolha: registre motivo técnico/comercial quando a menor proposta não for a escolhida.'
+    ],
+    conferencias: [
+      'Confira se a cotação pertence à requisição correta.',
+      'Verifique se todos os valores estão comparáveis, incluindo frete e impostos quando aplicável.',
+      'Não envie para aprovação sem fornecedor escolhido.',
+      'Use a justificativa para deixar clara a decisão para Planejamento ou Diretoria.'
+    ]
+  },
+  ComprasFinanceiroOperacional: {
+    titulo: 'Tutorial de Compras / Financeiro',
+    resumo: 'Use este roteiro para transformar a compra aprovada em pedido, informar nota fiscal ou exceção e preparar os dados para liberação.',
+    fluxo: [
+      'Abra Pedidos.',
+      'Confira cliente, obra, requerente, requisição, fornecedor e valor aprovado.',
+      'Anexe a nota fiscal ou marque Sem nota quando for uma exceção controlada.',
+      'Escolha a forma de pagamento e confira os dados apresentados antes de enviar para liberação.'
+    ],
+    preenchimentos: [
+      'Nota fiscal: anexe PDF, XML ou imagem quando houver NF.',
+      'Sem nota: marque apenas quando o processo não tiver NF neste momento.',
+      'Forma de pagamento: escolha Pix, Depósito bancário ou Boleto.',
+      'Pix: confira a chave do fornecedor cadastrada.',
+      'Depósito bancário: confira banco, agência e conta do fornecedor.',
+      'Boleto: anexe o boleto no campo exibido.',
+      'Número do pedido: é gerado automaticamente pelo sistema e não precisa ser preenchido.'
+    ],
+    conferencias: [
+      'Confira se fornecedor e valor batem com a cotação aprovada.',
+      'Não envie boleto quando a forma de pagamento for Pix ou Depósito.',
+      'Não use Sem nota para substituir uma NF que já foi recebida.',
+      'Depois de enviar, o processo segue para Liberação.'
+    ]
+  },
+  Planejamento: {
+    titulo: 'Tutorial de Planejamento / Aprovação',
+    resumo: 'Use este roteiro para validar tecnicamente solicitações e aprovar compras dentro da alçada atribuída ao perfil.',
+    fluxo: [
+      'Abra Aprovações.',
+      'Analise cliente, obra, requisição e cotações registradas.',
+      'Confira o fornecedor escolhido, o valor recomendado e a justificativa da escolha.',
+      'Aprove somente quando a compra estiver tecnicamente coerente com a necessidade da obra.'
+    ],
+    preenchimentos: [
+      'Este perfil normalmente não preenche a solicitação; ele valida as informações recebidas.',
+      'Use o Histórico para entender alterações anteriores.',
+      'Quando houver dúvida técnica, devolva o processo fora do sistema ou solicite complemento antes de aprovar.',
+      'A aprovação fica registrada no histórico da requisição.'
+    ],
+    conferencias: [
+      'Confirme se a especificação atende a obra.',
+      'Confira se quantidade, unidade e prazo fazem sentido.',
+      'Compare a cotação escolhida com as demais propostas.',
+      'Não aprove se faltar justificativa para uma escolha comercial fora do padrão.'
+    ]
+  },
+  Diretoria: {
+    titulo: 'Tutorial da Diretoria',
+    resumo: 'Use este roteiro para aprovações de alçada superior, decisões de exceção e liberação final de pagamento.',
+    fluxo: [
+      'Abra Aprovações para avaliar compras pendentes da sua alçada.',
+      'Confira cliente, obra, requisição, cotações, fornecedor escolhido, valor e justificativa.',
+      'Abra Liberação para conferir nota fiscal, boleto, chave Pix ou conta bancária antes da liberação.',
+      'Libere somente quando o processo estiver coerente e rastreável.'
+    ],
+    preenchimentos: [
+      'Este perfil atua por decisão: aprovar compra ou liberar pagamento.',
+      'A tela de Liberação mostra os dados críticos enviados por Compras / Financeiro.',
+      'Quando a forma de pagamento for Boleto, confira se o boleto está indicado.',
+      'Quando for Pix ou Depósito, confira se os dados bancários pertencem ao fornecedor.'
+    ],
+    conferencias: [
+      'Confirme cliente, obra e requerente antes de aprovar.',
+      'Confira se o valor liberado corresponde à compra aprovada.',
+      'Não libere pagamento sem nota fiscal ou justificativa de Sem nota.',
+      'Use Histórico para rastrear quem criou, cotou, aprovou e preparou o pagamento.'
+    ]
+  },
+  AdministradorSistema: {
+    titulo: 'Tutorial do Administrador do Sistema',
+    resumo: 'Use este roteiro para administrar usuários, perfis, alçadas e auditoria sem alterar diretamente listas quando o sistema oferecer a ação.',
+    fluxo: [
+      'Abra Usuários para criar ou atualizar usuários ativos do sistema.',
+      'Abra Perfis para ajustar permissões de trabalho de cada usuário.',
+      'Abra Alçadas para manter regras de aprovação por processo, tipo, obra e valor.',
+      'Abra Auditoria para conferir registros administrativos e testes controlados.'
+    ],
+    preenchimentos: [
+      'Usuário: informe nome, conta Microsoft 365 ou e-mail, e-mail corporativo, ID interno, perfil principal e status.',
+      'Perfil: marque somente permissões necessárias para a função real do usuário.',
+      'Alçada: use nome claro, tipo de solicitação por opção, aprovador principal e status ativo/inativo.',
+      'Usuários inativos não devem ser usados em novas alçadas ou aprovações.'
+    ],
+    conferencias: [
+      'Antes de salvar, confira se o usuário atual tem perfil Administrador do Sistema ativo.',
+      'Evite duplicar ID interno de usuário ou regra.',
+      'Alterações de alçada valem para novos processos; snapshots já criados preservam a decisão antiga.',
+      'Não use administração para contornar o fluxo operacional.'
+    ]
+  },
+  ConsultaLeitura: {
+    titulo: 'Tutorial de Consulta / Leitura',
+    resumo: 'Use este roteiro para acompanhar o andamento dos processos sem executar ações operacionais ou administrativas.',
+    fluxo: [
+      'Abra Visão geral para enxergar o volume de processos.',
+      'Abra Requisições para consultar solicitações agrupadas por cliente.',
+      'Abra Cotações ou Aprovações para verificar informações já registradas.',
+      'Abra Histórico para rastrear eventos da requisição selecionada.'
+    ],
+    preenchimentos: [
+      'Este perfil não deve preencher solicitações, cotações, pedidos ou liberações.',
+      'Use os filtros e agrupamentos existentes para localizar o processo.',
+      'Use Histórico como fonte de rastreabilidade.',
+      'Quando identificar inconsistência, acione o responsável pelo perfil operacional adequado.'
+    ],
+    conferencias: [
+      'Confirme cliente e obra antes de interpretar o status.',
+      'Verifique se a cotação escolhida e a justificativa estão visíveis.',
+      'Não solicite alteração diretamente nas listas.',
+      'Registre dúvidas fora do sistema até existir fluxo formal de comentários.'
+    ]
   }
 };
 
@@ -1547,6 +1724,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
           </div>
         )}
         {view === 'dashboard' && <Dashboard perfil={perfil} solicitacoes={solicitacoes} requisicoesResumo={usandoSharePointReadonly ? requisicoesResumoReadonly : []} origemDados={origemDadosEfetiva} />}
+        {view === 'tutorial' && <TutorialPerfil perfil={perfil} usuarioNome={nomeUsuarioBanner} />}
         {view === 'nova' && <NovaSolicitacao onSubmit={criarSolicitacao} />}
         {view === 'minhas' && <Requisicoes solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
         {view === 'cotacoes' && <Cotacoes solicitacoes={solicitacoes} onSelect={setSelectedId} onRegistrarCotacao={registrarCotacao} />}
@@ -1629,6 +1807,37 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
 function Dashboard({ perfil, solicitacoes, requisicoesResumo, origemDados }: { perfil: PerfilEnac; solicitacoes: ISolicitacaoEnac[]; requisicoesResumo: IRequisicaoResumoEnac[]; origemDados: OrigemDadosEnac }): JSX.Element {
   const cards = cardsDashboard(perfil, solicitacoes, requisicoesResumo, origemDados);
   return <div className={styles.metrics}>{cards.map((card) => <div key={card.label}><span>{card.label}</span><strong>{card.value}</strong></div>)}</div>;
+}
+
+function TutorialPerfil({ perfil, usuarioNome }: { perfil: PerfilEnac; usuarioNome: string }): JSX.Element {
+  const tutorial = tutoriaisPorPerfil[perfil];
+
+  return (
+    <section className={styles.tutorialPanel}>
+      <div className={styles.tutorialHeader}>
+        <span>Tutorial exclusivo do perfil ativo</span>
+        <h2>{tutorial.titulo}</h2>
+        <p>{tutorial.resumo}</p>
+        <strong>{usuarioNome} está visualizando como {perfilLabels[perfil]}.</strong>
+      </div>
+      <div className={styles.tutorialGrid}>
+        <TutorialLista titulo="Fluxo de trabalho" itens={tutorial.fluxo} />
+        <TutorialLista titulo="Preenchimentos" itens={tutorial.preenchimentos} />
+        <TutorialLista titulo="Conferências antes de avançar" itens={tutorial.conferencias} />
+      </div>
+    </section>
+  );
+}
+
+function TutorialLista({ titulo, itens }: { titulo: string; itens: string[] }): JSX.Element {
+  return (
+    <div className={styles.tutorialCard}>
+      <h3>{titulo}</h3>
+      <ol>
+        {itens.map((item) => <li key={item}>{item}</li>)}
+      </ol>
+    </div>
+  );
 }
 
 function cardsDashboard(perfil: PerfilEnac, solicitacoes: ISolicitacaoEnac[], requisicoesResumo: IRequisicaoResumoEnac[], origemDados: OrigemDadosEnac): { label: string; value: string | number }[] {
