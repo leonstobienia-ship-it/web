@@ -1846,6 +1846,12 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         </header>
 
         <div className={styles.contentPanel}>
+        <div className={styles.adminNotice}>
+          {carregandoReadonly && 'Conectando as listas SharePoint...'}
+          {!carregandoReadonly && usandoSharePointReadonly && 'Conectado as listas SharePoint em modo leitura. Cadastros e solicitacoes criados nesta tela ainda nao gravam nas listas na versao web atual.'}
+          {!carregandoReadonly && !usandoSharePointReadonly && erroReadonly && `Falha ao ler listas SharePoint: ${erroReadonly}. Usando fallback local; alteracoes feitas na tela nao serao salvas nas listas.`}
+          {!carregandoReadonly && !usandoSharePointReadonly && !erroReadonly && 'Modo local/prototipo. Alteracoes feitas na tela ficam apenas em memoria nesta sessao.'}
+        </div>
         {acessoOperacionalBloqueado && (
           <div className={styles.adminNotice}>
             {!usuarioCadastrado && 'Usuário não cadastrado no Sistema ENAC. Ações operacionais e administrativas permanecem bloqueadas.'}
