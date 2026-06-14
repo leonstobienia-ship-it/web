@@ -12,7 +12,7 @@ const siteUrl = import.meta.env.VITE_ENAC_SHAREPOINT_SITE_URL || 'https://enacco
 const sharePointOrigin = siteUrl ? new URL(siteUrl).origin : '';
 const sharePointScope = import.meta.env.VITE_ENAC_SHAREPOINT_SCOPE || `${sharePointOrigin}/AllSites.Read`;
 const redirectUri = import.meta.env.VITE_ENAC_REDIRECT_URI ||
-  (window.location.hostname === '127.0.0.1'
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? `http://localhost:${window.location.port || '5173'}/`
     : window.location.origin);
 
@@ -137,6 +137,28 @@ async function createOperationalState(): Promise<IOperationalState> {
 function WebPortal(): JSX.Element {
   const [section, setSection] = React.useState<WebSection>('visao');
   const [operationalState, setOperationalState] = React.useState<IOperationalState>({ loading: false });
+
+  React.useEffect(() => {
+    const authResponse = window.location.hash.indexOf('code=') >= 0 ||
+      window.location.hash.indexOf('error=') >= 0 ||
+      window.location.search.indexOf('code=') >= 0 ||
+      window.location.search.indexOf('error=') >= 0;
+
+    if (!authResponse) {
+      return;
+    }
+
+    setSection('sistema');
+    setOperationalState({ loading: true });
+    createOperationalState()
+      .then(setOperationalState)
+      .catch((error) => {
+        setOperationalState({
+          loading: false,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
+  }, []);
 
   const abrirSistema = async (): Promise<void> => {
     setSection('sistema');
