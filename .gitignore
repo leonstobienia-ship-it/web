@@ -18,6 +18,7 @@ coverage/
 *.pem
 *.key
 *.cer
+*.crt
 .DS_Store
 Thumbs.db
 config/teste-funcional-v2.3b.local.json

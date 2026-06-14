@@ -3,6 +3,7 @@ param(
 )
 
 $readonlyClientId = "0dab19b3-8e48-4f89-ad94-1446b08d3781"
+$writeClientId = "0df147e7-ab5c-407d-b1b1-bb350661bebf"
 $confirmacaoEsperada = "CONFIRMAR-ESCRITA-WEB-V3.0B-ENAC"
 $requiredSiteUrl = "https://enaccombr.sharepoint.com/sites/Equipe.Obras"
 
@@ -71,6 +72,10 @@ if ($habilitar -eq "true") {
     $issues.Add("ClientId aponta para o aplicativo readonly de inventario.")
   }
 
+  if ($clientId.ToLowerInvariant() -ne $writeClientId.ToLowerInvariant()) {
+    $warnings.Add("ClientId nao corresponde ao app write V3.0b documentado: $clientId")
+  }
+
   if ($scope -notmatch "/AllSites\.(Write|Manage|FullControl)$") {
     $issues.Add("Escopo nao permite escrita: $scope")
   }
@@ -91,7 +96,9 @@ $result = [ordered]@{
   TenantId = $tenantId
   SiteUrl = $siteUrl
   ClientIdReadonly = ($clientId.ToLowerInvariant() -eq $readonlyClientId.ToLowerInvariant())
+  ClientIdWrite = ($clientId.ToLowerInvariant() -eq $writeClientId.ToLowerInvariant())
   Scope = $scope
+  ScopeWrite = ($scope -match "/AllSites\.(Write|Manage|FullControl)$")
   EscritaSolicitada = ($habilitar -eq "true")
   ModoTeste = ($modoTeste -eq "true")
   ConfirmacaoValida = ($confirmacao -eq $confirmacaoEsperada)

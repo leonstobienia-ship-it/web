@@ -28,6 +28,8 @@ Na V3.0A, o Sistema ENAC passou a ter um host web Vite/React independente da web
 
 Na V3.0B, foi preparada a primeira escrita controlada do portal web: criação de nova requisição de compra na `Lista 02 — Requisições de Compra`, usando obras reais lidas da `Lista 01 - Controle de Obras ENAC` para preencher o lookup `ObraId`. A escrita permanece desabilitada por padrão e exige flags de teste, marcador `V3.0B-WEB-TESTE`, confirmação manual e aplicativo/escopo Entra com permissão delegada de escrita. Power Automate, cargas reais amplas, alterações de listas/permissões e demais ações operacionais continuam fora do escopo.
 
+Na configuração do app write V3.0b, o projeto local passou a usar o app `ENAC Sistema - Write V3.0b` (`0df147e7-ab5c-407d-b1b1-bb350661bebf`) com escopo delegado `SharePoint / AllSites.Write`, preservando o app readonly `0dab19b3-8e48-4f89-ad94-1446b08d3781`. O validador local `scripts/web/validar-config-v3.0b.ps1` deve retornar `Status = OK`, `ClientIdWrite = true`, `ScopeWrite = true` e `Issues = []` antes de qualquer teste manual de escrita. O app write ainda precisa ter `http://localhost:5173/` cadastrado como Redirect URI SPA quando o Entra retornar `AADSTS500113`.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
