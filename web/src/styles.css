@@ -1,0 +1,280 @@
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #f3f5f7;
+  color: #17212f;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.enac-web-shell {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.enac-web-nav {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 24px 18px;
+  background: #ffffff;
+  border-right: 1px solid #d9e0e7;
+}
+
+.enac-web-brand {
+  display: grid;
+  gap: 4px;
+  padding: 0 6px 24px;
+}
+
+.enac-web-brand strong {
+  font-size: 20px;
+}
+
+.enac-web-brand span {
+  color: #607086;
+  font-size: 13px;
+}
+
+.enac-web-nav nav {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-web-nav button,
+.enac-web-hero button,
+.enac-web-alert button {
+  border: 0;
+  cursor: pointer;
+}
+
+.enac-web-nav button {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: #243244;
+  text-align: left;
+}
+
+.enac-web-nav button:hover,
+.enac-web-nav button.is-active {
+  background: #e8edf3;
+}
+
+.enac-web-main {
+  min-width: 0;
+}
+
+.enac-web-page {
+  box-sizing: border-box;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+
+.enac-web-eyebrow {
+  margin: 0 0 8px;
+  color: #476177;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.enac-web-page h1 {
+  margin: 0 0 24px;
+  font-size: 34px;
+  line-height: 1.12;
+}
+
+.enac-web-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+  gap: 36px;
+  align-items: start;
+}
+
+.enac-web-hero p {
+  max-width: 680px;
+  margin: 0 0 22px;
+  color: #33465c;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+.enac-web-hero button,
+.enac-web-alert button {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 6px;
+  background: #245a7f;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.enac-web-hero dl {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.enac-web-hero dl div,
+.enac-web-card,
+.enac-web-alert,
+.enac-web-steps {
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-web-hero dl div {
+  padding: 16px;
+}
+
+.enac-web-hero dt {
+  color: #607086;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.enac-web-hero dd {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.enac-web-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.enac-web-grid--two {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.enac-web-card {
+  padding: 18px;
+}
+
+.enac-web-card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.enac-web-card p {
+  margin: 0;
+  color: #465a70;
+  line-height: 1.45;
+}
+
+.enac-web-flow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: flow;
+}
+
+.enac-web-flow li {
+  min-height: 88px;
+  padding: 16px;
+  border-left: 4px solid #6b8f71;
+  background: #ffffff;
+  counter-increment: flow;
+  font-weight: 700;
+}
+
+.enac-web-flow li::before {
+  display: block;
+  margin-bottom: 8px;
+  color: #6b8f71;
+  content: counter(flow, decimal-leading-zero);
+  font-size: 13px;
+}
+
+.enac-web-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.enac-web-table th,
+.enac-web-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #d9e0e7;
+  text-align: left;
+  vertical-align: top;
+}
+
+.enac-web-table th {
+  color: #34475d;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.enac-web-steps,
+.enac-web-alert {
+  padding: 20px;
+}
+
+.enac-web-steps p,
+.enac-web-alert p {
+  margin: 0 0 12px;
+  color: #40556b;
+  line-height: 1.5;
+}
+
+.enac-web-alert strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #e8edf3;
+}
+
+@media (max-width: 840px) {
+  .enac-web-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-web-nav {
+    position: static;
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid #d9e0e7;
+  }
+
+  .enac-web-nav nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .enac-web-page {
+    padding: 28px 18px;
+  }
+
+  .enac-web-hero {
+    grid-template-columns: 1fr;
+  }
+}

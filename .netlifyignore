@@ -1,0 +1,17 @@
+node_modules/
+dist/
+dist-web/
+lib/
+temp/
+release/
+solution/
+coverage/
+.git/
+.netlify/
+.spfx-scaffold-temp/
+backups/
+reports/
+sharepoint/
+tests/
+*.sppkg
+*.log

@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-web/
 lib/
 temp/
 release/
@@ -21,3 +22,4 @@ coverage/
 Thumbs.db
 config/teste-funcional-v2.3b.local.json
 .spfx-scaffold-temp/
+.netlify/
