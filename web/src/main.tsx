@@ -25,6 +25,39 @@ interface IOperationalState {
   repository?: SharePointEnacRepository;
 }
 
+interface IWebErrorBoundaryState {
+  error?: string;
+}
+
+class WebErrorBoundary extends React.Component<{ children: React.ReactNode }, IWebErrorBoundaryState> {
+  public state: IWebErrorBoundaryState = {};
+
+  public static getDerivedStateFromError(error: Error): IWebErrorBoundaryState {
+    return { error: error.message || String(error) };
+  }
+
+  public componentDidCatch(error: Error): void {
+    // Keep the portal visible and expose the error in the UI during web validation.
+    console.error('Sistema ENAC web runtime error', error);
+  }
+
+  public render(): React.ReactNode {
+    if (this.state.error) {
+      return (
+        <Page title="Sistema ENAC" eyebrow="Erro de execução">
+          <div className="enac-web-alert">
+            <strong>O sistema encontrou um erro ao abrir o módulo operacional.</strong>
+            <p>{this.state.error}</p>
+            <p>Recarregue a página após ajustar a autenticação ou envie esta mensagem para diagnóstico.</p>
+          </div>
+        </Page>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'visao', label: 'Visão geral' },
   { key: 'estrutura', label: 'Estrutura' },
@@ -199,7 +232,11 @@ function WebPortal(): JSX.Element {
       </aside>
       <main className="enac-web-main">
         {section !== 'sistema' && <ContentSection section={section} onOpenSystem={abrirSistema} />}
-        {section === 'sistema' && <OperationalSection state={operationalState} onOpenSystem={abrirSistema} />}
+        {section === 'sistema' && (
+          <WebErrorBoundary>
+            <OperationalSection state={operationalState} onOpenSystem={abrirSistema} />
+          </WebErrorBoundary>
+        )}
       </main>
     </div>
   );
