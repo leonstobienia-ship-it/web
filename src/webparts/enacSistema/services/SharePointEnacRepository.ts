@@ -1524,24 +1524,26 @@ export class SharePointEnacRepository implements IEnacRepository {
     let historicoItemId: number | undefined;
     const alertasHistorico: AlertaBloqueioEscrita[] = [];
 
-    try {
-      const historicoResponse = await this.spHttpClient.post(
-        this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes),
-        SPHttpClient.configurations.v1,
-        this.criarPostOptions({
-          Title: `${MARCADOR_WEB_V30B} CriarRequisicaoCompra ${itemId}`,
-          TipoConfiguracao: 'Historico Operacional',
-          AcaoRealizada: 'CriarRequisicaoCompra',
-          ItemConfiguracaoId: `Lista 02-${itemId}`,
-          ValorAnterior: '',
-          ValorNovo: 'Recebida',
-          Justificativa: `${MARCADOR_WEB_V30B} - requisicao criada pelo portal web; sem Power Automate.`
-        })
-      );
-      const historico = await this.ensureJson(historicoResponse);
-      historicoItemId = Number(historico.Id || historico.ID);
-    } catch (error) {
-      alertasHistorico.push({ codigo: 'HISTORICO_WEB_V30B_NAO_REGISTRADO', mensagem: this.getErrorMessage(error) });
+    if (flags.registrarHistoricoWebV30B === true) {
+      try {
+        const historicoResponse = await this.spHttpClient.post(
+          this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes),
+          SPHttpClient.configurations.v1,
+          this.criarPostOptions({
+            Title: `${MARCADOR_WEB_V30B} CriarRequisicaoCompra ${itemId}`,
+            TipoConfiguracao: 'Historico Operacional',
+            AcaoRealizada: 'CriarRequisicaoCompra',
+            ItemConfiguracaoId: `Lista 02-${itemId}`,
+            ValorAnterior: '',
+            ValorNovo: 'Recebida',
+            Justificativa: `${MARCADOR_WEB_V30B} - requisicao criada pelo portal web; sem Power Automate.`
+          })
+        );
+        const historico = await this.ensureJson(historicoResponse);
+        historicoItemId = Number(historico.Id || historico.ID);
+      } catch (error) {
+        alertasHistorico.push({ codigo: 'HISTORICO_WEB_V30B_NAO_REGISTRADO', mensagem: this.getErrorMessage(error) });
+      }
     }
 
     return {

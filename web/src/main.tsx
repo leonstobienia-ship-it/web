@@ -33,7 +33,8 @@ const flagsEscritaWebV30B = {
   modoTesteWebV30B: escritaWebV30BLiberada,
   exigirConfirmacaoManualV30B: true,
   confirmacaoManualV30B: escritaWebV30BLiberada ? confirmacaoWebV30B : '',
-  marcadorTesteWebV30B: 'V3.0B-WEB-TESTE' as const
+  marcadorTesteWebV30B: 'V3.0B-WEB-TESTE' as const,
+  registrarHistoricoWebV30B: import.meta.env.VITE_ENAC_REGISTRAR_HISTORICO_WEB_V30B === 'true'
 };
 
 type WebSection = 'visao' | 'estrutura' | 'fluxos' | 'dados' | 'seguranca' | 'implantacao' | 'sistema';

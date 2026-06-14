@@ -552,6 +552,7 @@ export interface FlagsEscritaWebV30B {
   exigirConfirmacaoManualV30B: boolean;
   confirmacaoManualV30B: string;
   marcadorTesteWebV30B: MarcadorTesteWebV30B;
+  registrarHistoricoWebV30B?: boolean;
 }
 
 export interface RequisicaoWebV30BPayload {
