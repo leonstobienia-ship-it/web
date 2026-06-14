@@ -366,6 +366,7 @@ export interface ISnapshotRegraEnac {
 
 export type MarcadorTesteEscritaEnac = 'V2.3B-TESTE' | 'V2.6A-TESTE';
 export type MarcadorTesteOperacionalEnac = 'V2.7A-TESTE';
+export type MarcadorTesteWebV30B = 'V3.0B-WEB-TESTE';
 
 export type AcaoOperacionalV27A =
   | 'CriarRequisicaoCompra'
@@ -543,6 +544,32 @@ export interface RequisicaoCompraControladaPayload {
   prioridade: 'Normal' | 'Alta' | 'Emergencial';
   dataNecessaria: string;
   marcadorTeste: MarcadorTesteOperacionalEnac;
+}
+
+export interface FlagsEscritaWebV30B {
+  habilitarEscritaRequisicaoV30B: boolean;
+  modoTesteWebV30B: boolean;
+  exigirConfirmacaoManualV30B: boolean;
+  confirmacaoManualV30B: string;
+  marcadorTesteWebV30B: MarcadorTesteWebV30B;
+}
+
+export interface RequisicaoWebV30BPayload {
+  titulo: string;
+  obraItemId: number;
+  codigoObra?: string;
+  centroCusto?: string;
+  tipoSolicitacao: TipoSolicitacaoEnac;
+  descricao: string;
+  especificacaoTecnica?: string;
+  quantidade?: number;
+  unidade?: string;
+  frenteServico?: string;
+  prioridade: 'Normal' | 'Alta' | 'Emergencial';
+  dataNecessaria: string;
+  justificativaUrgencia?: string;
+  observacoes?: string;
+  marcadorTeste: MarcadorTesteWebV30B;
 }
 
 export interface AtualizacaoRequisicaoCompraControladaPayload {

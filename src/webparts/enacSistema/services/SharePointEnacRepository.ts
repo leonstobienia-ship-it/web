@@ -6,10 +6,12 @@ import {
   ConfiguracaoTesteOperacionalV27A,
   ExecucaoAdministrativaV29CInput,
   FlagsEscritaOperacionalV27A,
+  FlagsEscritaWebV30B,
   HistoricoOperacionalPayload,
   IDiagnosticoReadonlyEnac,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
+  IObraEnac,
   IRequisicaoResumoEnac,
   IResolucaoAprovadorEnac,
   ISnapshotRegraEnac,
@@ -23,6 +25,7 @@ import {
   PreValidacaoOperacionalV27AResultado,
   ProgramacaoPagamentoControladaPayload,
   RequisicaoCompraControladaPayload,
+  RequisicaoWebV30BPayload,
   ResultadoAdministrativoV29C,
   ResultadoOperacionalV27A,
   ResultadoHistoricoConfiguracao,
@@ -79,6 +82,8 @@ const CONFIRMACAO_OPERACIONAL_V27A = 'CONFIRMAR-ESCRITA-OPERACIONAL-V2.7A-ENAC';
 const MARCADOR_OPERACIONAL_V27A = 'V2.7A-TESTE';
 const CONFIRMACAO_ADMINISTRATIVA_V29C = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9C-ENAC';
 const MARCADOR_ADMINISTRATIVO_V29C = 'V2.9C-ADMIN-TESTE';
+const CONFIRMACAO_WEB_V30B = 'CONFIRMAR-ESCRITA-WEB-V3.0B-ENAC';
+const MARCADOR_WEB_V30B = 'V3.0B-WEB-TESTE';
 const LISTA_02_REQUISICOES_COMPRA_TITULO = 'Lista 02 — Requisições de Compra';
 const LISTA_02_REQUISICOES_COMPRA_STATUS_FIELD = 'StatusdaRequisi_x00e7__x00e3_o';
 const LISTA_02_REQUISICOES_COMPRA_SELECT_PREVALIDACAO = [
@@ -341,6 +346,20 @@ export class SharePointEnacRepository implements IEnacRepository {
   public constructor(options: ISharePointEnacRepositoryOptions) {
     this.siteUrl = options.siteUrl;
     this.spHttpClient = options.spHttpClient;
+  }
+
+  public async listarObras(): Promise<IObraEnac[]> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.obras)}?$top=200&$select=Id,Title,NomedaObra,Cliente,CentrodeCusto`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+    const payload = await this.ensureJson(response);
+
+    return payload.value.map((item: any) => ({
+      id: String(item.Id),
+      nome: item.NomedaObra || item.Title || '',
+      codigoObra: item.Title || item.NomedaObra || '',
+      cliente: item.Cliente || '',
+      centroCusto: item.CentrodeCusto || ''
+    }));
   }
 
   public async listarSolicitacoes(): Promise<ISolicitacaoEnac[]> {
@@ -1437,6 +1456,105 @@ export class SharePointEnacRepository implements IEnacRepository {
       itemId,
       statusNovo: 'Aguardando cotacao',
       alertas: []
+    };
+  }
+
+  public async criarRequisicaoCompraWebV30B(payload: RequisicaoWebV30BPayload, emailOuLogin: string, flags: FlagsEscritaWebV30B): Promise<ResultadoOperacionalV27A> {
+    const usuario = await this.carregarPerfilUsuarioAtual(emailOuLogin);
+    const alertas: AlertaBloqueioEscrita[] = [];
+
+    if (!flags.habilitarEscritaRequisicaoV30B || !flags.modoTesteWebV30B) {
+      alertas.push({ codigo: 'FLAGS_WEB_V30B_DESABILITADAS', mensagem: 'Escrita web V3.0b exige flags de teste explicitamente habilitadas.' });
+    }
+
+    if (flags.marcadorTesteWebV30B !== MARCADOR_WEB_V30B || payload.marcadorTeste !== MARCADOR_WEB_V30B || payload.titulo.indexOf(MARCADOR_WEB_V30B) < 0) {
+      alertas.push({ codigo: 'MARCADOR_WEB_V30B_INVALIDO', mensagem: `Titulo, flags e payload devem conter ${MARCADOR_WEB_V30B}.` });
+    }
+
+    if (flags.exigirConfirmacaoManualV30B && flags.confirmacaoManualV30B !== CONFIRMACAO_WEB_V30B) {
+      alertas.push({ codigo: 'CONFIRMACAO_WEB_V30B_INVALIDA', mensagem: `Confirmacao manual deve ser ${CONFIRMACAO_WEB_V30B}.` });
+    }
+
+    if (!usuario.podeCriarSolicitacao && usuario.perfilPrincipal !== 'Campo' && !usuario.podeAdministrarConfiguracoes) {
+      alertas.push({ codigo: 'PERFIL_SEM_PERMISSAO', mensagem: `Perfil ${usuario.perfilPrincipal} nao pode criar requisicao de compra.` });
+    }
+
+    if (!payload.obraItemId || payload.obraItemId <= 0) {
+      alertas.push({ codigo: 'OBRA_LOOKUP_INVALIDO', mensagem: 'Criacao web V3.0b exige obra real da Lista 01 com ID numerico de lookup.' });
+    }
+
+    if (!payload.titulo || !payload.descricao || !payload.dataNecessaria) {
+      alertas.push({ codigo: 'REQUISICAO_WEB_INCOMPLETA', mensagem: 'Titulo, descricao e data necessaria sao obrigatorios.' });
+    }
+
+    if (alertas.length > 0) {
+      return this.criarResultadoOperacionalBloqueado('CriarRequisicaoCompra', 'Criacao web V3.0b bloqueada.', alertas);
+    }
+
+    const observacoes = [
+      MARCADOR_WEB_V30B,
+      payload.observacoes,
+      payload.especificacaoTecnica ? `Especificacao tecnica: ${payload.especificacaoTecnica}` : '',
+      payload.frenteServico ? `Frente/local: ${payload.frenteServico}` : '',
+      payload.prioridade ? `Prioridade: ${payload.prioridade}` : '',
+      payload.justificativaUrgencia ? `Justificativa urgencia: ${payload.justificativaUrgencia}` : ''
+    ].filter(Boolean).join('\n');
+
+    const body = {
+      Title: payload.titulo,
+      ObraId: payload.obraItemId,
+      C_x00f3_digodaObra: payload.codigoObra || '',
+      CentrodeCusto: payload.centroCusto || '',
+      TipodaSolicita_x00e7__x00e3_o: this.mapTipoSolicitacaoParaSharePoint(payload.tipoSolicitacao),
+      Descri_x00e7__x00e3_odaSolicita_: payload.descricao,
+      StatusdaRequisi_x00e7__x00e3_o: 'Recebida',
+      Observa_x00e7__x00f5_es: observacoes,
+      Quantidade: payload.quantidade || undefined,
+      Unidade: payload.unidade || undefined,
+      SolicitanteId: usuario.contaMicrosoft365Id || undefined
+    };
+
+    const response = await this.spHttpClient.post(
+      this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra),
+      SPHttpClient.configurations.v1,
+      this.criarPostOptions(body)
+    );
+    const item = await this.ensureJson(response);
+    const itemId = Number(item.Id || item.ID);
+    let historicoItemId: number | undefined;
+    const alertasHistorico: AlertaBloqueioEscrita[] = [];
+
+    try {
+      const historicoResponse = await this.spHttpClient.post(
+        this.getListItemsEndpoint(LISTAS_ENAC.historicoConfiguracoes),
+        SPHttpClient.configurations.v1,
+        this.criarPostOptions({
+          Title: `${MARCADOR_WEB_V30B} CriarRequisicaoCompra ${itemId}`,
+          TipoConfiguracao: 'Historico Operacional',
+          AcaoRealizada: 'CriarRequisicaoCompra',
+          ItemConfiguracaoId: `Lista 02-${itemId}`,
+          ValorAnterior: '',
+          ValorNovo: 'Recebida',
+          Justificativa: `${MARCADOR_WEB_V30B} - requisicao criada pelo portal web; sem Power Automate.`
+        })
+      );
+      const historico = await this.ensureJson(historicoResponse);
+      historicoItemId = Number(historico.Id || historico.ID);
+    } catch (error) {
+      alertasHistorico.push({ codigo: 'HISTORICO_WEB_V30B_NAO_REGISTRADO', mensagem: this.getErrorMessage(error) });
+    }
+
+    return {
+      sucesso: true,
+      bloqueado: false,
+      acao: 'CriarRequisicaoCompra',
+      mensagem: `Requisicao web V3.0b criada na Lista 02 com status Recebida.`,
+      itemId,
+      statusNovo: 'Recebida',
+      historicoRegistrado: Boolean(historicoItemId),
+      historicoItemId,
+      statusHttpEscrita: response.status,
+      alertas: alertasHistorico
     };
   }
 
@@ -3924,6 +4042,19 @@ export class SharePointEnacRepository implements IEnacRepository {
       case 'Locação':
       case 'Locacao':
         return 'Locacao';
+      case 'Equipamento':
+        return 'Equipamento';
+      default:
+        return 'Material';
+    }
+  }
+
+  private mapTipoSolicitacaoParaSharePoint(value: TipoSolicitacaoEnac): string {
+    switch (value) {
+      case 'Servico':
+        return 'Serviço';
+      case 'Locacao':
+        return 'Locação';
       case 'Equipamento':
         return 'Equipamento';
       default:

@@ -15,6 +15,13 @@ const redirectUri = import.meta.env.VITE_ENAC_REDIRECT_URI ||
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? `http://localhost:${window.location.port || '5173'}/`
     : window.location.origin);
+const flagsEscritaWebV30B = {
+  habilitarEscritaRequisicaoV30B: import.meta.env.VITE_ENAC_HABILITAR_ESCRITA_REQUISICAO_V30B === 'true',
+  modoTesteWebV30B: import.meta.env.VITE_ENAC_MODO_TESTE_WEB_V30B === 'true',
+  exigirConfirmacaoManualV30B: true,
+  confirmacaoManualV30B: import.meta.env.VITE_ENAC_CONFIRMACAO_MANUAL_V30B || '',
+  marcadorTesteWebV30B: 'V3.0B-WEB-TESTE' as const
+};
 
 type WebSection = 'visao' | 'estrutura' | 'fluxos' | 'dados' | 'seguranca' | 'implantacao' | 'sistema';
 
@@ -162,7 +169,7 @@ async function createOperationalState(): Promise<IOperationalState> {
     account,
     repository: new SharePointEnacRepository({
       siteUrl,
-      spHttpClient: new SharePointFetchClient(getAccessToken)
+      spHttpClient: new SharePointFetchClient(getAccessToken, siteUrl)
     })
   };
 }
@@ -364,6 +371,7 @@ function OperationalSection({ state, onOpenSystem }: { state: IOperationalState;
       diagnosticoReadonly={true}
       repository={state.repository}
       siteUrl={siteUrl}
+      flagsEscritaWebV30B={flagsEscritaWebV30B}
     />
   );
 }

@@ -8,6 +8,7 @@ import {
   FlagsEscritaAdministrativaV29B,
   FlagsEscritaAdministrativaV29C,
   FlagsEscritaOperacionalV27A,
+  FlagsEscritaWebV30B,
   IAlcadaEnac,
   IHistoricoConfiguracaoEnac,
   IObraEnac,
@@ -84,6 +85,7 @@ const unidadeSolicitacaoOptions = ['un', 'm', 'm²', 'm³', 'Kg', 'L', 'Cx', 'P�
 const CONFIRMACAO_ADMINISTRATIVA_V29B = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9B-ENAC';
 const CONFIRMACAO_ADMINISTRATIVA_V29C = 'CONFIRMAR-ESCRITA-ADMINISTRATIVA-V2.9C-ENAC';
 const MARCADOR_ADMINISTRATIVO_V29C = 'V2.9C-ADMIN-TESTE';
+const MARCADOR_WEB_V30B = 'V3.0B-WEB-TESTE';
 
 type FormaPagamentoPedido = 'Pix' | 'Depósito bancário' | 'Boleto';
 
@@ -337,6 +339,7 @@ export interface IEnacSistemaProps {
   flagsEscritaAdministrativaV29B?: FlagsEscritaAdministrativaV29B;
   configuracaoAdministrativaV29B?: ConfiguracaoAdministrativaV29B;
   flagsEscritaAdministrativaV29C?: FlagsEscritaAdministrativaV29C;
+  flagsEscritaWebV30B?: FlagsEscritaWebV30B;
 }
 
 const obras: IObraEnac[] = [
@@ -1000,6 +1003,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [selectedId, setSelectedId] = React.useState(initialSolicitacoes[0].id);
   const [usuariosPerfisReadonly, setUsuariosPerfisReadonly] = React.useState<IUsuarioPerfilEnac[]>([]);
   const [alcadasReadonly, setAlcadasReadonly] = React.useState<IAlcadaEnac[]>([]);
+  const [obrasReadonly, setObrasReadonly] = React.useState<IObraEnac[]>([]);
   const [requisicoesResumoReadonly, setRequisicoesResumoReadonly] = React.useState<IRequisicaoResumoEnac[]>([]);
   const [historicoConfiguracoesReadonly, setHistoricoConfiguracoesReadonly] = React.useState<IHistoricoConfiguracaoEnac[]>([]);
   const [diagnosticoReadonlyState, setDiagnosticoReadonlyState] = React.useState<IDiagnosticoReadonlyEnac | null>(null);
@@ -1016,6 +1020,8 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const [confirmacaoFinalOperacionalV27A, setConfirmacaoFinalOperacionalV27A] = React.useState<string>('');
   const [resultadoOperacionalV27A, setResultadoOperacionalV27A] = React.useState<ResultadoOperacionalV27A | null>(null);
   const [executandoOperacionalV27A, setExecutandoOperacionalV27A] = React.useState<boolean>(false);
+  const [resultadoCriacaoWebV30B, setResultadoCriacaoWebV30B] = React.useState<ResultadoOperacionalV27A | null>(null);
+  const [executandoCriacaoWebV30B, setExecutandoCriacaoWebV30B] = React.useState<boolean>(false);
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -1072,9 +1078,16 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       const erros: string[] = [];
       let usuariosPerfis: IUsuarioPerfilEnac[] = [];
       let alcadasSharePoint: IAlcadaEnac[] = [];
+      let obrasSharePoint: IObraEnac[] = [];
       let requisicoesResumo: IRequisicaoResumoEnac[] = [];
       let historicoSharePoint: IHistoricoConfiguracaoEnac[] = [];
       let diagnostico: IDiagnosticoReadonlyEnac | null = null;
+
+      try {
+        obrasSharePoint = await props.repository!.listarObras();
+      } catch (error) {
+        erros.push(`obras: ${error instanceof Error ? error.message : String(error)}`);
+      }
 
       try {
         usuariosPerfis = await props.repository!.listarUsuariosPerfis();
@@ -1122,6 +1135,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
 
       setUsuariosPerfisReadonly(usuariosPerfis);
       setAlcadasReadonly(alcadasSharePoint);
+      setObrasReadonly(obrasSharePoint);
       setRequisicoesResumoReadonly(requisicoesResumo);
       setHistoricoConfiguracoesReadonly(historicoSharePoint);
       setDiagnosticoReadonlyState(diagnostico);
@@ -1130,6 +1144,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       if (DEBUG && props.diagnosticoReadonly) {
         console.info('[ENAC][V2.5A] Dados readonly SharePoint disponiveis para interface', {
           fonteCards: 'sharepoint',
+          obras: obrasSharePoint.length,
           usuariosPerfis: usuariosPerfis.length,
           alcadas: alcadasSharePoint.length,
           requisicoesResumo: requisicoesResumo.length,
@@ -1149,6 +1164,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
 
         setUsuariosPerfisReadonly([]);
         setAlcadasReadonly([]);
+        setObrasReadonly([]);
         setRequisicoesResumoReadonly([]);
         setHistoricoConfiguracoesReadonly([]);
         setDiagnosticoReadonlyState(null);
@@ -1198,6 +1214,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
   const usandoSharePointReadonly = origemDadosEfetiva === 'sharepoint';
   const usuariosParaAdmin = usandoSharePointReadonly ? usuariosPerfisReadonly : usuarios;
   const alcadasParaAdmin = usandoSharePointReadonly ? alcadasReadonly : alcadas;
+  const obrasParaFormulario = usandoSharePointReadonly && obrasReadonly.length > 0 ? obrasReadonly : obrasCadastradas;
   const historicoParaAdmin = usandoSharePointReadonly && historicoConfiguracoesReadonly.length > 0 ? historicoConfiguracoesReadonly : historicoConfiguracoes;
   const usuarioAtualSistema = findUsuarioAtual(usuariosParaAdmin, props.currentUserEmail, props.currentUserName, props.currentUserPerfil || 'Campo', !usandoSharePointReadonly);
   const usuarioCadastrado = Boolean(usuarioAtualSistema);
@@ -1227,6 +1244,12 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     props.escritaTesteRequisicaoItemId &&
     props.escritaTesteValorAnalisado &&
     props.escritaTesteMarcador
+  );
+  const escritaWebV30BHabilitada = Boolean(
+    props.flagsEscritaWebV30B?.habilitarEscritaRequisicaoV30B &&
+    props.flagsEscritaWebV30B.modoTesteWebV30B &&
+    props.flagsEscritaWebV30B.confirmacaoManualV30B &&
+    props.flagsEscritaWebV30B.marcadorTesteWebV30B === MARCADOR_WEB_V30B
   );
 
   React.useEffect(() => {
@@ -1577,21 +1600,96 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
     }
   }
 
-  function criarSolicitacao(form: FormData): void {
-    const obra = obrasCadastradas.find((item) => item.id === String(form.get('obra'))) || obrasCadastradas[0] || obras[0];
+  async function criarSolicitacao(form: FormData): Promise<void> {
+    const obra = obrasParaFormulario.find((item) => item.id === String(form.get('obra'))) || obrasParaFormulario[0] || obras[0];
+    const tituloBase = String(form.get('titulo'));
+    const tipoSolicitacao = String(form.get('tipo')) as ISolicitacaoEnac['tipo'];
+    const quantidade = Number(form.get('quantidade') || 0);
+    const unidade = String(form.get('unidade') || '');
+    const especificacaoTecnica = String(form.get('especificacaoTecnica'));
+    const frenteServico = String(form.get('frenteServico'));
+    const dataNecessaria = String(form.get('dataNecessaria'));
+    const prioridade = String(form.get('prioridade')) as ISolicitacaoEnac['prioridade'];
+    const justificativaUrgencia = String(form.get('justificativaUrgencia') || '');
+    let id = `REQ-${1001 + solicitacoes.length}`;
+
+    setResultadoCriacaoWebV30B(null);
+
+    if (usandoSharePointReadonly && props.repository && props.currentUserEmail && escritaWebV30BHabilitada) {
+      const obraItemId = Number(obra.id);
+      if (!obraItemId || Number.isNaN(obraItemId)) {
+        setResultadoCriacaoWebV30B({
+          sucesso: false,
+          bloqueado: true,
+          acao: 'CriarRequisicaoCompra',
+          mensagem: 'Criacao web V3.0b bloqueada: selecione uma obra carregada da Lista 01.',
+          alertas: [{ codigo: 'OBRA_LOCAL_SEM_LOOKUP', mensagem: 'A obra selecionada nao possui ID numerico real do SharePoint.' }]
+        });
+        return;
+      }
+
+      setExecutandoCriacaoWebV30B(true);
+      try {
+        const resultado = await props.repository.criarRequisicaoCompraWebV30B({
+          titulo: `${MARCADOR_WEB_V30B} - ${tituloBase}`,
+          obraItemId,
+          codigoObra: obra.codigoObra,
+          centroCusto: obra.centroCusto,
+          tipoSolicitacao,
+          descricao: tituloBase,
+          especificacaoTecnica,
+          quantidade,
+          unidade,
+          frenteServico,
+          prioridade,
+          dataNecessaria,
+          justificativaUrgencia,
+          observacoes: `Criado pelo portal web V3.0b por ${props.currentUserName}.`,
+          marcadorTeste: MARCADOR_WEB_V30B
+        }, props.currentUserEmail, props.flagsEscritaWebV30B!);
+
+        setResultadoCriacaoWebV30B(resultado);
+
+        if (!resultado.sucesso || resultado.bloqueado || !resultado.itemId) {
+          return;
+        }
+
+        id = `REQ-${resultado.itemId}`;
+      } catch (error) {
+        setResultadoCriacaoWebV30B({
+          sucesso: false,
+          bloqueado: true,
+          acao: 'CriarRequisicaoCompra',
+          mensagem: error instanceof Error ? error.message : String(error),
+          alertas: [{ codigo: 'ERRO_CRIACAO_WEB_V30B', mensagem: error instanceof Error ? error.message : String(error) }]
+        });
+        return;
+      } finally {
+        setExecutandoCriacaoWebV30B(false);
+      }
+    } else if (usandoSharePointReadonly) {
+      setResultadoCriacaoWebV30B({
+        sucesso: false,
+        bloqueado: true,
+        acao: 'CriarRequisicaoCompra',
+        mensagem: 'Escrita web V3.0b nao habilitada. A solicitacao foi mantida apenas na tela para continuidade do prototipo.',
+        alertas: [{ codigo: 'ESCRITA_WEB_V30B_DESABILITADA', mensagem: 'Configure as variaveis VITE_ENAC_HABILITAR_ESCRITA_REQUISICAO_V30B, VITE_ENAC_MODO_TESTE_WEB_V30B e VITE_ENAC_CONFIRMACAO_MANUAL_V30B para gravar na Lista 02.' }]
+      });
+    }
+
     const next: ISolicitacaoEnac = {
-      id: `REQ-${1001 + solicitacoes.length}`,
-      titulo: String(form.get('titulo')),
+      id,
+      titulo: tituloBase,
       obra,
-      tipo: String(form.get('tipo')) as ISolicitacaoEnac['tipo'],
-      descricao: String(form.get('titulo')),
-      especificacaoTecnica: String(form.get('especificacaoTecnica')),
-      quantidade: Number(form.get('quantidade') || 0),
-      unidade: String(form.get('unidade') || ''),
-      frenteServico: String(form.get('frenteServico')),
-      dataNecessaria: String(form.get('dataNecessaria')),
-      prioridade: String(form.get('prioridade')) as ISolicitacaoEnac['prioridade'],
-      justificativaUrgencia: String(form.get('justificativaUrgencia') || ''),
+      tipo: tipoSolicitacao,
+      descricao: tituloBase,
+      especificacaoTecnica,
+      quantidade,
+      unidade,
+      frenteServico,
+      dataNecessaria,
+      prioridade,
+      justificativaUrgencia,
       anexoReferencia: getFormFileName(form, 'anexoReferencia'),
       observacoes: '',
       solicitante: props.currentUserName,
@@ -1604,7 +1702,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       ]
     };
 
-    setSolicitacoes([next, ...solicitacoes]);
+    setSolicitacoes((atuais) => [next, ...atuais]);
     setSelectedId(next.id);
     setView('minhas');
   }
@@ -1848,10 +1946,18 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         <div className={styles.contentPanel}>
         <div className={styles.adminNotice}>
           {carregandoReadonly && 'Conectando as listas SharePoint...'}
-          {!carregandoReadonly && usandoSharePointReadonly && 'Conectado as listas SharePoint em modo leitura. Cadastros e solicitacoes criados nesta tela ainda nao gravam nas listas na versao web atual.'}
+          {!carregandoReadonly && usandoSharePointReadonly && !escritaWebV30BHabilitada && 'Conectado as listas SharePoint em modo leitura. Cadastros e solicitacoes criados nesta tela ainda nao gravam nas listas na configuracao atual.'}
+          {!carregandoReadonly && usandoSharePointReadonly && escritaWebV30BHabilitada && 'Conectado as listas SharePoint. Escrita controlada V3.0b de nova requisicao esta habilitada em modo teste.'}
           {!carregandoReadonly && !usandoSharePointReadonly && erroReadonly && `Falha ao ler listas SharePoint: ${erroReadonly}. Usando fallback local; alteracoes feitas na tela nao serao salvas nas listas.`}
           {!carregandoReadonly && !usandoSharePointReadonly && !erroReadonly && 'Modo local/prototipo. Alteracoes feitas na tela ficam apenas em memoria nesta sessao.'}
         </div>
+        {(executandoCriacaoWebV30B || resultadoCriacaoWebV30B) && (
+          <div className={styles.adminNotice}>
+            {executandoCriacaoWebV30B && 'Gravando requisicao V3.0b na Lista 02...'}
+            {!executandoCriacaoWebV30B && resultadoCriacaoWebV30B?.sucesso && `V3.0b: requisicao gravada na Lista 02 com ID ${resultadoCriacaoWebV30B.itemId}. Historico: ${resultadoCriacaoWebV30B.historicoRegistrado ? 'registrado' : 'nao registrado'}.`}
+            {!executandoCriacaoWebV30B && resultadoCriacaoWebV30B && !resultadoCriacaoWebV30B.sucesso && resultadoCriacaoWebV30B.mensagem}
+          </div>
+        )}
         {acessoOperacionalBloqueado && (
           <div className={styles.adminNotice}>
             {!usuarioCadastrado && 'Usuário não cadastrado no Sistema ENAC. Ações operacionais e administrativas permanecem bloqueadas.'}
@@ -1863,7 +1969,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         {view === 'cadastroClientes' && <CadastroClientes clientes={clientes} onSubmit={cadastrarCliente} />}
         {view === 'cadastroObras' && <CadastroObras clientes={clientes} obras={obrasCadastradas} onSubmit={cadastrarObra} />}
         {view === 'cadastroFornecedores' && <CadastroFornecedores fornecedores={fornecedores} onSubmit={cadastrarFornecedor} />}
-        {view === 'nova' && <NovaSolicitacao obrasDisponiveis={obrasCadastradas} onSubmit={criarSolicitacao} />}
+        {view === 'nova' && <NovaSolicitacao obrasDisponiveis={obrasParaFormulario} onSubmit={criarSolicitacao} />}
         {view === 'minhas' && <Requisicoes solicitacoes={solicitacoes} onSelect={(id) => { setSelectedId(id); setView('historico'); }} />}
         {view === 'cotacoes' && <Cotacoes solicitacoes={solicitacoes} onSelect={setSelectedId} onRegistrarCotacao={registrarCotacao} />}
         {view === 'aprovacoes' && <Aprovacoes solicitacoes={solicitacoes} perfil={perfil} onApprove={aprovar} />}
@@ -2123,7 +2229,7 @@ function CadastroFornecedores({ fornecedores, onSubmit }: { fornecedores: IForne
   );
 }
 
-function NovaSolicitacao({ obrasDisponiveis, onSubmit }: { obrasDisponiveis: IObraEnac[]; onSubmit: (form: FormData) => void }): JSX.Element {
+function NovaSolicitacao({ obrasDisponiveis, onSubmit }: { obrasDisponiveis: IObraEnac[]; onSubmit: (form: FormData) => void | Promise<void> }): JSX.Element {
   const clientes = uniqueStrings(obrasDisponiveis.map((obra) => obra.cliente));
   const [clienteSelecionado, setClienteSelecionado] = React.useState<string>(clientes[0] || '');
   const obrasDoCliente = obrasDisponiveis.filter((obra) => obra.cliente === clienteSelecionado);
@@ -2138,7 +2244,7 @@ function NovaSolicitacao({ obrasDisponiveis, onSubmit }: { obrasDisponiveis: IOb
   }, [clienteSelecionado, obraSelecionada, obrasDisponiveis, obrasDoCliente]);
 
   return (
-    <form onSubmit={(event) => { event.preventDefault(); onSubmit(new FormData(event.currentTarget)); }}>
+    <form onSubmit={(event) => { event.preventDefault(); void onSubmit(new FormData(event.currentTarget)); }}>
       <label>Cliente<select name="cliente" value={clienteSelecionado} onChange={(event) => setClienteSelecionado(event.currentTarget.value)}>{clientes.map((cliente) => <option key={cliente} value={cliente}>{cliente}</option>)}</select></label>
       <label>Obra<select name="obra" value={obraSelecionada} onChange={(event) => setObraSelecionada(event.currentTarget.value)}>{obrasDoCliente.map((obra) => <option key={obra.id} value={obra.id}>{obra.nome}</option>)}</select></label>
       <label>Tipo<select name="tipo"><option value="Material">Material</option><option value="Servico">Serviço</option><option value="Locacao">Locação</option><option value="Equipamento">Equipamento</option></select></label>

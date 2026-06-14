@@ -22,6 +22,12 @@ Os demais processos validados no Microsoft 365 permanecem documentados como cont
 - Camada de serviços isolando acesso real aos dados em `SharePointEnacRepository.ts`.
 - Administração / Configurações como fonte única simulada de usuários, perfis, alçadas, regras especiais e parâmetros gerais.
 
+## V3.0 - Portal web
+
+Na V3.0A, o Sistema ENAC passou a ter um host web Vite/React independente da webpart, com autenticação Microsoft Entra via MSAL e leitura SharePoint REST em modo readonly. O portal preserva a base visual e funcional existente, mas cadastros e solicitações ainda não eram persistidos nas listas quando operados pela tela web.
+
+Na V3.0B, foi preparada a primeira escrita controlada do portal web: criação de nova requisição de compra na `Lista 02 — Requisições de Compra`, usando obras reais lidas da `Lista 01 - Controle de Obras ENAC` para preencher o lookup `ObraId`. A escrita permanece desabilitada por padrão e exige flags de teste, marcador `V3.0B-WEB-TESTE`, confirmação manual e aplicativo/escopo Entra com permissão delegada de escrita. Power Automate, cargas reais amplas, alterações de listas/permissões e demais ações operacionais continuam fora do escopo.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
