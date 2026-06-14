@@ -1079,6 +1079,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       let usuariosPerfis: IUsuarioPerfilEnac[] = [];
       let alcadasSharePoint: IAlcadaEnac[] = [];
       let obrasSharePoint: IObraEnac[] = [];
+      let solicitacoesSharePoint: ISolicitacaoEnac[] = [];
       let requisicoesResumo: IRequisicaoResumoEnac[] = [];
       let historicoSharePoint: IHistoricoConfiguracaoEnac[] = [];
       let diagnostico: IDiagnosticoReadonlyEnac | null = null;
@@ -1105,6 +1106,12 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         requisicoesResumo = await props.repository!.listarRequisicoesResumo();
       } catch (error) {
         erros.push(`requisicoes: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
+      try {
+        solicitacoesSharePoint = await props.repository!.listarSolicitacoes();
+      } catch (error) {
+        erros.push(`solicitacoes: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       try {
@@ -1137,6 +1144,14 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       setAlcadasReadonly(alcadasSharePoint);
       setObrasReadonly(obrasSharePoint);
       setRequisicoesResumoReadonly(requisicoesResumo);
+      if (solicitacoesSharePoint.length > 0) {
+        const solicitacoesComObra = solicitacoesSharePoint.map((solicitacao) => {
+          const obraReal = obrasSharePoint.find((obraItem) => obraItem.id === solicitacao.obra.id);
+          return obraReal ? { ...solicitacao, obra: obraReal } : solicitacao;
+        });
+        setSolicitacoes(solicitacoesComObra);
+        setSelectedId((atual) => solicitacoesComObra.some((item) => item.id === atual) ? atual : solicitacoesComObra[0].id);
+      }
       setHistoricoConfiguracoesReadonly(historicoSharePoint);
       setDiagnosticoReadonlyState(diagnostico);
       setOrigemDadosEfetiva('sharepoint');
@@ -1147,6 +1162,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
           obras: obrasSharePoint.length,
           usuariosPerfis: usuariosPerfis.length,
           alcadas: alcadasSharePoint.length,
+          solicitacoes: solicitacoesSharePoint.length,
           requisicoesResumo: requisicoesResumo.length,
           historicoConfiguracoes: historicoSharePoint.length,
           diagnostico
@@ -1166,6 +1182,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         setAlcadasReadonly([]);
         setObrasReadonly([]);
         setRequisicoesResumoReadonly([]);
+        setSolicitacoes(initialSolicitacoes);
         setHistoricoConfiguracoesReadonly([]);
         setDiagnosticoReadonlyState(null);
         setOrigemDadosEfetiva('local');

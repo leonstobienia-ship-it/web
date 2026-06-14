@@ -8,6 +8,7 @@ import {
   IHistoricoConfiguracaoEnac,
   IObraEnac,
   IRequisicaoResumoEnac,
+  ISolicitacaoEnac,
   PreValidacaoOperacionalV27AResultado,
   PreValidacaoTesteControladoSnapshotResultado,
   ResultadoAdministrativoV29C,
@@ -20,6 +21,7 @@ import {
 
 export interface IEnacRepository {
   listarObras(): Promise<IObraEnac[]>;
+  listarSolicitacoes(): Promise<ISolicitacaoEnac[]>;
   listarUsuariosPerfis(options?: { somenteAtivos?: boolean }): Promise<IUsuarioPerfilEnac[]>;
   listarAlcadas(): Promise<IAlcadaEnac[]>;
   listarRequisicoesResumo(): Promise<IRequisicaoResumoEnac[]>;

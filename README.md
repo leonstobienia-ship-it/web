@@ -32,6 +32,8 @@ Na configuração do app write V3.0b, o projeto local passou a usar o app `ENAC 
 
 Na V3.0C, foi executado o primeiro teste real controlado de escrita do portal web. Foi criado um unico item de teste na `Lista 02 — Requisições de Compra`, ID `13`, com titulo `V3.0B-WEB-TESTE - TESTE_V3_0C_NAO_OPERACIONAL - validacao minima`, status `Recebida`, quantidade `1.11` e sem anexos. O item foi confirmado em modo readonly pelo formulario de exibicao do SharePoint. Nao houve `DELETE`, automacao, Power Automate, pedido, nota fiscal, conta a pagar, aprovacao ou etapa operacional posterior.
 
+Na correcao pos-validacao da V3.0C, a aba `Requisições` passou a carregar os itens reais da Lista 02 apos reload, usando `listarSolicitacoes()` no reposititorio SharePoint. A falha observada era de leitura da interface, nao de gravacao: o item `REQ-13` existia no SharePoint, mas a tela detalhada ainda usava apenas dados locais iniciais.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

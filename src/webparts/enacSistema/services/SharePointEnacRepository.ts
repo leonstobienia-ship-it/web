@@ -363,7 +363,7 @@ export class SharePointEnacRepository implements IEnacRepository {
   }
 
   public async listarSolicitacoes(): Promise<ISolicitacaoEnac[]> {
-    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}?$top=20&$select=Id,Title,TipodaSolicita_x00e7__x00e3_o,Descri_x00e7__x00e3_odaSolicita_,StatusdaRequisi_x00e7__x00e3_o,Solicitante/Title,Obra/Id,Obra/Title,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=Solicitante,Obra,SnapshotAprovacaoCompra`;
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.requisicoesCompra)}?$top=50&$orderby=Id desc&$select=Id,Title,C_x00f3_digodaObra,CentrodeCusto,TipodaSolicita_x00e7__x00e3_o,Descri_x00e7__x00e3_odaSolicita_,StatusdaRequisi_x00e7__x00e3_o,Observa_x00e7__x00f5_es,Quantidade,Unidade,Solicitante/Title,Obra/Id,Obra/Title,SnapshotAprovacaoCompra/Id,SnapshotAprovacaoCompra/Title&$expand=Solicitante,Obra,SnapshotAprovacaoCompra`;
     const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
     const payload = await this.ensureJson(response);
 
@@ -372,26 +372,26 @@ export class SharePointEnacRepository implements IEnacRepository {
       titulo: item.Title,
       tipo: this.mapTipoSolicitacao(item.TipodaSolicita_x00e7__x00e3_o),
       descricao: item.Descri_x00e7__x00e3_odaSolicita_ || '',
-      especificacaoTecnica: '',
+      especificacaoTecnica: item.Observa_x00e7__x00f5_es || '',
       quantidade: Number(item.Quantidade || 0),
-      unidade: item.Unidade,
-      frenteServico: item.FrenteServico,
-      dataNecessaria: item.DataNecessaria,
+      unidade: item.Unidade || '',
+      frenteServico: '',
+      dataNecessaria: '',
       prioridade: item.Prioridade || 'Normal',
       justificativaUrgencia: item.JustificativaUrgencia,
       anexoReferencia: item.AnexoReferencia,
-      observacoes: item.Observacoes,
+      observacoes: item.Observa_x00e7__x00f5_es,
       solicitante: item.Solicitante?.Title || '',
-      dataHoraSolicitacao: item.DataHoraSolicitacao,
+      dataHoraSolicitacao: '',
       status: this.mapStatusProcesso(item.StatusdaRequisi_x00e7__x00e3_o),
       divergencias: [],
       snapshotAprovacaoCompra: item.SnapshotAprovacaoCompra ? { id: String(item.SnapshotAprovacaoCompra.Id) } as ISnapshotRegraEnac : undefined,
       obra: {
         id: String(item.Obra?.Id || ''),
         nome: item.Obra?.Title || '',
-        codigoObra: item.Obra?.CodigoObra || '',
+        codigoObra: item.C_x00f3_digodaObra || item.Obra?.Title || '',
         cliente: item.Obra?.Cliente || '',
-        centroCusto: item.Obra?.CentroCusto || ''
+        centroCusto: item.CentrodeCusto || ''
       },
       historico: []
     }));
@@ -4066,6 +4066,13 @@ export class SharePointEnacRepository implements IEnacRepository {
 
   private mapStatusProcesso(value: string): ISolicitacaoEnac['status'] {
     switch (value) {
+      case 'Recebida':
+      case 'Em cotação':
+      case 'Em cotacao':
+        return 'AguardandoCotacao';
+      case 'Aguardando aprovação':
+      case 'Aguardando aprovacao':
+        return 'AguardandoAprovacao';
       case 'Aprovada para compra':
         return 'AprovadaParaCompra';
       case 'Pedido emitido':
