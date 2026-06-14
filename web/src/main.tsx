@@ -6,6 +6,7 @@ import { SharePointEnacRepository } from '@enacSistema/services/SharePointEnacRe
 import { SharePointFetchClient } from './sharePointFetchClient';
 import './styles.css';
 
+const readonlyInventoryClientId = '0dab19b3-8e48-4f89-ad94-1446b08d3781';
 const clientId = import.meta.env.VITE_ENAC_ENTRA_CLIENT_ID || '0dab19b3-8e48-4f89-ad94-1446b08d3781';
 const tenantId = import.meta.env.VITE_ENAC_ENTRA_TENANT_ID || 'enaccombr.onmicrosoft.com';
 const siteUrl = import.meta.env.VITE_ENAC_SHAREPOINT_SITE_URL || 'https://enaccombr.sharepoint.com/sites/Equipe.Obras';
@@ -15,11 +16,23 @@ const redirectUri = import.meta.env.VITE_ENAC_REDIRECT_URI ||
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? `http://localhost:${window.location.port || '5173'}/`
     : window.location.origin);
+const escritaWebV30BSolicitada = import.meta.env.VITE_ENAC_HABILITAR_ESCRITA_REQUISICAO_V30B === 'true';
+const modoTesteWebV30BSolicitado = import.meta.env.VITE_ENAC_MODO_TESTE_WEB_V30B === 'true';
+const confirmacaoWebV30B = import.meta.env.VITE_ENAC_CONFIRMACAO_MANUAL_V30B || '';
+const usandoAppReadonlyInventario = clientId.toLowerCase() === readonlyInventoryClientId.toLowerCase();
+const escopoEscritaWebV30B = /\/AllSites\.(Write|Manage|FullControl)$/i.test(sharePointScope);
+const bloqueiosEscritaWebV30B = [
+  escritaWebV30BSolicitada && usandoAppReadonlyInventario ? 'ClientId configurado e o aplicativo readonly de inventario; use um app separado de escrita.' : '',
+  escritaWebV30BSolicitada && !escopoEscritaWebV30B ? 'Escopo SharePoint nao e de escrita; configure AllSites.Write, AllSites.Manage ou equivalente aprovado.' : '',
+  escritaWebV30BSolicitada && !modoTesteWebV30BSolicitado ? 'Modo de teste V3.0b nao esta habilitado.' : '',
+  escritaWebV30BSolicitada && confirmacaoWebV30B !== 'CONFIRMAR-ESCRITA-WEB-V3.0B-ENAC' ? 'Confirmacao manual V3.0b ausente ou divergente.' : ''
+].filter(Boolean);
+const escritaWebV30BLiberada = escritaWebV30BSolicitada && bloqueiosEscritaWebV30B.length === 0;
 const flagsEscritaWebV30B = {
-  habilitarEscritaRequisicaoV30B: import.meta.env.VITE_ENAC_HABILITAR_ESCRITA_REQUISICAO_V30B === 'true',
-  modoTesteWebV30B: import.meta.env.VITE_ENAC_MODO_TESTE_WEB_V30B === 'true',
+  habilitarEscritaRequisicaoV30B: escritaWebV30BLiberada,
+  modoTesteWebV30B: escritaWebV30BLiberada,
   exigirConfirmacaoManualV30B: true,
-  confirmacaoManualV30B: import.meta.env.VITE_ENAC_CONFIRMACAO_MANUAL_V30B || '',
+  confirmacaoManualV30B: escritaWebV30BLiberada ? confirmacaoWebV30B : '',
   marcadorTesteWebV30B: 'V3.0B-WEB-TESTE' as const
 };
 
@@ -363,16 +376,32 @@ function OperationalSection({ state, onOpenSystem }: { state: IOperationalState;
   }
 
   return (
-    <EnacSistema
-      currentUserName={state.account.name || state.account.username || 'Usuario ENAC'}
-      currentUserEmail={state.account.username}
-      currentUserPerfil="Campo"
-      origemDados="sharepoint"
-      diagnosticoReadonly={true}
-      repository={state.repository}
-      siteUrl={siteUrl}
-      flagsEscritaWebV30B={flagsEscritaWebV30B}
-    />
+    <>
+      {escritaWebV30BSolicitada && bloqueiosEscritaWebV30B.length > 0 && (
+        <div className="enac-web-alert enac-web-alert--compact">
+          <strong>Escrita V3.0b bloqueada por configuração.</strong>
+          <ul>
+            {bloqueiosEscritaWebV30B.map((bloqueio) => <li key={bloqueio}>{bloqueio}</li>)}
+          </ul>
+        </div>
+      )}
+      {escritaWebV30BLiberada && (
+        <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">
+          <strong>Escrita V3.0b liberada para teste controlado.</strong>
+          <p>Somente nova requisição com marcador V3.0B-WEB-TESTE será enviada para a Lista 02.</p>
+        </div>
+      )}
+      <EnacSistema
+        currentUserName={state.account.name || state.account.username || 'Usuario ENAC'}
+        currentUserEmail={state.account.username}
+        currentUserPerfil="Campo"
+        origemDados="sharepoint"
+        diagnosticoReadonly={true}
+        repository={state.repository}
+        siteUrl={siteUrl}
+        flagsEscritaWebV30B={flagsEscritaWebV30B}
+      />
+    </>
   );
 }
 
