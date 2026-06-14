@@ -10,6 +10,7 @@ import {
   HistoricoOperacionalPayload,
   IDiagnosticoReadonlyEnac,
   IAlcadaEnac,
+  IFornecedorCadastroEnac,
   IHistoricoConfiguracaoEnac,
   IObraEnac,
   IRequisicaoResumoEnac,
@@ -359,6 +360,23 @@ export class SharePointEnacRepository implements IEnacRepository {
       codigoObra: item.Title || item.NomedaObra || '',
       cliente: item.Cliente || '',
       centroCusto: item.CentrodeCusto || ''
+    }));
+  }
+
+  public async listarFornecedores(): Promise<IFornecedorCadastroEnac[]> {
+    const endpoint = `${this.getListItemsEndpoint(LISTAS_ENAC.fornecedoresPrestadores)}?$top=200&$orderby=Title asc&$select=Id,Title,NomeFantasia,CNPJ_x002f_CPF,ContatoPrincipal,Telefone_x002f_WhatsApp,E_x002d_mail,DadosBanc_x00e1_rios,StatusdoFornecedor`;
+    const response = await this.spHttpClient.get(endpoint, SPHttpClient.configurations.v1);
+    const payload = await this.ensureJson(response);
+
+    return payload.value.map((item: any) => ({
+      id: String(item.Id),
+      nome: item.NomeFantasia || item.Title || '',
+      cnpj: item.CNPJ_x002f_CPF || '',
+      contato: item.ContatoPrincipal || '',
+      email: item.E_x002d_mail || '',
+      telefone: item.Telefone_x002f_WhatsApp || '',
+      contaBancaria: item.DadosBanc_x00e1_rios || '',
+      ativo: !item.StatusdoFornecedor || String(item.StatusdoFornecedor).toLowerCase() !== 'inativo'
     }));
   }
 

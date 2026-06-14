@@ -5,6 +5,7 @@ import {
   FlagsEscritaWebV30B,
   IDiagnosticoReadonlyEnac,
   IAlcadaEnac,
+  IFornecedorCadastroEnac,
   IHistoricoConfiguracaoEnac,
   IObraEnac,
   IRequisicaoResumoEnac,
@@ -21,6 +22,7 @@ import {
 
 export interface IEnacRepository {
   listarObras(): Promise<IObraEnac[]>;
+  listarFornecedores(): Promise<IFornecedorCadastroEnac[]>;
   listarSolicitacoes(): Promise<ISolicitacaoEnac[]>;
   listarUsuariosPerfis(options?: { somenteAtivos?: boolean }): Promise<IUsuarioPerfilEnac[]>;
   listarAlcadas(): Promise<IAlcadaEnac[]>;

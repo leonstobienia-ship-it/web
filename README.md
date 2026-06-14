@@ -34,6 +34,8 @@ Na V3.0C, foi executado o primeiro teste real controlado de escrita do portal we
 
 Na correcao pos-validacao da V3.0C, a aba `Requisições` passou a carregar os itens reais da Lista 02 apos reload, usando `listarSolicitacoes()` no reposititorio SharePoint. A falha observada era de leitura da interface, nao de gravacao: o item `REQ-13` existia no SharePoint, mas a tela detalhada ainda usava apenas dados locais iniciais.
 
+Na V3.0D, a mesma correcao de leitura apos reload foi estendida para as listas cadastrais ja exibidas na interface: Clientes passam a ser derivados das obras reais da `Lista 01 - Controle de Obras ENAC`, Obras usam a Lista 01 real e Fornecedores usam a `Lista 06 - Fornecedores e Prestadores`. Administracao, usuarios, alcadas, historico e requisicoes mantem a leitura SharePoint ja existente. Nao houve nova escrita, alteracao de permissao, alteracao de listas/colunas, Power Automate ou criacao de novas telas.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

@@ -35,6 +35,28 @@ export interface IObraEnac {
   enderecoEntrega?: string;
 }
 
+export interface IClienteCadastroEnac {
+  id: string;
+  nome: string;
+  cnpj?: string;
+  responsavel?: string;
+  email?: string;
+  telefone?: string;
+  ativo: boolean;
+}
+
+export interface IFornecedorCadastroEnac {
+  id: string;
+  nome: string;
+  cnpj?: string;
+  contato?: string;
+  email?: string;
+  telefone?: string;
+  pix?: string;
+  contaBancaria?: string;
+  ativo: boolean;
+}
+
 export interface IHistoricoEnac {
   data: string;
   autor: string;

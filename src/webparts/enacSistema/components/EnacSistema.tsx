@@ -10,6 +10,8 @@ import {
   FlagsEscritaOperacionalV27A,
   FlagsEscritaWebV30B,
   IAlcadaEnac,
+  IClienteCadastroEnac,
+  IFornecedorCadastroEnac,
   IHistoricoConfiguracaoEnac,
   IObraEnac,
   IRequisicaoResumoEnac,
@@ -113,28 +115,6 @@ interface ITutorialPerfilEnac {
   fluxo: string[];
   preenchimentos: string[];
   conferencias: string[];
-}
-
-interface IClienteCadastroEnac {
-  id: string;
-  nome: string;
-  cnpj?: string;
-  responsavel?: string;
-  email?: string;
-  telefone?: string;
-  ativo: boolean;
-}
-
-interface IFornecedorCadastroEnac {
-  id: string;
-  nome: string;
-  cnpj?: string;
-  contato?: string;
-  email?: string;
-  telefone?: string;
-  pix?: string;
-  contaBancaria?: string;
-  ativo: boolean;
 }
 
 const dadosPagamentoFornecedores: Record<string, { pix: string; contaBancaria: string }> = {
@@ -392,6 +372,21 @@ const getDadosPagamentoFornecedor = (fornecedor: string | undefined, fornecedore
     pix: 'Chave Pix não cadastrada',
     contaBancaria: 'Dados bancários não cadastrados'
   };
+};
+
+const montarClientesPorObras = (obrasSharePoint: IObraEnac[]): IClienteCadastroEnac[] => {
+  const nomes = obrasSharePoint.reduce<string[]>((acumulado, obra) => {
+    if (obra.cliente && acumulado.indexOf(obra.cliente) === -1) {
+      acumulado.push(obra.cliente);
+    }
+    return acumulado;
+  }, []);
+
+  return nomes.map((nome, index) => ({
+    id: `sp-cliente-${index + 1}`,
+    nome,
+    ativo: true
+  }));
 };
 
 const normalizeTipoSolicitacaoAlcada = (value: string | undefined): string => {
@@ -1079,6 +1074,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       let usuariosPerfis: IUsuarioPerfilEnac[] = [];
       let alcadasSharePoint: IAlcadaEnac[] = [];
       let obrasSharePoint: IObraEnac[] = [];
+      let fornecedoresSharePoint: IFornecedorCadastroEnac[] = [];
       let solicitacoesSharePoint: ISolicitacaoEnac[] = [];
       let requisicoesResumo: IRequisicaoResumoEnac[] = [];
       let historicoSharePoint: IHistoricoConfiguracaoEnac[] = [];
@@ -1088,6 +1084,12 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         obrasSharePoint = await props.repository!.listarObras();
       } catch (error) {
         erros.push(`obras: ${error instanceof Error ? error.message : String(error)}`);
+      }
+
+      try {
+        fornecedoresSharePoint = await props.repository!.listarFornecedores();
+      } catch (error) {
+        erros.push(`fornecedores: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       try {
@@ -1143,6 +1145,16 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
       setUsuariosPerfisReadonly(usuariosPerfis);
       setAlcadasReadonly(alcadasSharePoint);
       setObrasReadonly(obrasSharePoint);
+      if (obrasSharePoint.length > 0) {
+        setObrasCadastradas(obrasSharePoint);
+        const clientesSharePoint = montarClientesPorObras(obrasSharePoint);
+        if (clientesSharePoint.length > 0) {
+          setClientes(clientesSharePoint);
+        }
+      }
+      if (fornecedoresSharePoint.length > 0) {
+        setFornecedores(fornecedoresSharePoint);
+      }
       setRequisicoesResumoReadonly(requisicoesResumo);
       if (solicitacoesSharePoint.length > 0) {
         const solicitacoesComObra = solicitacoesSharePoint.map((solicitacao) => {
@@ -1160,6 +1172,7 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         console.info('[ENAC][V2.5A] Dados readonly SharePoint disponiveis para interface', {
           fonteCards: 'sharepoint',
           obras: obrasSharePoint.length,
+          fornecedores: fornecedoresSharePoint.length,
           usuariosPerfis: usuariosPerfis.length,
           alcadas: alcadasSharePoint.length,
           solicitacoes: solicitacoesSharePoint.length,
@@ -1183,6 +1196,9 @@ export function EnacSistema(props: IEnacSistemaProps): JSX.Element {
         setObrasReadonly([]);
         setRequisicoesResumoReadonly([]);
         setSolicitacoes(initialSolicitacoes);
+        setClientes(clientesIniciais);
+        setObrasCadastradas(obras);
+        setFornecedores(fornecedoresIniciais);
         setHistoricoConfiguracoesReadonly([]);
         setDiagnosticoReadonlyState(null);
         setOrigemDadosEfetiva('local');
