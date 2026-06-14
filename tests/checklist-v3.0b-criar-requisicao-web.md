@@ -17,6 +17,7 @@
 
 ## Teste manual com escrita controlada
 
+- Executar `pwsh -File ".\scripts\web\validar-config-v3.0b.ps1"` e confirmar `Status = OK`.
 - Usar app Entra com permissao delegada de escrita aprovada.
 - Confirmar que `VITE_ENAC_ENTRA_CLIENT_ID` nao e o ClientId readonly de inventario `0dab19b3-8e48-4f89-ad94-1446b08d3781`.
 - Configurar `VITE_ENAC_SHAREPOINT_SCOPE` com escopo de escrita compatível.
