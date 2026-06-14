@@ -13,7 +13,7 @@ const sharePointOrigin = siteUrl ? new URL(siteUrl).origin : '';
 const sharePointScope = import.meta.env.VITE_ENAC_SHAREPOINT_SCOPE || `${sharePointOrigin}/AllSites.Read`;
 const redirectUri = import.meta.env.VITE_ENAC_REDIRECT_URI ||
   (window.location.hostname === '127.0.0.1'
-    ? `http://localhost:${window.location.port || '5173'}`
+    ? `http://localhost:${window.location.port || '5173'}/`
     : window.location.origin);
 
 type WebSection = 'visao' | 'estrutura' | 'fluxos' | 'dados' | 'seguranca' | 'implantacao' | 'sistema';
