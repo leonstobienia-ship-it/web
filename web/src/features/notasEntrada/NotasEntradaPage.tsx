@@ -38,9 +38,10 @@ const marker = 'DEV_LOCAL_V3_5A';
 
 const statusLabels: Record<NotaEntradaStatus, string> = {
   RASCUNHO: 'Rascunho',
-  LANCADA: 'Lançada',
   CONFERIDA: 'Conferida',
-  APROVADA_FINANCEIRO: 'Aprovada financeiro',
+  DIVERGENTE: 'Divergente',
+  APROVADA: 'Aprovada',
+  PROVISIONADA: 'Provisionada',
   CANCELADA: 'Cancelada'
 };
 
@@ -53,6 +54,12 @@ const emptyFilters = (): NotaFilters => ({
 });
 
 const today = (): string => new Date().toISOString().slice(0, 10);
+
+const addDays = (days: number): string => {
+  const value = new Date();
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+};
 
 const nextNotaNumero = (): string => `NF-${marker}-${Date.now().toString().slice(-8)}`;
 
@@ -113,7 +120,7 @@ const calculateTotal = (form: NotaForm): number =>
   ).toFixed(2));
 
 const canEdit = (nota: NotaEntradaApi | null): boolean => nota?.status === 'RASCUNHO';
-const canCancel = (nota: NotaEntradaApi): boolean => ['RASCUNHO', 'LANCADA', 'CONFERIDA'].includes(nota.status);
+const canCancel = (nota: NotaEntradaApi): boolean => ['RASCUNHO', 'CONFERIDA', 'DIVERGENTE'].includes(nota.status);
 
 export function NotasEntradaPage(): JSX.Element {
   const [empresas, setEmpresas] = React.useState<EmpresaApi[]>([]);
@@ -140,13 +147,16 @@ export function NotasEntradaPage(): JSX.Element {
   }, []);
 
   const loadReferences = React.useCallback(async (): Promise<void> => {
-    const [empresasResponse, fornecedoresResponse, obrasResponse, centrosResponse, pedidosResponse] = await Promise.all([
+    const [empresasResponse, fornecedoresResponse, obrasResponse, centrosResponse, pedidosEmitidos, pedidosEnviados, pedidosConfirmados] = await Promise.all([
       erpApi.empresas.list(),
       erpApi.fornecedores.list(),
       erpApi.obras.list(),
       erpApi.centrosCusto.list(),
+      erpApi.pedidosCompra.list({ status: 'EMITIDO' }),
+      erpApi.pedidosCompra.list({ status: 'ENVIADO_FORNECEDOR' }),
       erpApi.pedidosCompra.list({ status: 'CONFIRMADO' })
     ]);
+    const pedidosResponse = [...pedidosEmitidos, ...pedidosEnviados, ...pedidosConfirmados];
     setEmpresas(empresasResponse);
     setFornecedores(fornecedoresResponse.filter((fornecedor) => fornecedor.status !== 'inativo'));
     setObras(obrasResponse.filter((obra) => obra.status !== 'inativo'));
@@ -257,7 +267,7 @@ export function NotasEntradaPage(): JSX.Element {
     setMessage('');
     try {
       const total = calculateTotal(form);
-      const nota = await erpApi.notasEntrada.create({
+      const nota = await erpApi.notasEntrada.gerarDoPedido({
         company_id: empresa.id,
         pedido_id: form.pedido_id,
         numero: form.numero,
@@ -321,7 +331,7 @@ export function NotasEntradaPage(): JSX.Element {
 
   const transition = async (
     nota: NotaEntradaApi,
-    action: 'lancar' | 'conferir' | 'aprovar-financeiro' | 'cancelar'
+    action: 'conferir' | 'marcar-divergente' | 'reabrir-rascunho' | 'aprovar' | 'provisionar-conta-pagar' | 'cancelar'
   ): Promise<void> => {
     if (saving) {
       return;
@@ -330,10 +340,15 @@ export function NotasEntradaPage(): JSX.Element {
     setError('');
     setMessage('');
     try {
-      const updated = await erpApi.notasEntrada.transition(nota.id, action);
+      const updated = action === 'provisionar-conta-pagar'
+        ? (await erpApi.notasEntrada.provisionarContaPagar(nota.id, {
+          data_vencimento: addDays(7),
+          observacoes: `${marker} - conta provisionada pela nota fiscal de entrada`
+        })).nota
+        : await erpApi.notasEntrada.transition(nota.id, action);
       setSelectedNota(updated);
       setCancelTarget(null);
-      setMessage('Status da nota atualizado.');
+      setMessage(action === 'provisionar-conta-pagar' ? 'Conta a pagar provisionada.' : 'Status da nota atualizado.');
       await refresh(updated.id);
     } catch (transitionError) {
       setError(getErrorMessage(transitionError));
@@ -345,9 +360,9 @@ export function NotasEntradaPage(): JSX.Element {
   return (
     <section className="enac-web-page enac-finance-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
-      <h1>Notas de Entrada</h1>
+      <h1>Notas Fiscais de Entrada</h1>
       <p className="enac-web-lead">
-        Lançamento local de nota fiscal de entrada vinculada a pedido confirmado, sem XML, SEFAZ, prefeitura ou pagamento.
+        Lançamento local de nota fiscal de entrada vinculada a pedido de compra, sem XML, SEFAZ, prefeitura ou pagamento.
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando notas locais.</div>}
@@ -376,7 +391,7 @@ export function NotasEntradaPage(): JSX.Element {
 
             <div className="enac-cadastro-toolbar">
               <div>
-                <h2>Lista de notas</h2>
+                <h2>Lista de notas fiscais</h2>
                 <p>{notas.length} nota(s) encontrada(s)</p>
               </div>
               <button type="button" className="enac-cadastro-secondary" onClick={() => void refresh()} disabled={saving}>
@@ -401,10 +416,10 @@ export function NotasEntradaPage(): JSX.Element {
             )}
           </section>
 
-          <aside className="enac-finance-panel" aria-label="Nova nota de entrada">
+          <aside className="enac-finance-panel" aria-label="Nova nota fiscal de entrada">
             <form className="enac-cadastro-form enac-finance-form" onSubmit={(event) => void createNota(event)}>
               <div className="enac-cadastro-form-head">
-                <h3>Nova nota</h3>
+                <h3>Nova nota fiscal</h3>
               </div>
 
               <div className="enac-cadastro-form-grid">
@@ -606,7 +621,10 @@ function NotaDetail({
   cancelTarget: NotaEntradaApi | null;
   onEditChange: (field: keyof NotaForm, value: string) => void;
   onSave: (event: React.FormEvent) => void;
-  onTransition: (nota: NotaEntradaApi, action: 'lancar' | 'conferir' | 'aprovar-financeiro' | 'cancelar') => void;
+  onTransition: (
+    nota: NotaEntradaApi,
+    action: 'conferir' | 'marcar-divergente' | 'reabrir-rascunho' | 'aprovar' | 'provisionar-conta-pagar' | 'cancelar'
+  ) => void;
   onConfirmCancel: (nota: NotaEntradaApi) => void;
   onDismissCancel: () => void;
 }): JSX.Element {
@@ -631,9 +649,11 @@ function NotaDetail({
       </div>
 
       <div className="enac-cadastro-row-actions enac-finance-actions">
-        {nota.status === 'RASCUNHO' && <button type="button" onClick={() => onTransition(nota, 'lancar')} disabled={saving}>Lançar</button>}
-        {nota.status === 'LANCADA' && <button type="button" onClick={() => onTransition(nota, 'conferir')} disabled={saving}>Conferir</button>}
-        {nota.status === 'CONFERIDA' && <button type="button" onClick={() => onTransition(nota, 'aprovar-financeiro')} disabled={saving}>Aprovar financeiro</button>}
+        {nota.status === 'RASCUNHO' && <button type="button" onClick={() => onTransition(nota, 'conferir')} disabled={saving}>Conferir</button>}
+        {nota.status === 'RASCUNHO' && <button type="button" onClick={() => onTransition(nota, 'marcar-divergente')} disabled={saving}>Marcar divergente</button>}
+        {nota.status === 'DIVERGENTE' && <button type="button" onClick={() => onTransition(nota, 'reabrir-rascunho')} disabled={saving}>Reabrir rascunho</button>}
+        {nota.status === 'CONFERIDA' && <button type="button" onClick={() => onTransition(nota, 'aprovar')} disabled={saving}>Aprovar</button>}
+        {nota.status === 'APROVADA' && <button type="button" onClick={() => onTransition(nota, 'provisionar-conta-pagar')} disabled={saving}>Provisionar conta a pagar</button>}
         {canCancel(nota) && <button type="button" onClick={() => onTransition(nota, 'cancelar')} disabled={saving}>Cancelar</button>}
       </div>
 

@@ -1257,19 +1257,22 @@ textarea {
 }
 
 .enac-finance-status--rascunho,
-.enac-finance-status--aberta {
+.enac-finance-status--aberta,
+.enac-finance-status--divergente {
   background: #fff3d8;
   color: #7a4a00;
 }
 
 .enac-finance-status--lancada,
 .enac-finance-status--conferida,
+.enac-finance-status--provisionada,
 .enac-finance-status--aguardando-programacao {
   background: #e5f0fb;
   color: #245a7f;
 }
 
-.enac-finance-status--aprovada-financeiro {
+.enac-finance-status--aprovada-financeiro,
+.enac-finance-status--aprovada {
   background: #e7f4ea;
   color: #1f6b35;
 }
@@ -1280,7 +1283,8 @@ textarea {
 }
 
 .enac-finance-status--cancelada,
-.enac-finance-status--baixada {
+.enac-finance-status--baixada,
+.enac-finance-status--paga {
   background: #eceff3;
   color: #68717d;
 }

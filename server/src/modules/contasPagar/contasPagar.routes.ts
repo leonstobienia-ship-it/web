@@ -3,7 +3,7 @@ import type { PoolClient, QueryResultRow } from 'pg';
 import { getPool } from '../../db/client.js';
 import { HttpError, isHttpError, methodNotAllowed, readJsonBody, sendError, sendJson } from '../../http.js';
 
-type ContaPagarStatus = 'ABERTA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'CANCELADA' | 'BAIXADA';
+type ContaPagarStatus = 'PROVISIONADA' | 'APROVADA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'PAGA' | 'CANCELADA';
 
 interface PgErrorLike {
   code?: string;
@@ -31,11 +31,10 @@ interface ContaRow extends QueryResultRow {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-const statuses: ContaPagarStatus[] = ['ABERTA', 'AGUARDANDO_PROGRAMACAO', 'PROGRAMADA', 'CANCELADA', 'BAIXADA'];
-const editableStatuses: ContaPagarStatus[] = ['ABERTA'];
+const statuses: ContaPagarStatus[] = ['PROVISIONADA', 'APROVADA', 'AGUARDANDO_PROGRAMACAO', 'PROGRAMADA', 'PAGA', 'CANCELADA'];
+const editableStatuses: ContaPagarStatus[] = ['PROVISIONADA'];
 const transitions: Record<string, { from: ContaPagarStatus[]; to: ContaPagarStatus }> = {
-  'enviar-programacao': { from: ['ABERTA'], to: 'AGUARDANDO_PROGRAMACAO' },
-  cancelar: { from: ['ABERTA', 'AGUARDANDO_PROGRAMACAO'], to: 'CANCELADA' }
+  cancelar: { from: ['PROVISIONADA'], to: 'CANCELADA' }
 };
 
 const assertUuid = (value: unknown, fieldName: string): string => {
@@ -128,8 +127,8 @@ const fetchNotaEntrada = async (client: PoolClient, notaEntradaId: string): Prom
   if (!nota) {
     throw new HttpError(404, 'not_found', 'Nota de entrada nao encontrada.');
   }
-  if (nota.status !== 'APROVADA_FINANCEIRO') {
-    throw new HttpError(409, 'status_conflict', 'Nota deve estar APROVADA_FINANCEIRO para gerar conta a pagar.');
+  if (nota.status !== 'APROVADA') {
+    throw new HttpError(409, 'status_conflict', 'Nota deve estar APROVADA para provisionar conta a pagar.');
   }
   return nota;
 };
@@ -321,7 +320,7 @@ const gerarContaDaNota = async (payload: Record<string, unknown>) => {
         forma_pagamento,
         observacoes
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, $12, $12, 'ABERTA', $13, $13, $14)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, $12, $12, 'PROVISIONADA', $13, $13, $14)
       returning id
       `,
       [
@@ -493,7 +492,7 @@ export const handleContasPagar = async (req: IncomingMessage, res: ServerRespons
   const parts = relativePath.split('/').filter(Boolean);
 
   try {
-    if (parts.length === 1 && parts[0] === 'gerar-da-nota') {
+    if (parts.length === 1 && ['gerar-da-nota', 'provisionar-da-nota'].includes(parts[0])) {
       if (method !== 'POST') {
         methodNotAllowed(res, ['POST']);
         return;

@@ -520,9 +520,9 @@ Teste manual do frontend:
 8. Emita, envie ao fornecedor e confirme.
 9. Teste o bloqueio de duplicidade e o cancelamento em status permitido.
 
-## V3.5A - Nota de Entrada e Contas a Pagar Inicial
+## V3.5A - Nota Fiscal de Entrada e Conta a Pagar Inicial
 
-A V3.5A implementa Nota Fiscal de Entrada local vinculada a Pedido de Compra confirmado e geração inicial de Conta a Pagar em parcela única. A etapa não implementa programação bancária real, pagamento, baixa, conciliação, XML, SEFAZ, prefeitura, NF-e, NFS-e, SharePoint, Entra, automações ou `DELETE` físico.
+A V3.5A implementa Nota Fiscal de Entrada local vinculada a Pedido de Compra e provisão inicial de Conta a Pagar em parcela única. A etapa não implementa programação bancária, pagamento, baixa, conciliação, XML, SEFAZ, prefeitura, NF-e, NFS-e, SharePoint, Entra, automações ou `DELETE` físico.
 
 Aplicar migrations locais:
 
@@ -546,17 +546,20 @@ Rodar frontend:
 npm.cmd run web:dev
 ```
 
-Endpoints de notas:
+Endpoints de notas fiscais:
 
 ```text
-GET    /notas-entrada
-GET    /notas-entrada/:id
-POST   /notas-entrada
-PATCH  /notas-entrada/:id
-PATCH  /notas-entrada/:id/lancar
-PATCH  /notas-entrada/:id/conferir
-PATCH  /notas-entrada/:id/aprovar-financeiro
-PATCH  /notas-entrada/:id/cancelar
+GET    /notas-fiscais-entrada
+GET    /notas-fiscais-entrada/:id
+POST   /notas-fiscais-entrada
+POST   /notas-fiscais-entrada/gerar-do-pedido
+PATCH  /notas-fiscais-entrada/:id
+PATCH  /notas-fiscais-entrada/:id/conferir
+PATCH  /notas-fiscais-entrada/:id/marcar-divergente
+PATCH  /notas-fiscais-entrada/:id/reabrir-rascunho
+PATCH  /notas-fiscais-entrada/:id/aprovar
+PATCH  /notas-fiscais-entrada/:id/provisionar-conta-pagar
+PATCH  /notas-fiscais-entrada/:id/cancelar
 ```
 
 Endpoints de contas a pagar:
@@ -564,22 +567,17 @@ Endpoints de contas a pagar:
 ```text
 GET    /contas-pagar
 GET    /contas-pagar/:id
-POST   /contas-pagar/gerar-da-nota
-PATCH  /contas-pagar/:id
-PATCH  /contas-pagar/:id/enviar-programacao
-PATCH  /contas-pagar/:id/cancelar
+POST   /contas-pagar/provisionar-da-nota
 ```
 
 Fluxo V3.5A:
 
 ```text
-Pedido CONFIRMADO -> Nota RASCUNHO
-RASCUNHO -> LANCADA
-LANCADA -> CONFERIDA
-CONFERIDA -> APROVADA_FINANCEIRO
-Nota APROVADA_FINANCEIRO -> Conta ABERTA
-ABERTA -> AGUARDANDO_PROGRAMACAO
-ABERTA | AGUARDANDO_PROGRAMACAO -> CANCELADA
+Pedido EMITIDO | ENVIADO_FORNECEDOR | CONFIRMADO -> Nota RASCUNHO
+RASCUNHO -> CONFERIDA
+RASCUNHO -> DIVERGENTE -> RASCUNHO
+CONFERIDA -> APROVADA
+APROVADA -> PROVISIONADA + Conta PROVISIONADA
 ```
 
 Smoke tests:
@@ -590,21 +588,20 @@ npm.cmd run smoke:notas
 npm.cmd run smoke:contas-pagar
 ```
 
-Os smokes criam cenário local com marcador `DEV_LOCAL_V3_5A`, garantem pedido confirmado, criam nota com itens herdados, aprovam para financeiro, geram conta a pagar, validam duplicidade com HTTP `409` e cancelam conta em status permitido.
+Os smokes criam cenário local com marcador `DEV_LOCAL_V3_5A`, garantem pedido elegível, criam NF com itens herdados, aprovam, provisionam conta a pagar e validam duplicidade com HTTP `409`.
 
 Teste manual do frontend:
 
 1. Suba PostgreSQL local e backend.
 2. Rode `npm.cmd run web:dev`.
 3. Abra `http://127.0.0.1:5173`.
-4. Acesse `Notas de Entrada`.
-5. Crie nota a partir de pedido confirmado.
+4. Acesse `Notas Fiscais`.
+5. Crie nota fiscal a partir de pedido elegível.
 6. Confira itens herdados e valor total.
-7. Lance, confira e aprove financeiro.
+7. Confira, aprove e provisione a conta a pagar.
 8. Acesse `Contas a Pagar`.
-9. Gere conta a partir da nota aprovada.
-10. Envie para programação lógica.
-11. Teste duplicidade para a mesma nota/parcela e cancele conta em status permitido.
+9. Verifique a conta `PROVISIONADA`.
+10. Teste duplicidade para a mesma nota/parcela.
 
 ## V2.3 - Integração SharePoint
 

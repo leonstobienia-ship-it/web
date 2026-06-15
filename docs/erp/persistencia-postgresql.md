@@ -244,9 +244,9 @@ npm.cmd run smoke:pedidos
 
 O smoke cria dados locais com marcador `DEV_LOCAL_V3_4C`, gera pedido a partir de cotacao vencedora, valida itens herdados, executa transicoes ate `CONFIRMADO` e valida duplicidade com `409`.
 
-## Nota de Entrada e Contas a Pagar V3.5A
+## Nota Fiscal de Entrada e Conta a Pagar V3.5A
 
-A V3.5A libera escrita local para Nota de Entrada vinculada a Pedido de Compra confirmado e para Conta a Pagar inicial gerada por nota aprovada:
+A V3.5A libera escrita local para Nota Fiscal de Entrada vinculada a Pedido de Compra e para Conta a Pagar inicial provisionada por nota aprovada:
 
 - cabecalho em `notas_fiscais_entrada`;
 - itens em `notas_fiscais_entrada_itens`;
@@ -255,18 +255,21 @@ A V3.5A libera escrita local para Nota de Entrada vinculada a Pedido de Compra c
 - bloqueio de duplicidade ativa de nota por fornecedor, numero e serie;
 - bloqueio de duplicidade ativa de conta por nota e parcela.
 
-Endpoints de notas:
+Endpoints de notas fiscais:
 
 | Endpoint | Uso |
 |---|---|
-| `GET /notas-entrada` | Lista notas, com filtros opcionais por `status`, `fornecedor_id`, `pedido_id`, `obra_id` e `centro_custo_id` |
-| `GET /notas-entrada/:id` | Detalhe com itens herdados |
-| `POST /notas-entrada` | Cria nota `RASCUNHO` vinculada a pedido confirmado |
-| `PATCH /notas-entrada/:id` | Atualiza campos basicos enquanto `RASCUNHO` |
-| `PATCH /notas-entrada/:id/lancar` | `RASCUNHO -> LANCADA` |
-| `PATCH /notas-entrada/:id/conferir` | `LANCADA -> CONFERIDA` |
-| `PATCH /notas-entrada/:id/aprovar-financeiro` | `CONFERIDA -> APROVADA_FINANCEIRO` |
-| `PATCH /notas-entrada/:id/cancelar` | Cancela status permitido |
+| `GET /notas-fiscais-entrada` | Lista notas, com filtros opcionais por `status`, `fornecedor_id`, `pedido_id`, `obra_id` e `centro_custo_id` |
+| `GET /notas-fiscais-entrada/:id` | Detalhe com itens herdados |
+| `POST /notas-fiscais-entrada` | Cria nota `RASCUNHO` vinculada a pedido |
+| `POST /notas-fiscais-entrada/gerar-do-pedido` | Gera nota a partir de pedido elegivel |
+| `PATCH /notas-fiscais-entrada/:id` | Atualiza campos basicos enquanto `RASCUNHO` |
+| `PATCH /notas-fiscais-entrada/:id/conferir` | `RASCUNHO -> CONFERIDA` |
+| `PATCH /notas-fiscais-entrada/:id/marcar-divergente` | `RASCUNHO -> DIVERGENTE` |
+| `PATCH /notas-fiscais-entrada/:id/reabrir-rascunho` | `DIVERGENTE -> RASCUNHO` |
+| `PATCH /notas-fiscais-entrada/:id/aprovar` | `CONFERIDA -> APROVADA` |
+| `PATCH /notas-fiscais-entrada/:id/provisionar-conta-pagar` | `APROVADA -> PROVISIONADA` e cria conta `PROVISIONADA` |
+| `PATCH /notas-fiscais-entrada/:id/cancelar` | Cancela status permitido |
 
 Endpoints de contas a pagar:
 
@@ -274,12 +277,9 @@ Endpoints de contas a pagar:
 |---|---|
 | `GET /contas-pagar` | Lista contas, com filtros por `status`, `fornecedor_id`, `obra_id`, `vencimento_de` e `vencimento_ate` |
 | `GET /contas-pagar/:id` | Detalhe da conta |
-| `POST /contas-pagar/gerar-da-nota` | Gera conta `ABERTA` em parcela unica a partir de nota aprovada |
-| `PATCH /contas-pagar/:id` | Atualiza campos basicos enquanto `ABERTA` |
-| `PATCH /contas-pagar/:id/enviar-programacao` | `ABERTA -> AGUARDANDO_PROGRAMACAO` logico |
-| `PATCH /contas-pagar/:id/cancelar` | Cancela status permitido |
+| `POST /contas-pagar/provisionar-da-nota` | Alias auxiliar para gerar conta `PROVISIONADA` a partir de NF `APROVADA` |
 
-Na V3.5A, `PROGRAMADA` e `BAIXADA` ficam reservados. A etapa nao implementa programacao bancaria real, pagamento, baixa, conciliacao, XML, SEFAZ, prefeitura, NF-e, NFS-e, SharePoint, Entra, automacao ou `DELETE`.
+Na V3.5A, `APROVADA`, `AGUARDANDO_PROGRAMACAO`, `PROGRAMADA` e `PAGA` em contas ficam reservados para etapas futuras. A etapa nao implementa programacao bancaria, pagamento, baixa, conciliacao, XML, SEFAZ, prefeitura, NF-e, NFS-e, SharePoint, Entra, automacao ou `DELETE`.
 
 Smoke tests:
 
@@ -289,7 +289,7 @@ npm.cmd run smoke:notas
 npm.cmd run smoke:contas-pagar
 ```
 
-Os smokes criam dados locais com marcador `DEV_LOCAL_V3_5A`, aprovam nota para financeiro, geram conta, validam duplicidade com `409` e cancelam a conta em status permitido, sem acionar banco real ou integracao externa.
+Os smokes usam marcador `DEV_LOCAL_V3_5A`, aprovam NF, provisionam conta, validam duplicidade com `409` e nao acionam banco real externo, SharePoint, Entra, automacao, programacao bancaria, pagamento ou baixa.
 
 ## Estabilizacao V3.3C
 

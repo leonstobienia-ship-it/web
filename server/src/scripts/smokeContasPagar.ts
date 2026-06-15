@@ -16,6 +16,7 @@ interface NotaEntrada {
 
 interface ContaPagar {
   id: string;
+  nota_entrada_id: string;
   numero_documento: string;
   status: string;
   valor_original: string | number;
@@ -70,30 +71,21 @@ const expectHttpError = async (endpoint: string, expectedStatus: number, init?: 
   return text;
 };
 
-const transitionConta = async (
-  conta: ContaPagar,
-  action: string,
-  expectedStatus: string
-): Promise<ContaPagar> => {
-  const response = await requestJson<ApiItemResponse<ContaPagar>>(`/contas-pagar/${conta.id}/${action}`, {
-    method: 'PATCH'
-  });
-  if (response.data.status !== expectedStatus) {
-    throw new Error(`Transicao ${action} retornou ${response.data.status}, esperado ${expectedStatus}.`);
-  }
-  return response.data;
-};
-
 const findApprovedNota = async (): Promise<NotaEntrada> => {
-  const notas = (await requestJson<ApiListResponse<NotaEntrada>>('/notas-entrada?status=APROVADA_FINANCEIRO')).data;
+  const notas = (await requestJson<ApiListResponse<NotaEntrada>>('/notas-fiscais-entrada?status=APROVADA')).data;
   const nota = notas.find((item) => {
     const searchable = `${item.numero} ${item.observacoes || ''}`;
     return searchable.includes(marker);
   });
   if (!nota) {
-    throw new Error(`Nenhuma nota APROVADA_FINANCEIRO com marcador ${marker}. Rode npm.cmd run smoke:notas antes.`);
+    throw new Error(`Nenhuma nota APROVADA com marcador ${marker}. Rode npm.cmd run smoke:notas para criar novo cenario ou aprove uma nota local.`);
   }
   return nota;
+};
+
+const findProvisionedConta = async (): Promise<ContaPagar | undefined> => {
+  const contas = (await requestJson<ApiListResponse<ContaPagar>>('/contas-pagar?status=PROVISIONADA')).data;
+  return contas.find((item) => item.numero_documento.includes(marker));
 };
 
 const run = async (): Promise<void> => {
@@ -111,50 +103,50 @@ const run = async (): Promise<void> => {
   }
   results.push({ etapa: 'GET /health/db', ok: true, detalhe: 'PostgreSQL local conectado' });
 
-  const nota = await findApprovedNota();
-  results.push({ etapa: 'Nota aprovada localizada', ok: true, detalhe: nota.numero });
-
-  let conta = (await requestJson<ApiItemResponse<ContaPagar>>('/contas-pagar/gerar-da-nota', {
-    method: 'POST',
-    body: JSON.stringify({
-      nota_entrada_id: nota.id,
-      data_vencimento: addDays(7),
-      forma_pagamento_prevista: `${marker} - forma local`,
-      observacoes: `${marker} - conta local sem programacao bancaria, pagamento ou baixa`
-    })
-  })).data;
-  if (conta.status !== 'ABERTA') {
-    throw new Error(`Conta criada em status ${conta.status}, esperado ABERTA.`);
+  let conta = await findProvisionedConta();
+  if (!conta) {
+    const nota = await findApprovedNota();
+    results.push({ etapa: 'Nota aprovada localizada', ok: true, detalhe: nota.numero });
+    conta = (await requestJson<ApiItemResponse<ContaPagar>>('/contas-pagar/provisionar-da-nota', {
+      method: 'POST',
+      body: JSON.stringify({
+        nota_entrada_id: nota.id,
+        data_vencimento: addDays(7),
+        forma_pagamento_prevista: `${marker} - forma local`,
+        observacoes: `${marker} - conta local sem programacao bancaria, pagamento ou baixa`
+      })
+    })).data;
   }
-  if (Number(conta.valor_original) <= 0 || Number(conta.valor_aberto) !== Number(conta.valor_original)) {
+  if (!conta) {
+    throw new Error('Nenhuma conta provisionada ou nota aprovada encontrada para o smoke.');
+  }
+  const contaFinal = conta;
+  if (contaFinal.status !== 'PROVISIONADA') {
+    throw new Error(`Conta criada em status ${contaFinal.status}, esperado PROVISIONADA.`);
+  }
+  if (Number(contaFinal.valor_original) <= 0 || Number(contaFinal.valor_aberto) !== Number(contaFinal.valor_original)) {
     throw new Error('Conta criada nao iniciou com valor aberto igual ao original.');
   }
-  results.push({ etapa: 'POST /contas-pagar/gerar-da-nota', ok: true, detalhe: conta.numero_documento });
+  results.push({ etapa: 'Conta provisionada localizada/criada', ok: true, detalhe: contaFinal.numero_documento });
 
   const listContas = await requestJson<ApiListResponse<ContaPagar>>('/contas-pagar');
-  if (!listContas.data.some((item) => item.id === conta.id)) {
+  if (!listContas.data.some((item) => item.id === contaFinal.id)) {
     throw new Error('GET /contas-pagar nao retornou a conta criada.');
   }
-  const detalheConta = await requestJson<ApiItemResponse<ContaPagar>>(`/contas-pagar/${conta.id}`);
+  const detalheConta = await requestJson<ApiItemResponse<ContaPagar>>(`/contas-pagar/${contaFinal.id}`);
   results.push({ etapa: 'GET /contas-pagar e /:id', ok: true, detalhe: detalheConta.data.numero_documento });
 
-  conta = await transitionConta(conta, 'enviar-programacao', 'AGUARDANDO_PROGRAMACAO');
-  results.push({ etapa: 'Enviar para programacao', ok: true, detalhe: conta.status });
-
-  await expectHttpError('/contas-pagar/gerar-da-nota', 409, {
+  await expectHttpError('/contas-pagar/provisionar-da-nota', 409, {
     method: 'POST',
     body: JSON.stringify({
-      nota_entrada_id: nota.id,
+      nota_entrada_id: contaFinal.nota_entrada_id,
       data_vencimento: addDays(10),
       observacoes: `${marker} - duplicidade bloqueada`
     })
   });
   results.push({ etapa: 'Duplicidade bloqueada', ok: true, detalhe: 'HTTP 409' });
 
-  conta = await transitionConta(conta, 'cancelar', 'CANCELADA');
-  results.push({ etapa: 'Cancelamento permitido', ok: true, detalhe: conta.status });
-
-  console.info(`Smoke V3.5A contas a pagar concluido contra ${apiBaseUrl}. Marcador: ${marker}. Sem DELETE, pagamento, baixa ou conciliacao.`);
+  console.info(`Smoke V3.5A contas a pagar concluido contra ${apiBaseUrl}. Marcador: ${marker}. Sem DELETE, programacao, pagamento, baixa ou conciliacao.`);
   console.table(results);
 };
 

@@ -436,11 +436,12 @@ export interface PedidoCompraUpdatePayload {
   observacoes?: string | null;
 }
 
-export type NotaEntradaStatus = 'RASCUNHO' | 'LANCADA' | 'CONFERIDA' | 'APROVADA_FINANCEIRO' | 'CANCELADA';
+export type NotaEntradaStatus = 'RASCUNHO' | 'CONFERIDA' | 'DIVERGENTE' | 'APROVADA' | 'PROVISIONADA' | 'CANCELADA';
 
 export interface NotaEntradaItemApi {
   id: string;
   nota_id: string;
+  nota_fiscal_id?: string;
   pedido_item_id?: string | null;
   descricao: string;
   unidade: string;
@@ -516,7 +517,7 @@ export interface NotaEntradaPayload {
 
 export type NotaEntradaUpdatePayload = Partial<Omit<NotaEntradaPayload, 'company_id' | 'pedido_id'>>;
 
-export type ContaPagarStatus = 'ABERTA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'CANCELADA' | 'BAIXADA';
+export type ContaPagarStatus = 'PROVISIONADA' | 'APROVADA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'PAGA' | 'CANCELADA';
 
 export interface ContaPagarApi {
   id: string;
@@ -563,6 +564,17 @@ export interface GerarContaPagarPayload {
   data_vencimento: string;
   forma_pagamento_prevista?: string | null;
   observacoes?: string | null;
+}
+
+export interface ProvisionarContaPagarPayload {
+  data_vencimento?: string;
+  forma_pagamento_prevista?: string | null;
+  observacoes?: string | null;
+}
+
+export interface ProvisionarContaPagarResponse {
+  nota: NotaEntradaApi;
+  conta_pagar: ContaPagarApi;
 }
 
 export interface ContaPagarUpdatePayload {
@@ -753,7 +765,7 @@ export const erpApi = {
   notasEntrada: {
     list: async (filters: NotaEntradaFilters = {}): Promise<NotaEntradaApi[]> =>
       (await request<ApiListResponse<NotaEntradaApi>>(
-        `/notas-entrada${buildQueryString({
+        `/notas-fiscais-entrada${buildQueryString({
           status: filters.status || undefined,
           fornecedor_id: filters.fornecedor_id,
           pedido_id: filters.pedido_id,
@@ -762,23 +774,36 @@ export const erpApi = {
         })}`
       )).data,
     get: async (id: string): Promise<NotaEntradaApi> =>
-      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-entrada/${id}`)).data,
+      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-fiscais-entrada/${id}`)).data,
     create: async (payload: NotaEntradaPayload): Promise<NotaEntradaApi> =>
-      (await request<ApiItemResponse<NotaEntradaApi>>('/notas-entrada', {
+      (await request<ApiItemResponse<NotaEntradaApi>>('/notas-fiscais-entrada', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    gerarDoPedido: async (payload: NotaEntradaPayload): Promise<NotaEntradaApi> =>
+      (await request<ApiItemResponse<NotaEntradaApi>>('/notas-fiscais-entrada/gerar-do-pedido', {
         method: 'POST',
         body: JSON.stringify(payload)
       })).data,
     update: async (id: string, payload: NotaEntradaUpdatePayload): Promise<NotaEntradaApi> =>
-      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-entrada/${id}`, {
+      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-fiscais-entrada/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data,
     transition: async (
       id: string,
-      action: 'lancar' | 'conferir' | 'aprovar-financeiro' | 'cancelar'
+      action: 'conferir' | 'marcar-divergente' | 'reabrir-rascunho' | 'aprovar' | 'cancelar'
     ): Promise<NotaEntradaApi> =>
-      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-entrada/${id}/${action}`, {
+      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-fiscais-entrada/${id}/${action}`, {
         method: 'PATCH'
+      })).data,
+    provisionarContaPagar: async (
+      id: string,
+      payload: ProvisionarContaPagarPayload = {}
+    ): Promise<ProvisionarContaPagarResponse> =>
+      (await request<ApiItemResponse<ProvisionarContaPagarResponse>>(`/notas-fiscais-entrada/${id}/provisionar-conta-pagar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
       })).data
   },
   contasPagar: {
@@ -799,6 +824,11 @@ export const erpApi = {
         method: 'POST',
         body: JSON.stringify(payload)
       })).data,
+    provisionarDaNota: async (payload: GerarContaPagarPayload): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>('/contas-pagar/provisionar-da-nota', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
     update: async (id: string, payload: ContaPagarUpdatePayload): Promise<ContaPagarApi> =>
       (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}`, {
         method: 'PATCH',
@@ -806,7 +836,7 @@ export const erpApi = {
       })).data,
     transition: async (
       id: string,
-      action: 'enviar-programacao' | 'cancelar'
+      action: 'cancelar'
     ): Promise<ContaPagarApi> =>
       (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/${action}`, {
         method: 'PATCH'

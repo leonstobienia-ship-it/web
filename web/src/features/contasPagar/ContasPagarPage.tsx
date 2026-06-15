@@ -27,18 +27,20 @@ interface ContaForm {
 const marker = 'DEV_LOCAL_V3_5A';
 
 const statusLabels: Record<ContaPagarStatus, string> = {
-  ABERTA: 'Aberta',
+  PROVISIONADA: 'Provisionada',
+  APROVADA: 'Aprovada',
   AGUARDANDO_PROGRAMACAO: 'Aguardando programação',
   PROGRAMADA: 'Programada',
-  CANCELADA: 'Cancelada',
-  BAIXADA: 'Baixada'
+  PAGA: 'Paga',
+  CANCELADA: 'Cancelada'
 };
 
 const notaStatusLabels: Record<NotaEntradaStatus, string> = {
   RASCUNHO: 'Rascunho',
-  LANCADA: 'Lançada',
   CONFERIDA: 'Conferida',
-  APROVADA_FINANCEIRO: 'Aprovada financeiro',
+  DIVERGENTE: 'Divergente',
+  APROVADA: 'Aprovada',
+  PROVISIONADA: 'Provisionada',
   CANCELADA: 'Cancelada'
 };
 
@@ -85,8 +87,8 @@ const formatDate = (value: string | null | undefined): string =>
 
 const statusClass = (status: string): string => status.toLowerCase().replace(/_/g, '-');
 
-const canEdit = (conta: ContaPagarApi | null): boolean => conta?.status === 'ABERTA';
-const canCancel = (conta: ContaPagarApi): boolean => ['ABERTA', 'AGUARDANDO_PROGRAMACAO'].includes(conta.status);
+const canEdit = (conta: ContaPagarApi | null): boolean => conta?.status === 'PROVISIONADA';
+const canCancel = (conta: ContaPagarApi): boolean => conta.status === 'PROVISIONADA';
 
 export function ContasPagarPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
@@ -112,7 +114,7 @@ export function ContasPagarPage(): JSX.Element {
     const [fornecedoresResponse, obrasResponse, notasResponse] = await Promise.all([
       erpApi.fornecedores.list(),
       erpApi.obras.list(),
-      erpApi.notasEntrada.list({ status: 'APROVADA_FINANCEIRO' })
+      erpApi.notasEntrada.list({ status: 'APROVADA' })
     ]);
     setFornecedores(fornecedoresResponse.filter((fornecedor) => fornecedor.status !== 'inativo'));
     setObras(obrasResponse.filter((obra) => obra.status !== 'inativo'));
@@ -216,7 +218,7 @@ export function ContasPagarPage(): JSX.Element {
     setError('');
     setMessage('');
     try {
-      const conta = await erpApi.contasPagar.gerarDaNota({
+      const conta = await erpApi.contasPagar.provisionarDaNota({
         nota_entrada_id: form.nota_entrada_id,
         data_vencimento: form.data_vencimento,
         forma_pagamento_prevista: form.forma_pagamento_prevista || null,
@@ -224,7 +226,7 @@ export function ContasPagarPage(): JSX.Element {
       });
       setSelectedConta(conta);
       setForm(emptyContaForm());
-      setMessage('Conta a pagar criada em aberto.');
+      setMessage('Conta a pagar provisionada.');
       await refresh(conta.id);
     } catch (generateError) {
       setError(getErrorMessage(generateError));
@@ -257,7 +259,7 @@ export function ContasPagarPage(): JSX.Element {
     }
   };
 
-  const transition = async (conta: ContaPagarApi, action: 'enviar-programacao' | 'cancelar'): Promise<void> => {
+  const transition = async (conta: ContaPagarApi, action: 'cancelar'): Promise<void> => {
     if (saving) {
       return;
     }
@@ -282,7 +284,7 @@ export function ContasPagarPage(): JSX.Element {
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Contas a Pagar</h1>
       <p className="enac-web-lead">
-        Conta a pagar inicial gerada a partir de nota aprovada para financeiro, sem programação bancária real, pagamento ou baixa.
+        Conta a pagar inicial provisionada a partir de nota fiscal de entrada aprovada, sem programação bancária, pagamento ou baixa.
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando contas locais.</div>}
@@ -481,7 +483,7 @@ function ContaDetail({
   cancelTarget: ContaPagarApi | null;
   onEditChange: (field: keyof ContaForm, value: string) => void;
   onSave: (event: React.FormEvent) => void;
-  onTransition: (conta: ContaPagarApi, action: 'enviar-programacao' | 'cancelar') => void;
+  onTransition: (conta: ContaPagarApi, action: 'cancelar') => void;
   onConfirmCancel: (conta: ContaPagarApi) => void;
   onDismissCancel: () => void;
 }): JSX.Element {
@@ -506,7 +508,6 @@ function ContaDetail({
       </div>
 
       <div className="enac-cadastro-row-actions enac-finance-actions">
-        {conta.status === 'ABERTA' && <button type="button" onClick={() => onTransition(conta, 'enviar-programacao')} disabled={saving}>Enviar para programação</button>}
         {canCancel(conta) && <button type="button" onClick={() => onTransition(conta, 'cancelar')} disabled={saving}>Cancelar</button>}
       </div>
 
@@ -523,7 +524,7 @@ function ContaDetail({
 
       {canEdit(conta) && (
         <form className="enac-cadastro-form enac-finance-edit-form" onSubmit={onSave}>
-          <div className="enac-cadastro-form-head"><h3>Editar conta aberta</h3></div>
+          <div className="enac-cadastro-form-head"><h3>Editar conta provisionada</h3></div>
           <div className="enac-cadastro-form-grid">
             <label>
               <span>Vencimento</span>

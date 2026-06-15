@@ -105,7 +105,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'solicitacoes-compra', label: 'Solicitações de Compra' },
   { key: 'cotacoes', label: 'Cotações' },
   { key: 'pedidos-compra', label: 'Pedidos de Compra' },
-  { key: 'notas-entrada', label: 'Notas de Entrada' },
+  { key: 'notas-entrada', label: 'Notas Fiscais' },
   { key: 'contas-pagar', label: 'Contas a Pagar' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },

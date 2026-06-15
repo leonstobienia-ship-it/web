@@ -69,6 +69,17 @@ interface NotaEntrada {
   itens?: Array<{ id: string }>;
 }
 
+interface ContaPagar {
+  id: string;
+  status: string;
+  numero_documento: string;
+}
+
+interface ProvisionamentoNota {
+  nota: NotaEntrada;
+  conta_pagar: ContaPagar;
+}
+
 interface SmokeResult {
   etapa: string;
   ok: boolean;
@@ -102,6 +113,20 @@ const requestJson = async <T>(endpoint: string, init?: RequestInit): Promise<T> 
   }
 
   return body as T;
+};
+
+const expectHttpError = async (endpoint: string, expectedStatus: number, init?: RequestInit): Promise<void> => {
+  const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+    ...init,
+    headers: {
+      ...(init?.body ? { 'content-type': 'application/json' } : {}),
+      ...(init?.headers || {})
+    }
+  });
+  if (response.status !== expectedStatus) {
+    const text = await response.text();
+    throw new Error(`${endpoint} retornou HTTP ${response.status}, esperado ${expectedStatus}: ${text}`);
+  }
 };
 
 const getFirst = async <T>(endpoint: string, label: string): Promise<T> => {
@@ -162,7 +187,7 @@ const transitionNota = async (
   action: string,
   expectedStatus: string
 ): Promise<NotaEntrada> => {
-  const response = await requestJson<ApiItemResponse<NotaEntrada>>(`/notas-entrada/${nota.id}/${action}`, {
+  const response = await requestJson<ApiItemResponse<NotaEntrada>>(`/notas-fiscais-entrada/${nota.id}/${action}`, {
     method: 'PATCH'
   });
   if (response.data.status !== expectedStatus) {
@@ -309,7 +334,7 @@ const run = async (): Promise<void> => {
   }
 
   const valorTotal = Number(pedidoDetalhado.data.valor_total);
-  let nota = (await requestJson<ApiItemResponse<NotaEntrada>>('/notas-entrada', {
+  let nota = (await requestJson<ApiItemResponse<NotaEntrada>>('/notas-fiscais-entrada/gerar-do-pedido', {
     method: 'POST',
     body: JSON.stringify({
       company_id: empresa.id,
@@ -331,24 +356,46 @@ const run = async (): Promise<void> => {
   if (nota.status !== 'RASCUNHO' || !Array.isArray(nota.itens) || nota.itens.length !== 2) {
     throw new Error('Nota criada nao retornou RASCUNHO com itens herdados.');
   }
-  results.push({ etapa: 'POST /notas-entrada', ok: true, detalhe: nota.numero });
+  results.push({ etapa: 'POST /notas-fiscais-entrada/gerar-do-pedido', ok: true, detalhe: nota.numero });
 
-  const listNotas = await requestJson<ApiListResponse<NotaEntrada>>('/notas-entrada');
+  const listNotas = await requestJson<ApiListResponse<NotaEntrada>>('/notas-fiscais-entrada');
   if (!listNotas.data.some((item) => item.id === nota.id)) {
-    throw new Error('GET /notas-entrada nao retornou a nota criada.');
+    throw new Error('GET /notas-fiscais-entrada nao retornou a nota criada.');
   }
-  const detalheNota = await requestJson<ApiItemResponse<NotaEntrada>>(`/notas-entrada/${nota.id}`);
+  const detalheNota = await requestJson<ApiItemResponse<NotaEntrada>>(`/notas-fiscais-entrada/${nota.id}`);
   if (Number(detalheNota.data.valor_total) !== valorTotal) {
-    throw new Error('GET /notas-entrada/:id nao retornou valor total esperado.');
+    throw new Error('GET /notas-fiscais-entrada/:id nao retornou valor total esperado.');
   }
-  results.push({ etapa: 'GET /notas-entrada e /:id', ok: true, detalhe: detalheNota.data.numero });
+  results.push({ etapa: 'GET /notas-fiscais-entrada e /:id', ok: true, detalhe: detalheNota.data.numero });
 
-  nota = await transitionNota(nota, 'lancar', 'LANCADA');
   nota = await transitionNota(nota, 'conferir', 'CONFERIDA');
-  nota = await transitionNota(nota, 'aprovar-financeiro', 'APROVADA_FINANCEIRO');
+  nota = await transitionNota(nota, 'aprovar', 'APROVADA');
   results.push({ etapa: 'Transicoes da nota', ok: true, detalhe: nota.status });
 
-  console.info(`Smoke V3.5A notas concluido contra ${apiBaseUrl}. Marcador: ${marker}. Sem DELETE, fiscal real, banco ou pagamento.`);
+  const provisionamento = await requestJson<ApiItemResponse<ProvisionamentoNota>>(
+    `/notas-fiscais-entrada/${nota.id}/provisionar-conta-pagar`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        data_vencimento: addDays(7),
+        observacoes: `${marker} - provisionamento local sem pagamento`
+      })
+    }
+  );
+  if (provisionamento.data.nota.status !== 'PROVISIONADA' || provisionamento.data.conta_pagar.status !== 'PROVISIONADA') {
+    throw new Error('Provisionamento nao retornou nota e conta em status PROVISIONADA.');
+  }
+  const contas = await requestJson<ApiListResponse<ContaPagar>>('/contas-pagar?status=PROVISIONADA');
+  if (!contas.data.some((conta) => conta.id === provisionamento.data.conta_pagar.id)) {
+    throw new Error('GET /contas-pagar nao retornou a conta provisionada.');
+  }
+  await expectHttpError(`/notas-fiscais-entrada/${nota.id}/provisionar-conta-pagar`, 409, {
+    method: 'PATCH',
+    body: JSON.stringify({ data_vencimento: addDays(10) })
+  });
+  results.push({ etapa: 'Conta a pagar provisionada', ok: true, detalhe: provisionamento.data.conta_pagar.numero_documento });
+
+  console.info(`Smoke V3.5A notas concluido contra ${apiBaseUrl}. Marcador: ${marker}. Sem DELETE, fiscal real, programacao, baixa ou pagamento.`);
   console.table(results);
 };
 

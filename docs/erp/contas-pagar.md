@@ -2,23 +2,13 @@
 
 ## Papel no ERP
 
-Contas a Pagar representa a obrigacao financeira gerada a partir de Nota de Entrada aprovada para financeiro. Na V3.5A, a conta nasce em parcela unica e pode ser enviada para uma fila logica de programacao, sem executar programacao bancaria real, pagamento, baixa ou conciliacao.
-
-## Fonte de dados
-
-Fonte operacional local:
-
-```text
-PostgreSQL local: enac_erp_dev
-```
-
-Nenhum banco, gateway, CNAB, API bancaria, SharePoint, Entra ou automacao e acionado nesta etapa.
+Conta a Pagar representa a obrigacao financeira inicial gerada a partir de Nota Fiscal de Entrada aprovada. Na V3.5A, a conta e apenas provisionada; nao ha programacao bancaria, pagamento, baixa, conciliacao ou integracao bancaria.
 
 ## Entidade `contas_pagar`
 
-A tabela ja existia na fundacao V3.2 e foi ajustada incrementalmente para o fluxo V3.5A.
+A tabela nasceu na fundacao V3.2 e foi ajustada incrementalmente. O vinculo operacional com Nota Fiscal de Entrada usa `nota_entrada_id`, porque `nota_fiscal_id` ja existia apontando para a tabela generica `notas_fiscais`.
 
-Campos principais do fluxo:
+Campos principais do fluxo V3.5A:
 
 - `company_id`
 - `nota_entrada_id`
@@ -37,54 +27,30 @@ Campos principais do fluxo:
 - `forma_pagamento_prevista`
 - `observacoes`
 
-Colunas legadas preservadas:
-
-- `nota_fiscal_id`
-- `contrato_fornecedor_id`
-- `vencimento`
-- `saldo`
-- `forma_pagamento`
-
-Elas nao foram removidas para preservar compatibilidade da fundacao.
-
-## Fluxo V3.5A
+## Status
 
 ```text
-Nota APROVADA_FINANCEIRO
-  -> Conta ABERTA
-  -> AGUARDANDO_PROGRAMACAO
-```
-
-Cancelamento permitido:
-
-- `ABERTA`
-- `AGUARDANDO_PROGRAMACAO`
-
-Status existentes:
-
-```text
-ABERTA
+PROVISIONADA
+APROVADA
 AGUARDANDO_PROGRAMACAO
 PROGRAMADA
+PAGA
 CANCELADA
-BAIXADA
 ```
 
-`PROGRAMADA` e `BAIXADA` ficam reservados para etapas futuras e nao sao usados operacionalmente na V3.5A.
+Na V3.5A, somente `PROVISIONADA` e cancelamento local controlado sao operacionalizados. `APROVADA`, `AGUARDANDO_PROGRAMACAO`, `PROGRAMADA` e `PAGA` ficam reservados para etapas futuras.
 
 ## Regras
 
-- Conta nasce somente de nota `APROVADA_FINANCEIRO`.
-- Conta herda empresa, fornecedor, pedido, obra e centro de custo da nota.
-- Conta herda numero do documento, data de emissao e valor total da nota.
+- Conta nasce de NF de entrada `APROVADA`.
+- Provisao pela NF muda a NF para `PROVISIONADA`.
+- Empresa, fornecedor, pedido, obra, centro de custo, numero, emissao e valor sao herdados da NF.
 - V3.5A permite apenas parcela unica.
-- `data_vencimento` e obrigatoria.
 - `valor_aberto` inicia igual a `valor_original`.
-- Duplicidade ativa por nota e parcela retorna `409`.
-- Conta `CANCELADA` nao permite edicao.
-- Conta `AGUARDANDO_PROGRAMACAO` nao representa programacao bancaria real.
+- Duplicidade ativa por NF/parcela retorna `409`.
 - Nao ha pagamento.
 - Nao ha baixa.
+- Nao ha programacao bancaria.
 - Nao ha conciliacao.
 - Nao ha `DELETE` fisico.
 
@@ -93,26 +59,26 @@ BAIXADA
 ```text
 GET    /contas-pagar
 GET    /contas-pagar/:id
-POST   /contas-pagar/gerar-da-nota
-PATCH  /contas-pagar/:id
-PATCH  /contas-pagar/:id/enviar-programacao
-PATCH  /contas-pagar/:id/cancelar
+POST   /contas-pagar/provisionar-da-nota
 ```
 
-Filtros de lista:
+Alias local preservado:
 
-- `status`
-- `fornecedor_id`
-- `obra_id`
-- `vencimento_de`
-- `vencimento_ate`
+```text
+POST   /contas-pagar/gerar-da-nota
+```
+
+O fluxo preferencial da V3.5A e:
+
+```text
+PATCH /notas-fiscais-entrada/:id/provisionar-conta-pagar
+```
 
 ## Smoke
 
 ```powershell
 cd server
 npm.cmd run smoke:notas
-npm.cmd run smoke:contas-pagar
 ```
 
-O smoke de contas localiza nota `APROVADA_FINANCEIRO` com marcador `DEV_LOCAL_V3_5A`, gera conta, valida `GET`, envia para programacao logica, valida duplicidade com `409` e cancela em status permitido. Nao executa pagamento, baixa, conciliacao, banco, SharePoint, Entra, automacao ou `DELETE`.
+`smoke:notas` valida a conta provisionada. `smoke:contas-pagar` permanece como smoke auxiliar de leitura e duplicidade, sem programacao ou pagamento.

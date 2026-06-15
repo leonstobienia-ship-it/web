@@ -3,7 +3,7 @@ import type { PoolClient, QueryResultRow } from 'pg';
 import { getPool } from '../../db/client.js';
 import { HttpError, isHttpError, methodNotAllowed, readJsonBody, sendError, sendJson } from '../../http.js';
 
-type NotaEntradaStatus = 'RASCUNHO' | 'LANCADA' | 'CONFERIDA' | 'APROVADA_FINANCEIRO' | 'CANCELADA';
+type NotaEntradaStatus = 'RASCUNHO' | 'CONFERIDA' | 'DIVERGENTE' | 'APROVADA' | 'PROVISIONADA' | 'CANCELADA';
 
 interface PgErrorLike {
   code?: string;
@@ -50,13 +50,16 @@ interface NotaItemInput {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-const statuses: NotaEntradaStatus[] = ['RASCUNHO', 'LANCADA', 'CONFERIDA', 'APROVADA_FINANCEIRO', 'CANCELADA'];
+const statuses: NotaEntradaStatus[] = ['RASCUNHO', 'CONFERIDA', 'DIVERGENTE', 'APROVADA', 'PROVISIONADA', 'CANCELADA'];
 const editableStatuses: NotaEntradaStatus[] = ['RASCUNHO'];
 const transitions: Record<string, { from: NotaEntradaStatus[]; to: NotaEntradaStatus }> = {
-  lancar: { from: ['RASCUNHO'], to: 'LANCADA' },
-  conferir: { from: ['LANCADA'], to: 'CONFERIDA' },
-  'aprovar-financeiro': { from: ['CONFERIDA'], to: 'APROVADA_FINANCEIRO' },
-  cancelar: { from: ['RASCUNHO', 'LANCADA', 'CONFERIDA'], to: 'CANCELADA' }
+  conferir: { from: ['RASCUNHO'], to: 'CONFERIDA' },
+  'marcar-divergente': { from: ['RASCUNHO'], to: 'DIVERGENTE' },
+  'reabrir-rascunho': { from: ['DIVERGENTE'], to: 'RASCUNHO' },
+  aprovar: { from: ['CONFERIDA'], to: 'APROVADA' },
+  cancelar: { from: ['RASCUNHO', 'CONFERIDA', 'DIVERGENTE'], to: 'CANCELADA' },
+  lancar: { from: ['RASCUNHO'], to: 'CONFERIDA' },
+  'aprovar-financeiro': { from: ['CONFERIDA'], to: 'APROVADA' }
 };
 
 const assertUuid = (value: unknown, fieldName: string): string => {
@@ -146,9 +149,9 @@ const resolveValorTotal = (payload: Record<string, unknown>): number => {
   const calculated = buildCalculatedTotal(payload);
   const provided = payload.valor_total === undefined || payload.valor_total === null || String(payload.valor_total).trim() === ''
     ? calculated
-    : normalizePositiveNumber(payload.valor_total, 'valor_total');
-  if (provided <= 0) {
-    throw new HttpError(400, 'validation_error', 'valor_total deve ser maior que zero.');
+    : normalizeNumber(payload.valor_total, 'valor_total');
+  if (provided < 0) {
+    throw new HttpError(400, 'validation_error', 'valor_total deve ser maior ou igual a zero.');
   }
   if (calculated > 0 && Math.abs(provided - calculated) > 0.01) {
     throw new HttpError(400, 'validation_error', 'valor_total diverge da soma dos campos da nota.');
@@ -172,8 +175,8 @@ const fetchPedido = async (client: PoolClient, pedidoId: string, companyId: stri
   if (pedido.status === 'CANCELADO') {
     throw new HttpError(409, 'status_conflict', 'Pedido cancelado nao permite nota de entrada.');
   }
-  if (!['CONFIRMADO', 'PARCIALMENTE_RECEBIDO', 'RECEBIDO'].includes(pedido.status)) {
-    throw new HttpError(409, 'status_conflict', 'Pedido deve estar confirmado para receber nota de entrada.');
+  if (!['EMITIDO', 'ENVIADO_FORNECEDOR', 'CONFIRMADO', 'PARCIALMENTE_RECEBIDO', 'RECEBIDO'].includes(pedido.status)) {
+    throw new HttpError(409, 'status_conflict', 'Pedido deve estar emitido, enviado ao fornecedor ou confirmado para receber nota fiscal de entrada.');
   }
   return pedido;
 };
@@ -247,12 +250,9 @@ const normalizeItems = (value: unknown, pedidoItems: PedidoItemRow[]): NotaItemI
   });
 };
 
-const assertNotaTotal = (notaTotal: number, itemTotal: number, pedidoTotal: number): void => {
+const assertNotaTotal = (notaTotal: number, itemTotal: number): void => {
   if (Math.abs(notaTotal - itemTotal) > 0.01) {
     throw new HttpError(400, 'validation_error', 'valor_total da nota diverge do total dos itens.');
-  }
-  if (notaTotal > pedidoTotal + 0.01) {
-    throw new HttpError(400, 'validation_error', 'Nota nao pode ultrapassar o valor total do pedido nesta etapa.');
   }
 };
 
@@ -262,6 +262,7 @@ const insertNotaItems = async (client: PoolClient, notaId: string, items: NotaIt
       `
       insert into notas_fiscais_entrada_itens (
         nota_id,
+        nota_fiscal_id,
         pedido_item_id,
         descricao,
         unidade,
@@ -271,7 +272,7 @@ const insertNotaItems = async (client: PoolClient, notaId: string, items: NotaIt
         observacoes,
         ordem
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      values ($1, $1, $2, $3, $4, $5, $6, $7, $8, $9)
       `,
       [
         notaId,
@@ -341,6 +342,7 @@ const fetchNota = async (client: PoolClient, id: string) => {
     select
       id,
       nota_id,
+      coalesce(nota_fiscal_id, nota_id) as nota_fiscal_id,
       pedido_item_id,
       descricao,
       unidade,
@@ -352,7 +354,7 @@ const fetchNota = async (client: PoolClient, id: string) => {
       created_at,
       updated_at
     from notas_fiscais_entrada_itens
-    where nota_id = $1
+    where coalesce(nota_fiscal_id, nota_id) = $1
     order by ordem, created_at
     `,
     [id]
@@ -465,7 +467,7 @@ const createNota = async (payload: Record<string, unknown>) => {
     const pedidoItems = await fetchPedidoItems(client, pedidoId);
     const notaItems = normalizeItems(payload.itens, pedidoItems);
     const itensTotal = roundMoney(notaItems.reduce((total, item) => total + item.valor_total, 0));
-    assertNotaTotal(valorTotal, itensTotal, Number(pedido.valor_total));
+    assertNotaTotal(valorTotal, itensTotal);
 
     const created = await client.query<{ id: string }>(
       `
@@ -653,6 +655,165 @@ const transitionNota = async (id: string, action: string) => {
   }
 };
 
+const provisionarContaPagar = async (id: string, payload: Record<string, unknown>) => {
+  assertUuid(id, 'id');
+  const client = await getPool().connect();
+
+  try {
+    await client.query('begin');
+    const notaResult = await client.query<{
+      id: string;
+      company_id: string;
+      pedido_id: string;
+      fornecedor_id: string;
+      obra_id: string | null;
+      centro_custo_id: string | null;
+      numero: string;
+      serie: string | null;
+      data_emissao: string;
+      data_entrada: string;
+      valor_total: string;
+      status: NotaEntradaStatus;
+    }>(
+      `
+      select
+        id,
+        company_id,
+        pedido_id,
+        fornecedor_id,
+        obra_id,
+        centro_custo_id,
+        numero,
+        serie,
+        data_emissao,
+        data_entrada,
+        valor_total,
+        status
+      from notas_fiscais_entrada
+      where id = $1
+      for update
+      `,
+      [id]
+    );
+    const nota = notaResult.rows[0];
+    if (!nota) {
+      throw new HttpError(404, 'not_found', 'Nota fiscal de entrada nao encontrada.');
+    }
+    if (nota.status !== 'APROVADA') {
+      throw new HttpError(409, 'status_conflict', 'Nota deve estar APROVADA para provisionar conta a pagar.');
+    }
+
+    const existingConta = await client.query(
+      `
+      select id, numero_documento
+      from contas_pagar
+      where nota_entrada_id = $1 and parcela = 1 and status <> 'CANCELADA'
+      limit 1
+      `,
+      [nota.id]
+    );
+    if (existingConta.rows[0]) {
+      throw new HttpError(409, 'duplicate_active_payable', 'Nota ja possui conta a pagar ativa.', existingConta.rows[0]);
+    }
+
+    const dataVencimento = optionalDate(payload, 'data_vencimento') || String(nota.data_entrada).slice(0, 10);
+    const formaPagamentoPrevista = optionalText(payload, 'forma_pagamento_prevista');
+    const observacoes = optionalText(payload, 'observacoes');
+    const valorOriginal = normalizePositiveNumber(nota.valor_total, 'valor_original');
+    const numeroDocumento = `${nota.numero}${nota.serie ? `/${nota.serie}` : ''}`;
+
+    const createdConta = await client.query<{ id: string }>(
+      `
+      insert into contas_pagar (
+        company_id,
+        nota_entrada_id,
+        pedido_id,
+        fornecedor_id,
+        obra_id,
+        centro_custo_id,
+        numero_documento,
+        parcela,
+        total_parcelas,
+        data_emissao,
+        data_vencimento,
+        vencimento,
+        valor_original,
+        valor_aberto,
+        saldo,
+        status,
+        forma_pagamento_prevista,
+        forma_pagamento,
+        observacoes
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, 1, 1, $8, $9, $9, $10, $10, $10, 'PROVISIONADA', $11, $11, $12)
+      returning id
+      `,
+      [
+        nota.company_id,
+        nota.id,
+        nota.pedido_id,
+        nota.fornecedor_id,
+        nota.obra_id,
+        nota.centro_custo_id,
+        numeroDocumento,
+        nota.data_emissao,
+        dataVencimento,
+        valorOriginal,
+        formaPagamentoPrevista,
+        observacoes
+      ]
+    );
+
+    await client.query(
+      `
+      update notas_fiscais_entrada
+      set status = 'PROVISIONADA', updated_at = now()
+      where id = $1
+      `,
+      [nota.id]
+    );
+
+    const conta = await client.query(
+      `
+      select
+        id,
+        company_id,
+        nota_entrada_id,
+        pedido_id,
+        fornecedor_id,
+        obra_id,
+        centro_custo_id,
+        numero_documento,
+        parcela,
+        total_parcelas,
+        data_emissao,
+        data_vencimento,
+        valor_original,
+        valor_aberto,
+        status,
+        forma_pagamento_prevista,
+        observacoes,
+        created_at,
+        updated_at
+      from contas_pagar
+      where id = $1
+      `,
+      [createdConta.rows[0].id]
+    );
+    const updatedNota = await fetchNota(client, nota.id);
+    await client.query('commit');
+    return {
+      nota: updatedNota,
+      conta_pagar: conta.rows[0]
+    };
+  } catch (error) {
+    await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const toPgError = (error: unknown): PgErrorLike =>
   typeof error === 'object' && error !== null ? error as PgErrorLike : {};
 
@@ -677,11 +838,21 @@ const handleError = (res: ServerResponse, error: unknown): void => {
 
 export const handleNotasEntrada = async (req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> => {
   const method = req.method || 'GET';
-  const basePath = '/notas-entrada';
+  const basePath = url.pathname.startsWith('/notas-fiscais-entrada') ? '/notas-fiscais-entrada' : '/notas-entrada';
   const relativePath = url.pathname === basePath ? '' : url.pathname.slice(basePath.length);
   const parts = relativePath.split('/').filter(Boolean);
 
   try {
+    if (parts.length === 1 && parts[0] === 'gerar-do-pedido') {
+      if (method !== 'POST') {
+        methodNotAllowed(res, ['POST']);
+        return;
+      }
+      const payload = await readJsonBody(req);
+      sendJson(res, 201, { data: await createNota(payload) });
+      return;
+    }
+
     if (parts.length === 0) {
       if (method === 'GET') {
         sendJson(res, 200, { data: await listNotas(url) });
@@ -727,6 +898,11 @@ export const handleNotasEntrada = async (req: IncomingMessage, res: ServerRespon
 
     if (parts.length === 2 && method === 'PATCH') {
       const [id, action] = parts;
+      if (action === 'provisionar-conta-pagar') {
+        const payload = await readJsonBody(req);
+        sendJson(res, 200, { data: await provisionarContaPagar(id, payload) });
+        return;
+      }
       sendJson(res, 200, { data: await transitionNota(id, action) });
       return;
     }
