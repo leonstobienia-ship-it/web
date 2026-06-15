@@ -24,3 +24,5 @@ Thumbs.db
 config/teste-funcional-v2.3b.local.json
 .spfx-scaffold-temp/
 .netlify/
+
+.codex-remote-attachments/
