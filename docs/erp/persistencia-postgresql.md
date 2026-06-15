@@ -59,6 +59,7 @@ Migrations atuais:
 
 - `001_init_core`: fundacao do modelo ERP.
 - `002_cadastros_mestres`: campos e validacoes para clientes, fornecedores, centros de custo e obras.
+- `004_solicitacoes_compra_mvp`: cabecalho, itens, status e indices da Solicitacao de Compra MVP.
 
 Nao ha migration `003` na V3.3C porque as restricoes de duplicidade dos cadastros mestres ja existem nas migrations anteriores.
 
@@ -105,6 +106,49 @@ Operacoes permitidas:
 Nao existe `DELETE` fisico. Inativacao e reativacao sao feitas por `status`.
 
 As queries usam parametros do `pg` e o backend valida campos obrigatorios, UUID, `status`, `tipo_pessoa`, UF, datas e numeros antes de gravar.
+
+## Solicitacao de Compra V3.4A
+
+A V3.4A libera escrita local apenas para Solicitacao de Compra MVP:
+
+- cabecalho em `solicitacoes_compra`;
+- itens em `solicitacoes_compra_itens`;
+- transicoes iniciais de status;
+- edicao sem `DELETE` fisico.
+
+Endpoints:
+
+| Endpoint | Uso |
+|---|---|
+| `GET /solicitacoes-compra` | Lista solicitacoes, com filtros opcionais por `status`, `prioridade` e `obra_id` |
+| `GET /solicitacoes-compra/:id` | Detalhe com itens ativos |
+| `POST /solicitacoes-compra` | Cria rascunho com itens |
+| `PATCH /solicitacoes-compra/:id` | Atualiza solicitacao editavel |
+| `PATCH /solicitacoes-compra/:id/enviar` | `RASCUNHO -> ENVIADA` |
+| `PATCH /solicitacoes-compra/:id/em-analise` | `ENVIADA -> EM_ANALISE` |
+| `PATCH /solicitacoes-compra/:id/devolver` | `EM_ANALISE -> DEVOLVIDA` |
+| `PATCH /solicitacoes-compra/:id/reabrir-rascunho` | `DEVOLVIDA -> RASCUNHO` |
+| `PATCH /solicitacoes-compra/:id/cancelar` | Cancela `RASCUNHO`, `ENVIADA` ou `EM_ANALISE` |
+
+Status controlados:
+
+- `RASCUNHO`
+- `ENVIADA`
+- `EM_ANALISE`
+- `APROVADA_PARA_COTACAO`
+- `DEVOLVIDA`
+- `CANCELADA`
+
+`APROVADA_PARA_COTACAO` fica reservado para etapa futura. A V3.4A nao implementa cotacao, pedido de compra, nota fiscal, financeiro ou aprovacao por alcada.
+
+Smoke test:
+
+```powershell
+cd server
+npm.cmd run smoke:solicitacoes
+```
+
+O smoke cria registro local com marcador `DEV_LOCAL_V3_4A` e executa as transicoes permitidas ate `CANCELADA`.
 
 ## Estabilizacao V3.3C
 

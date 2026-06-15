@@ -93,9 +93,107 @@ export interface ObraApi extends CadastroRecord {
   observacoes?: string | null;
 }
 
+export interface UsuarioApi {
+  id: string;
+  nome: string;
+  email: string;
+  cargo_funcao?: string | null;
+  ativo: boolean;
+  status: string;
+  perfil_principal?: string | null;
+}
+
+export type SolicitacaoCompraStatus =
+  | 'RASCUNHO'
+  | 'ENVIADA'
+  | 'EM_ANALISE'
+  | 'APROVADA_PARA_COTACAO'
+  | 'DEVOLVIDA'
+  | 'CANCELADA';
+
+export type SolicitacaoCompraPrioridade = 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE';
+
+export interface SolicitacaoCompraItemApi {
+  id: string;
+  solicitacao_id: string;
+  descricao: string;
+  unidade: string;
+  quantidade: string | number;
+  valor_estimado_unitario: string | number;
+  valor_estimado_total: string | number;
+  observacoes?: string | null;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SolicitacaoCompraApi {
+  id: string;
+  company_id: string;
+  obra_id: string;
+  centro_custo_id: string;
+  solicitante_id: string;
+  codigo: string;
+  titulo: string;
+  descricao?: string;
+  prioridade: SolicitacaoCompraPrioridade;
+  data_necessidade: string;
+  status: SolicitacaoCompraStatus;
+  valor_estimado_total: string | number;
+  observacoes?: string | null;
+  created_at: string;
+  updated_at: string;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  solicitante_nome?: string | null;
+  itens_count?: number;
+  itens?: SolicitacaoCompraItemApi[];
+}
+
+export interface SolicitacaoCompraItemPayload {
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  valor_estimado_unitario: number;
+  observacoes?: string | null;
+}
+
+export interface SolicitacaoCompraPayload {
+  company_id?: string;
+  obra_id: string;
+  centro_custo_id: string;
+  solicitante_id: string;
+  titulo: string;
+  descricao: string;
+  prioridade: SolicitacaoCompraPrioridade;
+  data_necessidade: string;
+  observacoes?: string | null;
+  itens: SolicitacaoCompraItemPayload[];
+}
+
+export interface SolicitacaoCompraFilters {
+  status?: SolicitacaoCompraStatus | '';
+  prioridade?: SolicitacaoCompraPrioridade | '';
+  obra_id?: string;
+}
+
 export type CadastroPayload = Record<string, string | number | null | undefined>;
 
 const apiBaseUrl = (import.meta.env.VITE_ENAC_ERP_API_BASE_URL || 'http://127.0.0.1:3333').replace(/\/+$/, '');
+
+const buildQueryString = (params: Record<string, string | undefined>): string => {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      searchParams.set(key, value);
+    }
+  });
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : '';
+};
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -150,8 +248,40 @@ export const erpApi = {
   empresas: {
     list: async (): Promise<EmpresaApi[]> => (await request<ApiListResponse<EmpresaApi>>('/empresas')).data
   },
+  usuarios: {
+    list: async (): Promise<UsuarioApi[]> => (await request<ApiListResponse<UsuarioApi>>('/usuarios')).data
+  },
   clientes: makeResource<ClienteApi>('/clientes'),
   fornecedores: makeResource<FornecedorApi>('/fornecedores'),
   obras: makeResource<ObraApi>('/obras'),
-  centrosCusto: makeResource<CentroCustoApi>('/centros-custo')
+  centrosCusto: makeResource<CentroCustoApi>('/centros-custo'),
+  solicitacoesCompra: {
+    list: async (filters: SolicitacaoCompraFilters = {}): Promise<SolicitacaoCompraApi[]> =>
+      (await request<ApiListResponse<SolicitacaoCompraApi>>(
+        `/solicitacoes-compra${buildQueryString({
+          status: filters.status || undefined,
+          prioridade: filters.prioridade || undefined,
+          obra_id: filters.obra_id || undefined
+        })}`
+      )).data,
+    get: async (id: string): Promise<SolicitacaoCompraApi> =>
+      (await request<ApiItemResponse<SolicitacaoCompraApi>>(`/solicitacoes-compra/${id}`)).data,
+    create: async (payload: SolicitacaoCompraPayload): Promise<SolicitacaoCompraApi> =>
+      (await request<ApiItemResponse<SolicitacaoCompraApi>>('/solicitacoes-compra', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: Partial<SolicitacaoCompraPayload>): Promise<SolicitacaoCompraApi> =>
+      (await request<ApiItemResponse<SolicitacaoCompraApi>>(`/solicitacoes-compra/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    transition: async (
+      id: string,
+      action: 'enviar' | 'em-analise' | 'devolver' | 'reabrir-rascunho' | 'cancelar'
+    ): Promise<SolicitacaoCompraApi> =>
+      (await request<ApiItemResponse<SolicitacaoCompraApi>>(`/solicitacoes-compra/${id}/${action}`, {
+        method: 'PATCH'
+      })).data
+  }
 };

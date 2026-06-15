@@ -301,6 +301,81 @@ Troubleshooting de `GET /health/db` retornando `503`:
 - confirme que a senha no `.env` local e a mesma usada pelo container/volume PostgreSQL existente;
 - reinicie a API apos corrigir ambiente local.
 
+## V3.4A - Solicitação de Compra MVP
+
+A V3.4A implementa o MVP de Solicitação de Compra do ERP ENAC em PostgreSQL local, com backend Node/TypeScript e tela React. A etapa não implementa cotação, pedido de compra, nota fiscal, financeiro, aprovação por alçada, SharePoint, Entra, automações ou `DELETE` físico.
+
+Aplicar migrations locais:
+
+```powershell
+docker compose up -d postgres
+cd server
+npm.cmd run migrate
+```
+
+Rodar backend:
+
+```powershell
+cd server
+npm.cmd run build
+npm.cmd start
+```
+
+Rodar frontend:
+
+```powershell
+npm.cmd run web:dev
+```
+
+Configure o frontend local com:
+
+```text
+VITE_ENAC_ERP_API_BASE_URL=http://127.0.0.1:3333
+```
+
+Endpoints de Solicitação de Compra:
+
+```text
+GET    /solicitacoes-compra
+GET    /solicitacoes-compra/:id
+POST   /solicitacoes-compra
+PATCH  /solicitacoes-compra/:id
+PATCH  /solicitacoes-compra/:id/enviar
+PATCH  /solicitacoes-compra/:id/em-analise
+PATCH  /solicitacoes-compra/:id/devolver
+PATCH  /solicitacoes-compra/:id/reabrir-rascunho
+PATCH  /solicitacoes-compra/:id/cancelar
+```
+
+Fluxo V3.4A:
+
+```text
+RASCUNHO -> ENVIADA -> EM_ANALISE -> DEVOLVIDA -> RASCUNHO
+RASCUNHO | ENVIADA | EM_ANALISE -> CANCELADA
+```
+
+`APROVADA_PARA_COTACAO` existe no enum, mas não é usado operacionalmente nesta etapa.
+
+Smoke test:
+
+```powershell
+cd server
+npm.cmd run smoke:solicitacoes
+```
+
+O smoke cria uma solicitação local com 2 itens e marcador `DEV_LOCAL_V3_4A`, testa leitura e transições até `CANCELADA`.
+
+Teste manual do frontend:
+
+1. Suba PostgreSQL local e backend.
+2. Rode `npm.cmd run web:dev`.
+3. Abra `http://127.0.0.1:5173`.
+4. Acesse `Solicitações de Compra`.
+5. Crie uma solicitação `DEV_LOCAL_V3_4A` com 2 itens.
+6. Edite enquanto estiver em rascunho.
+7. Envie, marque em análise, devolva, reabra e cancele.
+8. Confirme que solicitação cancelada não permite edição.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
