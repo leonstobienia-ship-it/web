@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readEnv } from './config/env.js';
 import { handleCentrosCusto } from './modules/centrosCusto/centrosCusto.routes.js';
 import { handleClientes } from './modules/clientes/clientes.routes.js';
+import { handleCotacoes } from './modules/cotacoes/cotacoes.routes.js';
 import { handleEmpresas } from './modules/empresas/empresas.routes.js';
 import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.js';
 import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.routes.js';
@@ -25,7 +26,8 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/fornecedores', handler: handleFornecedores },
   { basePath: '/obras', handler: handleObras },
   { basePath: '/centros-custo', handler: handleCentrosCusto },
-  { basePath: '/solicitacoes-compra', handler: handleSolicitacoesCompra }
+  { basePath: '/solicitacoes-compra', handler: handleSolicitacoesCompra },
+  { basePath: '/cotacoes', handler: handleCotacoes }
 ];
 
 const findHandler = (pathname: string): RouteHandler | undefined => {

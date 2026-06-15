@@ -60,6 +60,7 @@ Migrations atuais:
 - `001_init_core`: fundacao do modelo ERP.
 - `002_cadastros_mestres`: campos e validacoes para clientes, fornecedores, centros de custo e obras.
 - `004_solicitacoes_compra_mvp`: cabecalho, itens, status e indices da Solicitacao de Compra MVP.
+- `005_cotacoes_mapa_comparativo`: cotacoes por fornecedor, itens cotados e mapa comparativo.
 
 Nao ha migration `003` na V3.3C porque as restricoes de duplicidade dos cadastros mestres ja existem nas migrations anteriores.
 
@@ -149,6 +150,49 @@ npm.cmd run smoke:solicitacoes
 ```
 
 O smoke cria registro local com marcador `DEV_LOCAL_V3_4A` e executa as transicoes permitidas ate `CANCELADA`.
+
+## Cotacao e Mapa Comparativo V3.4B
+
+A V3.4B libera escrita local apenas para cotacoes vinculadas a solicitacoes em `EM_ANALISE`:
+
+- proposta por fornecedor em `cotacoes`;
+- valores por item em `cotacoes_itens`;
+- mapa comparativo por item;
+- selecao local de cotacao;
+- edicao sem `DELETE` fisico.
+
+Endpoints:
+
+| Endpoint | Uso |
+|---|---|
+| `GET /cotacoes` | Lista cotacoes, com filtros opcionais por `solicitacao_compra_id`, `fornecedor_id` e `status` |
+| `GET /cotacoes/:id` | Detalhe com itens ativos |
+| `POST /cotacoes` | Registra cotacao recebida |
+| `PATCH /cotacoes/:id` | Atualiza cotacao editavel |
+| `PATCH /cotacoes/:id/receber` | `RASCUNHO -> RECEBIDA` |
+| `PATCH /cotacoes/:id/desclassificar` | Desclassifica cotacao recebida ou rascunho |
+| `PATCH /cotacoes/:id/selecionar` | Seleciona cotacao recebida no mapa |
+| `PATCH /cotacoes/:id/cancelar` | Cancela cotacao rascunho ou recebida |
+| `GET /cotacoes/mapa-comparativo?solicitacao_compra_id=<uuid>` | Retorna comparativo por item e resumo |
+
+Status controlados:
+
+- `RASCUNHO`
+- `RECEBIDA`
+- `DESCLASSIFICADA`
+- `SELECIONADA`
+- `CANCELADA`
+
+`SELECIONADA` nao cria pedido de compra. Pedido de compra fica para V3.4C.
+
+Smoke test:
+
+```powershell
+cd server
+npm.cmd run smoke:cotacoes
+```
+
+O smoke cria dados locais com marcador `DEV_LOCAL_V3_4B`, registra duas cotacoes, valida o mapa comparativo e seleciona a cotacao de menor total.
 
 ## Estabilizacao V3.3C
 

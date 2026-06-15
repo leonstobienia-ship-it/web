@@ -9,6 +9,7 @@
     "seed": "npm run build && node dist/db/seed.js",
     "smoke:cadastros": "npm run build && node dist/scripts/smokeCadastros.js",
     "smoke:solicitacoes": "npm run build && node dist/scripts/smokeSolicitacoesCompra.js",
+    "smoke:cotacoes": "npm run build && node dist/scripts/smokeCotacoes.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

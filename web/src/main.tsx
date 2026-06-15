@@ -5,6 +5,7 @@ import { EnacSistema } from '@enacSistema/components/EnacSistema';
 import { SharePointEnacRepository } from '@enacSistema/services/SharePointEnacRepository';
 import { SharePointFetchClient } from './sharePointFetchClient';
 import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
+import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
 import { SolicitacoesCompraPage } from './features/solicitacoesCompra/SolicitacoesCompraPage';
 import './styles.css';
 
@@ -43,6 +44,7 @@ type WebSection =
   | 'visao'
   | 'cadastros'
   | 'solicitacoes-compra'
+  | 'cotacoes'
   | 'estrutura'
   | 'mvp'
   | 'fluxos'
@@ -95,6 +97,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'visao', label: 'Visão geral' },
   { key: 'cadastros', label: 'Cadastros' },
   { key: 'solicitacoes-compra', label: 'Solicitações de Compra' },
+  { key: 'cotacoes', label: 'Cotações' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
   { key: 'fluxos', label: 'Workflows' },
@@ -361,6 +364,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'solicitacoes-compra') {
     return <SolicitacoesCompraPage />;
+  }
+
+  if (section === 'cotacoes') {
+    return <CotacoesMapaPage />;
   }
 
   if (section === 'estrutura') {

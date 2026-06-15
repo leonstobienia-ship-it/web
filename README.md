@@ -376,6 +376,75 @@ Teste manual do frontend:
 7. Envie, marque em análise, devolva, reabra e cancele.
 8. Confirme que solicitação cancelada não permite edição.
 
+## V3.4B - Cotação e mapa comparativo
+
+A V3.4B implementa cotações locais por fornecedor e mapa comparativo por item para solicitações de compra em análise. A etapa não implementa pedido de compra, nota fiscal, financeiro, aprovação por alçada, SharePoint, Entra, automações ou `DELETE` físico.
+
+Aplicar migrations locais:
+
+```powershell
+docker compose up -d postgres
+cd server
+npm.cmd run migrate
+```
+
+Rodar backend:
+
+```powershell
+cd server
+npm.cmd run build
+npm.cmd start
+```
+
+Rodar frontend:
+
+```powershell
+npm.cmd run web:dev
+```
+
+Endpoints de cotação:
+
+```text
+GET    /cotacoes
+GET    /cotacoes/:id
+POST   /cotacoes
+PATCH  /cotacoes/:id
+PATCH  /cotacoes/:id/receber
+PATCH  /cotacoes/:id/desclassificar
+PATCH  /cotacoes/:id/selecionar
+PATCH  /cotacoes/:id/cancelar
+GET    /cotacoes/mapa-comparativo?solicitacao_compra_id=<uuid>
+```
+
+Fluxo V3.4B:
+
+```text
+Solicitação EM_ANALISE -> registrar cotações RECEBIDA
+RECEBIDA -> SELECIONADA
+RASCUNHO | RECEBIDA -> DESCLASSIFICADA
+RASCUNHO | RECEBIDA -> CANCELADA
+```
+
+Smoke test:
+
+```powershell
+cd server
+npm.cmd run smoke:cotacoes
+```
+
+O smoke cria uma solicitação local com marcador `DEV_LOCAL_V3_4B`, move para `EM_ANALISE`, registra duas cotações, valida o mapa comparativo e seleciona a cotação de menor total.
+
+Teste manual do frontend:
+
+1. Suba PostgreSQL local e backend.
+2. Rode `npm.cmd run web:dev`.
+3. Abra `http://127.0.0.1:5173`.
+4. Acesse `Cotações`.
+5. Selecione uma solicitação em `EM_ANALISE`.
+6. Registre cotações para fornecedores locais.
+7. Confira o mapa comparativo e o destaque de menor valor.
+8. Selecione ou desclassifique uma cotação.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

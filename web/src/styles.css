@@ -786,6 +786,209 @@ textarea {
   background: #91452e !important;
 }
 
+.enac-cotacoes-page {
+  display: grid;
+  gap: 18px;
+}
+
+.enac-cotacoes-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.enac-cotacoes-main,
+.enac-cotacoes-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.enac-cotacoes-selector {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cotacoes-selector label {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-cotacoes-selector span {
+  color: #34475d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.enac-cotacoes-selector select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #17212f;
+}
+
+.enac-cotacoes-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 18px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cotacoes-summary h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.enac-cotacoes-summary dl {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.enac-cotacoes-summary dl div {
+  padding: 10px;
+  border: 1px solid #e1e7ee;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.enac-cotacoes-summary dt {
+  color: #607086;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.enac-cotacoes-summary dd {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.enac-cotacoes-table,
+.enac-cotacoes-mapa-table {
+  min-width: 920px;
+}
+
+.enac-cotacoes-mapa-table td strong,
+.enac-cotacoes-mapa-table td span {
+  display: block;
+}
+
+.enac-cotacoes-mapa-table td span {
+  margin-top: 4px;
+  color: #607086;
+  font-size: 12px;
+}
+
+.enac-cotacao-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.enac-cotacao-status--rascunho {
+  background: #f1f3f5;
+  color: #566170;
+}
+
+.enac-cotacao-status--recebida {
+  background: #e5f0fb;
+  color: #245a7f;
+}
+
+.enac-cotacao-status--desclassificada {
+  background: #fdece8;
+  color: #97432b;
+}
+
+.enac-cotacao-status--selecionada {
+  background: #e7f4ea;
+  color: #1f6b35;
+}
+
+.enac-cotacao-status--cancelada {
+  background: #eceff3;
+  color: #68717d;
+}
+
+.enac-cotacao-best {
+  background: #f3fbf4;
+  color: #1f6b35;
+}
+
+.enac-cotacao-form {
+  position: sticky;
+  top: 18px;
+}
+
+.enac-cotacao-items {
+  display: grid;
+  gap: 12px;
+}
+
+.enac-cotacao-item {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.enac-cotacao-item > div {
+  display: grid;
+  gap: 4px;
+}
+
+.enac-cotacao-item > div span {
+  color: #607086;
+}
+
+.enac-cotacao-item label {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-cotacao-item label span {
+  color: #34475d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.enac-cotacao-item input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #17212f;
+}
+
 code {
   padding: 2px 5px;
   border-radius: 4px;
@@ -837,11 +1040,23 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .enac-cotacoes-layout {
+    grid-template-columns: 1fr;
+  }
+
   .enac-solicitacoes-filters {
     grid-template-columns: 1fr;
   }
 
+  .enac-cotacoes-selector {
+    grid-template-columns: 1fr;
+  }
+
   .enac-solicitacao-form {
+    position: static;
+  }
+
+  .enac-cotacao-form {
     position: static;
   }
 
@@ -856,7 +1071,16 @@ code {
   .enac-solicitacao-items-head button,
   .enac-solicitacao-item-title button,
   .enac-solicitacao-detail-actions button,
-  .enac-solicitacoes-filters button {
+  .enac-solicitacoes-filters button,
+  .enac-cotacoes-selector button {
     width: 100%;
+  }
+
+  .enac-cotacoes-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-cotacoes-summary dl {
+    grid-template-columns: 1fr;
   }
 }
