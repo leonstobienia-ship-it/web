@@ -1,0 +1,134 @@
+[build]
+command = "npm run build"
+publish = "dist"
+
+[build.environment]
+VITE_SITE_URL = "https://www.stobienia.com.br"
+VITE_SITE_INDEXABLE = "false"
+
+# Homologação pública em stobienia.com.br: manter noindex.
+# Na migração para www.enac.com.br, remover este header ou trocar a estratégia
+# junto com VITE_SITE_INDEXABLE=true.
+[[headers]]
+for = "/*"
+[headers.values]
+X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[redirects]]
+from = "/supermercados-e-atacados/"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/supermercados-e-atacados"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/centros-de-distribuicao/"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/centros-de-distribuicao"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/concessionarias/"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/concessionarias"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/industrias/"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/industrias"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/hoteis/"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/hoteis"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/blog/"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/blog"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/blog/*"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/projeto-executivo-ocontrole-em-cada-etapa/"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/projeto-executivo-ocontrole-em-cada-etapa"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/como-funciona-agestao-de-obras/"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/como-funciona-agestao-de-obras"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/obras-de-grande-porte-exigem-prazos-seguros/"
+to = "/#obras"
+status = 301
+force = true
+
+[[redirects]]
+from = "/obras-de-grande-porte-exigem-prazos-seguros"
+to = "/#obras"
+status = 301
+force = true
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

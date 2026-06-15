@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ENAC Empreendimentos: diagnóstico, projeto executivo, gestão de fornecedores e execução de obras industriais, logísticas, comerciais, hoteleiras e concessionárias."
+    />
+    <meta name="robots" content="%SITE_ROBOTS%" />
+    <meta property="og:title" content="ENAC Empreendimentos | Obras industriais, logísticas e comerciais" />
+    <meta
+      property="og:description"
+      content="Diagnóstico, projeto executivo, gestão de fornecedores e execução de obras industriais, logísticas, comerciais, hoteleiras e concessionárias."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <link rel="canonical" href="%SITE_URL%/" />
+    <title>ENAC Empreendimentos | Obras industriais, logísticas e comerciais</title>
+  </head>
+  <body>
+    <form name="briefing-obra" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="bot-field" />
+      <input type="hidden" name="form-name" value="briefing-obra" />
+      <input type="text" name="nome" />
+      <input type="email" name="email" />
+      <input type="tel" name="telefone" />
+      <input type="text" name="cidade" />
+      <input type="text" name="segmento" />
+      <input type="text" name="assunto" />
+      <input type="text" name="identificacao" />
+      <input type="checkbox" name="lgpd" value="aceito" />
+      <textarea name="mensagem"></textarea>
+    </form>
+    <form name="cadastro-fornecedor" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="bot-field" />
+      <input type="hidden" name="form-name" value="cadastro-fornecedor" />
+      <input type="text" name="nome" />
+      <input type="email" name="email" />
+      <input type="tel" name="telefone" />
+      <input type="text" name="empresa" />
+      <input type="text" name="cnpj" />
+      <input type="text" name="assunto" />
+      <input type="text" name="identificacao" />
+      <input type="checkbox" name="lgpd" value="aceito" />
+      <textarea name="mensagem"></textarea>
+    </form>
+    <form name="trabalhe-conosco" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="bot-field" />
+      <input type="hidden" name="form-name" value="trabalhe-conosco" />
+      <input type="text" name="nome" />
+      <input type="email" name="email" />
+      <input type="tel" name="telefone" />
+      <input type="text" name="area" />
+      <input type="text" name="assunto" />
+      <input type="text" name="identificacao" />
+      <input type="checkbox" name="lgpd" value="aceito" />
+      <textarea name="mensagem"></textarea>
+    </form>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

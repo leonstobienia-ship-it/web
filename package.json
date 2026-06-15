@@ -1,0 +1,25 @@
+{
+  "name": "recriar-site-enac",
+  "version": "1.0.0",
+  "description": "Site institucional da ENAC com Vite, React e Netlify.",
+  "type": "module",
+  "scripts": {
+    "prebuild": "node scripts/generate-seo-files.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lucide-react": "^1.18.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@netlify/vite-plugin": "^2.12.7",
+    "@vitejs/plugin-react": "^6.0.2",
+    "vite": "^8.0.16"
+  }
+}
