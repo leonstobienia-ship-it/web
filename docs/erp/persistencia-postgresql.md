@@ -7,6 +7,9 @@
 - Migrations sao executadas por script controlado e registradas em `schema_migrations`.
 - Seeds sao idempotentes e marcadas com `DEV_LOCAL_V3_3A`.
 - A conexao aceita apenas `localhost`, `127.0.0.1` ou `::1` e database `enac_erp_dev`.
+- Backend local rodando diretamente no Windows/host deve usar `127.0.0.1:5432` ou `localhost:5432`.
+- Hostname `postgres` deve ser usado apenas quando o backend tambem estiver em container na rede Docker Compose.
+- `.env` e qualquer segredo local nunca devem ser commitados.
 
 ## Variaveis
 
@@ -21,6 +24,25 @@
 | `PG_POOL_MAX` | Limite de conexoes no pool |
 | `PG_IDLE_TIMEOUT_MS` | Timeout de conexao ociosa |
 | `PG_CONNECTION_TIMEOUT_MS` | Timeout para abrir conexao |
+
+## Host correto por cenário
+
+| Cenario | Host recomendado no `DATABASE_URL` |
+|---|---|
+| Backend rodando no Windows/host | `127.0.0.1:5432` ou `localhost:5432` |
+| Backend rodando em container na mesma rede Compose | `postgres:5432` |
+
+Exemplo para backend local no Windows/host:
+
+```text
+DATABASE_URL=postgres://enac_erp_dev:enac_erp_dev_password@127.0.0.1:5432/enac_erp_dev
+```
+
+Exemplo apenas para backend em container Compose:
+
+```text
+DATABASE_URL=postgres://enac_erp_dev:enac_erp_dev_password@postgres:5432/enac_erp_dev
+```
 
 ## Scripts
 

@@ -122,6 +122,14 @@ Próximos passos:
 
 A V3.3A prepara a validacao local da persistencia PostgreSQL do ERP ENAC. O banco esperado e local, via Docker, com database `enac_erp_dev` e seeds marcados como `DEV_LOCAL_V3_3A`.
 
+Validação local concluída na V3.3A.1:
+
+- Docker Compose subiu o container `enac-erp-postgres-dev`.
+- PostgreSQL local ficou `healthy`.
+- Backend Node rodou em `http://127.0.0.1:3333`.
+- `/health` e `/health/db` retornaram `200 OK`.
+- Endpoints de leitura retornaram dados locais com marcador `DEV_LOCAL_V3_3A`.
+
 Subir PostgreSQL local:
 
 ```powershell
@@ -134,6 +142,7 @@ Configurar `.env` local:
 
 - Use `.env.example` como base.
 - Mantenha `DATABASE_URL` apontando para `127.0.0.1` e database `enac_erp_dev`.
+- Use `postgres:5432` apenas se o backend tambem estiver em container na rede Docker Compose.
 - Nao commitar `.env`.
 
 Rodar migration e seed:

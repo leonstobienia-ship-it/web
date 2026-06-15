@@ -36,17 +36,29 @@
 - [x] `GET /health/db` testado sem PostgreSQL local e retornou 503 controlado (`ECONNREFUSED 127.0.0.1:5432`).
 - [x] Endpoints de leitura testados sem PostgreSQL local e retornaram 503 controlado.
 
-## Bloqueio local
+## Validacao manual local V3.3A.1
 
-- [x] `docker` indisponivel no PATH deste ambiente.
-- [ ] `docker compose config`.
-- [ ] PostgreSQL local via Docker iniciado.
-- [ ] Migration `001_init_core` executada localmente.
-- [ ] Seed `DEV_LOCAL_V3_3A` executada localmente.
-- [ ] `GET /health/db` testado com banco real.
-- [ ] Endpoints de leitura testados com dados do banco local.
+- [x] Docker Compose validado no ambiente local de Leon.
+- [x] PostgreSQL local via Docker iniciado.
+- [x] Container `enac-erp-postgres-dev` ficou `healthy`.
+- [x] Porta `5432` publicada em `127.0.0.1`/`localhost`.
+- [x] Migration `001_init_core` executada localmente.
+- [x] Seed `DEV_LOCAL_V3_3A` executada localmente.
+- [x] Backend Node rodou em `http://127.0.0.1:3333`.
+- [x] `GET /health` testado com `200 OK`.
+- [x] `GET /health/db` testado com banco real e `database.connected = true`.
+- [x] `GET /health/db` retornou `database.name = enac_erp_dev`.
+- [x] `GET /empresas` retornou dados do banco local.
+- [x] `GET /usuarios` retornou dados do banco local.
+- [x] `GET /clientes` retornou dados do banco local.
+- [x] `GET /fornecedores` retornou dados do banco local.
+- [x] `GET /obras` retornou dados do banco local.
+- [x] `GET /centros-custo` retornou dados do banco local.
+- [x] Dados de seed retornaram com marcador `DEV_LOCAL_V3_3A`.
+- [x] Host correto documentado: backend no Windows/host usa `127.0.0.1` ou `localhost`.
+- [x] Host `postgres` documentado apenas para backend dentro da rede Docker Compose.
 
 ## Resultado
 
 - [x] Implementacao preparada para execucao local com Docker.
-- [ ] Criterios que dependem de Docker/PostgreSQL local validados em maquina com Docker instalado.
+- [x] Criterios que dependem de Docker/PostgreSQL local validados manualmente no ambiente de Leon.
