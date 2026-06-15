@@ -3,7 +3,7 @@ import type { QueryResultRow } from 'pg';
 import { query } from '../../db/client.js';
 import { HttpError, isHttpError, methodNotAllowed, readJsonBody, sendError, sendJson } from '../../http.js';
 
-type FieldKind = 'text' | 'uuid' | 'status' | 'tipo_pessoa' | 'uf' | 'number' | 'date' | 'enum';
+type FieldKind = 'text' | 'uuid' | 'status' | 'tipo_pessoa' | 'uf' | 'number' | 'date' | 'email' | 'enum';
 
 export interface MasterField {
   column: string;
@@ -23,6 +23,7 @@ export interface MasterCadastroConfig {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const validStatuses = ['ativo', 'inativo'];
 const validTiposPessoa = ['fisica', 'juridica'];
 const validUfs = [
@@ -126,6 +127,13 @@ const normalizeValue = (field: MasterField, rawValue: unknown): unknown => {
       throw new HttpError(400, 'validation_error', `Data invalida em ${field.column}. Use YYYY-MM-DD.`);
     }
     return value;
+  }
+
+  if (kind === 'email') {
+    if (!emailPattern.test(value)) {
+      throw new HttpError(400, 'validation_error', `Email invalido em ${field.column}.`);
+    }
+    return value.toLowerCase();
   }
 
   if (kind === 'enum') {

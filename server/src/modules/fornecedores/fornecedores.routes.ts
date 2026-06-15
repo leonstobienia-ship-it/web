@@ -28,7 +28,7 @@ export const handleFornecedores = createMasterCadastroHandler({
     { column: 'tipo_pessoa', required: true, kind: 'tipo_pessoa' },
     { column: 'cpf_cnpj' },
     { column: 'categoria', required: true },
-    { column: 'email' },
+    { column: 'email', kind: 'email' },
     { column: 'telefone' },
     { column: 'endereco' },
     { column: 'contato' },

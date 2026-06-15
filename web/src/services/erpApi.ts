@@ -8,6 +8,26 @@ export interface ApiItemResponse<T> {
   data: T;
 }
 
+interface ApiErrorBody {
+  code?: string;
+  details?: unknown;
+  message?: string;
+  status?: string;
+}
+
+export class ErpApiError extends Error {
+  public readonly statusCode: number;
+  public readonly code?: string;
+  public readonly details?: unknown;
+
+  public constructor(message: string, statusCode: number, code?: string, details?: unknown) {
+    super(message);
+    this.statusCode = statusCode;
+    this.code = code;
+    this.details = details;
+  }
+}
+
 export interface EmpresaApi {
   id: string;
   razao_social: string;
@@ -86,10 +106,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
   });
   const text = await response.text();
-  const body = text ? JSON.parse(text) as { message?: string } : undefined;
+  let body: ApiErrorBody | T | undefined;
+
+  if (text) {
+    try {
+      body = JSON.parse(text) as ApiErrorBody | T;
+    } catch {
+      body = { message: text };
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(body?.message || `Falha HTTP ${response.status}`);
+    const errorBody = body as ApiErrorBody | undefined;
+    const details = Array.isArray(errorBody?.details) ? ` Campos: ${errorBody.details.join(', ')}.` : '';
+    const code = errorBody?.code ? ` (${errorBody.code})` : '';
+    throw new ErpApiError(
+      `${errorBody?.message || `Falha HTTP ${response.status}`}${code}${details}`,
+      response.status,
+      errorBody?.code,
+      errorBody?.details
+    );
   }
 
   return body as T;

@@ -1,7 +1,32 @@
 import { config as loadDotenv } from 'dotenv';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-loadDotenv({ path: '../.env' });
-loadDotenv({ path: '.env' });
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const serverRootDir = path.resolve(currentDir, '..', '..');
+const projectRootDir = path.resolve(serverRootDir, '..');
+const explicitDatabaseUrl = process.env.DATABASE_URL;
+
+const loadDevelopmentEnv = (): void => {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  const envFiles = [
+    path.join(projectRootDir, '.env'),
+    path.join(serverRootDir, '.env')
+  ];
+
+  for (const envFile of envFiles) {
+    if (existsSync(envFile)) {
+      loadDotenv({ path: envFile, override: false });
+    }
+  }
+};
+
+loadDevelopmentEnv();
 
 export interface ServerEnv {
   port: number;
@@ -22,11 +47,16 @@ const parsePositiveInt = (value: string | undefined, fallback: number): number =
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 
-const buildDatabaseUrl = (): string => {
-  if (process.env.DATABASE_URL) {
-    return process.env.DATABASE_URL;
-  }
+const hasPostgresParts = (): boolean =>
+  Boolean(
+    process.env.POSTGRES_HOST ||
+    process.env.POSTGRES_PORT ||
+    process.env.POSTGRES_DB ||
+    process.env.POSTGRES_USER ||
+    process.env.POSTGRES_PASSWORD
+  );
 
+const buildDatabaseUrlFromParts = (): string => {
   const host = process.env.POSTGRES_HOST || '127.0.0.1';
   const port = process.env.POSTGRES_PORT || '5432';
   const db = process.env.POSTGRES_DB || 'enac_erp_dev';
@@ -36,13 +66,29 @@ const buildDatabaseUrl = (): string => {
   return `postgres://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${db}`;
 };
 
+const buildDatabaseUrl = (): string => {
+  if (explicitDatabaseUrl) {
+    return explicitDatabaseUrl;
+  }
+
+  if (hasPostgresParts()) {
+    return buildDatabaseUrlFromParts();
+  }
+
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  return buildDatabaseUrlFromParts();
+};
+
 export const assertLocalDatabaseUrl = (databaseUrl: string): void => {
   const url = new URL(databaseUrl);
-  const allowedHosts = ['localhost', '127.0.0.1', '::1'];
+  const allowedHosts = ['localhost', '127.0.0.1', '::1', 'postgres'];
   const databaseName = url.pathname.replace(/^\//, '');
 
   if (!allowedHosts.includes(url.hostname) || databaseName !== 'enac_erp_dev') {
-    throw new Error('DATABASE_URL bloqueada: a V3.3A permite apenas banco local enac_erp_dev.');
+    throw new Error('DATABASE_URL bloqueada: use apenas banco local enac_erp_dev em localhost, 127.0.0.1, ::1 ou postgres.');
   }
 };
 

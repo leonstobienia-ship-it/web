@@ -78,14 +78,26 @@ Campos operacionais:
 - `status` controlado: `ativo` ou `inativo`.
 - `tipo_pessoa` controlado: `fisica` ou `juridica`.
 - `uf` validada por sigla brasileira.
+- `email` validado de forma simples quando informado.
+- `valor_previsto` deve ser numerico quando informado.
 - `company_id` e chave primaria usam UUID.
 - Nao ha `DELETE` fisico.
 - Inativacao preserva historico e vinculos.
 - Autenticacao, permissao por perfil, workflows e aprovacao ficam para etapas posteriores.
 
+## Duplicidades
+
+Restricoes atuais:
+
+- Clientes: `company_id + cpf_cnpj`, quando `cpf_cnpj` informado.
+- Fornecedores: `company_id + cpf_cnpj`, quando `cpf_cnpj` informado.
+- Centros de custo: `company_id + codigo`.
+- Obras: `company_id + codigo`.
+
+Violacoes retornam `409` pela API.
+
 ## Fonte de dados
 
-Na V3.3B a fonte de dados dos cadastros e o PostgreSQL local `enac_erp_dev`.
+Na V3.3B/V3.3C a fonte de dados dos cadastros e o PostgreSQL local `enac_erp_dev`.
 
 SharePoint continua reservado para documentos e para a webpart historica ja validada em etapas anteriores. Esta etapa nao escreve no SharePoint.
-

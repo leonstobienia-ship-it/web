@@ -60,6 +60,8 @@ Migrations atuais:
 - `001_init_core`: fundacao do modelo ERP.
 - `002_cadastros_mestres`: campos e validacoes para clientes, fornecedores, centros de custo e obras.
 
+Nao ha migration `003` na V3.3C porque as restricoes de duplicidade dos cadastros mestres ja existem nas migrations anteriores.
+
 `seed` cria:
 
 - empresa ENAC DEV;
@@ -103,3 +105,38 @@ Operacoes permitidas:
 Nao existe `DELETE` fisico. Inativacao e reativacao sao feitas por `status`.
 
 As queries usam parametros do `pg` e o backend valida campos obrigatorios, UUID, `status`, `tipo_pessoa`, UF, datas e numeros antes de gravar.
+
+## Estabilizacao V3.3C
+
+O carregamento de ambiente do backend passou a resolver `.env` por caminho absoluto:
+
+- raiz do projeto: `.env`;
+- diretorio `server`: `server/.env`.
+
+Arquivos `.env` sao carregados apenas fora de `NODE_ENV=production` e nao sobrescrevem variaveis ja presentes em `process.env`. Assim, `DATABASE_URL` explicita na sessao continua tendo prioridade.
+
+Quando nao ha `DATABASE_URL` explicita antes do carregamento do `.env`, o backend monta a conexao a partir de `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER` e `POSTGRES_PASSWORD`. Isso reduz fragilidade quando um `DATABASE_URL` local ficou desalinhado dos campos do container.
+
+## Troubleshooting de conexao
+
+Sintoma: `/health/db` retorna `503` com PostgreSQL aparentemente healthy.
+
+Verifique:
+
+- Backend no Windows/host deve usar `127.0.0.1:5432` ou `localhost:5432`.
+- Backend em container Compose deve usar `postgres:5432`.
+- O database deve continuar `enac_erp_dev`.
+- A senha do `.env` local deve ser a mesma usada quando o container/volume foi criado.
+- A API precisa ser reiniciada depois de corrigir `.env`.
+- Se `DATABASE_URL` foi exportada explicitamente na sessao, ela vence sobre `.env`; feche a sessao ou remova a variavel para validar apenas o `.env`.
+
+Comandos uteis:
+
+```powershell
+docker compose ps
+cd server
+npm.cmd start
+Invoke-RestMethod http://127.0.0.1:3333/health/db
+```
+
+Se houver divergencia de senha entre `.env` e container ja existente, ajuste apenas o `.env` local ou recrie o volume local de desenvolvimento. Nao commitar `.env`.

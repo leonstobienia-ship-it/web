@@ -263,6 +263,44 @@ Testar cadastros no frontend:
 
 Todos os dados de teste da V3.3B devem conter o marcador `DEV_LOCAL_V3_3B`. `.env` permanece local e ignorado.
 
+## V3.3C - Estabilizacao dos cadastros
+
+A V3.3C estabiliza o ambiente local e os cadastros mestres antes de qualquer modulo de compras. Nao ha SharePoint, Entra, automacoes, banco de producao, modulo de compras ou `DELETE` fisico.
+
+Carregamento de `.env`:
+
+- `process.env.DATABASE_URL` explicito tem prioridade.
+- Em desenvolvimento, o backend carrega `.env` da raiz do projeto e `server/.env` por caminho absoluto.
+- Sem `DATABASE_URL` explicito na sessao, a conexao local e montada pelos campos `POSTGRES_*` do `.env`.
+- Em `NODE_ENV=production`, `.env` nao e carregado automaticamente.
+- `.env` real permanece local e ignorado.
+
+Para backend no Windows/host:
+
+```text
+DATABASE_URL=postgres://enac_erp_dev:enac_erp_dev_password@127.0.0.1:5432/enac_erp_dev
+```
+
+Para backend em container na rede Docker Compose:
+
+```text
+DATABASE_URL=postgres://enac_erp_dev:enac_erp_dev_password@postgres:5432/enac_erp_dev
+```
+
+Smoke test de cadastros, com API ja rodando:
+
+```powershell
+cd server
+npm.cmd run smoke:cadastros
+```
+
+Troubleshooting de `GET /health/db` retornando `503`:
+
+- confirme `docker compose ps`;
+- confirme que o backend no Windows/host usa `127.0.0.1` ou `localhost`, nao `postgres`;
+- confirme que a senha no `.env` local e a mesma usada pelo container/volume PostgreSQL existente;
+- reinicie a API apos corrigir ambiente local.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

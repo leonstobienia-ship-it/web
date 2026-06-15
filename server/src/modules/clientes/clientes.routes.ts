@@ -24,7 +24,7 @@ export const handleClientes = createMasterCadastroHandler({
     { column: 'nome', required: true },
     { column: 'tipo_pessoa', required: true, kind: 'tipo_pessoa' },
     { column: 'cpf_cnpj' },
-    { column: 'email' },
+    { column: 'email', kind: 'email' },
     { column: 'telefone' },
     { column: 'endereco' },
     { column: 'responsavel' },

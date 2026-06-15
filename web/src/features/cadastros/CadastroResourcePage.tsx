@@ -34,6 +34,10 @@ const getRecordValue = (record: CadastroRecord, key: string): string => {
   return text;
 };
 
+const getStatusLabel = (status: string): string => status === 'inativo' ? 'Inativo' : 'Ativo';
+
+const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
+
 const buildFormFromRecord = (
   record: CadastroRecord,
   fields: CadastroField[],
@@ -62,7 +66,16 @@ const buildPayload = (fields: CadastroField[], values: Record<string, string>): 
       return;
     }
 
-    payload[field.name] = field.type === 'number' ? Number(rawValue.replace(',', '.')) : rawValue;
+    if (field.type === 'number') {
+      const numericValue = Number(rawValue.replace(',', '.'));
+      if (!Number.isFinite(numericValue)) {
+        throw new Error(`Informe um valor numerico valido para ${field.label}.`);
+      }
+      payload[field.name] = numericValue;
+      return;
+    }
+
+    payload[field.name] = rawValue;
   });
 
   return payload;
@@ -84,7 +97,7 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
     try {
       setItems(await config.list());
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : String(loadError));
+      setError(getErrorMessage(loadError));
     } finally {
       setLoading(false);
     }
@@ -116,6 +129,10 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
 
   const save = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
+    if (saving) {
+      return;
+    }
+
     setSaving(true);
     setError('');
     setMessage('');
@@ -127,18 +144,31 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
         setMessage(`${config.singular} atualizado.`);
       } else {
         await config.create(payload);
+        setSelected(null);
+        setFormValues(config.initialValues);
         setMessage(`${config.singular} criado.`);
       }
       setMode('list');
       await loadItems();
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : String(saveError));
+      setError(getErrorMessage(saveError));
     } finally {
       setSaving(false);
     }
   };
 
   const changeStatus = async (record: CadastroRecord): Promise<void> => {
+    if (saving) {
+      return;
+    }
+
+    if (record.status !== 'inativo') {
+      const confirmed = window.confirm(`Inativar ${config.singular} "${getRecordValue(record, 'nome')}"?`);
+      if (!confirmed) {
+        return;
+      }
+    }
+
     setSaving(true);
     setError('');
     setMessage('');
@@ -153,7 +183,7 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
       }
       await loadItems();
     } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : String(statusError));
+      setError(getErrorMessage(statusError));
     } finally {
       setSaving(false);
     }
@@ -166,7 +196,7 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
           <h2>{config.plural}</h2>
           <p>{items.length} registro(s) carregado(s)</p>
         </div>
-        <button type="button" onClick={openCreate}>Novo</button>
+        <button type="button" onClick={openCreate} disabled={saving || loading}>Novo</button>
       </div>
 
       {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
@@ -176,19 +206,24 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
         <form className="enac-cadastro-form" onSubmit={save}>
           <div className="enac-cadastro-form-head">
             <h3>{mode === 'edit' ? `Editar ${config.singular}` : `Novo ${config.singular}`}</h3>
-            <button type="button" className="enac-cadastro-secondary" onClick={() => setMode('list')}>Cancelar</button>
+            <button type="button" className="enac-cadastro-secondary" onClick={() => setMode('list')} disabled={saving}>Cancelar</button>
           </div>
           <div className="enac-cadastro-form-grid">
             {config.fields.map((field) => {
               if (field.type === 'hidden') {
-                return <input key={field.name} type="hidden" value={formValues[field.name] || ''} />;
+                return <input key={field.name} type="hidden" value={formValues[field.name] || ''} readOnly />;
               }
 
               if (field.type === 'textarea') {
                 return (
                   <label key={field.name}>
-                    <span>{field.label}{field.required ? ' *' : ''}</span>
-                    <textarea value={formValues[field.name] || ''} onChange={(event) => updateField(field.name, event.target.value)} />
+                    <span>{field.label}{field.required && <strong className="enac-cadastro-required">Obrigatório</strong>}</span>
+                    <textarea
+                      required={field.required}
+                      disabled={saving}
+                      value={formValues[field.name] || ''}
+                      onChange={(event) => updateField(field.name, event.target.value)}
+                    />
                   </label>
                 );
               }
@@ -196,8 +231,13 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
               if (field.type === 'select') {
                 return (
                   <label key={field.name}>
-                    <span>{field.label}{field.required ? ' *' : ''}</span>
-                    <select value={formValues[field.name] || ''} onChange={(event) => updateField(field.name, event.target.value)}>
+                    <span>{field.label}{field.required && <strong className="enac-cadastro-required">Obrigatório</strong>}</span>
+                    <select
+                      required={field.required}
+                      disabled={saving}
+                      value={formValues[field.name] || ''}
+                      onChange={(event) => updateField(field.name, event.target.value)}
+                    >
                       <option value="">Selecione</option>
                       {(field.options || []).map((option) => (
                         <option key={option.value} value={option.value}>{option.label}</option>
@@ -209,10 +249,12 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
 
               return (
                 <label key={field.name}>
-                  <span>{field.label}{field.required ? ' *' : ''}</span>
+                  <span>{field.label}{field.required && <strong className="enac-cadastro-required">Obrigatório</strong>}</span>
                   <input
                     type={field.type || 'text'}
                     step={field.step}
+                    required={field.required}
+                    disabled={saving}
                     value={formValues[field.name] || ''}
                     onChange={(event) => updateField(field.name, event.target.value)}
                   />
@@ -245,12 +287,20 @@ export function CadastroResourcePage({ config }: CadastroResourcePageProps): JSX
               {items.map((record) => (
                 <tr key={record.id}>
                   {config.columns.map((column) => (
-                    <td key={column.key}>{column.format ? column.format(record) : getRecordValue(record, column.key)}</td>
+                    <td key={column.key}>
+                      {column.key === 'status' ? (
+                        <span className={`enac-cadastro-status enac-cadastro-status--${record.status === 'inativo' ? 'inativo' : 'ativo'}`}>
+                          {getStatusLabel(String(record.status))}
+                        </span>
+                      ) : (
+                        column.format ? column.format(record) : getRecordValue(record, column.key)
+                      )}
+                    </td>
                   ))}
                   <td>
                     <div className="enac-cadastro-row-actions">
-                      <button type="button" onClick={() => openEdit(record)}>Editar</button>
-                      <button type="button" onClick={() => void changeStatus(record)}>
+                      <button type="button" onClick={() => openEdit(record)} disabled={saving}>Editar</button>
+                      <button type="button" onClick={() => void changeStatus(record)} disabled={saving}>
                         {record.status === 'inativo' ? 'Reativar' : 'Inativar'}
                       </button>
                     </div>
