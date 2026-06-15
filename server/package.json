@@ -11,6 +11,8 @@
     "smoke:solicitacoes": "npm run build && node dist/scripts/smokeSolicitacoesCompra.js",
     "smoke:cotacoes": "npm run build && node dist/scripts/smokeCotacoes.js",
     "smoke:pedidos": "npm run build && node dist/scripts/smokePedidosCompra.js",
+    "smoke:notas": "npm run build && node dist/scripts/smokeNotasEntrada.js",
+    "smoke:contas-pagar": "npm run build && node dist/scripts/smokeContasPagar.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

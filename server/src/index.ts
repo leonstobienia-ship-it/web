@@ -2,10 +2,12 @@ import { createServer } from 'node:http';
 import { readEnv } from './config/env.js';
 import { handleCentrosCusto } from './modules/centrosCusto/centrosCusto.routes.js';
 import { handleClientes } from './modules/clientes/clientes.routes.js';
+import { handleContasPagar } from './modules/contasPagar/contasPagar.routes.js';
 import { handleCotacoes } from './modules/cotacoes/cotacoes.routes.js';
 import { handleEmpresas } from './modules/empresas/empresas.routes.js';
 import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.js';
 import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.routes.js';
+import { handleNotasEntrada } from './modules/notasEntrada/notasEntrada.routes.js';
 import { handleObras } from './modules/obras/obras.routes.js';
 import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
@@ -29,7 +31,9 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/centros-custo', handler: handleCentrosCusto },
   { basePath: '/solicitacoes-compra', handler: handleSolicitacoesCompra },
   { basePath: '/cotacoes', handler: handleCotacoes },
-  { basePath: '/pedidos-compra', handler: handlePedidosCompra }
+  { basePath: '/pedidos-compra', handler: handlePedidosCompra },
+  { basePath: '/notas-entrada', handler: handleNotasEntrada },
+  { basePath: '/contas-pagar', handler: handleContasPagar }
 ];
 
 const findHandler = (pathname: string): RouteHandler | undefined => {

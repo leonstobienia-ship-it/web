@@ -520,6 +520,92 @@ Teste manual do frontend:
 8. Emita, envie ao fornecedor e confirme.
 9. Teste o bloqueio de duplicidade e o cancelamento em status permitido.
 
+## V3.5A - Nota de Entrada e Contas a Pagar Inicial
+
+A V3.5A implementa Nota Fiscal de Entrada local vinculada a Pedido de Compra confirmado e geração inicial de Conta a Pagar em parcela única. A etapa não implementa programação bancária real, pagamento, baixa, conciliação, XML, SEFAZ, prefeitura, NF-e, NFS-e, SharePoint, Entra, automações ou `DELETE` físico.
+
+Aplicar migrations locais:
+
+```powershell
+docker compose up -d postgres
+cd server
+npm.cmd run migrate
+```
+
+Rodar backend:
+
+```powershell
+cd server
+npm.cmd run build
+npm.cmd start
+```
+
+Rodar frontend:
+
+```powershell
+npm.cmd run web:dev
+```
+
+Endpoints de notas:
+
+```text
+GET    /notas-entrada
+GET    /notas-entrada/:id
+POST   /notas-entrada
+PATCH  /notas-entrada/:id
+PATCH  /notas-entrada/:id/lancar
+PATCH  /notas-entrada/:id/conferir
+PATCH  /notas-entrada/:id/aprovar-financeiro
+PATCH  /notas-entrada/:id/cancelar
+```
+
+Endpoints de contas a pagar:
+
+```text
+GET    /contas-pagar
+GET    /contas-pagar/:id
+POST   /contas-pagar/gerar-da-nota
+PATCH  /contas-pagar/:id
+PATCH  /contas-pagar/:id/enviar-programacao
+PATCH  /contas-pagar/:id/cancelar
+```
+
+Fluxo V3.5A:
+
+```text
+Pedido CONFIRMADO -> Nota RASCUNHO
+RASCUNHO -> LANCADA
+LANCADA -> CONFERIDA
+CONFERIDA -> APROVADA_FINANCEIRO
+Nota APROVADA_FINANCEIRO -> Conta ABERTA
+ABERTA -> AGUARDANDO_PROGRAMACAO
+ABERTA | AGUARDANDO_PROGRAMACAO -> CANCELADA
+```
+
+Smoke tests:
+
+```powershell
+cd server
+npm.cmd run smoke:notas
+npm.cmd run smoke:contas-pagar
+```
+
+Os smokes criam cenário local com marcador `DEV_LOCAL_V3_5A`, garantem pedido confirmado, criam nota com itens herdados, aprovam para financeiro, geram conta a pagar, validam duplicidade com HTTP `409` e cancelam conta em status permitido.
+
+Teste manual do frontend:
+
+1. Suba PostgreSQL local e backend.
+2. Rode `npm.cmd run web:dev`.
+3. Abra `http://127.0.0.1:5173`.
+4. Acesse `Notas de Entrada`.
+5. Crie nota a partir de pedido confirmado.
+6. Confira itens herdados e valor total.
+7. Lance, confira e aprove financeiro.
+8. Acesse `Contas a Pagar`.
+9. Gere conta a partir da nota aprovada.
+10. Envie para programação lógica.
+11. Teste duplicidade para a mesma nota/parcela e cancele conta em status permitido.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

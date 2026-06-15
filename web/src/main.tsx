@@ -5,7 +5,9 @@ import { EnacSistema } from '@enacSistema/components/EnacSistema';
 import { SharePointEnacRepository } from '@enacSistema/services/SharePointEnacRepository';
 import { SharePointFetchClient } from './sharePointFetchClient';
 import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
+import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
+import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
 import { PedidosCompraPage } from './features/pedidosCompra/PedidosCompraPage';
 import { SolicitacoesCompraPage } from './features/solicitacoesCompra/SolicitacoesCompraPage';
 import './styles.css';
@@ -47,6 +49,8 @@ type WebSection =
   | 'solicitacoes-compra'
   | 'cotacoes'
   | 'pedidos-compra'
+  | 'notas-entrada'
+  | 'contas-pagar'
   | 'estrutura'
   | 'mvp'
   | 'fluxos'
@@ -101,6 +105,8 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'solicitacoes-compra', label: 'Solicitações de Compra' },
   { key: 'cotacoes', label: 'Cotações' },
   { key: 'pedidos-compra', label: 'Pedidos de Compra' },
+  { key: 'notas-entrada', label: 'Notas de Entrada' },
+  { key: 'contas-pagar', label: 'Contas a Pagar' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
   { key: 'fluxos', label: 'Workflows' },
@@ -375,6 +381,14 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'pedidos-compra') {
     return <PedidosCompraPage />;
+  }
+
+  if (section === 'notas-entrada') {
+    return <NotasEntradaPage />;
+  }
+
+  if (section === 'contas-pagar') {
+    return <ContasPagarPage />;
   }
 
   if (section === 'estrutura') {

@@ -63,6 +63,7 @@ Migrations atuais:
 - `005_cotacoes_mapa_comparativo`: primeira base de cotacoes e itens cotados.
 - `006_cotacoes_fluxo_formal_v34b`: cotacao agregada, fornecedores participantes e mapa comparativo formal.
 - `007_pedidos_compra_mvp`: pedido de compra MVP e itens herdados da cotacao vencedora.
+- `008_notas_entrada_contas_pagar_mvp`: nota fiscal de entrada, itens da nota e conta a pagar inicial.
 
 Nao ha migration `003` na V3.3C porque as restricoes de duplicidade dos cadastros mestres ja existem nas migrations anteriores.
 
@@ -242,6 +243,53 @@ npm.cmd run smoke:pedidos
 ```
 
 O smoke cria dados locais com marcador `DEV_LOCAL_V3_4C`, gera pedido a partir de cotacao vencedora, valida itens herdados, executa transicoes ate `CONFIRMADO` e valida duplicidade com `409`.
+
+## Nota de Entrada e Contas a Pagar V3.5A
+
+A V3.5A libera escrita local para Nota de Entrada vinculada a Pedido de Compra confirmado e para Conta a Pagar inicial gerada por nota aprovada:
+
+- cabecalho em `notas_fiscais_entrada`;
+- itens em `notas_fiscais_entrada_itens`;
+- ajuste incremental em `contas_pagar`;
+- heranca de empresa, fornecedor, pedido, obra e centro de custo;
+- bloqueio de duplicidade ativa de nota por fornecedor, numero e serie;
+- bloqueio de duplicidade ativa de conta por nota e parcela.
+
+Endpoints de notas:
+
+| Endpoint | Uso |
+|---|---|
+| `GET /notas-entrada` | Lista notas, com filtros opcionais por `status`, `fornecedor_id`, `pedido_id`, `obra_id` e `centro_custo_id` |
+| `GET /notas-entrada/:id` | Detalhe com itens herdados |
+| `POST /notas-entrada` | Cria nota `RASCUNHO` vinculada a pedido confirmado |
+| `PATCH /notas-entrada/:id` | Atualiza campos basicos enquanto `RASCUNHO` |
+| `PATCH /notas-entrada/:id/lancar` | `RASCUNHO -> LANCADA` |
+| `PATCH /notas-entrada/:id/conferir` | `LANCADA -> CONFERIDA` |
+| `PATCH /notas-entrada/:id/aprovar-financeiro` | `CONFERIDA -> APROVADA_FINANCEIRO` |
+| `PATCH /notas-entrada/:id/cancelar` | Cancela status permitido |
+
+Endpoints de contas a pagar:
+
+| Endpoint | Uso |
+|---|---|
+| `GET /contas-pagar` | Lista contas, com filtros por `status`, `fornecedor_id`, `obra_id`, `vencimento_de` e `vencimento_ate` |
+| `GET /contas-pagar/:id` | Detalhe da conta |
+| `POST /contas-pagar/gerar-da-nota` | Gera conta `ABERTA` em parcela unica a partir de nota aprovada |
+| `PATCH /contas-pagar/:id` | Atualiza campos basicos enquanto `ABERTA` |
+| `PATCH /contas-pagar/:id/enviar-programacao` | `ABERTA -> AGUARDANDO_PROGRAMACAO` logico |
+| `PATCH /contas-pagar/:id/cancelar` | Cancela status permitido |
+
+Na V3.5A, `PROGRAMADA` e `BAIXADA` ficam reservados. A etapa nao implementa programacao bancaria real, pagamento, baixa, conciliacao, XML, SEFAZ, prefeitura, NF-e, NFS-e, SharePoint, Entra, automacao ou `DELETE`.
+
+Smoke tests:
+
+```powershell
+cd server
+npm.cmd run smoke:notas
+npm.cmd run smoke:contas-pagar
+```
+
+Os smokes criam dados locais com marcador `DEV_LOCAL_V3_5A`, aprovam nota para financeiro, geram conta, validam duplicidade com `409` e cancelam a conta em status permitido, sem acionar banco real ou integracao externa.
 
 ## Estabilizacao V3.3C
 

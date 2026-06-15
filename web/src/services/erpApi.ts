@@ -436,6 +436,141 @@ export interface PedidoCompraUpdatePayload {
   observacoes?: string | null;
 }
 
+export type NotaEntradaStatus = 'RASCUNHO' | 'LANCADA' | 'CONFERIDA' | 'APROVADA_FINANCEIRO' | 'CANCELADA';
+
+export interface NotaEntradaItemApi {
+  id: string;
+  nota_id: string;
+  pedido_item_id?: string | null;
+  descricao: string;
+  unidade: string;
+  quantidade: string | number;
+  valor_unitario: string | number;
+  valor_total: string | number;
+  observacoes?: string | null;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotaEntradaApi {
+  id: string;
+  company_id: string;
+  pedido_id: string;
+  fornecedor_id: string;
+  obra_id?: string | null;
+  centro_custo_id?: string | null;
+  numero: string;
+  serie?: string | null;
+  chave_acesso?: string | null;
+  tipo_documento: string;
+  data_emissao: string;
+  data_entrada: string;
+  valor_produtos: string | number;
+  valor_servicos: string | number;
+  valor_frete: string | number;
+  valor_desconto: string | number;
+  valor_impostos: string | number;
+  valor_total: string | number;
+  status: NotaEntradaStatus;
+  observacoes?: string | null;
+  created_at: string;
+  updated_at: string;
+  pedido_codigo?: string | null;
+  pedido_titulo?: string | null;
+  fornecedor_nome?: string | null;
+  fornecedor_cpf_cnpj?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  itens_count?: number;
+  itens?: NotaEntradaItemApi[];
+}
+
+export interface NotaEntradaFilters {
+  status?: NotaEntradaStatus | '';
+  fornecedor_id?: string;
+  pedido_id?: string;
+  obra_id?: string;
+  centro_custo_id?: string;
+}
+
+export interface NotaEntradaPayload {
+  company_id?: string;
+  pedido_id: string;
+  numero: string;
+  serie?: string | null;
+  chave_acesso?: string | null;
+  tipo_documento?: string | null;
+  data_emissao: string;
+  data_entrada: string;
+  valor_produtos: number;
+  valor_servicos?: number;
+  valor_frete?: number;
+  valor_desconto?: number;
+  valor_impostos?: number;
+  valor_total: number;
+  observacoes?: string | null;
+}
+
+export type NotaEntradaUpdatePayload = Partial<Omit<NotaEntradaPayload, 'company_id' | 'pedido_id'>>;
+
+export type ContaPagarStatus = 'ABERTA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'CANCELADA' | 'BAIXADA';
+
+export interface ContaPagarApi {
+  id: string;
+  company_id: string;
+  nota_entrada_id: string;
+  pedido_id: string;
+  fornecedor_id: string;
+  obra_id?: string | null;
+  centro_custo_id?: string | null;
+  numero_documento: string;
+  parcela: number;
+  total_parcelas: number;
+  data_emissao: string;
+  data_vencimento: string;
+  valor_original: string | number;
+  valor_aberto: string | number;
+  status: ContaPagarStatus;
+  forma_pagamento_prevista?: string | null;
+  observacoes?: string | null;
+  created_at: string;
+  updated_at: string;
+  nota_numero?: string | null;
+  nota_serie?: string | null;
+  pedido_codigo?: string | null;
+  pedido_titulo?: string | null;
+  fornecedor_nome?: string | null;
+  fornecedor_cpf_cnpj?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+}
+
+export interface ContaPagarFilters {
+  status?: ContaPagarStatus | '';
+  fornecedor_id?: string;
+  obra_id?: string;
+  vencimento_de?: string;
+  vencimento_ate?: string;
+}
+
+export interface GerarContaPagarPayload {
+  nota_entrada_id: string;
+  data_vencimento: string;
+  forma_pagamento_prevista?: string | null;
+  observacoes?: string | null;
+}
+
+export interface ContaPagarUpdatePayload {
+  data_vencimento?: string;
+  forma_pagamento_prevista?: string | null;
+  observacoes?: string | null;
+}
+
 export type CadastroPayload = Record<string, string | number | null | undefined>;
 
 const apiBaseUrl = (import.meta.env.VITE_ENAC_ERP_API_BASE_URL || 'http://127.0.0.1:3333').replace(/\/+$/, '');
@@ -612,6 +747,68 @@ export const erpApi = {
       action: 'emitir' | 'enviar-fornecedor' | 'confirmar' | 'cancelar'
     ): Promise<PedidoCompraApi> =>
       (await request<ApiItemResponse<PedidoCompraApi>>(`/pedidos-compra/${id}/${action}`, {
+        method: 'PATCH'
+      })).data
+  },
+  notasEntrada: {
+    list: async (filters: NotaEntradaFilters = {}): Promise<NotaEntradaApi[]> =>
+      (await request<ApiListResponse<NotaEntradaApi>>(
+        `/notas-entrada${buildQueryString({
+          status: filters.status || undefined,
+          fornecedor_id: filters.fornecedor_id,
+          pedido_id: filters.pedido_id,
+          obra_id: filters.obra_id,
+          centro_custo_id: filters.centro_custo_id
+        })}`
+      )).data,
+    get: async (id: string): Promise<NotaEntradaApi> =>
+      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-entrada/${id}`)).data,
+    create: async (payload: NotaEntradaPayload): Promise<NotaEntradaApi> =>
+      (await request<ApiItemResponse<NotaEntradaApi>>('/notas-entrada', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: NotaEntradaUpdatePayload): Promise<NotaEntradaApi> =>
+      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-entrada/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    transition: async (
+      id: string,
+      action: 'lancar' | 'conferir' | 'aprovar-financeiro' | 'cancelar'
+    ): Promise<NotaEntradaApi> =>
+      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-entrada/${id}/${action}`, {
+        method: 'PATCH'
+      })).data
+  },
+  contasPagar: {
+    list: async (filters: ContaPagarFilters = {}): Promise<ContaPagarApi[]> =>
+      (await request<ApiListResponse<ContaPagarApi>>(
+        `/contas-pagar${buildQueryString({
+          status: filters.status || undefined,
+          fornecedor_id: filters.fornecedor_id,
+          obra_id: filters.obra_id,
+          vencimento_de: filters.vencimento_de,
+          vencimento_ate: filters.vencimento_ate
+        })}`
+      )).data,
+    get: async (id: string): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}`)).data,
+    gerarDaNota: async (payload: GerarContaPagarPayload): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>('/contas-pagar/gerar-da-nota', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: ContaPagarUpdatePayload): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    transition: async (
+      id: string,
+      action: 'enviar-programacao' | 'cancelar'
+    ): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/${action}`, {
         method: 'PATCH'
       })).data
   }
