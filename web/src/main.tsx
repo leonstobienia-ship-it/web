@@ -37,7 +37,7 @@ const flagsEscritaWebV30B = {
   registrarHistoricoWebV30B: import.meta.env.VITE_ENAC_REGISTRAR_HISTORICO_WEB_V30B === 'true'
 };
 
-type WebSection = 'visao' | 'estrutura' | 'fluxos' | 'dados' | 'seguranca' | 'implantacao' | 'sistema';
+type WebSection = 'visao' | 'estrutura' | 'mvp' | 'fluxos' | 'dados' | 'seguranca' | 'implantacao' | 'sistema';
 
 interface IOperationalState {
   loading: boolean;
@@ -81,46 +81,123 @@ class WebErrorBoundary extends React.Component<{ children: React.ReactNode }, IW
 
 const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'visao', label: 'Visão geral' },
-  { key: 'estrutura', label: 'Estrutura' },
-  { key: 'fluxos', label: 'Fluxos' },
-  { key: 'dados', label: 'Listas SharePoint' },
-  { key: 'seguranca', label: 'Entra e acesso' },
-  { key: 'implantacao', label: 'Publicação' },
-  { key: 'sistema', label: 'Sistema' }
+  { key: 'estrutura', label: 'Arquitetura' },
+  { key: 'mvp', label: 'MVP ERP' },
+  { key: 'fluxos', label: 'Workflows' },
+  { key: 'dados', label: 'Modelo de dados' },
+  { key: 'seguranca', label: 'Segurança' },
+  { key: 'implantacao', label: 'Roadmap' },
+  { key: 'sistema', label: 'Sistema atual' }
 ];
 
-const modules = [
-  ['Clientes e obras', 'Cadastro base para separar solicitações por cliente, obra, centro de custo e local de entrega.'],
-  ['Fornecedores', 'Base de fornecedores e dados de pagamento usados em cotações, pedidos e liberação financeira.'],
-  ['Requisições', 'Entrada operacional do campo para materiais, serviços, locações, equipamentos, EPIs e documentos.'],
-  ['Cotações', 'Registro de propostas, recomendação de fornecedor, prazo, frete e condição de pagamento.'],
-  ['Aprovações', 'Alçadas parametrizadas por processo, tipo, obra, valor, aprovador principal e aprovador adicional.'],
-  ['Pedidos, notas e pagamentos', 'Encadeamento de pedido de compra, nota fiscal, programação bancária e conclusão do pagamento.'],
-  ['Administração', 'Usuários, perfis, alçadas, histórico de configuração e governança do sistema.']
+const architecturePillars = [
+  ['Fonte de verdade', 'PostgreSQL', 'Transações, relacionamentos, RLS, particionamento, PITR e réplica para BI.'],
+  ['Camada de negócio', 'API própria', 'Regras, auditoria, integrações, idempotência e políticas centralizadas.'],
+  ['Frontend', 'SPA web autenticada', 'Experiência operacional para obra, financeiro, comercial e locação com SSO Entra.'],
+  ['Documentos', 'SharePoint libraries', 'Contratos, ART/RRT, medições, propostas, evidências e comprovantes versionados.'],
+  ['Relatórios', 'BI em réplica/warehouse', 'Dashboards sem sobrecarregar o banco transacional.'],
+  ['Identidade', 'Entra ID + app roles', 'Grupos corporativos, MFA, menor privilégio e governança de acesso.']
 ];
 
-const flows = [
-  'Solicitação da obra',
-  'Cotação',
-  'Aprovação parametrizada',
-  'Pedido de compra',
-  'Execução da compra',
-  'Nota fiscal',
-  'Programação bancária',
-  'Liberação bancária',
-  'Pagamento concluído'
+const mvpModules = [
+  ['Cadastros mestres', 'CNPJ, sites, imóveis, edifícios, salas, vagas, centros de custo, clientes, fornecedores e parceiros.'],
+  ['CRM leve e comercial', 'Leads, oportunidades, propostas, versões, aprovações comerciais e histórico de negociação.'],
+  ['Contratos', 'Obra, serviço e locação com partes, escopo, valores, prazos, reajustes, retenções, aditivos e documentos.'],
+  ['Obras e medições', 'Projeto, WBS, orçamento base, cronograma físico-financeiro, diário, evidências e faturamento por medição.'],
+  ['AR, AP e tesouraria', 'Recebíveis, régua de cobrança, inadimplência, contas a pagar, programação, baixa e conciliação.'],
+  ['Locação e ocupação', 'Unidades, contratos, caução, cobrança recorrente, reajuste, renovação, rescisão e vacância.'],
+  ['Estacionamento simples', 'Vagas, regras, mensalistas, uso por período, fechamento, cobrança e repasse por parceiro.']
 ];
 
-const lists = [
-  ['Lista 01 - Controle de Obras ENAC', 'Obras, clientes, centro de custo e vínculos operacionais.'],
-  ['Lista 02 — Requisições de Compra', 'Solicitações, status, aprovação necessária e snapshot de aprovação.'],
-  ['Lista 03 — Pedidos de Compra', 'Pedidos gerados a partir das requisições aprovadas.'],
-  ['Lista 04 - Notas Fiscais Recebidas', 'Notas fiscais, conferência, vencimento, fornecedor, obra e vínculo com pedido.'],
-  ['Contas a pagar / programação financeira', 'Programação, forma de pagamento, origem, categoria e status.'],
-  ['ENAC Usuarios Perfis', 'Perfis internos, status, conta Microsoft 365 e permissões de uso.'],
-  ['ENAC Alcadas', 'Regras de aprovação por processo, tipo, valores e aprovadores.'],
-  ['ENAC Historico Configuracoes', 'Auditoria administrativa e operacional.'],
-  ['ENAC Snapshots Regras', 'Registro congelado da regra aplicada em aprovações.']
+const mvpBoundary = [
+  ['Entra ID, usuários e papéis', 'Mobile app nativo'],
+  ['Cadastros de CNPJ, site, imóvel, sala e partes', 'Restaurante como operação completa de PDV'],
+  ['CRM leve, oportunidade e proposta', 'Cowork como operação full-service'],
+  ['Contratos de obra e locação', 'Contabilidade estatutária completa dentro do ERP'],
+  ['Obra, WBS, orçamento base e medição', 'Automações fiscais muito específicas por município'],
+  ['Contas a receber, cobrança e baixa', 'Portal externo sofisticado com autosserviço amplo'],
+  ['Contas a pagar, pagamento e conciliação', 'Analytics avançado preditivo']
+];
+
+const workflows = [
+  {
+    title: 'Comercial e orçamento',
+    steps: ['Lead', 'Oportunidade', 'Proposta', 'Aprovação', 'Contrato'],
+    rule: 'Alçada por valor e margem, versão de proposta e trilha de negociação.'
+  },
+  {
+    title: 'Obras e medições',
+    steps: ['Contrato', 'Obra/WBS', 'Execução', 'Medição', 'Faturamento'],
+    rule: 'Medição não excede saldo aprovado; excesso exige aditivo ou change order.'
+  },
+  {
+    title: 'Locação de salas',
+    steps: ['Unidade', 'Proposta', 'Contrato', 'Cobrança recorrente', 'Reajuste'],
+    rule: 'Contrato ativo, caução, índice/data-base, multa, juros e inadimplência controlados.'
+  },
+  {
+    title: 'Estacionamento',
+    steps: ['Regras', 'Uso', 'Fechamento', 'Cobrança', 'Repasse'],
+    rule: 'Tarifa por período/usuário, ocupação e rateio por parceiro quando aplicável.'
+  },
+  {
+    title: 'Financeiro',
+    steps: ['Obrigação', 'Documento fiscal', 'Cobrança/pagamento', 'Baixa', 'Conciliação'],
+    rule: 'Não pagar sem aprovação; não faturar sem fato gerador; estornos auditáveis.'
+  }
+];
+
+const dataModelGroups = [
+  ['Organização', 'legal_entity, branch, site, building, unit, parking_space, cost_center, analytic_account'],
+  ['Pessoas e acesso', 'party, person, company_party, contact, user_account, role, user_role, access_scope'],
+  ['Comercial', 'lead, opportunity, proposal, proposal_item, activity, attachment'],
+  ['Contratos', 'contract, contract_party, contract_term, contract_index_rule, contract_addendum, signature_event'],
+  ['Obras', 'project, project_wbs, budget_baseline, budget_line, schedule_line, field_diary, measurement, measurement_item'],
+  ['Financeiro', 'receivable, payable, payment, receipt, bank_account, bank_transaction, reconciliation_event'],
+  ['Fiscal e integrações', 'fiscal_document, tax_rule, withholding_rule, nfse_event, webhook_event, integration_job'],
+  ['Plataforma', 'document_ref, audit_event, workflow_instance, notification, integration_job']
+];
+
+const roles = [
+  ['Admin', 'Todos os módulos, parametrização e auditoria', 'Papel excepcional, monitorado e com menor uso possível.'],
+  ['Gestor de obra', 'Obras, contratos técnicos, medições, OS, diário e evidências', 'Sem acesso irrestrito à tesouraria.'],
+  ['Financeiro', 'AP, AR, cobrança, baixa, conciliação e fiscal operacional', 'Não altera escopo técnico sem workflow.'],
+  ['Comercial', 'CRM, propostas, contratos comerciais e agenda', 'Sem baixa financeira e sem editar medição.'],
+  ['Locador/adm. imóveis', 'Imóveis, salas, contratos de locação, ocupação e inadimplência', 'Sem centros de custo globais.'],
+  ['Operador terceiro/locatário', 'Portal restrito por contrato/site', 'Acesso somente às próprias unidades, cobranças e chamados.']
+];
+
+const nonFunctionalRequirements = [
+  ['Segregação', 'legal_entity_id, site_id e RLS no banco; filtro obrigatório no backend.'],
+  ['Auditoria', 'Eventos append-only para login, aprovação, baixa, estorno, alteração contratual e exportação.'],
+  ['Resiliência', 'Outbox, filas, webhooks idempotentes, retries controlados e alertas de falha.'],
+  ['Documentos', 'SharePoint com versionamento, metadados e vínculo por contrato, obra, unidade, título ou chamado.'],
+  ['Backup', 'Base backup, WAL archiving, PITR e testes periódicos de restore.'],
+  ['Performance', 'Consultas paginadas e indexadas; dashboards em camada analítica.']
+];
+
+const reports = [
+  ['Fluxo de caixa', 'Diário', 'Previsto x realizado, saldo projetado por dia/semana e desvio.'],
+  ['AR/AP e inadimplência', 'Diário', 'Aging, vencido, a vencer, recuperação, acordos e carteira ativa.'],
+  ['Medição de obra', 'Semanal', 'Valor medido, acumulado, saldo contratual, retenções e pendências.'],
+  ['Ocupação de salas', 'Diário/semanal', 'm² ocupados, vacância, receita potencial e contratos a vencer.'],
+  ['Rentabilidade por obra', 'Semanal', 'Receita, custo, margem, a faturar, a pagar e exposição de caixa.'],
+  ['CRM leve', 'Semanal', 'Leads por origem, oportunidades por estágio, conversão e forecast.']
+];
+
+const integrations = [
+  ['Entra ID', 'SSO, MFA, grupos e app roles para papéis de aplicação.'],
+  ['Microsoft Graph / SharePoint', 'Documentos, notificações, bibliotecas e metadados com scopes restritos.'],
+  ['Gateway de cobrança', 'Pix, boleto, cartão, links de pagamento, webhooks e conciliação.'],
+  ['Bancos', 'Extrato, CNAB/API, liquidação e matching por título/ID externo.'],
+  ['Fiscal', 'NFS-e por município/provedor, NF-e quando aplicável, retenções e eventos fiscais.'],
+  ['BI', 'Power BI ou Metabase sobre réplica/ETL, não diretamente no OLTP.']
+];
+
+const roadmap = [
+  ['MVP', 'Blueprint detalhado, cadastros, CRM leve, contratos, obras/WBS/medições, AR/AP, cobrança, locação e go-live controlado.'],
+  ['v1', 'Integrações fiscal/gateway/BI, estacionamento ampliado, portal externo básico, auditoria e observabilidade.'],
+  ['v2', 'Automação avançada, renegociação, analytics, portais ampliados para terceiros e locatários.']
 ];
 
 function getConfigError(): string | null {
@@ -266,14 +343,48 @@ function WebPortal(): JSX.Element {
 function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpenSystem: () => void }): JSX.Element {
   if (section === 'estrutura') {
     return (
-      <Page title="Estrutura do Projeto" eyebrow="Arquitetura preservada">
-        <div className="enac-web-grid">
-          {modules.map(([title, description]) => (
-            <article className="enac-web-card" key={title}>
-              <h3>{title}</h3>
-              <p>{description}</p>
-            </article>
-          ))}
+      <Page title="Arquitetura alvo do ERP" eyebrow="PostgreSQL + API + SharePoint documental">
+        <div className="enac-web-stack">
+          <p className="enac-web-lead">
+            A base transacional recomendada passa a ser PostgreSQL, com backend próprio para regras,
+            auditoria e integrações. SharePoint continua como camada documental e colaborativa.
+          </p>
+          <div className="enac-web-grid">
+            {architecturePillars.map(([title, decision, description]) => (
+              <article className="enac-web-card" key={title}>
+                <span className="enac-web-card-label">{title}</span>
+                <h3>{decision}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </Page>
+    );
+  }
+
+  if (section === 'mvp') {
+    return (
+      <Page title="MVP verticalizado ENAC" eyebrow="Obra, contrato, aluguel, recebimento e caixa">
+        <div className="enac-web-stack">
+          <p className="enac-web-lead">
+            O MVP cobre o coração econômico da ENAC: cadastros mestres, CRM leve, contratos,
+            obras e medições, contas a receber, contas a pagar, tesouraria, locação e ocupação.
+          </p>
+          <div className="enac-web-grid">
+            {mvpModules.map(([title, description]) => (
+              <article className="enac-web-card" key={title}>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+          <table className="enac-web-table">
+            <thead><tr><th>Entrar no MVP</th><th>Ficar para depois</th></tr></thead>
+            <tbody>
+              {mvpBoundary.map(([included, later]) => <tr key={included}><td>{included}</td><td>{later}</td></tr>)}
+            </tbody>
+          </table>
         </div>
       </Page>
     );
@@ -281,35 +392,61 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'fluxos') {
     return (
-      <Page title="Fluxo Operacional" eyebrow="MVP de compras e pagamento">
-        <ol className="enac-web-flow">
-          {flows.map((item) => <li key={item}>{item}</li>)}
-        </ol>
+      <Page title="Workflows de negócio" eyebrow="Cinco fluxos-mãe">
+        <div className="enac-web-grid enac-web-grid--two">
+          {workflows.map((workflow) => (
+            <article className="enac-web-card" key={workflow.title}>
+              <h3>{workflow.title}</h3>
+              <p className="enac-web-flow-line">{workflow.steps.join(' -> ')}</p>
+              <p>{workflow.rule}</p>
+            </article>
+          ))}
+        </div>
       </Page>
     );
   }
 
   if (section === 'dados') {
     return (
-      <Page title="Listas SharePoint" eyebrow="Fonte oficial de dados">
-        <table className="enac-web-table">
-          <thead><tr><th>Lista</th><th>Uso no sistema</th></tr></thead>
-          <tbody>
-            {lists.map(([title, description]) => <tr key={title}><td>{title}</td><td>{description}</td></tr>)}
-          </tbody>
-        </table>
+      <Page title="Modelo de dados operacional" eyebrow="Transações por CNPJ, site e contrato">
+        <div className="enac-web-stack">
+          <p className="enac-web-lead">
+            Toda transação deve nascer com contexto empresarial e locacional. Entidades de alto volume
+            como ledger, auditoria, webhooks e eventos bancários devem ser candidatas a particionamento.
+          </p>
+          <table className="enac-web-table">
+            <thead><tr><th>Grupo</th><th>Entidades essenciais</th></tr></thead>
+            <tbody>
+              {dataModelGroups.map(([group, entities]) => <tr key={group}><td><strong>{group}</strong></td><td>{entities}</td></tr>)}
+            </tbody>
+          </table>
+          <div className="enac-web-note">
+            O ERP guarda metadados de negócio e vínculos; os arquivos binários ficam em bibliotecas SharePoint
+            com versionamento, metadados e permissões adequadas.
+          </div>
+        </div>
       </Page>
     );
   }
 
   if (section === 'seguranca') {
     return (
-      <Page title="Microsoft Entra e Acesso" eyebrow="Identidade e segurança">
-        <div className="enac-web-grid enac-web-grid--two">
-          <article className="enac-web-card"><h3>Login corporativo</h3><p>O portal usa MSAL no navegador e autenticação Microsoft Entra para identificar o usuário.</p></article>
-          <article className="enac-web-card"><h3>Permissão por perfil</h3><p>A visibilidade de módulos depende do cadastro em ENAC Usuarios Perfis e das permissões finas no SharePoint.</p></article>
-          <article className="enac-web-card"><h3>SharePoint REST</h3><p>As chamadas usam token Bearer delegado e mantêm as listas SharePoint como origem oficial.</p></article>
-          <article className="enac-web-card"><h3>Escrita controlada</h3><p>As rotas de escrita continuam protegidas por flags, modo de teste, marcadores e confirmação manual.</p></article>
+      <Page title="Segurança, papéis e governança" eyebrow="Entra ID, RLS e auditoria">
+        <div className="enac-web-stack">
+          <table className="enac-web-table">
+            <thead><tr><th>Papel</th><th>Escopo</th><th>Restrição recomendada</th></tr></thead>
+            <tbody>
+              {roles.map(([role, scope, restriction]) => <tr key={role}><td><strong>{role}</strong></td><td>{scope}</td><td>{restriction}</td></tr>)}
+            </tbody>
+          </table>
+          <div className="enac-web-grid enac-web-grid--two">
+            {nonFunctionalRequirements.map(([title, description]) => (
+              <article className="enac-web-card" key={title}>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </Page>
     );
@@ -317,32 +454,49 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'implantacao') {
     return (
-      <Page title="Publicação Netlify" eyebrow="Site web independente da webpart">
-        <div className="enac-web-steps">
-          <p><strong>Build:</strong> <code>npm run web:build</code></p>
-          <p><strong>Publicação:</strong> diretório <code>dist-web</code></p>
-          <p><strong>Variáveis:</strong> configurar <code>VITE_ENAC_ENTRA_CLIENT_ID</code>, <code>VITE_ENAC_ENTRA_TENANT_ID</code> e <code>VITE_ENAC_SHAREPOINT_SITE_URL</code> no Netlify.</p>
-          <p><strong>Redirect URI:</strong> cadastrar a URL do site Netlify no app registration do Microsoft Entra.</p>
+      <Page title="Roadmap e integrações" eyebrow="Implantação incremental">
+        <div className="enac-web-stack">
+          <div className="enac-web-roadmap">
+            {roadmap.map(([phase, description]) => (
+              <article key={phase}>
+                <span>{phase}</span>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+          <table className="enac-web-table">
+            <thead><tr><th>Integração</th><th>Finalidade no ERP</th></tr></thead>
+            <tbody>
+              {integrations.map(([name, purpose]) => <tr key={name}><td><strong>{name}</strong></td><td>{purpose}</td></tr>)}
+            </tbody>
+          </table>
+          <table className="enac-web-table">
+            <thead><tr><th>Relatório</th><th>Frequência</th><th>Métricas mínimas</th></tr></thead>
+            <tbody>
+              {reports.map(([report, cadence, metrics]) => <tr key={report}><td><strong>{report}</strong></td><td>{cadence}</td><td>{metrics}</td></tr>)}
+            </tbody>
+          </table>
         </div>
       </Page>
     );
   }
 
   return (
-    <Page title="Sistema Operacional ENAC" eyebrow="Da webpart ao portal web">
+    <Page title="ERP próprio para a ENAC" eyebrow="Blueprint executivo convertido em portal">
       <section className="enac-web-hero">
         <div>
           <p>
-            Este portal reúne a documentação operacional, a estrutura técnica e o acesso ao sistema
-            que usa listas SharePoint como fonte de dados e Microsoft Entra como identidade.
+            A recomendação consolidada é evoluir o Sistema ENAC para um ERP verticalizado de
+            engenharia/obras, gestão patrimonial/locação e financeiro operacional. O sistema atual
+            de compras e pagamentos permanece como base de aprendizado e operação controlada.
           </p>
-          <button type="button" onClick={onOpenSystem}>Abrir sistema</button>
+          <button type="button" onClick={onOpenSystem}>Abrir sistema atual</button>
         </div>
         <dl>
-          <div><dt>Origem dos dados</dt><dd>SharePoint Lists</dd></div>
-          <div><dt>Identidade</dt><dd>Microsoft Entra</dd></div>
-          <div><dt>Publicação</dt><dd>Netlify</dd></div>
-          <div><dt>Base preservada</dt><dd>React + modelos ENAC</dd></div>
+          <div><dt>MVP</dt><dd>7 frentes</dd></div>
+          <div><dt>Fonte de verdade alvo</dt><dd>PostgreSQL</dd></div>
+          <div><dt>Documentos</dt><dd>SharePoint</dd></div>
+          <div><dt>Prazo estimado</dt><dd>4 a 6 meses</dd></div>
         </dl>
       </section>
     </Page>

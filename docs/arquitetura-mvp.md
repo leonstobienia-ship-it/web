@@ -112,3 +112,30 @@ Na V2.7A, toda escrita operacional deve permanecer limitada a teste controlado. 
 ## Integração futura com Teams
 
 A solução SPFx deverá ser empacotada, publicada no catálogo de aplicativos e adicionada como aba no Teams. O protótipo atual não executa essa publicação.
+
+## V3.1 - alvo ERP verticalizado
+
+A partir do blueprint executivo anexado em 2026-06-14, o Sistema ENAC passa a ter dois horizontes explícitos:
+
+- **Operação atual controlada:** webpart/portal React integrado a listas SharePoint, focado em compras, aprovações, notas fiscais e programação financeira.
+- **Arquitetura-alvo de ERP:** produto verticalizado para engenharia/obras, gestão patrimonial/locação e financeiro operacional, com PostgreSQL como fonte de verdade transacional, backend próprio para regras/auditoria/integrações, SPA autenticada via Microsoft Entra ID e SharePoint como camada documental.
+
+Essa decisão não elimina a base atual. O fluxo de compras e pagamentos permanece como aprendizado funcional e operação controlada, mas deixa de ser a fronteira final do produto. O desenho de novas entidades, telas e integrações deve priorizar o ERP verticalizado.
+
+### Frentes mínimas do MVP ERP
+
+1. Cadastros mestres: CNPJ, sites, imóveis, edifícios, salas, vagas, partes, centros de custo e contas analíticas.
+2. CRM leve/comercial: lead, oportunidade, proposta, orçamento, aprovação e contrato.
+3. Contratos: obra, serviço e locação com partes, escopo, valores, prazos, retenções, reajustes, aditivos e documentos.
+4. Obras e medições: projeto, WBS, orçamento base, cronograma, diário, evidências, medição e faturamento.
+5. Financeiro operacional: contas a receber, cobrança, inadimplência, contas a pagar, programação, pagamento, baixa e conciliação.
+6. Locação e ocupação: unidades, contratos, caução, cobrança recorrente, reajuste, renovação, rescisão e vacância.
+7. Estacionamento simples: vagas, regras, mensalistas, uso por período, fechamento, cobrança e repasse.
+
+### Regras arquiteturais novas
+
+- SharePoint não deve ser usado como banco principal para transações críticas do ERP; deve guardar documentos, metadados documentais, versionamento e colaboração.
+- Toda transação relevante deve carregar ou derivar `legal_entity_id`, `site_id`, `created_by`, `created_at`, `updated_by`, `updated_at`, `status` e `row_version`.
+- O backend deve ser o ponto obrigatório para validações, alçadas, auditoria, regras fiscais, gateways de cobrança, bancos e webhooks.
+- Relatórios gerenciais devem usar réplica/warehouse ou camada BI, evitando consultas pesadas diretamente no OLTP.
+- Auditoria, idempotência, filas, logs e backup com PITR são requisitos de produto, não tarefas acessórias.

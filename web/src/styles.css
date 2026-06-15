@@ -102,6 +102,19 @@ select {
   line-height: 1.12;
 }
 
+.enac-web-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.enac-web-lead {
+  max-width: 860px;
+  margin: 0;
+  color: #33465c;
+  font-size: 18px;
+  line-height: 1.55;
+}
+
 .enac-web-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
@@ -195,10 +208,25 @@ select {
   font-size: 18px;
 }
 
+.enac-web-card-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #476177;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .enac-web-card p {
   margin: 0;
   color: #465a70;
   line-height: 1.45;
+}
+
+.enac-web-flow-line {
+  margin-bottom: 10px !important;
+  color: #245a7f !important;
+  font-weight: 800;
 }
 
 .enac-web-flow {
@@ -248,9 +276,50 @@ select {
   text-transform: uppercase;
 }
 
+.enac-web-table strong {
+  color: #17212f;
+}
+
 .enac-web-steps,
 .enac-web-alert {
   padding: 20px;
+}
+
+.enac-web-note {
+  border-left: 4px solid #6b8f71;
+  background: #ffffff;
+  color: #33465c;
+  padding: 14px 16px;
+  line-height: 1.5;
+}
+
+.enac-web-roadmap {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.enac-web-roadmap article {
+  border: 1px solid #d9e0e7;
+  border-top: 4px solid #245a7f;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.enac-web-roadmap span {
+  display: block;
+  margin-bottom: 8px;
+  color: #245a7f;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.enac-web-roadmap p {
+  margin: 0;
+  color: #465a70;
+  line-height: 1.45;
 }
 
 .enac-web-steps p,
@@ -292,6 +361,10 @@ code {
   }
 
   .enac-web-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-web-roadmap {
     grid-template-columns: 1fr;
   }
 }
