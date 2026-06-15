@@ -118,6 +118,67 @@ Próximos passos:
 - Implementar endpoints reais de cadastros mestres.
 - Planejar migração controlada das listas/planilhas existentes sem interromper a operação atual.
 
+## V3.3A - PostgreSQL local
+
+A V3.3A prepara a validacao local da persistencia PostgreSQL do ERP ENAC. O banco esperado e local, via Docker, com database `enac_erp_dev` e seeds marcados como `DEV_LOCAL_V3_3A`.
+
+Subir PostgreSQL local:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d postgres
+docker compose ps
+```
+
+Configurar `.env` local:
+
+- Use `.env.example` como base.
+- Mantenha `DATABASE_URL` apontando para `127.0.0.1` e database `enac_erp_dev`.
+- Nao commitar `.env`.
+
+Rodar migration e seed:
+
+```powershell
+cd server
+npm install
+npm run migrate
+npm run seed
+```
+
+Rodar API:
+
+```powershell
+cd server
+npm run build
+npm start
+```
+
+Testar saude:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:3333/health
+Invoke-RestMethod http://127.0.0.1:3333/health/db
+```
+
+Testar endpoints de leitura:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:3333/empresas
+Invoke-RestMethod http://127.0.0.1:3333/usuarios
+Invoke-RestMethod http://127.0.0.1:3333/clientes
+Invoke-RestMethod http://127.0.0.1:3333/fornecedores
+Invoke-RestMethod http://127.0.0.1:3333/obras
+Invoke-RestMethod http://127.0.0.1:3333/centros-custo
+```
+
+Seguranca da V3.3A:
+
+- A API bloqueia `DATABASE_URL` que nao seja local e que nao use `enac_erp_dev`.
+- Nao ha POST/PUT/PATCH/DELETE.
+- Nao ha escrita SharePoint.
+- Nao ha alteracao Entra.
+- Nao ha automacoes.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

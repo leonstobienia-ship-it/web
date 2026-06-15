@@ -2,7 +2,7 @@ import type { ServerResponse } from 'node:http';
 import { query } from '../../db/client.js';
 import { sendJson } from '../health/health.routes.js';
 
-export const handleClientes = async (method: string, res: ServerResponse): Promise<void> => {
+export const handleUsuarios = async (method: string, res: ServerResponse): Promise<void> => {
   if (method !== 'GET') {
     sendJson(res, 405, { status: 'method_not_allowed', allowed: ['GET'] });
     return;
@@ -10,9 +10,10 @@ export const handleClientes = async (method: string, res: ServerResponse): Promi
 
   try {
     const result = await query(`
-      select id, company_id, nome, cpf_cnpj, email, telefone, responsavel, observacoes, status, created_at, updated_at
-      from clientes
-      order by nome
+      select u.id, u.nome, u.email, u.cargo_funcao, u.ativo, u.status, p.nome as perfil_principal
+      from usuarios u
+      left join perfis p on p.id = u.perfil_principal_id
+      order by u.nome
     `);
 
     sendJson(res, 200, { data: result.rows });
