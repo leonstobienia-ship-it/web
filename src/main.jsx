@@ -36,6 +36,9 @@ const privacyUrl = "/politica-de-privacidade/";
 const whatsappMessage =
   "Olá, gostaria de falar com a ENAC sobre uma demanda de obra.\nEmpresa:\nCidade:\nSegmento:\nTipo de obra:\nPrazo desejado:";
 const whatsappUrl = `https://wa.me/5519983310333?text=${encodeURIComponent(whatsappMessage)}`;
+const legacyHashRedirects = {
+  "#fale-conosco": "#contato",
+};
 
 const navItems = [
   { label: "Quem somos", href: "#quem-somos" },
@@ -357,6 +360,24 @@ function App() {
   const [formMode, setFormMode] = useState(formModes[0].id);
   const [submitState, setSubmitState] = useState("idle");
   const isPrivacyPage = window.location.pathname.replace(/\/+$/, "") === "/politica-de-privacidade";
+
+  useEffect(() => {
+    function redirectLegacyHash() {
+      const mappedHash = legacyHashRedirects[window.location.hash];
+
+      if (mappedHash) {
+        window.history.replaceState(null, "", mappedHash);
+        window.requestAnimationFrame(() => {
+          document.querySelector(mappedHash)?.scrollIntoView();
+        });
+      }
+    }
+
+    redirectLegacyHash();
+    window.addEventListener("hashchange", redirectLegacyHash);
+
+    return () => window.removeEventListener("hashchange", redirectLegacyHash);
+  }, []);
 
   useEffect(() => {
     if (!isPrivacyPage) {

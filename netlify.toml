@@ -3,16 +3,58 @@ command = "npm run build"
 publish = "dist"
 
 [build.environment]
-VITE_SITE_URL = "https://www.stobienia.com.br"
-VITE_SITE_INDEXABLE = "false"
+SITE_URL = "https://www.enac.com.br"
+SITE_INDEXABLE = "true"
+VITE_SITE_URL = "https://www.enac.com.br"
+VITE_SITE_INDEXABLE = "true"
 
-# Homologação pública em stobienia.com.br: manter noindex.
-# Na migração para www.enac.com.br, remover este header ou trocar a estratégia
-# junto com VITE_SITE_INDEXABLE=true.
-[[headers]]
-for = "/*"
-[headers.values]
-X-Robots-Tag = "noindex, nofollow, noarchive"
+[[redirects]]
+from = "/quem-somos/"
+to = "/#quem-somos"
+status = 301
+force = true
+
+[[redirects]]
+from = "/quem-somos"
+to = "/#quem-somos"
+status = 301
+force = true
+
+[[redirects]]
+from = "/atuacao/"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/atuacao"
+to = "/#atuacao"
+status = 301
+force = true
+
+[[redirects]]
+from = "/clientes/"
+to = "/#clientes"
+status = 301
+force = true
+
+[[redirects]]
+from = "/clientes"
+to = "/#clientes"
+status = 301
+force = true
+
+[[redirects]]
+from = "/fale-conosco/"
+to = "/#contato"
+status = 301
+force = true
+
+[[redirects]]
+from = "/fale-conosco"
+to = "/#contato"
+status = 301
+force = true
 
 [[redirects]]
 from = "/supermercados-e-atacados/"
@@ -75,6 +117,18 @@ status = 301
 force = true
 
 [[redirects]]
+from = "/2024/05/29/"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
+from = "/2024/05/29"
+to = "/#metodo"
+status = 301
+force = true
+
+[[redirects]]
 from = "/blog/"
 to = "/#metodo"
 status = 301
@@ -125,6 +179,18 @@ force = true
 [[redirects]]
 from = "/obras-de-grande-porte-exigem-prazos-seguros"
 to = "/#obras"
+status = 301
+force = true
+
+[[redirects]]
+from = "/wp-content/uploads/2024/05/folder-catalogo-ENAC.pdf"
+to = "/#contato"
+status = 301
+force = true
+
+[[redirects]]
+from = "/politica-de-privacidade"
+to = "/politica-de-privacidade/"
 status = 301
 force = true
 
