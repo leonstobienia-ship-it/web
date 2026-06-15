@@ -4,14 +4,15 @@ import type { PoolClient, QueryResultRow } from 'pg';
 import { getPool } from '../../db/client.js';
 import { HttpError, isHttpError, methodNotAllowed, readJsonBody, sendError, sendJson } from '../../http.js';
 
-type CotacaoStatus = 'RASCUNHO' | 'RECEBIDA' | 'DESCLASSIFICADA' | 'SELECIONADA' | 'CANCELADA';
-type SolicitacaoStatus =
+type CotacaoStatus =
   | 'RASCUNHO'
-  | 'ENVIADA'
-  | 'EM_ANALISE'
-  | 'APROVADA_PARA_COTACAO'
-  | 'DEVOLVIDA'
+  | 'ENVIADA_FORNECEDORES'
+  | 'RESPOSTAS_RECEBIDAS'
+  | 'MAPA_GERADO'
+  | 'FORNECEDOR_ESCOLHIDO'
   | 'CANCELADA';
+
+type FornecedorCotacaoStatus = 'CONVIDADO' | 'RESPOSTA_RECEBIDA' | 'DESCLASSIFICADO' | 'ESCOLHIDO' | 'CANCELADO';
 
 interface PgErrorLike {
   code?: string;
@@ -23,7 +24,7 @@ interface SolicitacaoRow extends QueryResultRow {
   company_id: string;
   codigo: string;
   titulo: string;
-  status: SolicitacaoStatus;
+  status: string;
   obra_codigo: string | null;
   obra_nome: string | null;
   centro_custo_codigo: string | null;
@@ -38,43 +39,48 @@ interface SolicitacaoItemRow extends QueryResultRow {
   ordem: number;
 }
 
-interface ExistingCotacaoRow extends QueryResultRow {
+interface CotacaoRow extends QueryResultRow {
   id: string;
   company_id: string;
   solicitacao_compra_id: string;
-  fornecedor_id: string;
   status: CotacaoStatus;
 }
 
-interface NormalizedCotacaoItem {
-  solicitacao_item_id: string;
-  descricao: string;
-  unidade: string;
-  quantidade: number;
-  valor_unitario: number;
-  valor_total: number;
-  observacoes: string | null;
-  ordem: number;
+interface CotacaoFornecedorRow extends QueryResultRow {
+  id: string;
+  cotacao_id: string;
+  fornecedor_id: string;
+  status: FornecedorCotacaoStatus;
+  valor_total: string;
 }
 
-interface NormalizedCotacaoPayload {
-  company_id: string;
-  solicitacao_compra_id: string;
+interface RespostaItemPayload {
+  solicitacao_item_id: string;
+  valor_unitario: number;
+  marca_modelo: string | null;
+  prazo_entrega_dias: number | null;
+  observacoes: string | null;
+}
+
+interface RespostaFornecedorPayload {
   fornecedor_id: string;
-  data_recebimento: string;
-  validade_proposta: string | null;
   prazo_entrega_dias: number | null;
   condicao_pagamento: string | null;
-  frete: string | null;
   observacoes: string | null;
-  itens: NormalizedCotacaoItem[];
-  valor_total: number;
+  itens: RespostaItemPayload[];
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-const statuses: CotacaoStatus[] = ['RASCUNHO', 'RECEBIDA', 'DESCLASSIFICADA', 'SELECIONADA', 'CANCELADA'];
-const lockedForEdit: CotacaoStatus[] = ['DESCLASSIFICADA', 'SELECIONADA', 'CANCELADA'];
+const formalStatuses: CotacaoStatus[] = [
+  'RASCUNHO',
+  'ENVIADA_FORNECEDORES',
+  'RESPOSTAS_RECEBIDAS',
+  'MAPA_GERADO',
+  'FORNECEDOR_ESCOLHIDO',
+  'CANCELADA'
+];
+const cancelableStatuses: CotacaoStatus[] = ['RASCUNHO', 'ENVIADA_FORNECEDORES', 'RESPOSTAS_RECEBIDAS', 'MAPA_GERADO'];
 
 const assertUuid = (value: unknown, fieldName: string): string => {
   const normalized = typeof value === 'string' ? value.trim() : '';
@@ -102,15 +108,15 @@ const optionalText = (payload: Record<string, unknown>, fieldName: string): stri
   return normalized || null;
 };
 
-const normalizeDate = (payload: Record<string, unknown>, fieldName: string, required: boolean): string | null => {
-  const rawValue = required ? requiredText(payload, fieldName) : optionalText(payload, fieldName);
-  if (!rawValue) {
+const optionalDate = (payload: Record<string, unknown>, fieldName: string): string | null => {
+  const value = optionalText(payload, fieldName);
+  if (!value) {
     return null;
   }
-  if (!datePattern.test(rawValue)) {
+  if (!datePattern.test(value)) {
     throw new HttpError(400, 'validation_error', `Data invalida em ${fieldName}. Use YYYY-MM-DD.`);
   }
-  return rawValue;
+  return value;
 };
 
 const normalizeNumber = (value: unknown, fieldName: string): number => {
@@ -132,21 +138,23 @@ const normalizeOptionalInteger = (value: unknown, fieldName: string): number | n
   return parsed;
 };
 
-const normalizeStatus = (value: unknown): CotacaoStatus => {
-  const normalized = String(value ?? '').trim().toUpperCase();
-  if (!statuses.includes(normalized as CotacaoStatus)) {
-    throw new HttpError(400, 'validation_error', `Status invalido. Use: ${statuses.join(', ')}.`);
+const normalizeStatus = (value: string): CotacaoStatus => {
+  const normalized = value.trim().toUpperCase();
+  if (!formalStatuses.includes(normalized as CotacaoStatus)) {
+    throw new HttpError(400, 'validation_error', `Status invalido. Use: ${formalStatuses.join(', ')}.`);
   }
   return normalized as CotacaoStatus;
 };
-
-const sumItems = (items: NormalizedCotacaoItem[]): number =>
-  Number(items.reduce((total, item) => total + item.valor_total, 0).toFixed(2));
 
 const generateCodigo = (): string => {
   const now = new Date();
   const datePart = now.toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
   return `COT-${datePart}-${randomUUID().slice(0, 8).toUpperCase()}`;
+};
+
+const getSolicitacaoId = (payload: Record<string, unknown>): string => {
+  const value = payload.solicitacao_id ?? payload.solicitacao_compra_id;
+  return assertUuid(value, 'solicitacao_id');
 };
 
 const fetchSolicitacao = async (client: PoolClient, solicitacaoId: string): Promise<SolicitacaoRow | undefined> => {
@@ -185,136 +193,87 @@ const fetchSolicitacaoItems = async (client: PoolClient, solicitacaoId: string):
   return result.rows;
 };
 
-const assertSolicitacaoCanQuote = (solicitacao: SolicitacaoRow): void => {
-  if (solicitacao.status !== 'EM_ANALISE') {
-    throw new HttpError(
-      409,
-      'status_conflict',
-      `Solicitacao em status ${solicitacao.status} nao permite cotacao. Use EM_ANALISE.`
-    );
+const assertSolicitacaoCanCreateCotacao = (solicitacao: SolicitacaoRow): void => {
+  if (solicitacao.status === 'CANCELADA') {
+    throw new HttpError(409, 'status_conflict', 'Solicitacao cancelada nao permite cotacao.');
   }
 };
 
-const validateFornecedor = async (client: PoolClient, companyId: string, fornecedorId: string): Promise<void> => {
-  const result = await client.query(
-    'select id from fornecedores where id = $1 and company_id = $2 and status = $3',
-    [fornecedorId, companyId, 'ativo']
+const validateFornecedorIds = async (client: PoolClient, companyId: string, fornecedorIds: string[]): Promise<void> => {
+  const result = await client.query<{ id: string }>(
+    `
+    select id
+    from fornecedores
+    where company_id = $1 and status = 'ativo' and id = any($2::uuid[])
+    `,
+    [companyId, fornecedorIds]
   );
-  if (!result.rows[0]) {
-    throw new HttpError(400, 'validation_error', 'Fornecedor invalido ou inativo para a empresa.');
+  const found = new Set(result.rows.map((row) => row.id));
+  const missing = fornecedorIds.filter((id) => !found.has(id));
+  if (missing.length > 0) {
+    throw new HttpError(400, 'validation_error', 'Fornecedor invalido ou inativo para a empresa.', missing);
   }
 };
 
-const normalizeItems = (
-  value: unknown,
-  solicitationItems: SolicitacaoItemRow[],
-  required: boolean
-): NormalizedCotacaoItem[] | undefined => {
-  if (value === undefined) {
-    if (required) {
-      throw new HttpError(400, 'validation_error', 'Todos os itens da solicitacao devem ser cotados.');
-    }
-    return undefined;
-  }
-
+const normalizeFornecedorIds = (value: unknown): string[] => {
   if (!Array.isArray(value) || value.length === 0) {
-    throw new HttpError(400, 'validation_error', 'Todos os itens da solicitacao devem ser cotados.');
+    throw new HttpError(400, 'validation_error', 'Cotacao deve ter pelo menos 1 fornecedor.');
   }
 
-  if (value.length !== solicitationItems.length) {
-    throw new HttpError(400, 'validation_error', 'Cotacao deve conter exatamente os itens ativos da solicitacao.');
-  }
-
-  const itemById = new Map(solicitationItems.map((item) => [item.id, item]));
-  const usedIds = new Set<string>();
-
-  return value.map((item, index) => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      throw new HttpError(400, 'validation_error', `Item ${index + 1} invalido.`);
+  const ids = value.map((entry, index) => {
+    if (typeof entry === 'string') {
+      return assertUuid(entry, `fornecedores[${index}]`);
     }
-
-    const itemPayload = item as Record<string, unknown>;
-    const solicitacaoItemId = assertUuid(itemPayload.solicitacao_item_id, `itens[${index}].solicitacao_item_id`);
-    const sourceItem = itemById.get(solicitacaoItemId);
-    if (!sourceItem) {
-      throw new HttpError(400, 'validation_error', `Item ${index + 1} nao pertence a solicitacao.`);
+    if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+      return assertUuid((entry as Record<string, unknown>).fornecedor_id, `fornecedores[${index}].fornecedor_id`);
     }
-    if (usedIds.has(solicitacaoItemId)) {
-      throw new HttpError(400, 'validation_error', `Item ${index + 1} duplicado na cotacao.`);
-    }
-    usedIds.add(solicitacaoItemId);
-
-    const valorUnitario = normalizeNumber(itemPayload.valor_unitario, `itens[${index}].valor_unitario`);
-    if (valorUnitario < 0) {
-      throw new HttpError(400, 'validation_error', `Valor unitario deve ser maior ou igual a zero no item ${index + 1}.`);
-    }
-
-    const quantidade = Number(sourceItem.quantidade);
-    const valorTotal = Number((quantidade * valorUnitario).toFixed(2));
-
-    return {
-      solicitacao_item_id: solicitacaoItemId,
-      descricao: sourceItem.descricao,
-      unidade: sourceItem.unidade,
-      quantidade,
-      valor_unitario: valorUnitario,
-      valor_total: valorTotal,
-      observacoes: optionalText(itemPayload, 'observacoes'),
-      ordem: sourceItem.ordem
-    };
+    throw new HttpError(400, 'validation_error', `Fornecedor ${index + 1} invalido.`);
   });
-};
 
-const normalizeCreatePayload = async (client: PoolClient, payload: Record<string, unknown>): Promise<NormalizedCotacaoPayload> => {
-  const companyId = assertUuid(payload.company_id, 'company_id');
-  const solicitacaoId = assertUuid(payload.solicitacao_compra_id, 'solicitacao_compra_id');
-  const fornecedorId = assertUuid(payload.fornecedor_id, 'fornecedor_id');
-  const solicitacao = await fetchSolicitacao(client, solicitacaoId);
-  if (!solicitacao || solicitacao.company_id !== companyId) {
-    throw new HttpError(400, 'validation_error', 'Solicitacao invalida para a empresa.');
+  const uniqueIds = Array.from(new Set(ids));
+  if (uniqueIds.length !== ids.length) {
+    throw new HttpError(400, 'validation_error', 'Fornecedor duplicado na cotacao.');
   }
-  assertSolicitacaoCanQuote(solicitacao);
-  await validateFornecedor(client, companyId, fornecedorId);
-
-  const solicitationItems = await fetchSolicitacaoItems(client, solicitacaoId);
-  const itens = normalizeItems(payload.itens, solicitationItems, true) as NormalizedCotacaoItem[];
-
-  return {
-    company_id: companyId,
-    solicitacao_compra_id: solicitacaoId,
-    fornecedor_id: fornecedorId,
-    data_recebimento: normalizeDate(payload, 'data_recebimento', true) as string,
-    validade_proposta: normalizeDate(payload, 'validade_proposta', false),
-    prazo_entrega_dias: normalizeOptionalInteger(payload.prazo_entrega_dias, 'prazo_entrega_dias'),
-    condicao_pagamento: optionalText(payload, 'condicao_pagamento'),
-    frete: optionalText(payload, 'frete'),
-    observacoes: optionalText(payload, 'observacoes'),
-    itens,
-    valor_total: sumItems(itens)
-  };
+  return uniqueIds;
 };
 
-const insertItems = async (client: PoolClient, cotacaoId: string, items: NormalizedCotacaoItem[]): Promise<void> => {
-  for (const item of items) {
+const fetchCotacaoForUpdate = async (client: PoolClient, id: string): Promise<CotacaoRow | undefined> => {
+  const result = await client.query<CotacaoRow>(
+    `
+    select id, company_id, solicitacao_compra_id, status
+    from cotacoes
+    where id = $1 and titulo is not null
+    for update
+    `,
+    [id]
+  );
+  return result.rows[0];
+};
+
+const insertFornecedorItens = async (
+  client: PoolClient,
+  cotacaoId: string,
+  cotacaoFornecedorId: string,
+  solicitacaoItems: SolicitacaoItemRow[]
+): Promise<void> => {
+  for (const item of solicitacaoItems) {
     await client.query(
       `
       insert into cotacoes_itens (
-        cotacao_id, solicitacao_item_id, descricao, unidade, quantidade,
-        valor_unitario, valor_total, observacoes, ordem, status
+        cotacao_id,
+        cotacao_fornecedor_id,
+        solicitacao_item_id,
+        descricao,
+        unidade,
+        quantidade,
+        valor_unitario,
+        valor_total,
+        ordem,
+        status
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ATIVO')
+      values ($1, $2, $3, $4, $5, $6, 0, 0, $7, 'ATIVO')
       `,
-      [
-        cotacaoId,
-        item.solicitacao_item_id,
-        item.descricao,
-        item.unidade,
-        item.quantidade,
-        item.valor_unitario,
-        item.valor_total,
-        item.observacoes,
-        item.ordem
-      ]
+      [cotacaoId, cotacaoFornecedorId, item.id, item.descricao, item.unidade, item.quantidade, item.ordem]
     );
   }
 };
@@ -326,31 +285,29 @@ const fetchCotacao = async (client: PoolClient, id: string) => {
       c.id,
       c.company_id,
       c.solicitacao_compra_id,
+      c.solicitacao_compra_id as solicitacao_id,
       c.fornecedor_id,
       c.codigo,
-      c.valor_total,
-      c.prazo_entrega,
-      c.prazo_entrega_dias,
-      c.condicao_pagamento,
-      c.frete,
-      c.recomendada,
-      c.justificativa,
-      c.data_recebimento,
-      c.validade_proposta,
+      c.titulo,
       c.status,
+      c.valor_total,
+      c.prazo_resposta,
       c.observacoes,
-      c.motivo_desclassificacao,
-      c.selecionada_em,
+      c.justificativa,
       c.created_at,
       c.updated_at,
-      f.nome as fornecedor_nome,
-      f.cpf_cnpj as fornecedor_cpf_cnpj,
       s.codigo as solicitacao_codigo,
-      s.titulo as solicitacao_titulo
+      s.titulo as solicitacao_titulo,
+      m.id as mapa_id,
+      m.fornecedor_vencedor_id,
+      m.criterio_decisao,
+      m.justificativa as mapa_justificativa,
+      m.valor_vencedor,
+      m.status as mapa_status
     from cotacoes c
-    join fornecedores f on f.id = c.fornecedor_id
     join solicitacoes_compra s on s.id = c.solicitacao_compra_id
-    where c.id = $1
+    left join mapa_comparativo_cotacao m on m.cotacao_id = c.id
+    where c.id = $1 and c.titulo is not null
     `,
     [id]
   );
@@ -360,48 +317,80 @@ const fetchCotacao = async (client: PoolClient, id: string) => {
     return undefined;
   }
 
-  const items = await client.query(
+  const fornecedores = await client.query(
     `
     select
-      id,
-      cotacao_id,
-      solicitacao_item_id,
-      descricao,
-      unidade,
-      quantidade,
-      valor_unitario,
-      valor_total,
-      observacoes,
-      ordem,
-      created_at,
-      updated_at
-    from cotacoes_itens
-    where cotacao_id = $1 and status = 'ATIVO'
-    order by ordem, created_at
+      cf.id,
+      cf.cotacao_id,
+      cf.fornecedor_id,
+      f.nome as fornecedor_nome,
+      f.cpf_cnpj as fornecedor_cpf_cnpj,
+      cf.status,
+      cf.valor_total,
+      cf.prazo_entrega_dias,
+      cf.condicao_pagamento,
+      cf.observacoes,
+      cf.created_at,
+      cf.updated_at
+    from cotacoes_fornecedores cf
+    join fornecedores f on f.id = cf.fornecedor_id
+    where cf.cotacao_id = $1 and cf.status <> 'CANCELADO'
+    order by cf.created_at
+    `,
+    [id]
+  );
+
+  const itens = await client.query(
+    `
+    select
+      i.id,
+      i.cotacao_id,
+      i.cotacao_fornecedor_id,
+      cf.fornecedor_id,
+      i.solicitacao_item_id,
+      i.descricao,
+      i.unidade,
+      i.quantidade,
+      i.valor_unitario,
+      i.valor_total,
+      i.marca_modelo,
+      i.prazo_entrega_dias,
+      i.observacoes,
+      i.ordem,
+      i.created_at,
+      i.updated_at
+    from cotacoes_itens i
+    join cotacoes_fornecedores cf on cf.id = i.cotacao_fornecedor_id
+    where i.cotacao_id = $1 and i.status = 'ATIVO'
+    order by i.ordem, cf.created_at
     `,
     [id]
   );
 
   return {
     ...cotacao,
-    itens: items.rows
+    mapa: cotacao.mapa_id ? {
+      id: cotacao.mapa_id,
+      cotacao_id: cotacao.id,
+      fornecedor_vencedor_id: cotacao.fornecedor_vencedor_id,
+      criterio_decisao: cotacao.criterio_decisao,
+      justificativa: cotacao.mapa_justificativa,
+      valor_vencedor: cotacao.valor_vencedor,
+      status: cotacao.mapa_status
+    } : null,
+    fornecedores: fornecedores.rows,
+    itens: itens.rows
   };
 };
 
 const listCotacoes = async (url: URL): Promise<QueryResultRow[]> => {
   const params: unknown[] = [];
-  const conditions: string[] = [];
+  const conditions: string[] = ['c.titulo is not null'];
 
-  const solicitacaoId = url.searchParams.get('solicitacao_compra_id');
+  const solicitacaoId = url.searchParams.get('solicitacao_id') || url.searchParams.get('solicitacao_compra_id');
   if (solicitacaoId) {
-    params.push(assertUuid(solicitacaoId, 'solicitacao_compra_id'));
+    params.push(assertUuid(solicitacaoId, 'solicitacao_id'));
     conditions.push(`c.solicitacao_compra_id = $${params.length}`);
-  }
-
-  const fornecedorId = url.searchParams.get('fornecedor_id');
-  if (fornecedorId) {
-    params.push(assertUuid(fornecedorId, 'fornecedor_id'));
-    conditions.push(`c.fornecedor_id = $${params.length}`);
   }
 
   const status = url.searchParams.get('status');
@@ -410,36 +399,38 @@ const listCotacoes = async (url: URL): Promise<QueryResultRow[]> => {
     conditions.push(`c.status = $${params.length}`);
   }
 
-  const where = conditions.length > 0 ? `where ${conditions.join(' and ')}` : '';
+  const where = `where ${conditions.join(' and ')}`;
   const result = await getPool().query(
     `
     select
       c.id,
       c.company_id,
       c.solicitacao_compra_id,
+      c.solicitacao_compra_id as solicitacao_id,
       c.fornecedor_id,
       c.codigo,
-      c.valor_total,
-      c.prazo_entrega_dias,
-      c.condicao_pagamento,
-      c.frete,
-      c.recomendada,
-      c.data_recebimento,
-      c.validade_proposta,
+      c.titulo,
       c.status,
+      c.valor_total,
+      c.prazo_resposta,
+      c.observacoes,
+      c.justificativa,
       c.created_at,
       c.updated_at,
-      f.nome as fornecedor_nome,
-      f.cpf_cnpj as fornecedor_cpf_cnpj,
       s.codigo as solicitacao_codigo,
       s.titulo as solicitacao_titulo,
-      count(i.id)::int as itens_count
+      count(distinct cf.id)::int as fornecedores_count,
+      count(distinct i.id)::int as itens_count,
+      m.fornecedor_vencedor_id,
+      f.nome as fornecedor_vencedor_nome
     from cotacoes c
-    join fornecedores f on f.id = c.fornecedor_id
     join solicitacoes_compra s on s.id = c.solicitacao_compra_id
+    left join cotacoes_fornecedores cf on cf.cotacao_id = c.id and cf.status <> 'CANCELADO'
     left join cotacoes_itens i on i.cotacao_id = c.id and i.status = 'ATIVO'
+    left join mapa_comparativo_cotacao m on m.cotacao_id = c.id
+    left join fornecedores f on f.id = m.fornecedor_vencedor_id
     ${where}
-    group by c.id, f.nome, f.cpf_cnpj, s.codigo, s.titulo
+    group by c.id, s.codigo, s.titulo, m.fornecedor_vencedor_id, f.nome
     order by c.created_at desc
     `,
     params
@@ -448,39 +439,61 @@ const listCotacoes = async (url: URL): Promise<QueryResultRow[]> => {
 };
 
 const createCotacao = async (payload: Record<string, unknown>) => {
+  const companyId = assertUuid(payload.company_id, 'company_id');
+  const solicitacaoId = getSolicitacaoId(payload);
+  const fornecedorIds = normalizeFornecedorIds(payload.fornecedores);
+  const titulo = requiredText(payload, 'titulo');
+  const prazoResposta = optionalDate(payload, 'prazo_resposta');
+  const observacoes = optionalText(payload, 'observacoes');
   const client = await getPool().connect();
 
   try {
     await client.query('begin');
-    const normalized = await normalizeCreatePayload(client, payload);
+    const solicitacao = await fetchSolicitacao(client, solicitacaoId);
+    if (!solicitacao || solicitacao.company_id !== companyId) {
+      throw new HttpError(400, 'validation_error', 'Solicitacao invalida para a empresa.');
+    }
+    assertSolicitacaoCanCreateCotacao(solicitacao);
+
+    const solicitacaoItems = await fetchSolicitacaoItems(client, solicitacaoId);
+    if (solicitacaoItems.length === 0) {
+      throw new HttpError(400, 'validation_error', 'Solicitacao deve ter ao menos 1 item ativo para cotacao.');
+    }
+
+    await validateFornecedorIds(client, companyId, fornecedorIds);
 
     const created = await client.query<{ id: string }>(
       `
       insert into cotacoes (
-        company_id, solicitacao_compra_id, fornecedor_id, codigo, valor_total,
-        prazo_entrega, prazo_entrega_dias, condicao_pagamento, frete,
-        data_recebimento, validade_proposta, status, observacoes
+        company_id,
+        solicitacao_compra_id,
+        codigo,
+        titulo,
+        prazo_resposta,
+        data_recebimento,
+        valor_total,
+        recomendada,
+        status,
+        observacoes
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'RECEBIDA', $12)
+      values ($1, $2, $3, $4, $5, current_date, 0, false, 'RASCUNHO', $6)
       returning id
       `,
-      [
-        normalized.company_id,
-        normalized.solicitacao_compra_id,
-        normalized.fornecedor_id,
-        generateCodigo(),
-        normalized.valor_total,
-        normalized.prazo_entrega_dias === null ? null : `${normalized.prazo_entrega_dias} dias`,
-        normalized.prazo_entrega_dias,
-        normalized.condicao_pagamento,
-        normalized.frete,
-        normalized.data_recebimento,
-        normalized.validade_proposta,
-        normalized.observacoes
-      ]
+      [companyId, solicitacaoId, generateCodigo(), titulo, prazoResposta, observacoes]
     );
 
-    await insertItems(client, created.rows[0].id, normalized.itens);
+    for (const fornecedorId of fornecedorIds) {
+      const fornecedor = await client.query<{ id: string }>(
+        `
+        insert into cotacoes_fornecedores (cotacao_id, fornecedor_id, status)
+        values ($1, $2, 'CONVIDADO')
+        returning id
+        `,
+        [created.rows[0].id, fornecedorId]
+      );
+      await insertFornecedorItens(client, created.rows[0].id, fornecedor.rows[0].id, solicitacaoItems);
+    }
+
     const cotacao = await fetchCotacao(client, created.rows[0].id);
     await client.query('commit');
     return cotacao;
@@ -492,100 +505,35 @@ const createCotacao = async (payload: Record<string, unknown>) => {
   }
 };
 
-const getExistingForUpdate = async (client: PoolClient, id: string): Promise<ExistingCotacaoRow | undefined> => {
-  const result = await client.query<ExistingCotacaoRow>(
-    `
-    select id, company_id, solicitacao_compra_id, fornecedor_id, status
-    from cotacoes
-    where id = $1
-    for update
-    `,
-    [id]
-  );
-  return result.rows[0];
-};
-
 const updateCotacao = async (id: string, payload: Record<string, unknown>) => {
   assertUuid(id, 'id');
-  const allowedFields = [
-    'fornecedor_id',
-    'data_recebimento',
-    'validade_proposta',
-    'prazo_entrega_dias',
-    'condicao_pagamento',
-    'frete',
-    'observacoes',
-    'itens'
-  ];
+  const allowedFields = ['titulo', 'prazo_resposta', 'observacoes'];
   const unknownFields = Object.keys(payload).filter((key) => !allowedFields.includes(key));
   if (unknownFields.length > 0) {
     throw new HttpError(400, 'validation_error', 'Campos nao permitidos no payload.', unknownFields);
   }
 
   const client = await getPool().connect();
-
   try {
     await client.query('begin');
-    const existing = await getExistingForUpdate(client, id);
+    const existing = await fetchCotacaoForUpdate(client, id);
     if (!existing) {
       throw new HttpError(404, 'not_found', 'Cotacao nao encontrada.');
     }
-    if (lockedForEdit.includes(existing.status)) {
+    if (existing.status !== 'RASCUNHO') {
       throw new HttpError(409, 'status_conflict', `Cotacao em status ${existing.status} nao permite edicao.`);
     }
 
-    const solicitacao = await fetchSolicitacao(client, existing.solicitacao_compra_id);
-    if (!solicitacao) {
-      throw new HttpError(400, 'validation_error', 'Solicitacao vinculada nao encontrada.');
-    }
-    assertSolicitacaoCanQuote(solicitacao);
-
     const updates: Array<{ column: string; value: unknown }> = [];
-    const finalFornecedorId = payload.fornecedor_id === undefined
-      ? existing.fornecedor_id
-      : assertUuid(payload.fornecedor_id, 'fornecedor_id');
-
-    if (payload.fornecedor_id !== undefined) {
-      await validateFornecedor(client, existing.company_id, finalFornecedorId);
-      updates.push({ column: 'fornecedor_id', value: finalFornecedorId });
+    if (payload.titulo !== undefined) {
+      updates.push({ column: 'titulo', value: requiredText(payload, 'titulo') });
     }
-
-    if (payload.data_recebimento !== undefined) {
-      updates.push({ column: 'data_recebimento', value: normalizeDate(payload, 'data_recebimento', true) });
-    }
-    if (payload.validade_proposta !== undefined) {
-      updates.push({ column: 'validade_proposta', value: normalizeDate(payload, 'validade_proposta', false) });
-    }
-    if (payload.prazo_entrega_dias !== undefined) {
-      const prazo = normalizeOptionalInteger(payload.prazo_entrega_dias, 'prazo_entrega_dias');
-      updates.push({ column: 'prazo_entrega_dias', value: prazo });
-      updates.push({ column: 'prazo_entrega', value: prazo === null ? null : `${prazo} dias` });
-    }
-    if (payload.condicao_pagamento !== undefined) {
-      updates.push({ column: 'condicao_pagamento', value: optionalText(payload, 'condicao_pagamento') });
-    }
-    if (payload.frete !== undefined) {
-      updates.push({ column: 'frete', value: optionalText(payload, 'frete') });
+    if (payload.prazo_resposta !== undefined) {
+      updates.push({ column: 'prazo_resposta', value: optionalDate(payload, 'prazo_resposta') });
     }
     if (payload.observacoes !== undefined) {
       updates.push({ column: 'observacoes', value: optionalText(payload, 'observacoes') });
     }
-
-    if (payload.itens !== undefined) {
-      const solicitationItems = await fetchSolicitacaoItems(client, existing.solicitacao_compra_id);
-      const items = normalizeItems(payload.itens, solicitationItems, true) as NormalizedCotacaoItem[];
-      await client.query(
-        `
-        update cotacoes_itens
-        set status = 'SUBSTITUIDO', updated_at = now()
-        where cotacao_id = $1 and status = 'ATIVO'
-        `,
-        [id]
-      );
-      await insertItems(client, id, items);
-      updates.push({ column: 'valor_total', value: sumItems(items) });
-    }
-
     if (updates.length === 0) {
       throw new HttpError(400, 'validation_error', 'Informe ao menos um campo para atualizar.');
     }
@@ -611,79 +559,345 @@ const updateCotacao = async (id: string, payload: Record<string, unknown>) => {
   }
 };
 
+const normalizeRespostaItens = (
+  value: unknown,
+  solicitationItems: SolicitacaoItemRow[],
+  fornecedorIndex: number
+): RespostaItemPayload[] => {
+  if (!Array.isArray(value) || value.length !== solicitationItems.length) {
+    throw new HttpError(400, 'validation_error', `Fornecedor ${fornecedorIndex + 1} deve informar todos os itens da solicitacao.`);
+  }
+
+  const itemById = new Map(solicitationItems.map((item) => [item.id, item]));
+  const usedIds = new Set<string>();
+
+  return value.map((entry, index) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new HttpError(400, 'validation_error', `Item ${index + 1} da resposta ${fornecedorIndex + 1} invalido.`);
+    }
+
+    const itemPayload = entry as Record<string, unknown>;
+    const solicitacaoItemId = assertUuid(itemPayload.solicitacao_item_id, `fornecedores[${fornecedorIndex}].itens[${index}].solicitacao_item_id`);
+    if (!itemById.has(solicitacaoItemId)) {
+      throw new HttpError(400, 'validation_error', `Item ${index + 1} nao pertence a solicitacao.`);
+    }
+    if (usedIds.has(solicitacaoItemId)) {
+      throw new HttpError(400, 'validation_error', `Item ${index + 1} duplicado na resposta do fornecedor.`);
+    }
+    usedIds.add(solicitacaoItemId);
+
+    const valorUnitario = normalizeNumber(itemPayload.valor_unitario, `fornecedores[${fornecedorIndex}].itens[${index}].valor_unitario`);
+    if (valorUnitario < 0) {
+      throw new HttpError(400, 'validation_error', 'valor_unitario deve ser maior ou igual a zero.');
+    }
+
+    return {
+      solicitacao_item_id: solicitacaoItemId,
+      valor_unitario: valorUnitario,
+      marca_modelo: optionalText(itemPayload, 'marca_modelo'),
+      prazo_entrega_dias: normalizeOptionalInteger(itemPayload.prazo_entrega_dias, `fornecedores[${fornecedorIndex}].itens[${index}].prazo_entrega_dias`),
+      observacoes: optionalText(itemPayload, 'observacoes')
+    };
+  });
+};
+
+const normalizeRespostas = (
+  value: unknown,
+  solicitationItems: SolicitacaoItemRow[],
+  expectedFornecedorIds: Set<string>
+): RespostaFornecedorPayload[] => {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new HttpError(400, 'validation_error', 'Informe respostas de fornecedores.');
+  }
+
+  const usedIds = new Set<string>();
+  const respostas = value.map((entry, index) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new HttpError(400, 'validation_error', `Resposta ${index + 1} invalida.`);
+    }
+    const responsePayload = entry as Record<string, unknown>;
+    const fornecedorId = assertUuid(responsePayload.fornecedor_id, `fornecedores[${index}].fornecedor_id`);
+    if (!expectedFornecedorIds.has(fornecedorId)) {
+      throw new HttpError(400, 'validation_error', `Fornecedor ${index + 1} nao participa da cotacao.`);
+    }
+    if (usedIds.has(fornecedorId)) {
+      throw new HttpError(400, 'validation_error', `Fornecedor ${index + 1} duplicado nas respostas.`);
+    }
+    usedIds.add(fornecedorId);
+
+    return {
+      fornecedor_id: fornecedorId,
+      prazo_entrega_dias: normalizeOptionalInteger(responsePayload.prazo_entrega_dias, `fornecedores[${index}].prazo_entrega_dias`),
+      condicao_pagamento: optionalText(responsePayload, 'condicao_pagamento'),
+      observacoes: optionalText(responsePayload, 'observacoes'),
+      itens: normalizeRespostaItens(responsePayload.itens, solicitationItems, index)
+    };
+  });
+
+  const missing = Array.from(expectedFornecedorIds).filter((id) => !usedIds.has(id));
+  if (missing.length > 0) {
+    throw new HttpError(400, 'validation_error', 'Todas as respostas de fornecedores devem ser registradas antes do mapa.', missing);
+  }
+
+  return respostas;
+};
+
+const registrarRespostas = async (client: PoolClient, cotacao: CotacaoRow, payload: Record<string, unknown>) => {
+  if (cotacao.status !== 'ENVIADA_FORNECEDORES') {
+    throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${cotacao.status} -> RESPOSTAS_RECEBIDAS.`);
+  }
+
+  const solicitationItems = await fetchSolicitacaoItems(client, cotacao.solicitacao_compra_id);
+  const fornecedores = await client.query<CotacaoFornecedorRow>(
+    `
+    select id, cotacao_id, fornecedor_id, status, valor_total
+    from cotacoes_fornecedores
+    where cotacao_id = $1 and status <> 'CANCELADO'
+    order by created_at
+    `,
+    [cotacao.id]
+  );
+  if (fornecedores.rows.length === 0) {
+    throw new HttpError(400, 'validation_error', 'Cotacao deve ter pelo menos 1 fornecedor.');
+  }
+
+  const fornecedoresById = new Map(fornecedores.rows.map((row) => [row.fornecedor_id, row]));
+  const respostas = normalizeRespostas(payload.fornecedores, solicitationItems, new Set(fornecedoresById.keys()));
+  const itemById = new Map(solicitationItems.map((item) => [item.id, item]));
+  const totals: number[] = [];
+
+  for (const resposta of respostas) {
+    const cotacaoFornecedor = fornecedoresById.get(resposta.fornecedor_id);
+    if (!cotacaoFornecedor) {
+      throw new HttpError(400, 'validation_error', 'Fornecedor nao participa da cotacao.');
+    }
+
+    let totalFornecedor = 0;
+    for (const item of resposta.itens) {
+      const sourceItem = itemById.get(item.solicitacao_item_id);
+      if (!sourceItem) {
+        throw new HttpError(400, 'validation_error', 'Item da solicitacao nao encontrado.');
+      }
+      const quantidade = Number(sourceItem.quantidade);
+      const valorTotal = Number((quantidade * item.valor_unitario).toFixed(2));
+      totalFornecedor = Number((totalFornecedor + valorTotal).toFixed(2));
+      await client.query(
+        `
+        update cotacoes_itens
+        set
+          valor_unitario = $1,
+          valor_total = $2,
+          marca_modelo = $3,
+          prazo_entrega_dias = $4,
+          observacoes = $5,
+          updated_at = now()
+        where cotacao_id = $6
+          and cotacao_fornecedor_id = $7
+          and solicitacao_item_id = $8
+          and status = 'ATIVO'
+        `,
+        [
+          item.valor_unitario,
+          valorTotal,
+          item.marca_modelo,
+          item.prazo_entrega_dias,
+          item.observacoes,
+          cotacao.id,
+          cotacaoFornecedor.id,
+          item.solicitacao_item_id
+        ]
+      );
+    }
+
+    totals.push(totalFornecedor);
+    await client.query(
+      `
+      update cotacoes_fornecedores
+      set
+        status = 'RESPOSTA_RECEBIDA',
+        valor_total = $1,
+        prazo_entrega_dias = $2,
+        condicao_pagamento = $3,
+        observacoes = $4,
+        updated_at = now()
+      where id = $5
+      `,
+      [
+        totalFornecedor,
+        resposta.prazo_entrega_dias,
+        resposta.condicao_pagamento,
+        resposta.observacoes,
+        cotacaoFornecedor.id
+      ]
+    );
+  }
+
+  await client.query(
+    `
+    update cotacoes
+    set status = 'RESPOSTAS_RECEBIDAS', valor_total = $1, updated_at = now()
+    where id = $2
+    `,
+    [Math.min(...totals), cotacao.id]
+  );
+};
+
+const upsertMapa = async (
+  client: PoolClient,
+  cotacaoId: string,
+  fornecedorId: string | null,
+  criterio: string,
+  justificativa: string | null,
+  valor: number,
+  status: 'GERADO' | 'FORNECEDOR_ESCOLHIDO' | 'CANCELADO'
+): Promise<void> => {
+  await client.query(
+    `
+    insert into mapa_comparativo_cotacao (
+      cotacao_id,
+      fornecedor_vencedor_id,
+      criterio_decisao,
+      justificativa,
+      valor_vencedor,
+      status
+    )
+    values ($1, $2, $3, $4, $5, $6)
+    on conflict (cotacao_id)
+    do update set
+      fornecedor_vencedor_id = excluded.fornecedor_vencedor_id,
+      criterio_decisao = excluded.criterio_decisao,
+      justificativa = excluded.justificativa,
+      valor_vencedor = excluded.valor_vencedor,
+      status = excluded.status,
+      updated_at = now()
+    `,
+    [cotacaoId, fornecedorId, criterio, justificativa, valor, status]
+  );
+};
+
+const getFornecedorMenorValor = async (client: PoolClient, cotacaoId: string): Promise<QueryResultRow> => {
+  const result = await client.query(
+    `
+    select cf.id, cf.fornecedor_id, cf.valor_total, f.nome as fornecedor_nome
+    from cotacoes_fornecedores cf
+    join fornecedores f on f.id = cf.fornecedor_id
+    where cf.cotacao_id = $1 and cf.status in ('RESPOSTA_RECEBIDA', 'ESCOLHIDO')
+    order by cf.valor_total asc, cf.created_at asc
+    limit 1
+    `,
+    [cotacaoId]
+  );
+  const winner = result.rows[0];
+  if (!winner) {
+    throw new HttpError(400, 'validation_error', 'Mapa comparativo exige ao menos 1 resposta de fornecedor.');
+  }
+  return winner;
+};
+
 const transitionCotacao = async (id: string, action: string, payload: Record<string, unknown>) => {
   assertUuid(id, 'id');
   const client = await getPool().connect();
 
   try {
     await client.query('begin');
-    const existing = await getExistingForUpdate(client, id);
-    if (!existing) {
+    const cotacao = await fetchCotacaoForUpdate(client, id);
+    if (!cotacao) {
       throw new HttpError(404, 'not_found', 'Cotacao nao encontrada.');
     }
 
-    if (action === 'receber') {
-      if (existing.status !== 'RASCUNHO') {
-        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${existing.status} -> RECEBIDA.`);
-      }
-      await client.query('update cotacoes set status = $1, updated_at = now() where id = $2', ['RECEBIDA', id]);
-    } else if (action === 'desclassificar') {
-      if (!['RASCUNHO', 'RECEBIDA'].includes(existing.status)) {
-        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${existing.status} -> DESCLASSIFICADA.`);
+    if (action === 'enviar-fornecedores') {
+      if (cotacao.status !== 'RASCUNHO') {
+        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${cotacao.status} -> ENVIADA_FORNECEDORES.`);
       }
       await client.query(
-        `
-        update cotacoes
-        set status = 'DESCLASSIFICADA', motivo_desclassificacao = $1, recomendada = false, updated_at = now()
-        where id = $2
-        `,
-        [optionalText(payload, 'motivo_desclassificacao') || 'Desclassificada na V3.4B local.', id]
+        "update cotacoes set status = 'ENVIADA_FORNECEDORES', updated_at = now() where id = $1",
+        [id]
       );
-    } else if (action === 'selecionar') {
-      if (existing.status !== 'RECEBIDA') {
-        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${existing.status} -> SELECIONADA.`);
+    } else if (action === 'registrar-respostas') {
+      await registrarRespostas(client, cotacao, payload);
+    } else if (action === 'gerar-mapa') {
+      if (cotacao.status !== 'RESPOSTAS_RECEBIDAS') {
+        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${cotacao.status} -> MAPA_GERADO.`);
       }
-      const solicitacao = await fetchSolicitacao(client, existing.solicitacao_compra_id);
-      if (!solicitacao) {
-        throw new HttpError(400, 'validation_error', 'Solicitacao vinculada nao encontrada.');
+      const winner = await getFornecedorMenorValor(client, id);
+      await upsertMapa(
+        client,
+        id,
+        String(winner.fornecedor_id),
+        optionalText(payload, 'criterio_decisao') || 'MENOR_PRECO',
+        optionalText(payload, 'justificativa') || 'Mapa gerado por menor valor total na V3.4B local.',
+        Number(winner.valor_total),
+        'GERADO'
+      );
+      await client.query(
+        "update cotacoes set status = 'MAPA_GERADO', valor_total = $1, updated_at = now() where id = $2",
+        [winner.valor_total, id]
+      );
+    } else if (action === 'escolher-fornecedor') {
+      if (cotacao.status !== 'MAPA_GERADO') {
+        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${cotacao.status} -> FORNECEDOR_ESCOLHIDO.`);
       }
-      assertSolicitacaoCanQuote(solicitacao);
+      const fornecedorId = assertUuid(payload.fornecedor_id, 'fornecedor_id');
+      const justificativa = requiredText(payload, 'justificativa');
+      const chosen = await client.query<CotacaoFornecedorRow>(
+        `
+        select id, cotacao_id, fornecedor_id, status, valor_total
+        from cotacoes_fornecedores
+        where cotacao_id = $1 and fornecedor_id = $2 and status = 'RESPOSTA_RECEBIDA'
+        `,
+        [id, fornecedorId]
+      );
+      const chosenRow = chosen.rows[0];
+      if (!chosenRow) {
+        throw new HttpError(400, 'validation_error', 'Fornecedor vencedor deve participar da cotacao e ter resposta recebida.');
+      }
 
       await client.query(
         `
-        update cotacoes
-        set status = 'RECEBIDA', recomendada = false, selecionada_em = null, updated_at = now()
-        where solicitacao_compra_id = $1 and status = 'SELECIONADA'
+        update cotacoes_fornecedores
+        set status = case when fornecedor_id = $1 then 'ESCOLHIDO' else 'RESPOSTA_RECEBIDA' end,
+            updated_at = now()
+        where cotacao_id = $2 and status in ('RESPOSTA_RECEBIDA', 'ESCOLHIDO')
         `,
-        [existing.solicitacao_compra_id]
+        [fornecedorId, id]
+      );
+      await upsertMapa(
+        client,
+        id,
+        fornecedorId,
+        optionalText(payload, 'criterio_decisao') || 'MENOR_PRECO',
+        justificativa,
+        Number(chosenRow.valor_total),
+        'FORNECEDOR_ESCOLHIDO'
       );
       await client.query(
         `
         update cotacoes
-        set status = 'SELECIONADA', recomendada = true, justificativa = $1, selecionada_em = now(), updated_at = now()
-        where id = $2
+        set
+          status = 'FORNECEDOR_ESCOLHIDO',
+          fornecedor_id = $1,
+          valor_total = $2,
+          recomendada = true,
+          justificativa = $3,
+          updated_at = now()
+        where id = $4
         `,
-        [optionalText(payload, 'justificativa') || 'Selecionada no mapa comparativo V3.4B local.', id]
+        [fornecedorId, chosenRow.valor_total, justificativa, id]
       );
     } else if (action === 'cancelar') {
-      if (!['RASCUNHO', 'RECEBIDA'].includes(existing.status)) {
-        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${existing.status} -> CANCELADA.`);
+      if (!cancelableStatuses.includes(cotacao.status)) {
+        throw new HttpError(409, 'invalid_status_transition', `Transicao ilegal: ${cotacao.status} -> CANCELADA.`);
       }
-      await client.query(
-        `
-        update cotacoes
-        set status = 'CANCELADA', recomendada = false, updated_at = now()
-        where id = $1
-        `,
-        [id]
-      );
+      await client.query("update cotacoes set status = 'CANCELADA', recomendada = false, updated_at = now() where id = $1", [id]);
+      await client.query("update cotacoes_fornecedores set status = 'CANCELADO', updated_at = now() where cotacao_id = $1", [id]);
+      await upsertMapa(client, id, null, 'CANCELAMENTO', optionalText(payload, 'justificativa'), 0, 'CANCELADO');
     } else {
       throw new HttpError(404, 'not_found', 'Acao de cotacao nao encontrada.');
     }
 
-    const cotacao = await fetchCotacao(client, id);
+    const updated = await fetchCotacao(client, id);
     await client.query('commit');
-    return cotacao;
+    return updated;
   } catch (error) {
     await client.query('rollback');
     throw error;
@@ -692,83 +906,91 @@ const transitionCotacao = async (id: string, action: string, payload: Record<str
   }
 };
 
-const buildMapaComparativo = async (solicitacaoId: string) => {
-  assertUuid(solicitacaoId, 'solicitacao_compra_id');
+const resolveCotacaoForMapa = async (client: PoolClient, url: URL): Promise<string> => {
+  const cotacaoId = url.searchParams.get('cotacao_id');
+  if (cotacaoId) {
+    return assertUuid(cotacaoId, 'cotacao_id');
+  }
+
+  const solicitacaoId = url.searchParams.get('solicitacao_id') || url.searchParams.get('solicitacao_compra_id');
+  if (!solicitacaoId) {
+    throw new HttpError(400, 'validation_error', 'Informe cotacao_id ou solicitacao_id.');
+  }
+
+  const result = await client.query<{ id: string }>(
+    `
+    select id
+    from cotacoes
+    where solicitacao_compra_id = $1 and titulo is not null
+    order by created_at desc
+    limit 1
+    `,
+    [assertUuid(solicitacaoId, 'solicitacao_id')]
+  );
+  const cotacao = result.rows[0];
+  if (!cotacao) {
+    throw new HttpError(404, 'not_found', 'Cotacao nao encontrada para a solicitacao.');
+  }
+  return cotacao.id;
+};
+
+const buildMapaComparativo = async (url: URL) => {
   const client = await getPool().connect();
 
   try {
-    const solicitacao = await fetchSolicitacao(client, solicitacaoId);
+    const cotacaoId = await resolveCotacaoForMapa(client, url);
+    const cotacao = await fetchCotacao(client, cotacaoId);
+    if (!cotacao) {
+      throw new HttpError(404, 'not_found', 'Cotacao nao encontrada.');
+    }
+
+    const solicitacao = await fetchSolicitacao(client, String(cotacao.solicitacao_compra_id));
     if (!solicitacao) {
       throw new HttpError(404, 'not_found', 'Solicitacao de compra nao encontrada.');
     }
 
-    const solicitationItems = await fetchSolicitacaoItems(client, solicitacaoId);
-    const cotacoes = await client.query(
-      `
-      select
-        c.id,
-        c.codigo,
-        c.fornecedor_id,
-        f.nome as fornecedor_nome,
-        f.cpf_cnpj as fornecedor_cpf_cnpj,
-        c.valor_total,
-        c.prazo_entrega_dias,
-        c.condicao_pagamento,
-        c.frete,
-        c.status,
-        c.recomendada,
-        c.data_recebimento,
-        c.validade_proposta
-      from cotacoes c
-      join fornecedores f on f.id = c.fornecedor_id
-      where c.solicitacao_compra_id = $1
-      order by c.valor_total asc, c.created_at asc
-      `,
-      [solicitacaoId]
-    );
-
-    const cotacaoItems = await client.query(
-      `
-      select
-        i.cotacao_id,
-        i.solicitacao_item_id,
-        i.valor_unitario,
-        i.valor_total
-      from cotacoes_itens i
-      join cotacoes c on c.id = i.cotacao_id
-      where c.solicitacao_compra_id = $1 and i.status = 'ATIVO'
-      `,
-      [solicitacaoId]
-    );
-
-    const quoteItemsBySolicitationItem = new Map<string, QueryResultRow[]>();
-    cotacaoItems.rows.forEach((item) => {
-      const key = String(item.solicitacao_item_id);
-      const current = quoteItemsBySolicitationItem.get(key) || [];
-      current.push(item);
-      quoteItemsBySolicitationItem.set(key, current);
-    });
-
-    const comparableQuotes = cotacoes.rows.filter((cotacao) => !['DESCLASSIFICADA', 'CANCELADA'].includes(String(cotacao.status)));
-    const menorTotal = comparableQuotes[0];
-    const selecionada = cotacoes.rows.find((cotacao) => cotacao.status === 'SELECIONADA');
+    const solicitationItems = await fetchSolicitacaoItems(client, String(cotacao.solicitacao_compra_id));
+    const fornecedores = (cotacao.fornecedores || []) as QueryResultRow[];
+    const itens = (cotacao.itens || []) as QueryResultRow[];
+    const fornecedoresComparaveis = fornecedores
+      .filter((fornecedor) => ['RESPOSTA_RECEBIDA', 'ESCOLHIDO'].includes(String(fornecedor.status)))
+      .sort((left, right) => Number(left.valor_total) - Number(right.valor_total));
+    const menorTotal = fornecedoresComparaveis[0] || null;
+    const mapa = cotacao.mapa as QueryResultRow | null;
+    const fornecedorVencedorId = mapa?.fornecedor_vencedor_id ? String(mapa.fornecedor_vencedor_id) : null;
+    const vencedor = fornecedorVencedorId
+      ? fornecedores.find((fornecedor) => fornecedor.fornecedor_id === fornecedorVencedorId) || null
+      : null;
 
     return {
+      cotacao,
       solicitacao,
       resumo: {
-        total_cotacoes: cotacoes.rows.length,
-        total_cotacoes_comparaveis: comparableQuotes.length,
-        cotacao_menor_total: menorTotal || null,
-        cotacao_selecionada: selecionada || null
+        total_fornecedores: fornecedores.length,
+        total_respostas: fornecedoresComparaveis.length,
+        fornecedor_menor_total: menorTotal,
+        fornecedor_vencedor: vencedor,
+        mapa
       },
-      cotacoes: cotacoes.rows,
+      fornecedores,
       itens: solicitationItems.map((item) => {
-        const itemQuotes = quoteItemsBySolicitationItem.get(item.id) || [];
-        const comparableItems = itemQuotes
-          .filter((quoteItem) => {
-            const cotacao = cotacoes.rows.find((row) => row.id === quoteItem.cotacao_id);
-            return cotacao && !['DESCLASSIFICADA', 'CANCELADA'].includes(String(cotacao.status));
-          })
+        const itemComparativos = itens
+          .filter((cotacaoItem) => cotacaoItem.solicitacao_item_id === item.id)
+          .map((cotacaoItem) => {
+            const fornecedor = fornecedores.find((row) => row.id === cotacaoItem.cotacao_fornecedor_id);
+            return {
+              cotacao_fornecedor_id: cotacaoItem.cotacao_fornecedor_id,
+              fornecedor_id: cotacaoItem.fornecedor_id,
+              fornecedor_nome: fornecedor?.fornecedor_nome || null,
+              status: fornecedor?.status || null,
+              valor_unitario: cotacaoItem.valor_unitario,
+              valor_total: cotacaoItem.valor_total,
+              marca_modelo: cotacaoItem.marca_modelo,
+              prazo_entrega_dias: cotacaoItem.prazo_entrega_dias
+            };
+          });
+        const comparableItems = itemComparativos
+          .filter((cotacaoItem) => ['RESPOSTA_RECEBIDA', 'ESCOLHIDO'].includes(String(cotacaoItem.status)))
           .sort((left, right) => Number(left.valor_total) - Number(right.valor_total));
         const bestItem = comparableItems[0];
 
@@ -778,19 +1000,11 @@ const buildMapaComparativo = async (solicitacaoId: string) => {
           unidade: item.unidade,
           quantidade: item.quantidade,
           ordem: item.ordem,
-          melhor_cotacao_id: bestItem?.cotacao_id || null,
-          comparativos: itemQuotes.map((quoteItem) => {
-            const cotacao = cotacoes.rows.find((row) => row.id === quoteItem.cotacao_id);
-            return {
-              cotacao_id: quoteItem.cotacao_id,
-              cotacao_codigo: cotacao?.codigo || null,
-              fornecedor_nome: cotacao?.fornecedor_nome || null,
-              status: cotacao?.status || null,
-              valor_unitario: quoteItem.valor_unitario,
-              valor_total: quoteItem.valor_total,
-              melhor_valor: bestItem?.cotacao_id === quoteItem.cotacao_id
-            };
-          })
+          melhor_fornecedor_id: bestItem?.fornecedor_id || null,
+          comparativos: itemComparativos.map((cotacaoItem) => ({
+            ...cotacaoItem,
+            melhor_valor: Boolean(bestItem && bestItem.fornecedor_id === cotacaoItem.fornecedor_id)
+          }))
         };
       })
     };
@@ -833,11 +1047,7 @@ export const handleCotacoes = async (req: IncomingMessage, res: ServerResponse, 
         methodNotAllowed(res, ['GET']);
         return;
       }
-      const solicitacaoId = url.searchParams.get('solicitacao_compra_id');
-      if (!solicitacaoId) {
-        throw new HttpError(400, 'validation_error', 'Informe solicitacao_compra_id.');
-      }
-      sendJson(res, 200, { data: await buildMapaComparativo(solicitacaoId) });
+      sendJson(res, 200, { data: await buildMapaComparativo(url) });
       return;
     }
 
@@ -846,13 +1056,11 @@ export const handleCotacoes = async (req: IncomingMessage, res: ServerResponse, 
         sendJson(res, 200, { data: await listCotacoes(url) });
         return;
       }
-
       if (method === 'POST') {
         const payload = await readJsonBody(req);
         sendJson(res, 201, { data: await createCotacao(payload) });
         return;
       }
-
       methodNotAllowed(res, ['GET', 'POST']);
       return;
     }

@@ -3,106 +3,121 @@
 ## Pre-flight
 
 - [x] `AGENTS.md` lido.
-- [x] `git status --short` rodado antes do inicio.
-- [x] Working tree confirmado limpo antes do inicio.
+- [x] `git status --short` rodado.
+- [x] Working tree limpo confirmado antes da correcao.
 - [x] `git log --oneline -10` rodado.
 - [x] `git tag --list "v3.*"` rodado.
 - [x] Tag `v3.4a-solicitacao-compra-mvp` confirmada.
-- [x] Proxima etapa identificada: V3.4B.
 - [x] `docker compose ps` rodado com PostgreSQL local `healthy`.
+- [x] Sem `git push`.
+- [x] Sem alteracao de historico Git.
 
 ## Banco de dados
 
-- [x] Migration `database/migrations/005_cotacoes_mapa_comparativo.sql` criada.
-- [x] Tabela `cotacoes` ajustada sem remover migration antiga.
-- [x] Tabela `cotacoes_itens` criada.
+- [x] `database/migrations/005_cotacoes_mapa_comparativo.sql` preservada.
+- [x] `database/migrations/006_cotacoes_fluxo_formal_v34b.sql` criada como complemento incremental.
+- [x] `cotacoes` ajustada para cabecalho do processo formal.
+- [x] `cotacoes_fornecedores` criada.
+- [x] `cotacoes_itens` ajustada para vinculo por fornecedor.
+- [x] `mapa_comparativo_cotacao` criada.
 - [x] UUID mantido como chave primaria.
-- [x] FKs previstas para solicitacao, fornecedor e itens da solicitacao.
-- [x] Indices por empresa, solicitacao, fornecedor e status previstos.
-- [x] Status controlados por constraint.
+- [x] FKs para solicitacao, fornecedores e itens da solicitacao.
+- [x] Indices por empresa, solicitacao, cotacao, fornecedor e status.
+- [x] Status controlados por constraints.
 - [x] Sem `DELETE` fisico.
 
 ## Backend
 
-- [x] Modulo `server/src/modules/cotacoes` criado.
+- [x] Modulo `server/src/modules/cotacoes` atualizado para cotacao agregada.
 - [x] `GET /cotacoes` implementado.
 - [x] `GET /cotacoes/:id` implementado.
 - [x] `POST /cotacoes` implementado.
 - [x] `PATCH /cotacoes/:id` implementado.
-- [x] `PATCH /cotacoes/:id/receber` implementado.
-- [x] `PATCH /cotacoes/:id/desclassificar` implementado.
-- [x] `PATCH /cotacoes/:id/selecionar` implementado.
+- [x] `PATCH /cotacoes/:id/enviar-fornecedores` implementado.
+- [x] `PATCH /cotacoes/:id/registrar-respostas` implementado.
+- [x] `PATCH /cotacoes/:id/gerar-mapa` implementado.
+- [x] `PATCH /cotacoes/:id/escolher-fornecedor` implementado.
 - [x] `PATCH /cotacoes/:id/cancelar` implementado.
 - [x] `GET /cotacoes/mapa-comparativo` implementado.
 - [x] Nenhum endpoint `DELETE` criado.
 - [x] Queries parametrizadas.
 - [x] Erros JSON padronizados.
 
-## Validações Backend
+## Validacoes Backend
 
 - [x] `company_id` obrigatorio.
-- [x] `solicitacao_compra_id` obrigatorio.
-- [x] `fornecedor_id` obrigatorio.
-- [x] `data_recebimento` obrigatoria.
+- [x] `solicitacao_id` ou `solicitacao_compra_id` obrigatorio.
 - [x] Solicitacao deve existir e pertencer a empresa.
-- [x] Solicitacao deve estar em `EM_ANALISE`.
+- [x] Solicitacao `CANCELADA` bloqueada.
+- [x] Cotacao exige pelo menos 1 fornecedor.
 - [x] Fornecedor deve existir, estar ativo e pertencer a empresa.
-- [x] Uma cotacao por fornecedor por solicitacao.
-- [x] Cotacao deve conter todos os itens ativos da solicitacao.
+- [x] Respostas preservam todos os itens ativos da solicitacao.
+- [x] `quantidade > 0` herdada da solicitacao.
 - [x] `valor_unitario >= 0`.
-- [x] Total dos itens calculado pela API.
-- [x] Total da cotacao calculado pela API.
-- [x] Edicao bloqueada para `DESCLASSIFICADA`, `SELECIONADA` e `CANCELADA`.
-- [x] Transicao ilegal bloqueada com `409`.
+- [x] Total por item calculado pela API.
+- [x] Total por fornecedor calculado pela API.
+- [x] Escolha de fornecedor exige justificativa.
+- [x] Transicoes ilegais retornam `409`.
+- [x] ID inexistente retorna `404`.
+- [x] Payload invalido retorna `400`.
+- [x] Falha real de banco retorna `503`.
 
 ## Frontend
 
-- [x] Area `web/src/features/cotacoes` criada.
-- [x] Menu `Cotações` criado.
-- [x] Selecao de solicitacao implementada.
-- [x] Formulario de cotacao implementado.
-- [x] Edicao de cotacao recebida implementada.
-- [x] Mapa comparativo por item implementado.
-- [x] Destaque de menor valor implementado.
-- [x] Acao de selecionar cotacao implementada.
-- [x] Acao de desclassificar cotacao implementada.
-- [x] Estados de carregamento, vazio, erro e salvamento implementados.
+- [x] Area `web/src/features/cotacoes` mantida.
+- [x] Menu `Cotações` mantido.
+- [x] Lista de cotacoes por solicitacao.
+- [x] Criacao de cotacao a partir de solicitacao.
+- [x] Selecao de fornecedores participantes.
+- [x] Envio aos fornecedores.
+- [x] Formulario de resposta por fornecedor.
+- [x] Mapa comparativo por item.
+- [x] Destaque de menor valor.
+- [x] Escolha de fornecedor vencedor com justificativa.
+- [x] Cancelamento em status permitido.
+- [x] Estados de carregamento, vazio, erro e salvamento.
 - [x] Frontend nao usa SharePoint para este modulo.
 
 ## Smoke Test
 
-- [x] Script `server/src/scripts/smokeCotacoes.ts` criado.
-- [x] Script npm `smoke:cotacoes` criado.
-- [x] `GET /health` validado em execucao local.
-- [x] `GET /health/db` validado em execucao local.
+- [x] Script `server/src/scripts/smokeCotacoes.ts` atualizado.
+- [x] Script npm `smoke:cotacoes` mantido.
+- [x] `GET /health` validado.
+- [x] `GET /health/db` validado.
 - [x] Solicitacao `DEV_LOCAL_V3_4B` criada e movida para `EM_ANALISE`.
-- [x] Duas cotacoes `DEV_LOCAL_V3_4B` criadas.
+- [x] Cotacao formal `DEV_LOCAL_V3_4B` criada com dois fornecedores.
+- [x] `RASCUNHO -> ENVIADA_FORNECEDORES`.
+- [x] `ENVIADA_FORNECEDORES -> RESPOSTAS_RECEBIDAS`.
 - [x] Mapa comparativo validado.
-- [x] Cotacao de menor total selecionada.
-- [x] Mapa final refletiu cotacao selecionada.
+- [x] `RESPOSTAS_RECEBIDAS -> MAPA_GERADO`.
+- [x] `MAPA_GERADO -> FORNECEDOR_ESCOLHIDO`.
+- [x] `GET /cotacoes` e `GET /cotacoes/:id` validados.
+- [x] Nenhum `DELETE` executado.
 
-## Validações Técnicas
+## Validacoes Tecnicas
 
 - [x] `docker compose ps`.
-- [x] Migration 005 executada localmente.
+- [x] Migration 006 executada localmente.
 - [x] `npm.cmd run build` em `server`.
+- [x] `npm.cmd run smoke:cotacoes`.
 - [x] `npm.cmd run smoke:cadastros`.
 - [x] `npm.cmd run smoke:solicitacoes`.
-- [x] `npm.cmd run smoke:cotacoes`.
 - [x] `npm.cmd run web:build`.
 - [x] `npx.cmd tsc -p web/tsconfig.json --noEmit`.
 - [x] `npx.cmd tsc -p tsconfig.json --noEmit`.
-- [x] Testes HTTP de `/health`, `/health/db` e `/cotacoes/mapa-comparativo`.
-- [x] Teste manual da aba `Cotações`.
-- [x] Console do navegador sem erros na aba `Cotações`.
+- [x] Testes HTTP de `/health`, `/health/db` e `/cotacoes`.
+- [x] Teste manual da aba `Cotações` apos correcao formal.
+- [x] Console do navegador sem erros apos correcao formal.
 
-## Correção durante validação
+## Correcoes durante validacao
 
-- [x] Primeira execução de `smoke:cotacoes` falhou por regex UUID incorreto no módulo novo.
-- [x] Regex corrigido para o mesmo padrão usado em Solicitações.
-- [x] Smoke V3.4B reexecutado com sucesso após reiniciar a API.
+- [x] Desenho inicial de V3.4B foi ajustado para o modelo formal do anexo.
+- [x] Migration antiga nao foi reescrita; criada migration incremental 006.
+- [x] Primeiro smoke formal revelou `data_recebimento NOT NULL` herdado da 005.
+- [x] API formal passou a preencher `data_recebimento` com `current_date`.
+- [x] Smoke V3.4B reexecutado com sucesso.
 
-## Restrições Mantidas
+## Restricoes Mantidas
 
 - [x] Nenhum pedido de compra implementado.
 - [x] Nenhuma nota fiscal implementada.
@@ -112,4 +127,5 @@
 - [x] Nenhuma alteracao Entra.
 - [x] Nenhuma automacao.
 - [x] Nenhum `.env` commitado.
+- [x] Nenhum banco de producao acessado.
 - [x] Nenhum `DELETE` fisico.

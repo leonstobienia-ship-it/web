@@ -39,22 +39,29 @@ interface SolicitacaoCompra {
   itens?: SolicitacaoItem[];
 }
 
-interface Cotacao {
+interface CotacaoFornecedor {
   id: string;
-  codigo: string;
   fornecedor_id: string;
+  fornecedor_nome: string;
   status: string;
   valor_total: string | number;
 }
 
+interface Cotacao {
+  id: string;
+  codigo: string;
+  status: string;
+  fornecedores?: CotacaoFornecedor[];
+}
+
 interface MapaComparativo {
   resumo: {
-    total_cotacoes: number;
-    total_cotacoes_comparaveis: number;
-    cotacao_menor_total?: Cotacao | null;
-    cotacao_selecionada?: Cotacao | null;
+    total_fornecedores: number;
+    total_respostas: number;
+    fornecedor_menor_total?: CotacaoFornecedor | null;
+    fornecedor_vencedor?: CotacaoFornecedor | null;
   };
-  cotacoes: Cotacao[];
+  fornecedores: CotacaoFornecedor[];
   itens: Array<{ comparativos: Array<{ melhor_valor: boolean }> }>;
 }
 
@@ -108,28 +115,21 @@ const transitionSolicitacao = async (
   return response.data;
 };
 
-const buildCotacaoPayload = (
-  empresa: Empresa,
-  solicitacao: SolicitacaoCompra,
-  fornecedor: Fornecedor,
-  firstPrice: number,
-  secondPrice: number
-) => ({
-  company_id: empresa.id,
-  solicitacao_compra_id: solicitacao.id,
-  fornecedor_id: fornecedor.id,
-  data_recebimento: new Date().toISOString().slice(0, 10),
-  validade_proposta: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-  prazo_entrega_dias: firstPrice < secondPrice ? 3 : 5,
-  condicao_pagamento: `${marker} - pagamento local`,
-  frete: `${marker} - frete local`,
-  observacoes: `${marker} - cotacao local sem compra real`,
-  itens: (solicitacao.itens || []).map((item, index) => ({
-    solicitacao_item_id: item.id,
-    valor_unitario: index === 0 ? firstPrice : secondPrice,
-    observacoes: `${marker} - item cotado localmente`
-  }))
-});
+const transitionCotacao = async (
+  cotacao: Cotacao,
+  action: string,
+  expectedStatus: string,
+  payload: Record<string, unknown> = {}
+): Promise<Cotacao> => {
+  const response = await requestJson<ApiItemResponse<Cotacao>>(`/cotacoes/${cotacao.id}/${action}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload)
+  });
+  if (response.data.status !== expectedStatus) {
+    throw new Error(`Transicao ${action} retornou ${response.data.status}, esperado ${expectedStatus}.`);
+  }
+  return response.data;
+};
 
 const run = async (): Promise<void> => {
   const results: SmokeResult[] = [];
@@ -162,7 +162,7 @@ const run = async (): Promise<void> => {
       obra_id: obra.id,
       centro_custo_id: centroCusto.id,
       solicitante_id: usuario.id,
-      titulo: `${marker} - solicitacao para cotacao`,
+      titulo: `${marker} - solicitacao para cotacao formal`,
       descricao: `${marker} - base para mapa comparativo local`,
       prioridade: 'NORMAL',
       data_necessidade: new Date().toISOString().slice(0, 10),
@@ -195,46 +195,88 @@ const run = async (): Promise<void> => {
   }
   results.push({ etapa: 'Solicitação em análise', ok: true, detalhe: detalheSolicitacao.data.status });
 
-  const primeiraCotacao = await requestJson<ApiItemResponse<Cotacao>>('/cotacoes', {
+  let cotacao = (await requestJson<ApiItemResponse<Cotacao>>('/cotacoes', {
     method: 'POST',
-    body: JSON.stringify(buildCotacaoPayload(empresa, detalheSolicitacao.data, fornecedores[0], 11, 19))
+    body: JSON.stringify({
+      company_id: empresa.id,
+      solicitacao_id: solicitacao.id,
+      titulo: `${marker} - cotacao formal smoke`,
+      prazo_resposta: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      observacoes: `${marker} - cotacao local sem pedido de compra`,
+      fornecedores: fornecedores.slice(0, 2).map((fornecedor) => ({ fornecedor_id: fornecedor.id }))
+    })
+  })).data;
+  if (cotacao.status !== 'RASCUNHO' || (cotacao.fornecedores || []).length !== 2) {
+    throw new Error('Cotacao formal nao nasceu em RASCUNHO com 2 fornecedores.');
+  }
+  results.push({ etapa: 'POST /cotacoes', ok: true, detalhe: cotacao.codigo });
+
+  cotacao = await transitionCotacao(cotacao, 'enviar-fornecedores', 'ENVIADA_FORNECEDORES');
+  results.push({ etapa: 'PATCH enviar-fornecedores', ok: true, detalhe: cotacao.status });
+
+  const responsePayload = {
+    fornecedores: fornecedores.slice(0, 2).map((fornecedor, fornecedorIndex) => ({
+      fornecedor_id: fornecedor.id,
+      prazo_entrega_dias: fornecedorIndex === 0 ? 5 : 3,
+      condicao_pagamento: `${marker} - pagamento fornecedor ${fornecedorIndex + 1}`,
+      observacoes: `${marker} - resposta local`,
+      itens: (detalheSolicitacao.data.itens || []).map((item, itemIndex) => ({
+        solicitacao_item_id: item.id,
+        valor_unitario: fornecedorIndex === 0 ? (itemIndex === 0 ? 11 : 19) : (itemIndex === 0 ? 9 : 18),
+        marca_modelo: `${marker} - marca local`,
+        prazo_entrega_dias: fornecedorIndex === 0 ? 5 : 3,
+        observacoes: `${marker} - item cotado localmente`
+      }))
+    }))
+  };
+
+  cotacao = await transitionCotacao(cotacao, 'registrar-respostas', 'RESPOSTAS_RECEBIDAS', responsePayload);
+  results.push({ etapa: 'PATCH registrar-respostas', ok: true, detalhe: cotacao.status });
+
+  const mapaRecebido = await requestJson<ApiItemResponse<MapaComparativo>>(`/cotacoes/mapa-comparativo?cotacao_id=${cotacao.id}`);
+  if (mapaRecebido.data.resumo.total_fornecedores !== 2 || mapaRecebido.data.resumo.total_respostas !== 2) {
+    throw new Error('Mapa antes da geracao nao retornou 2 fornecedores com respostas.');
+  }
+  results.push({ etapa: 'GET /cotacoes/mapa-comparativo', ok: true, detalhe: '2 respostas comparadas' });
+
+  cotacao = await transitionCotacao(cotacao, 'gerar-mapa', 'MAPA_GERADO', {
+    criterio_decisao: 'MENOR_PRECO',
+    justificativa: `${marker} - mapa gerado por menor valor`
   });
-  results.push({ etapa: 'POST /cotacoes fornecedor 1', ok: true, detalhe: primeiraCotacao.data.codigo });
+  results.push({ etapa: 'PATCH gerar-mapa', ok: true, detalhe: cotacao.status });
 
-  const segundaCotacao = await requestJson<ApiItemResponse<Cotacao>>('/cotacoes', {
-    method: 'POST',
-    body: JSON.stringify(buildCotacaoPayload(empresa, detalheSolicitacao.data, fornecedores[1], 9, 18))
+  const mapaGerado = await requestJson<ApiItemResponse<MapaComparativo>>(`/cotacoes/mapa-comparativo?cotacao_id=${cotacao.id}`);
+  const fornecedorVencedor = mapaGerado.data.resumo.fornecedor_menor_total;
+  if (!fornecedorVencedor) {
+    throw new Error('Mapa gerado nao retornou fornecedor_menor_total.');
+  }
+
+  cotacao = await transitionCotacao(cotacao, 'escolher-fornecedor', 'FORNECEDOR_ESCOLHIDO', {
+    fornecedor_id: fornecedorVencedor.fornecedor_id,
+    criterio_decisao: 'MENOR_PRECO',
+    justificativa: `${marker} - menor total escolhido no smoke`
   });
-  results.push({ etapa: 'POST /cotacoes fornecedor 2', ok: true, detalhe: segundaCotacao.data.codigo });
+  results.push({ etapa: 'PATCH escolher-fornecedor', ok: true, detalhe: cotacao.status });
 
-  const mapa = await requestJson<ApiItemResponse<MapaComparativo>>(`/cotacoes/mapa-comparativo?solicitacao_compra_id=${solicitacao.id}`);
-  if (mapa.data.resumo.total_cotacoes !== 2 || mapa.data.resumo.total_cotacoes_comparaveis !== 2) {
-    throw new Error('Mapa comparativo nao retornou as 2 cotacoes comparaveis.');
-  }
-  if (!mapa.data.itens.every((item) => item.comparativos.some((comparativo) => comparativo.melhor_valor))) {
-    throw new Error('Mapa comparativo nao marcou melhor valor por item.');
-  }
-  results.push({ etapa: 'GET /cotacoes/mapa-comparativo', ok: true, detalhe: '2 cotacoes comparadas' });
-
-  const menorCotacao = mapa.data.resumo.cotacao_menor_total;
-  if (!menorCotacao) {
-    throw new Error('Mapa comparativo nao retornou cotacao_menor_total.');
+  const detalheCotacao = await requestJson<ApiItemResponse<Cotacao>>(`/cotacoes/${cotacao.id}`);
+  if (detalheCotacao.data.status !== 'FORNECEDOR_ESCOLHIDO') {
+    throw new Error('GET /cotacoes/:id nao refletiu fornecedor escolhido.');
   }
 
-  const selecionada = await requestJson<ApiItemResponse<Cotacao>>(`/cotacoes/${menorCotacao.id}/selecionar`, {
-    method: 'PATCH',
-    body: JSON.stringify({ justificativa: `${marker} - menor total selecionado no smoke` })
-  });
-  if (selecionada.data.status !== 'SELECIONADA') {
-    throw new Error(`Cotacao selecionada retornou ${selecionada.data.status}, esperado SELECIONADA.`);
+  const listaCotacoes = await requestJson<ApiListResponse<Cotacao>>(`/cotacoes?solicitacao_id=${solicitacao.id}`);
+  if (!listaCotacoes.data.some((item) => item.id === cotacao.id)) {
+    throw new Error('GET /cotacoes nao retornou a cotacao criada no smoke.');
   }
-  results.push({ etapa: 'PATCH /cotacoes/:id/selecionar', ok: true, detalhe: selecionada.data.codigo });
+  results.push({ etapa: 'GET /cotacoes e /cotacoes/:id', ok: true, detalhe: cotacao.codigo });
 
-  const finalMapa = await requestJson<ApiItemResponse<MapaComparativo>>(`/cotacoes/mapa-comparativo?solicitacao_compra_id=${solicitacao.id}`);
-  if (finalMapa.data.resumo.cotacao_selecionada?.id !== selecionada.data.id) {
-    throw new Error('Mapa final nao refletiu cotacao selecionada.');
+  const mapaFinal = await requestJson<ApiItemResponse<MapaComparativo>>(`/cotacoes/mapa-comparativo?cotacao_id=${cotacao.id}`);
+  if (mapaFinal.data.resumo.fornecedor_vencedor?.fornecedor_id !== fornecedorVencedor.fornecedor_id) {
+    throw new Error('Mapa final nao refletiu fornecedor vencedor.');
   }
-  results.push({ etapa: 'Mapa final', ok: true, detalhe: 'cotacao selecionada refletida' });
+  if (!mapaFinal.data.itens.every((item) => item.comparativos.some((comparativo) => comparativo.melhor_valor))) {
+    throw new Error('Mapa comparativo nao marcou menor valor por item.');
+  }
+  results.push({ etapa: 'Mapa final', ok: true, detalhe: 'fornecedor vencedor refletido' });
 
   console.info(`Smoke V3.4B concluido contra ${apiBaseUrl}. Marcador: ${marker}.`);
   console.table(results);

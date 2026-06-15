@@ -2,7 +2,7 @@ import * as React from 'react';
 import {
   erpApi,
   type CotacaoApi,
-  type CotacaoItemPayload,
+  type CotacaoFornecedorApi,
   type CotacaoStatus,
   type EmpresaApi,
   type FornecedorApi,
@@ -11,30 +11,29 @@ import {
   type SolicitacaoCompraItemApi
 } from '../../services/erpApi';
 
-type FormMode = 'list' | 'create' | 'edit';
-
-interface CotacaoFormState {
-  fornecedor_id: string;
-  data_recebimento: string;
-  validade_proposta: string;
-  prazo_entrega_dias: string;
-  condicao_pagamento: string;
-  frete: string;
+interface CreateFormState {
+  titulo: string;
+  prazo_resposta: string;
   observacoes: string;
 }
 
-interface ItemPriceState {
+interface ItemResponseState {
   valor_unitario: string;
+  marca_modelo: string;
+  prazo_entrega_dias: string;
   observacoes: string;
 }
+
+type ResponseState = Record<string, Record<string, ItemResponseState>>;
 
 const marker = 'DEV_LOCAL_V3_4B';
 
 const statusLabels: Record<CotacaoStatus, string> = {
   RASCUNHO: 'Rascunho',
-  RECEBIDA: 'Recebida',
-  DESCLASSIFICADA: 'Desclassificada',
-  SELECIONADA: 'Selecionada',
+  ENVIADA_FORNECEDORES: 'Enviada aos fornecedores',
+  RESPOSTAS_RECEBIDAS: 'Respostas recebidas',
+  MAPA_GERADO: 'Mapa gerado',
+  FORNECEDOR_ESCOLHIDO: 'Fornecedor escolhido',
   CANCELADA: 'Cancelada'
 };
 
@@ -47,14 +46,17 @@ const solicitacaoStatusLabels: Record<string, string> = {
   CANCELADA: 'Cancelada'
 };
 
-const emptyForm = (): CotacaoFormState => ({
-  fornecedor_id: '',
-  data_recebimento: new Date().toISOString().slice(0, 10),
-  validade_proposta: '',
+const emptyCreateForm = (): CreateFormState => ({
+  titulo: `${marker} - cotacao operacional`,
+  prazo_resposta: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  observacoes: `${marker} - cotacao local sem pedido de compra`
+});
+
+const emptyItemResponse = (): ItemResponseState => ({
+  valor_unitario: '0',
+  marca_modelo: '',
   prazo_entrega_dias: '',
-  condicao_pagamento: '',
-  frete: '',
-  observacoes: ''
+  observacoes: `${marker} - resposta local`
 });
 
 const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
@@ -68,36 +70,48 @@ const formatDate = (value: string | null | undefined): string => {
   if (!value) {
     return '-';
   }
-
   return value.slice(0, 10).split('-').reverse().join('/');
 };
 
 const normalizeDecimal = (value: string): number => {
   const parsed = Number(value.trim().replace(',', '.'));
   if (!Number.isFinite(parsed)) {
-    throw new Error('Informe valores numéricos válidos para os itens da cotação.');
+    throw new Error('Informe valores numéricos válidos nas respostas dos fornecedores.');
   }
   return parsed;
 };
 
 const statusClass = (status: string): string => status.toLowerCase().replace(/_/g, '-');
 
+const canCreateCotacao = (solicitacao: SolicitacaoCompraApi | null): boolean =>
+  Boolean(solicitacao && solicitacao.status !== 'CANCELADA');
+
+const canCancel = (cotacao: CotacaoApi): boolean =>
+  ['RASCUNHO', 'ENVIADA_FORNECEDORES', 'RESPOSTAS_RECEBIDAS', 'MAPA_GERADO'].includes(cotacao.status);
+
 const toSolicitacaoLabel = (solicitacao: SolicitacaoCompraApi): string =>
   `${solicitacao.codigo} - ${solicitacao.titulo} (${solicitacaoStatusLabels[solicitacao.status] || solicitacao.status})`;
 
-const buildItemPrices = (items: SolicitacaoCompraItemApi[], cotacao?: CotacaoApi): Record<string, ItemPriceState> => {
-  const prices: Record<string, ItemPriceState> = {};
-  const cotacaoItems = cotacao?.itens || [];
-
-  items.forEach((item) => {
-    const cotacaoItem = cotacaoItems.find((quoteItem) => quoteItem.solicitacao_item_id === item.id);
-    prices[item.id] = {
-      valor_unitario: cotacaoItem ? String(cotacaoItem.valor_unitario) : '0',
-      observacoes: cotacaoItem?.observacoes || ''
-    };
+const buildInitialResponses = (cotacao: CotacaoApi, itens: SolicitacaoCompraItemApi[]): ResponseState => {
+  const initial: ResponseState = {};
+  (cotacao.fornecedores || []).forEach((fornecedor, fornecedorIndex) => {
+    initial[fornecedor.fornecedor_id] = {};
+    itens.forEach((item, itemIndex) => {
+      const savedItem = (cotacao.itens || []).find(
+        (cotacaoItem) =>
+          cotacaoItem.fornecedor_id === fornecedor.fornecedor_id &&
+          cotacaoItem.solicitacao_item_id === item.id
+      );
+      const suggestedValue = fornecedorIndex === 0 ? 12 + itemIndex : 10 + itemIndex;
+      initial[fornecedor.fornecedor_id][item.id] = {
+        valor_unitario: savedItem ? String(savedItem.valor_unitario) : String(suggestedValue),
+        marca_modelo: savedItem?.marca_modelo || `${marker} - marca local`,
+        prazo_entrega_dias: savedItem?.prazo_entrega_dias ? String(savedItem.prazo_entrega_dias) : '5',
+        observacoes: savedItem?.observacoes || `${marker} - resposta fornecedor local`
+      };
+    });
   });
-
-  return prices;
+  return initial;
 };
 
 export function CotacoesMapaPage(): JSX.Element {
@@ -106,48 +120,49 @@ export function CotacoesMapaPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
   const [selectedSolicitacaoId, setSelectedSolicitacaoId] = React.useState<string>('');
   const [selectedSolicitacao, setSelectedSolicitacao] = React.useState<SolicitacaoCompraApi | null>(null);
-  const [mapa, setMapa] = React.useState<MapaComparativoApi | null>(null);
-  const [mode, setMode] = React.useState<FormMode>('list');
+  const [cotacoes, setCotacoes] = React.useState<CotacaoApi[]>([]);
   const [selectedCotacao, setSelectedCotacao] = React.useState<CotacaoApi | null>(null);
-  const [form, setForm] = React.useState<CotacaoFormState>(emptyForm());
-  const [itemPrices, setItemPrices] = React.useState<Record<string, ItemPriceState>>({});
-  const [loadingRefs, setLoadingRefs] = React.useState<boolean>(true);
-  const [loadingMapa, setLoadingMapa] = React.useState<boolean>(false);
+  const [mapa, setMapa] = React.useState<MapaComparativoApi | null>(null);
+  const [createForm, setCreateForm] = React.useState<CreateFormState>(emptyCreateForm());
+  const [supplierSelection, setSupplierSelection] = React.useState<Set<string>>(new Set());
+  const [responses, setResponses] = React.useState<ResponseState>({});
+  const [justificativa, setJustificativa] = React.useState<string>(`${marker} - menor valor total escolhido no mapa`);
+  const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
 
   const empresa = empresas[0];
   const solicitationItems = selectedSolicitacao?.itens || [];
-  const canQuote = selectedSolicitacao?.status === 'EM_ANALISE';
-  const quotedSupplierIds = new Set((mapa?.cotacoes || []).map((cotacao) => cotacao.fornecedor_id));
 
-  const loadMapa = React.useCallback(async (solicitacaoId: string): Promise<void> => {
+  const loadCotacoes = React.useCallback(async (solicitacaoId: string): Promise<void> => {
     if (!solicitacaoId) {
-      setSelectedSolicitacao(null);
+      setCotacoes([]);
+      setSelectedCotacao(null);
       setMapa(null);
       return;
     }
-
-    setLoadingMapa(true);
-    setError('');
-    try {
-      const [detalhe, mapaResponse] = await Promise.all([
-        erpApi.solicitacoesCompra.get(solicitacaoId),
-        erpApi.cotacoes.mapaComparativo(solicitacaoId)
-      ]);
-      setSelectedSolicitacao(detalhe);
-      setMapa(mapaResponse);
-    } catch (loadError) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setLoadingMapa(false);
+    const response = await erpApi.cotacoes.list({ solicitacao_id: solicitacaoId });
+    setCotacoes(response);
+    if (response.length === 0) {
+      setSelectedCotacao(null);
+      setMapa(null);
     }
   }, []);
 
+  const loadCotacaoDetail = React.useCallback(async (cotacaoId: string): Promise<void> => {
+    const detail = await erpApi.cotacoes.get(cotacaoId);
+    setSelectedCotacao(detail);
+    setResponses(buildInitialResponses(detail, solicitationItems));
+    try {
+      setMapa(await erpApi.cotacoes.mapaComparativo(cotacaoId));
+    } catch {
+      setMapa(null);
+    }
+  }, [solicitationItems]);
+
   React.useEffect(() => {
     let active = true;
-
     Promise.all([
       erpApi.empresas.list(),
       erpApi.solicitacoesCompra.list(),
@@ -160,7 +175,7 @@ export function CotacoesMapaPage(): JSX.Element {
         setEmpresas(empresasResponse);
         setSolicitacoes(solicitacoesResponse);
         setFornecedores(fornecedoresResponse.filter((fornecedor) => fornecedor.status !== 'inativo'));
-        const firstEligible = solicitacoesResponse.find((solicitacao) => solicitacao.status === 'EM_ANALISE') || solicitacoesResponse[0];
+        const firstEligible = solicitacoesResponse.find((solicitacao) => solicitacao.status !== 'CANCELADA') || solicitacoesResponse[0];
         setSelectedSolicitacaoId(firstEligible?.id || '');
       })
       .catch((loadError) => {
@@ -170,7 +185,7 @@ export function CotacoesMapaPage(): JSX.Element {
       })
       .finally(() => {
         if (active) {
-          setLoadingRefs(false);
+          setLoading(false);
         }
       });
 
@@ -180,97 +195,54 @@ export function CotacoesMapaPage(): JSX.Element {
   }, []);
 
   React.useEffect(() => {
-    void loadMapa(selectedSolicitacaoId);
-  }, [loadMapa, selectedSolicitacaoId]);
-
-  const refreshAll = async (): Promise<void> => {
-    setError('');
-    const [solicitacoesResponse] = await Promise.all([
-      erpApi.solicitacoesCompra.list(),
-      selectedSolicitacaoId ? loadMapa(selectedSolicitacaoId) : Promise.resolve()
-    ]);
-    setSolicitacoes(solicitacoesResponse);
-  };
-
-  const openCreate = (): void => {
-    if (!selectedSolicitacao) {
-      return;
-    }
-    setMode('create');
-    setSelectedCotacao(null);
-    setForm({
-      ...emptyForm(),
-      observacoes: `${marker} - cotacao local`
-    });
-    setItemPrices(buildItemPrices(solicitationItems));
-    setError('');
-    setMessage('');
-  };
-
-  const openEdit = async (cotacao: CotacaoApi): Promise<void> => {
-    if (saving) {
+    let active = true;
+    if (!selectedSolicitacaoId) {
+      setSelectedSolicitacao(null);
       return;
     }
 
-    setSaving(true);
-    setError('');
-    setMessage('');
-    try {
-      const detalhe = await erpApi.cotacoes.get(cotacao.id);
-      setSelectedCotacao(detalhe);
-      setForm({
-        fornecedor_id: detalhe.fornecedor_id,
-        data_recebimento: detalhe.data_recebimento.slice(0, 10),
-        validade_proposta: detalhe.validade_proposta ? detalhe.validade_proposta.slice(0, 10) : '',
-        prazo_entrega_dias: detalhe.prazo_entrega_dias === null || detalhe.prazo_entrega_dias === undefined ? '' : String(detalhe.prazo_entrega_dias),
-        condicao_pagamento: detalhe.condicao_pagamento || '',
-        frete: detalhe.frete || '',
-        observacoes: detalhe.observacoes || ''
+    erpApi.solicitacoesCompra.get(selectedSolicitacaoId)
+      .then((solicitacao) => {
+        if (active) {
+          setSelectedSolicitacao(solicitacao);
+        }
+      })
+      .catch((loadError) => {
+        if (active) {
+          setError(getErrorMessage(loadError));
+        }
       });
-      setItemPrices(buildItemPrices(solicitationItems, detalhe));
-      setMode('edit');
-    } catch (detailError) {
-      setError(getErrorMessage(detailError));
-    } finally {
-      setSaving(false);
+
+    return () => {
+      active = false;
+    };
+  }, [selectedSolicitacaoId]);
+
+  React.useEffect(() => {
+    void loadCotacoes(selectedSolicitacaoId).catch((loadError) => setError(getErrorMessage(loadError)));
+  }, [loadCotacoes, selectedSolicitacaoId]);
+
+  const refresh = async (cotacaoId = selectedCotacao?.id): Promise<void> => {
+    setError('');
+    await loadCotacoes(selectedSolicitacaoId);
+    if (cotacaoId) {
+      await loadCotacaoDetail(cotacaoId);
     }
   };
 
-  const updateForm = (field: keyof CotacaoFormState, value: string): void => {
-    setForm((current) => ({ ...current, [field]: value }));
-  };
-
-  const updateItemPrice = (itemId: string, field: keyof ItemPriceState, value: string): void => {
-    setItemPrices((current) => ({
-      ...current,
-      [itemId]: {
-        ...(current[itemId] || { valor_unitario: '0', observacoes: '' }),
-        [field]: value
+  const toggleSupplier = (fornecedorId: string): void => {
+    setSupplierSelection((current) => {
+      const next = new Set(current);
+      if (next.has(fornecedorId)) {
+        next.delete(fornecedorId);
+      } else {
+        next.add(fornecedorId);
       }
-    }));
-  };
-
-  const buildItemsPayload = (): CotacaoItemPayload[] => {
-    if (solicitationItems.length === 0) {
-      throw new Error('A solicitação selecionada não possui itens ativos.');
-    }
-
-    return solicitationItems.map((item, index) => {
-      const state = itemPrices[item.id];
-      const valorUnitario = normalizeDecimal(state?.valor_unitario || '0');
-      if (valorUnitario < 0) {
-        throw new Error(`Valor unitário deve ser maior ou igual a zero no item ${index + 1}.`);
-      }
-
-      return {
-        solicitacao_item_id: item.id,
-        valor_unitario: valorUnitario,
-        observacoes: state?.observacoes?.trim() || null
-      };
+      return next;
     });
   };
 
-  const save = async (event: React.FormEvent): Promise<void> => {
+  const createCotacao = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
     if (saving || !empresa || !selectedSolicitacao) {
       return;
@@ -279,50 +251,33 @@ export function CotacoesMapaPage(): JSX.Element {
     setSaving(true);
     setError('');
     setMessage('');
-
     try {
-      if (!canQuote) {
-        throw new Error('A solicitação precisa estar em análise para receber cotações.');
+      if (!canCreateCotacao(selectedSolicitacao)) {
+        throw new Error('Solicitação cancelada não permite cotação.');
       }
-      if (!form.fornecedor_id || !form.data_recebimento) {
-        throw new Error('Fornecedor e data de recebimento são obrigatórios.');
+      if (supplierSelection.size === 0) {
+        throw new Error('Selecione pelo menos um fornecedor.');
       }
-
-      const payload = {
+      const created = await erpApi.cotacoes.create({
         company_id: empresa.id,
-        solicitacao_compra_id: selectedSolicitacao.id,
-        fornecedor_id: form.fornecedor_id,
-        data_recebimento: form.data_recebimento,
-        validade_proposta: form.validade_proposta || null,
-        prazo_entrega_dias: form.prazo_entrega_dias ? Number(form.prazo_entrega_dias) : null,
-        condicao_pagamento: form.condicao_pagamento.trim() || null,
-        frete: form.frete.trim() || null,
-        observacoes: form.observacoes.trim() || null,
-        itens: buildItemsPayload()
-      };
-
-      if (mode === 'edit' && selectedCotacao) {
-        const { company_id: _companyId, solicitacao_compra_id: _solicitacaoId, ...updatePayload } = payload;
-        await erpApi.cotacoes.update(selectedCotacao.id, updatePayload);
-        setMessage('Cotação atualizada.');
-      } else {
-        await erpApi.cotacoes.create(payload);
-        setMessage('Cotação registrada.');
-      }
-
-      setMode('list');
-      setSelectedCotacao(null);
-      setForm(emptyForm());
-      setItemPrices({});
-      await refreshAll();
-    } catch (saveError) {
-      setError(getErrorMessage(saveError));
+        solicitacao_id: selectedSolicitacao.id,
+        titulo: createForm.titulo,
+        prazo_resposta: createForm.prazo_resposta || null,
+        observacoes: createForm.observacoes || null,
+        fornecedores: Array.from(supplierSelection).map((fornecedorId) => ({ fornecedor_id: fornecedorId }))
+      });
+      setCreateForm(emptyCreateForm());
+      setSupplierSelection(new Set());
+      setMessage('Cotação criada em rascunho.');
+      await refresh(created.id);
+    } catch (createError) {
+      setError(getErrorMessage(createError));
     } finally {
       setSaving(false);
     }
   };
 
-  const transition = async (cotacao: CotacaoApi, action: 'selecionar' | 'desclassificar' | 'cancelar'): Promise<void> => {
+  const transition = async (cotacao: CotacaoApi, action: 'enviar-fornecedores' | 'gerar-mapa' | 'cancelar'): Promise<void> => {
     if (saving) {
       return;
     }
@@ -331,16 +286,11 @@ export function CotacoesMapaPage(): JSX.Element {
     setError('');
     setMessage('');
     try {
-      const payload: Record<string, string | null> = {};
-      if (action === 'selecionar') {
-        payload.justificativa = `${marker} - selecionada no mapa comparativo local`;
-      }
-      if (action === 'desclassificar') {
-        payload.motivo_desclassificacao = `${marker} - desclassificada no teste local`;
-      }
-      await erpApi.cotacoes.transition(cotacao.id, action, payload);
-      setMessage(`Cotação ${statusLabels[action === 'selecionar' ? 'SELECIONADA' : action === 'desclassificar' ? 'DESCLASSIFICADA' : 'CANCELADA'].toLowerCase()}.`);
-      await refreshAll();
+      await erpApi.cotacoes.transition(cotacao.id, action, {
+        justificativa: `${marker} - transicao local ${action}`
+      });
+      setMessage('Status da cotação atualizado.');
+      await refresh(cotacao.id);
     } catch (transitionError) {
       setError(getErrorMessage(transitionError));
     } finally {
@@ -348,19 +298,100 @@ export function CotacoesMapaPage(): JSX.Element {
     }
   };
 
-  const availableFornecedores = fornecedores.filter((fornecedor) =>
-    mode === 'edit' && selectedCotacao?.fornecedor_id === fornecedor.id ? true : !quotedSupplierIds.has(fornecedor.id)
-  );
+  const updateResponse = (
+    fornecedorId: string,
+    itemId: string,
+    field: keyof ItemResponseState,
+    value: string
+  ): void => {
+    setResponses((current) => ({
+      ...current,
+      [fornecedorId]: {
+        ...(current[fornecedorId] || {}),
+        [itemId]: {
+          ...emptyItemResponse(),
+          ...(current[fornecedorId]?.[itemId] || {}),
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  const submitResponses = async (): Promise<void> => {
+    if (saving || !selectedCotacao) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const fornecedoresPayload = (selectedCotacao.fornecedores || []).map((fornecedor) => ({
+        fornecedor_id: fornecedor.fornecedor_id,
+        prazo_entrega_dias: 5,
+        condicao_pagamento: `${marker} - pagamento local`,
+        observacoes: `${marker} - resposta local`,
+        itens: solicitationItems.map((item) => {
+          const state = responses[fornecedor.fornecedor_id]?.[item.id] || emptyItemResponse();
+          const valorUnitario = normalizeDecimal(state.valor_unitario);
+          if (valorUnitario < 0) {
+            throw new Error('Valor unitário deve ser maior ou igual a zero.');
+          }
+          return {
+            solicitacao_item_id: item.id,
+            valor_unitario: valorUnitario,
+            marca_modelo: state.marca_modelo || null,
+            prazo_entrega_dias: state.prazo_entrega_dias ? Number(state.prazo_entrega_dias) : null,
+            observacoes: state.observacoes || null
+          };
+        })
+      }));
+
+      await erpApi.cotacoes.registrarRespostas(selectedCotacao.id, { fornecedores: fornecedoresPayload });
+      setMessage('Respostas dos fornecedores registradas.');
+      await refresh(selectedCotacao.id);
+    } catch (responseError) {
+      setError(getErrorMessage(responseError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const chooseSupplier = async (fornecedor: CotacaoFornecedorApi): Promise<void> => {
+    if (saving || !selectedCotacao) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      await erpApi.cotacoes.escolherFornecedor(selectedCotacao.id, {
+        fornecedor_id: fornecedor.fornecedor_id,
+        criterio_decisao: 'MENOR_PRECO',
+        justificativa
+      });
+      setMessage('Fornecedor vencedor escolhido.');
+      await refresh(selectedCotacao.id);
+    } catch (chooseError) {
+      setError(getErrorMessage(chooseError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const selectedWinner = mapa?.resumo.fornecedor_vencedor;
+  const lowerTotalSupplier = mapa?.resumo.fornecedor_menor_total;
 
   return (
     <section className="enac-web-page enac-cotacoes-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Cotações e mapa comparativo</h1>
       <p className="enac-web-lead">
-        Registro local de propostas por fornecedor e comparação por item para solicitações em análise.
+        Cotação operacional vinculada à solicitação de compra, com fornecedores, respostas e mapa comparativo local.
       </p>
 
-      {loadingRefs && <div className="enac-cadastro-empty">Carregando referências locais.</div>}
+      {loading && <div className="enac-cadastro-empty">Carregando referências locais.</div>}
       {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
       {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
 
@@ -371,15 +402,9 @@ export function CotacoesMapaPage(): JSX.Element {
         </div>
       )}
 
-      {!loadingRefs && solicitacoes.length === 0 && (
-        <div className="enac-web-alert enac-web-alert--compact">
-          Nenhuma solicitação local encontrada. Crie uma solicitação e mova para análise antes de cotar.
-        </div>
-      )}
-
-      {solicitacoes.length > 0 && (
+      {!loading && solicitacoes.length > 0 && (
         <div className="enac-cotacoes-layout">
-          <section className="enac-cotacoes-main" aria-label="Mapa comparativo de cotações">
+          <section className="enac-cotacoes-main" aria-label="Cotações e mapa comparativo">
             <div className="enac-cotacoes-selector">
               <label>
                 <span>Solicitação</span>
@@ -387,167 +412,151 @@ export function CotacoesMapaPage(): JSX.Element {
                   value={selectedSolicitacaoId}
                   onChange={(event) => {
                     setSelectedSolicitacaoId(event.target.value);
-                    setMode('list');
                     setSelectedCotacao(null);
+                    setMapa(null);
                   }}
-                  disabled={saving || loadingMapa}
+                  disabled={saving}
                 >
                   {solicitacoes.map((solicitacao) => (
                     <option key={solicitacao.id} value={solicitacao.id}>{toSolicitacaoLabel(solicitacao)}</option>
                   ))}
                 </select>
               </label>
-              <button type="button" className="enac-cadastro-secondary" onClick={() => void refreshAll()} disabled={saving || loadingMapa}>
+              <button type="button" className="enac-cadastro-secondary" onClick={() => void refresh()} disabled={saving}>
                 Atualizar
               </button>
             </div>
 
-            {loadingMapa && <div className="enac-cadastro-empty">Carregando mapa comparativo.</div>}
-
-            {selectedSolicitacao && !loadingMapa && (
-              <>
-                <div className="enac-cotacoes-summary">
-                  <div>
-                    <span className="enac-web-card-label">{selectedSolicitacao.codigo}</span>
-                    <h2>{selectedSolicitacao.titulo}</h2>
-                  </div>
-                  <span className={`enac-solicitacao-status enac-solicitacao-status--${statusClass(selectedSolicitacao.status)}`}>
-                    {solicitacaoStatusLabels[selectedSolicitacao.status] || selectedSolicitacao.status}
-                  </span>
-                  <dl>
-                    <div><dt>Cotações</dt><dd>{mapa?.resumo.total_cotacoes || 0}</dd></div>
-                    <div><dt>Comparáveis</dt><dd>{mapa?.resumo.total_cotacoes_comparaveis || 0}</dd></div>
-                    <div><dt>Menor total</dt><dd>{formatMoney(mapa?.resumo.cotacao_menor_total?.valor_total)}</dd></div>
-                  </dl>
+            {selectedSolicitacao && (
+              <div className="enac-cotacoes-summary">
+                <div>
+                  <span className="enac-web-card-label">{selectedSolicitacao.codigo}</span>
+                  <h2>{selectedSolicitacao.titulo}</h2>
                 </div>
-
-                {!canQuote && (
-                  <div className="enac-web-alert enac-web-alert--compact">
-                    Cotações só podem ser registradas quando a solicitação estiver em análise.
-                  </div>
-                )}
-
-                <div className="enac-cadastro-toolbar">
-                  <div>
-                    <h2>Cotações recebidas</h2>
-                    <p>{mapa?.cotacoes.length || 0} fornecedor(es) cotado(s)</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={openCreate}
-                    disabled={!canQuote || saving || solicitationItems.length === 0 || availableFornecedores.length === 0}
-                  >
-                    Nova cotação
-                  </button>
-                </div>
-
-                <CotacoesTable
-                  cotacoes={mapa?.cotacoes || []}
-                  saving={saving}
-                  onEdit={(cotacao) => void openEdit(cotacao)}
-                  onTransition={(cotacao, action) => void transition(cotacao, action)}
-                />
-
-                <MapaComparativoTable mapa={mapa} />
-              </>
-            )}
-          </section>
-
-          <aside className="enac-cotacoes-panel" aria-label="Formulário de cotação">
-            {mode === 'list' && (
-              <div className="enac-cadastro-empty">
-                Selecione uma solicitação em análise e registre cotações por fornecedor. Pedido de compra fica para a V3.4C.
+                <span className={`enac-solicitacao-status enac-solicitacao-status--${statusClass(selectedSolicitacao.status)}`}>
+                  {solicitacaoStatusLabels[selectedSolicitacao.status] || selectedSolicitacao.status}
+                </span>
+                <dl>
+                  <div><dt>Cotações</dt><dd>{cotacoes.length}</dd></div>
+                  <div><dt>Itens</dt><dd>{solicitationItems.length}</dd></div>
+                  <div><dt>Fornecedores</dt><dd>{fornecedores.length}</dd></div>
+                </dl>
               </div>
             )}
 
-            {mode !== 'list' && selectedSolicitacao && (
-              <form className="enac-cadastro-form enac-cotacao-form" onSubmit={save}>
-                <div className="enac-cadastro-form-head">
-                  <h3>{mode === 'edit' ? 'Editar cotação' : 'Nova cotação'}</h3>
-                  <button type="button" className="enac-cadastro-secondary" onClick={() => setMode('list')} disabled={saving}>
-                    Cancelar
-                  </button>
+            <div className="enac-cadastro-toolbar">
+              <div>
+                <h2>Lista de cotações</h2>
+                <p>{cotacoes.length} cotação(ões) para a solicitação selecionada</p>
+              </div>
+            </div>
+
+            <CotacoesTable
+              cotacoes={cotacoes}
+              saving={saving}
+              selectedId={selectedCotacao?.id}
+              onSelect={(cotacao) => void loadCotacaoDetail(cotacao.id).catch((detailError) => setError(getErrorMessage(detailError)))}
+              onTransition={(cotacao, action) => void transition(cotacao, action)}
+            />
+
+            {selectedCotacao && (
+              <section className="enac-cotacao-detail">
+                <div className="enac-cadastro-toolbar">
+                  <div>
+                    <span className="enac-web-card-label">{selectedCotacao.codigo}</span>
+                    <h2>{selectedCotacao.titulo}</h2>
+                    <p>{statusLabels[selectedCotacao.status]}</p>
+                  </div>
+                  <span className={`enac-cotacao-status enac-cotacao-status--${statusClass(selectedCotacao.status)}`}>
+                    {statusLabels[selectedCotacao.status]}
+                  </span>
                 </div>
 
-                <div className="enac-cadastro-form-grid">
-                  <label>
-                    <span>Fornecedor<strong className="enac-cadastro-required">Obrigatório</strong></span>
-                    <select value={form.fornecedor_id} onChange={(event) => updateForm('fornecedor_id', event.target.value)} disabled={saving || mode === 'edit'} required>
-                      <option value="">Selecione</option>
-                      {availableFornecedores.map((fornecedor) => (
-                        <option key={fornecedor.id} value={fornecedor.id}>{fornecedor.nome}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>Recebimento<strong className="enac-cadastro-required">Obrigatório</strong></span>
-                    <input type="date" value={form.data_recebimento} onChange={(event) => updateForm('data_recebimento', event.target.value)} disabled={saving} required />
-                  </label>
-                  <label>
-                    <span>Validade</span>
-                    <input type="date" value={form.validade_proposta} onChange={(event) => updateForm('validade_proposta', event.target.value)} disabled={saving} />
-                  </label>
-                  <label>
-                    <span>Prazo de entrega (dias)</span>
+                <FornecedoresTable fornecedores={selectedCotacao.fornecedores || []} />
+
+                {selectedCotacao.status === 'ENVIADA_FORNECEDORES' && (
+                  <ResponseEditor
+                    fornecedores={selectedCotacao.fornecedores || []}
+                    itens={solicitationItems}
+                    responses={responses}
+                    saving={saving}
+                    onChange={updateResponse}
+                    onSubmit={() => void submitResponses()}
+                  />
+                )}
+
+                {(selectedCotacao.status === 'RESPOSTAS_RECEBIDAS' ||
+                  selectedCotacao.status === 'MAPA_GERADO' ||
+                  selectedCotacao.status === 'FORNECEDOR_ESCOLHIDO') && (
+                  <MapaComparativo
+                    mapa={mapa}
+                    lowerTotalSupplier={lowerTotalSupplier}
+                    selectedWinner={selectedWinner}
+                    justificativa={justificativa}
+                    saving={saving}
+                    onJustificativaChange={setJustificativa}
+                    onChoose={(fornecedor) => void chooseSupplier(fornecedor)}
+                  />
+                )}
+              </section>
+            )}
+          </section>
+
+          <aside className="enac-cotacoes-panel" aria-label="Nova cotação">
+            <form className="enac-cadastro-form enac-cotacao-form" onSubmit={(event) => void createCotacao(event)}>
+              <div className="enac-cadastro-form-head">
+                <h3>Nova cotação</h3>
+              </div>
+              <div className="enac-cadastro-form-grid">
+                <label className="enac-solicitacao-span-2">
+                  <span>Título<strong className="enac-cadastro-required">Obrigatório</strong></span>
+                  <input
+                    value={createForm.titulo}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, titulo: event.target.value }))}
+                    disabled={saving}
+                    required
+                  />
+                </label>
+                <label>
+                  <span>Prazo de resposta</span>
+                  <input
+                    type="date"
+                    value={createForm.prazo_resposta}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, prazo_resposta: event.target.value }))}
+                    disabled={saving}
+                  />
+                </label>
+                <label className="enac-solicitacao-span-2">
+                  <span>Observações</span>
+                  <textarea
+                    value={createForm.observacoes}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, observacoes: event.target.value }))}
+                    disabled={saving}
+                  />
+                </label>
+              </div>
+
+              <div className="enac-cotacao-suppliers">
+                <h4>Fornecedores</h4>
+                {fornecedores.map((fornecedor) => (
+                  <label key={fornecedor.id} className="enac-cotacao-checkbox">
                     <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={form.prazo_entrega_dias}
-                      onChange={(event) => updateForm('prazo_entrega_dias', event.target.value)}
+                      type="checkbox"
+                      checked={supplierSelection.has(fornecedor.id)}
+                      onChange={() => toggleSupplier(fornecedor.id)}
                       disabled={saving}
                     />
+                    <span>{fornecedor.nome}</span>
                   </label>
-                  <label>
-                    <span>Condição de pagamento</span>
-                    <input value={form.condicao_pagamento} onChange={(event) => updateForm('condicao_pagamento', event.target.value)} disabled={saving} />
-                  </label>
-                  <label>
-                    <span>Frete</span>
-                    <input value={form.frete} onChange={(event) => updateForm('frete', event.target.value)} disabled={saving} />
-                  </label>
-                  <label className="enac-solicitacao-span-2">
-                    <span>Observações</span>
-                    <textarea value={form.observacoes} onChange={(event) => updateForm('observacoes', event.target.value)} disabled={saving} />
-                  </label>
-                </div>
+                ))}
+              </div>
 
-                <div className="enac-cotacao-items">
-                  {solicitationItems.map((item, index) => (
-                    <div className="enac-cotacao-item" key={item.id}>
-                      <div>
-                        <strong>{index + 1}. {item.descricao}</strong>
-                        <span>{Number(item.quantidade).toLocaleString('pt-BR')} {item.unidade}</span>
-                      </div>
-                      <label>
-                        <span>Valor unitário<strong className="enac-cadastro-required">Obrigatório</strong></span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={itemPrices[item.id]?.valor_unitario || '0'}
-                          onChange={(event) => updateItemPrice(item.id, 'valor_unitario', event.target.value)}
-                          disabled={saving}
-                          required
-                        />
-                      </label>
-                      <label>
-                        <span>Observação do item</span>
-                        <input
-                          value={itemPrices[item.id]?.observacoes || ''}
-                          onChange={(event) => updateItemPrice(item.id, 'observacoes', event.target.value)}
-                          disabled={saving}
-                        />
-                      </label>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="enac-cadastro-actions">
-                  <button type="submit" disabled={saving}>{saving ? 'Salvando...' : 'Salvar cotação'}</button>
-                </div>
-              </form>
-            )}
+              <div className="enac-cadastro-actions">
+                <button type="submit" disabled={saving || !selectedSolicitacao || supplierSelection.size === 0}>
+                  {saving ? 'Salvando...' : 'Criar cotação'}
+                </button>
+              </div>
+            </form>
           </aside>
         </div>
       )}
@@ -558,16 +567,18 @@ export function CotacoesMapaPage(): JSX.Element {
 function CotacoesTable({
   cotacoes,
   saving,
-  onEdit,
+  selectedId,
+  onSelect,
   onTransition
 }: {
   cotacoes: CotacaoApi[];
   saving: boolean;
-  onEdit: (cotacao: CotacaoApi) => void;
-  onTransition: (cotacao: CotacaoApi, action: 'selecionar' | 'desclassificar' | 'cancelar') => void;
+  selectedId?: string;
+  onSelect: (cotacao: CotacaoApi) => void;
+  onTransition: (cotacao: CotacaoApi, action: 'enviar-fornecedores' | 'gerar-mapa' | 'cancelar') => void;
 }): JSX.Element {
   if (cotacoes.length === 0) {
-    return <div className="enac-cadastro-empty">Nenhuma cotação registrada para esta solicitação.</div>;
+    return <div className="enac-cadastro-empty">Nenhuma cotação criada para esta solicitação.</div>;
   }
 
   return (
@@ -576,33 +587,43 @@ function CotacoesTable({
         <thead>
           <tr>
             <th>Código</th>
-            <th>Fornecedor</th>
+            <th>Título</th>
             <th>Status</th>
-            <th>Total</th>
-            <th>Prazo</th>
-            <th>Validade</th>
+            <th>Fornecedores</th>
+            <th>Vencedor</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody>
           {cotacoes.map((cotacao) => (
-            <tr key={cotacao.id}>
+            <tr key={cotacao.id} className={selectedId === cotacao.id ? 'enac-cotacao-row-selected' : ''}>
               <td><strong>{cotacao.codigo}</strong></td>
-              <td>{cotacao.fornecedor_nome}</td>
+              <td>{cotacao.titulo}</td>
               <td>
                 <span className={`enac-cotacao-status enac-cotacao-status--${statusClass(cotacao.status)}`}>
                   {statusLabels[cotacao.status]}
                 </span>
               </td>
-              <td>{formatMoney(cotacao.valor_total)}</td>
-              <td>{cotacao.prazo_entrega_dias === null || cotacao.prazo_entrega_dias === undefined ? '-' : `${cotacao.prazo_entrega_dias} dias`}</td>
-              <td>{formatDate(cotacao.validade_proposta)}</td>
+              <td>{cotacao.fornecedores_count || 0}</td>
+              <td>{cotacao.fornecedor_vencedor_nome || '-'}</td>
               <td>
                 <div className="enac-cadastro-row-actions">
-                  {cotacao.status === 'RECEBIDA' && <button type="button" onClick={() => onEdit(cotacao)} disabled={saving}>Editar</button>}
-                  {cotacao.status === 'RECEBIDA' && <button type="button" onClick={() => onTransition(cotacao, 'selecionar')} disabled={saving}>Selecionar</button>}
-                  {cotacao.status === 'RECEBIDA' && <button type="button" onClick={() => onTransition(cotacao, 'desclassificar')} disabled={saving}>Desclassificar</button>}
-                  {cotacao.status === 'RASCUNHO' && <button type="button" onClick={() => onTransition(cotacao, 'cancelar')} disabled={saving}>Cancelar</button>}
+                  <button type="button" onClick={() => onSelect(cotacao)} disabled={saving}>Detalhe</button>
+                  {cotacao.status === 'RASCUNHO' && (
+                    <button type="button" onClick={() => onTransition(cotacao, 'enviar-fornecedores')} disabled={saving}>
+                      Enviar
+                    </button>
+                  )}
+                  {cotacao.status === 'RESPOSTAS_RECEBIDAS' && (
+                    <button type="button" onClick={() => onTransition(cotacao, 'gerar-mapa')} disabled={saving}>
+                      Gerar mapa
+                    </button>
+                  )}
+                  {canCancel(cotacao) && (
+                    <button type="button" onClick={() => onTransition(cotacao, 'cancelar')} disabled={saving}>
+                      Cancelar
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
@@ -613,61 +634,190 @@ function CotacoesTable({
   );
 }
 
-function MapaComparativoTable({ mapa }: { mapa: MapaComparativoApi | null }): JSX.Element {
-  if (!mapa || mapa.itens.length === 0) {
-    return <div className="enac-cadastro-empty">Mapa comparativo indisponível sem itens da solicitação.</div>;
-  }
-
-  if (mapa.cotacoes.length === 0) {
-    return <div className="enac-cadastro-empty">Registre cotações para montar o mapa comparativo.</div>;
+function FornecedoresTable({ fornecedores }: { fornecedores: CotacaoFornecedorApi[] }): JSX.Element {
+  if (fornecedores.length === 0) {
+    return <div className="enac-cadastro-empty">Nenhum fornecedor participante.</div>;
   }
 
   return (
     <div className="enac-cadastro-table-wrap">
-      <table className="enac-web-table enac-cotacoes-mapa-table">
+      <table className="enac-web-table enac-cotacoes-table">
         <thead>
           <tr>
-            <th>Item</th>
-            <th>Qtd.</th>
-            {mapa.cotacoes.map((cotacao) => (
-              <th key={cotacao.id}>{cotacao.fornecedor_nome}</th>
-            ))}
+            <th>Fornecedor</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Prazo</th>
+            <th>Pagamento</th>
           </tr>
         </thead>
         <tbody>
-          {mapa.itens.map((item) => (
-            <tr key={item.id}>
-              <td>
-                <strong>{item.descricao}</strong>
-                <span>{item.unidade}</span>
-              </td>
-              <td>{Number(item.quantidade).toLocaleString('pt-BR')}</td>
-              {mapa.cotacoes.map((cotacao) => {
-                const comparativo = item.comparativos.find((quoteItem) => quoteItem.cotacao_id === cotacao.id);
-                return (
-                  <td key={cotacao.id} className={comparativo?.melhor_valor ? 'enac-cotacao-best' : ''}>
-                    {comparativo ? (
-                      <>
-                        <strong>{formatMoney(comparativo.valor_total)}</strong>
-                        <span>{formatMoney(comparativo.valor_unitario)} / un.</span>
-                      </>
-                    ) : '-'}
-                  </td>
-                );
-              })}
+          {fornecedores.map((fornecedor) => (
+            <tr key={fornecedor.id}>
+              <td>{fornecedor.fornecedor_nome}</td>
+              <td>{fornecedor.status}</td>
+              <td>{formatMoney(fornecedor.valor_total)}</td>
+              <td>{fornecedor.prazo_entrega_dias ? `${fornecedor.prazo_entrega_dias} dias` : '-'}</td>
+              <td>{fornecedor.condicao_pagamento || '-'}</td>
             </tr>
           ))}
-          <tr>
-            <td><strong>Total</strong></td>
-            <td>-</td>
-            {mapa.cotacoes.map((cotacao) => (
-              <td key={cotacao.id} className={mapa.resumo.cotacao_menor_total?.id === cotacao.id ? 'enac-cotacao-best' : ''}>
-                <strong>{formatMoney(cotacao.valor_total)}</strong>
-              </td>
-            ))}
-          </tr>
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ResponseEditor({
+  fornecedores,
+  itens,
+  responses,
+  saving,
+  onChange,
+  onSubmit
+}: {
+  fornecedores: CotacaoFornecedorApi[];
+  itens: SolicitacaoCompraItemApi[];
+  responses: ResponseState;
+  saving: boolean;
+  onChange: (fornecedorId: string, itemId: string, field: keyof ItemResponseState, value: string) => void;
+  onSubmit: () => void;
+}): JSX.Element {
+  return (
+    <div className="enac-cotacao-response-editor">
+      <h3>Respostas por fornecedor</h3>
+      {fornecedores.map((fornecedor) => (
+        <div className="enac-cotacao-response-card" key={fornecedor.id}>
+          <h4>{fornecedor.fornecedor_nome}</h4>
+          {itens.map((item) => {
+            const state = responses[fornecedor.fornecedor_id]?.[item.id] || emptyItemResponse();
+            return (
+              <div className="enac-cotacao-response-grid" key={item.id}>
+                <strong>{item.descricao}</strong>
+                <span>{Number(item.quantidade).toLocaleString('pt-BR')} {item.unidade}</span>
+                <label>
+                  <span>Valor unitário</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={state.valor_unitario}
+                    onChange={(event) => onChange(fornecedor.fornecedor_id, item.id, 'valor_unitario', event.target.value)}
+                    disabled={saving}
+                  />
+                </label>
+                <label>
+                  <span>Marca/modelo</span>
+                  <input
+                    value={state.marca_modelo}
+                    onChange={(event) => onChange(fornecedor.fornecedor_id, item.id, 'marca_modelo', event.target.value)}
+                    disabled={saving}
+                  />
+                </label>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <div className="enac-cadastro-actions">
+        <button type="button" onClick={onSubmit} disabled={saving}>{saving ? 'Salvando...' : 'Registrar respostas'}</button>
+      </div>
+    </div>
+  );
+}
+
+function MapaComparativo({
+  mapa,
+  lowerTotalSupplier,
+  selectedWinner,
+  justificativa,
+  saving,
+  onJustificativaChange,
+  onChoose
+}: {
+  mapa: MapaComparativoApi | null;
+  lowerTotalSupplier?: CotacaoFornecedorApi | null;
+  selectedWinner?: CotacaoFornecedorApi | null;
+  justificativa: string;
+  saving: boolean;
+  onJustificativaChange: (value: string) => void;
+  onChoose: (fornecedor: CotacaoFornecedorApi) => void;
+}): JSX.Element {
+  if (!mapa) {
+    return <div className="enac-cadastro-empty">Mapa comparativo ainda não disponível.</div>;
+  }
+
+  return (
+    <div className="enac-cotacao-map">
+      <div className="enac-cotacoes-summary">
+        <div>
+          <span className="enac-web-card-label">Mapa comparativo</span>
+          <h2>{selectedWinner ? `Vencedor: ${selectedWinner.fornecedor_nome}` : 'Comparação de respostas'}</h2>
+        </div>
+        <dl>
+          <div><dt>Fornecedores</dt><dd>{mapa.resumo.total_fornecedores}</dd></div>
+          <div><dt>Respostas</dt><dd>{mapa.resumo.total_respostas}</dd></div>
+          <div><dt>Menor total</dt><dd>{formatMoney(lowerTotalSupplier?.valor_total)}</dd></div>
+        </dl>
+      </div>
+
+      <div className="enac-cadastro-table-wrap">
+        <table className="enac-web-table enac-cotacoes-mapa-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qtd.</th>
+              {mapa.fornecedores.map((fornecedor) => (
+                <th key={fornecedor.id}>{fornecedor.fornecedor_nome}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {mapa.itens.map((item) => (
+              <tr key={item.id}>
+                <td>
+                  <strong>{item.descricao}</strong>
+                  <span>{item.unidade}</span>
+                </td>
+                <td>{Number(item.quantidade).toLocaleString('pt-BR')}</td>
+                {mapa.fornecedores.map((fornecedor) => {
+                  const comparativo = item.comparativos.find((entry) => entry.fornecedor_id === fornecedor.fornecedor_id);
+                  return (
+                    <td key={fornecedor.id} className={comparativo?.melhor_valor ? 'enac-cotacao-best' : ''}>
+                      {comparativo ? (
+                        <>
+                          <strong>{formatMoney(comparativo.valor_total)}</strong>
+                          <span>{formatMoney(comparativo.valor_unitario)} / un.</span>
+                        </>
+                      ) : '-'}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            <tr>
+              <td><strong>Total</strong></td>
+              <td>-</td>
+              {mapa.fornecedores.map((fornecedor) => (
+                <td key={fornecedor.id} className={lowerTotalSupplier?.id === fornecedor.id ? 'enac-cotacao-best' : ''}>
+                  <strong>{formatMoney(fornecedor.valor_total)}</strong>
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {!selectedWinner && lowerTotalSupplier && (
+        <div className="enac-cotacao-winner">
+          <label>
+            <span>Justificativa da escolha</span>
+            <textarea value={justificativa} onChange={(event) => onJustificativaChange(event.target.value)} disabled={saving} />
+          </label>
+          <button type="button" onClick={() => onChoose(lowerTotalSupplier)} disabled={saving || !justificativa.trim()}>
+            Escolher menor total
+          </button>
+        </div>
+      )}
     </div>
   );
 }

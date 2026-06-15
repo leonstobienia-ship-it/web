@@ -378,7 +378,7 @@ Teste manual do frontend:
 
 ## V3.4B - Cotação e mapa comparativo
 
-A V3.4B implementa cotações locais por fornecedor e mapa comparativo por item para solicitações de compra em análise. A etapa não implementa pedido de compra, nota fiscal, financeiro, aprovação por alçada, SharePoint, Entra, automações ou `DELETE` físico.
+A V3.4B implementa a cotação local como processo agregado vinculado à solicitação de compra. A cotação nasce em `RASCUNHO`, recebe fornecedores participantes, registra respostas por item, gera mapa comparativo e permite escolher o fornecedor vencedor com justificativa. A etapa não implementa pedido de compra, nota fiscal, financeiro, aprovação por alçada, SharePoint, Entra, automações ou `DELETE` físico.
 
 Aplicar migrations locais:
 
@@ -409,20 +409,24 @@ GET    /cotacoes
 GET    /cotacoes/:id
 POST   /cotacoes
 PATCH  /cotacoes/:id
-PATCH  /cotacoes/:id/receber
-PATCH  /cotacoes/:id/desclassificar
-PATCH  /cotacoes/:id/selecionar
+PATCH  /cotacoes/:id/enviar-fornecedores
+PATCH  /cotacoes/:id/registrar-respostas
+PATCH  /cotacoes/:id/gerar-mapa
+PATCH  /cotacoes/:id/escolher-fornecedor
 PATCH  /cotacoes/:id/cancelar
-GET    /cotacoes/mapa-comparativo?solicitacao_compra_id=<uuid>
+GET    /cotacoes/mapa-comparativo?cotacao_id=<uuid>
+GET    /cotacoes/mapa-comparativo?solicitacao_id=<uuid>
 ```
 
 Fluxo V3.4B:
 
 ```text
-Solicitação EM_ANALISE -> registrar cotações RECEBIDA
-RECEBIDA -> SELECIONADA
-RASCUNHO | RECEBIDA -> DESCLASSIFICADA
-RASCUNHO | RECEBIDA -> CANCELADA
+Solicitação -> Cotação RASCUNHO
+RASCUNHO -> ENVIADA_FORNECEDORES
+ENVIADA_FORNECEDORES -> RESPOSTAS_RECEBIDAS
+RESPOSTAS_RECEBIDAS -> MAPA_GERADO
+MAPA_GERADO -> FORNECEDOR_ESCOLHIDO
+RASCUNHO | ENVIADA_FORNECEDORES | RESPOSTAS_RECEBIDAS | MAPA_GERADO -> CANCELADA
 ```
 
 Smoke test:
@@ -432,7 +436,7 @@ cd server
 npm.cmd run smoke:cotacoes
 ```
 
-O smoke cria uma solicitação local com marcador `DEV_LOCAL_V3_4B`, move para `EM_ANALISE`, registra duas cotações, valida o mapa comparativo e seleciona a cotação de menor total.
+O smoke cria uma solicitação local com marcador `DEV_LOCAL_V3_4B`, move para `EM_ANALISE`, cria uma cotação formal com dois fornecedores, registra respostas, gera o mapa comparativo e escolhe o fornecedor vencedor.
 
 Teste manual do frontend:
 
@@ -440,10 +444,11 @@ Teste manual do frontend:
 2. Rode `npm.cmd run web:dev`.
 3. Abra `http://127.0.0.1:5173`.
 4. Acesse `Cotações`.
-5. Selecione uma solicitação em `EM_ANALISE`.
-6. Registre cotações para fornecedores locais.
-7. Confira o mapa comparativo e o destaque de menor valor.
-8. Selecione ou desclassifique uma cotação.
+5. Selecione uma solicitação local.
+6. Crie uma cotação com fornecedores locais.
+7. Envie aos fornecedores e registre respostas.
+8. Gere o mapa comparativo.
+9. Escolha o fornecedor vencedor com justificativa.
 
 ## V2.3 - Integração SharePoint
 

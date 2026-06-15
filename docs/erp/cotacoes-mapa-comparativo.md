@@ -2,92 +2,136 @@
 
 ## Papel no ERP
 
-Cotacao e Mapa Comparativo compoem a segunda etapa do fluxo local de compras. Depois que uma Solicitacao de Compra entra em analise, fornecedores podem enviar propostas. O sistema registra os valores por item e monta um comparativo objetivo para apoiar a escolha.
+Cotacao e Mapa Comparativo compoem a etapa entre Solicitacao de Compra e Pedido de Compra. A V3.4B registra o processo de cotacao e apoia a decisao de fornecedor, mas nao gera pedido de compra.
 
 ## Fonte de dados
 
-Na V3.4B, a fonte e exclusivamente o PostgreSQL local:
+A fonte da V3.4B e exclusivamente o PostgreSQL local:
 
 ```text
 enac_erp_dev
 ```
 
-SharePoint permanece fora da operacao deste modulo. Documentos de proposta podem ser integrados em etapa futura, mas nenhum arquivo ou item SharePoint e criado nesta etapa.
+SharePoint permanece fora desta etapa. Documentos de proposta poderao ser vinculados em etapa futura, sem usar SharePoint como banco principal.
 
-## Entidades
+## Modelo operacional
 
 ### `cotacoes`
 
-Representa a proposta de um fornecedor para uma solicitacao.
+Representa o processo de cotacao criado a partir de uma solicitacao.
 
 Campos de negocio:
 
 - `company_id`
 - `solicitacao_compra_id`
-- `fornecedor_id`
 - `codigo`
-- `valor_total`
-- `prazo_entrega_dias`
-- `condicao_pagamento`
-- `frete`
-- `data_recebimento`
-- `validade_proposta`
+- `titulo`
+- `prazo_resposta`
 - `status`
 - `observacoes`
-- `motivo_desclassificacao`
-- `recomendada`
-- `justificativa`
-- `selecionada_em`
+- `fornecedor_id`, preenchido somente quando houver vencedor escolhido
+- `justificativa`, preenchida na escolha do fornecedor
 
-### `cotacoes_itens`
+### `cotacoes_fornecedores`
 
-Representa valores cotados por item da solicitacao.
+Representa fornecedores participantes e resposta consolidada.
 
 Campos de negocio:
 
 - `cotacao_id`
+- `fornecedor_id`
+- `status`
+- `valor_total`
+- `prazo_entrega_dias`
+- `condicao_pagamento`
+- `observacoes`
+
+### `cotacoes_itens`
+
+Representa valores por item e fornecedor.
+
+Campos de negocio:
+
+- `cotacao_id`
+- `cotacao_fornecedor_id`
 - `solicitacao_item_id`
 - `descricao`
 - `unidade`
 - `quantidade`
 - `valor_unitario`
 - `valor_total`
+- `marca_modelo`
+- `prazo_entrega_dias`
 - `observacoes`
-- `ordem`
+
+### `mapa_comparativo_cotacao`
+
+Representa a consolidacao do mapa e a decisao.
+
+Campos de negocio:
+
+- `cotacao_id`
+- `fornecedor_vencedor_id`
+- `criterio_decisao`
+- `justificativa`
+- `valor_vencedor`
 - `status`
 
-O campo `status` dos itens e tecnico e evita `DELETE` fisico durante edicao.
+## Fluxo
 
-## Regras atuais
+```text
+Solicitacao de Compra
+  -> Cotacao RASCUNHO
+  -> ENVIADA_FORNECEDORES
+  -> RESPOSTAS_RECEBIDAS
+  -> MAPA_GERADO
+  -> FORNECEDOR_ESCOLHIDO
+```
 
-- A solicitacao precisa estar em `EM_ANALISE`.
-- Cada fornecedor pode ter apenas uma cotacao por solicitacao.
-- A cotacao deve conter todos os itens ativos da solicitacao.
-- A quantidade vem da solicitacao; o usuario informa apenas valor unitario.
-- O total por item e calculado pela API.
-- O total da cotacao e a soma dos itens ativos.
-- Fornecedor deve estar ativo e pertencer a empresa.
-- Cotacoes `DESCLASSIFICADA`, `SELECIONADA` e `CANCELADA` nao podem ser editadas.
-- Selecionar cotacao nao cria pedido de compra.
-- Nao ha exclusao fisica.
+Cancelamento e permitido em:
+
+- `RASCUNHO`
+- `ENVIADA_FORNECEDORES`
+- `RESPOSTAS_RECEBIDAS`
+- `MAPA_GERADO`
 
 ## Mapa comparativo
 
-O mapa comparativo retorna:
+O mapa retorna:
 
-- dados da solicitacao;
-- resumo de cotacoes;
+- fornecedores participantes;
+- total por fornecedor;
+- prazo de entrega;
+- condicao de pagamento;
 - menor total;
-- cotacao selecionada;
-- lista de cotacoes;
-- comparativo de valores por item;
-- destaque de menor valor por item.
+- menor valor por item;
+- fornecedor vencedor, quando escolhido;
+- justificativa da escolha.
 
-Endpoint:
+Endpoint principal:
 
 ```text
-GET /cotacoes/mapa-comparativo?solicitacao_compra_id=<uuid>
+GET /cotacoes/mapa-comparativo?cotacao_id=<uuid>
 ```
+
+Tambem existe consulta por solicitacao:
+
+```text
+GET /cotacoes/mapa-comparativo?solicitacao_id=<uuid>
+```
+
+## Regras
+
+- A cotacao nasce de uma solicitacao de compra.
+- Solicitacao cancelada nao pode gerar cotacao.
+- Cotacao deve ter pelo menos 1 fornecedor.
+- Fornecedor deve estar ativo e pertencer a empresa.
+- Respostas devem preservar todos os itens ativos da solicitacao.
+- Quantidade vem da solicitacao.
+- Usuario informa valores unitarios; API calcula totais.
+- Escolher fornecedor exige justificativa.
+- Nenhum pedido de compra e criado na V3.4B.
+- Nao ha exclusao fisica.
 
 ## Fora do escopo V3.4B
 

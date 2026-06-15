@@ -919,6 +919,26 @@ textarea {
   color: #245a7f;
 }
 
+.enac-cotacao-status--enviada-fornecedores {
+  background: #fff3d9;
+  color: #7a5300;
+}
+
+.enac-cotacao-status--respostas-recebidas {
+  background: #e5f0fb;
+  color: #245a7f;
+}
+
+.enac-cotacao-status--mapa-gerado {
+  background: #eeeafd;
+  color: #563c8f;
+}
+
+.enac-cotacao-status--fornecedor-escolhido {
+  background: #e7f4ea;
+  color: #1f6b35;
+}
+
 .enac-cotacao-status--desclassificada {
   background: #fdece8;
   color: #97432b;
@@ -937,6 +957,110 @@ textarea {
 .enac-cotacao-best {
   background: #f3fbf4;
   color: #1f6b35;
+}
+
+.enac-cotacao-row-selected {
+  background: #f8fafc;
+}
+
+.enac-cotacao-detail,
+.enac-cotacao-map,
+.enac-cotacao-response-editor {
+  display: grid;
+  gap: 16px;
+}
+
+.enac-cotacao-suppliers {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.enac-cotacao-suppliers h4,
+.enac-cotacao-response-card h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.enac-cotacao-checkbox {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.enac-cotacao-checkbox input {
+  width: 16px;
+  height: 16px;
+}
+
+.enac-cotacao-response-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cotacao-response-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(80px, 0.4fr) minmax(120px, 0.6fr) minmax(140px, 0.8fr);
+  gap: 10px;
+  align-items: end;
+  padding: 10px;
+  border: 1px solid #e1e7ee;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.enac-cotacao-response-grid > span {
+  color: #607086;
+  font-size: 13px;
+}
+
+.enac-cotacao-response-grid label,
+.enac-cotacao-winner label {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-cotacao-response-grid label span,
+.enac-cotacao-winner label span {
+  color: #34475d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.enac-cotacao-response-grid input,
+.enac-cotacao-winner textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #17212f;
+}
+
+.enac-cotacao-winner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cotacao-winner button {
+  min-height: 40px;
 }
 
 .enac-cotacao-form {
@@ -1081,6 +1205,11 @@ code {
   }
 
   .enac-cotacoes-summary dl {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-cotacao-response-grid,
+  .enac-cotacao-winner {
     grid-template-columns: 1fr;
   }
 }

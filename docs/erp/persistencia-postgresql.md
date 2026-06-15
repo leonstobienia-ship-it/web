@@ -60,7 +60,8 @@ Migrations atuais:
 - `001_init_core`: fundacao do modelo ERP.
 - `002_cadastros_mestres`: campos e validacoes para clientes, fornecedores, centros de custo e obras.
 - `004_solicitacoes_compra_mvp`: cabecalho, itens, status e indices da Solicitacao de Compra MVP.
-- `005_cotacoes_mapa_comparativo`: cotacoes por fornecedor, itens cotados e mapa comparativo.
+- `005_cotacoes_mapa_comparativo`: primeira base de cotacoes e itens cotados.
+- `006_cotacoes_fluxo_formal_v34b`: cotacao agregada, fornecedores participantes e mapa comparativo formal.
 
 Nao ha migration `003` na V3.3C porque as restricoes de duplicidade dos cadastros mestres ja existem nas migrations anteriores.
 
@@ -153,37 +154,40 @@ O smoke cria registro local com marcador `DEV_LOCAL_V3_4A` e executa as transico
 
 ## Cotacao e Mapa Comparativo V3.4B
 
-A V3.4B libera escrita local apenas para cotacoes vinculadas a solicitacoes em `EM_ANALISE`:
+A V3.4B libera escrita local para o processo de cotacao vinculado a solicitacoes de compra:
 
-- proposta por fornecedor em `cotacoes`;
-- valores por item em `cotacoes_itens`;
-- mapa comparativo por item;
-- selecao local de cotacao;
-- edicao sem `DELETE` fisico.
+- cabecalho do processo em `cotacoes`;
+- fornecedores participantes em `cotacoes_fornecedores`;
+- valores por item e fornecedor em `cotacoes_itens`;
+- consolidacao e vencedor em `mapa_comparativo_cotacao`;
+- transicoes de status sem `DELETE` fisico.
 
 Endpoints:
 
 | Endpoint | Uso |
 |---|---|
-| `GET /cotacoes` | Lista cotacoes, com filtros opcionais por `solicitacao_compra_id`, `fornecedor_id` e `status` |
-| `GET /cotacoes/:id` | Detalhe com itens ativos |
-| `POST /cotacoes` | Registra cotacao recebida |
-| `PATCH /cotacoes/:id` | Atualiza cotacao editavel |
-| `PATCH /cotacoes/:id/receber` | `RASCUNHO -> RECEBIDA` |
-| `PATCH /cotacoes/:id/desclassificar` | Desclassifica cotacao recebida ou rascunho |
-| `PATCH /cotacoes/:id/selecionar` | Seleciona cotacao recebida no mapa |
-| `PATCH /cotacoes/:id/cancelar` | Cancela cotacao rascunho ou recebida |
-| `GET /cotacoes/mapa-comparativo?solicitacao_compra_id=<uuid>` | Retorna comparativo por item e resumo |
+| `GET /cotacoes` | Lista cotacoes, com filtros opcionais por `solicitacao_id` e `status` |
+| `GET /cotacoes/:id` | Detalhe com fornecedores e itens |
+| `POST /cotacoes` | Cria cotacao em `RASCUNHO` com fornecedores participantes |
+| `PATCH /cotacoes/:id` | Atualiza cabecalho editavel |
+| `PATCH /cotacoes/:id/enviar-fornecedores` | `RASCUNHO -> ENVIADA_FORNECEDORES` |
+| `PATCH /cotacoes/:id/registrar-respostas` | `ENVIADA_FORNECEDORES -> RESPOSTAS_RECEBIDAS` |
+| `PATCH /cotacoes/:id/gerar-mapa` | `RESPOSTAS_RECEBIDAS -> MAPA_GERADO` |
+| `PATCH /cotacoes/:id/escolher-fornecedor` | `MAPA_GERADO -> FORNECEDOR_ESCOLHIDO` |
+| `PATCH /cotacoes/:id/cancelar` | Cancela status permitido |
+| `GET /cotacoes/mapa-comparativo?cotacao_id=<uuid>` | Retorna comparativo por item e resumo |
+| `GET /cotacoes/mapa-comparativo?solicitacao_id=<uuid>` | Retorna o ultimo mapa da solicitacao |
 
 Status controlados:
 
 - `RASCUNHO`
-- `RECEBIDA`
-- `DESCLASSIFICADA`
-- `SELECIONADA`
+- `ENVIADA_FORNECEDORES`
+- `RESPOSTAS_RECEBIDAS`
+- `MAPA_GERADO`
+- `FORNECEDOR_ESCOLHIDO`
 - `CANCELADA`
 
-`SELECIONADA` nao cria pedido de compra. Pedido de compra fica para V3.4C.
+`FORNECEDOR_ESCOLHIDO` nao cria pedido de compra. Pedido de compra fica para V3.4C.
 
 Smoke test:
 
@@ -192,7 +196,7 @@ cd server
 npm.cmd run smoke:cotacoes
 ```
 
-O smoke cria dados locais com marcador `DEV_LOCAL_V3_4B`, registra duas cotacoes, valida o mapa comparativo e seleciona a cotacao de menor total.
+O smoke cria dados locais com marcador `DEV_LOCAL_V3_4B`, cria uma cotacao formal com dois fornecedores, registra respostas, valida o mapa comparativo e escolhe o fornecedor vencedor.
 
 ## Estabilizacao V3.3C
 

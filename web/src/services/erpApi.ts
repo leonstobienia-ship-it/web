@@ -179,84 +179,142 @@ export interface SolicitacaoCompraFilters {
   obra_id?: string;
 }
 
-export type CotacaoStatus = 'RASCUNHO' | 'RECEBIDA' | 'DESCLASSIFICADA' | 'SELECIONADA' | 'CANCELADA';
+export type CotacaoStatus =
+  | 'RASCUNHO'
+  | 'ENVIADA_FORNECEDORES'
+  | 'RESPOSTAS_RECEBIDAS'
+  | 'MAPA_GERADO'
+  | 'FORNECEDOR_ESCOLHIDO'
+  | 'CANCELADA';
+
+export type CotacaoFornecedorStatus = 'CONVIDADO' | 'RESPOSTA_RECEBIDA' | 'DESCLASSIFICADO' | 'ESCOLHIDO' | 'CANCELADO';
 
 export interface CotacaoItemApi {
   id: string;
   cotacao_id: string;
+  cotacao_fornecedor_id?: string | null;
+  fornecedor_id?: string | null;
   solicitacao_item_id: string;
   descricao: string;
   unidade: string;
   quantidade: string | number;
   valor_unitario: string | number;
   valor_total: string | number;
+  marca_modelo?: string | null;
+  prazo_entrega_dias?: string | number | null;
   observacoes?: string | null;
   ordem: number;
   created_at: string;
   updated_at: string;
 }
 
+export interface CotacaoFornecedorApi {
+  id: string;
+  cotacao_id: string;
+  fornecedor_id: string;
+  fornecedor_nome: string;
+  fornecedor_cpf_cnpj?: string | null;
+  status: CotacaoFornecedorStatus;
+  valor_total: string | number;
+  prazo_entrega_dias?: string | number | null;
+  condicao_pagamento?: string | null;
+  observacoes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CotacaoMapaApi {
+  id: string;
+  cotacao_id: string;
+  fornecedor_vencedor_id?: string | null;
+  criterio_decisao?: string | null;
+  justificativa?: string | null;
+  valor_vencedor?: string | number | null;
+  status: string;
+}
+
 export interface CotacaoApi {
   id: string;
   company_id: string;
   solicitacao_compra_id: string;
-  fornecedor_id: string;
+  solicitacao_id?: string;
+  fornecedor_id?: string | null;
   codigo: string;
+  titulo: string;
   valor_total: string | number;
-  prazo_entrega?: string | null;
-  prazo_entrega_dias?: string | number | null;
-  condicao_pagamento?: string | null;
-  frete?: string | null;
-  recomendada: boolean;
+  prazo_resposta?: string | null;
+  recomendada?: boolean;
   justificativa?: string | null;
-  data_recebimento: string;
-  validade_proposta?: string | null;
   status: CotacaoStatus;
   observacoes?: string | null;
-  motivo_desclassificacao?: string | null;
-  selecionada_em?: string | null;
   created_at: string;
   updated_at: string;
-  fornecedor_nome?: string | null;
-  fornecedor_cpf_cnpj?: string | null;
   solicitacao_codigo?: string | null;
   solicitacao_titulo?: string | null;
+  fornecedores_count?: number;
   itens_count?: number;
+  fornecedor_vencedor_id?: string | null;
+  fornecedor_vencedor_nome?: string | null;
+  mapa?: CotacaoMapaApi | null;
+  fornecedores?: CotacaoFornecedorApi[];
   itens?: CotacaoItemApi[];
 }
 
-export interface CotacaoItemPayload {
+export interface CotacaoFornecedorPayload {
+  fornecedor_id: string;
+}
+
+export interface CotacaoCreatePayload {
+  company_id?: string;
+  solicitacao_id?: string;
+  solicitacao_compra_id?: string;
+  titulo: string;
+  prazo_resposta?: string | null;
+  observacoes?: string | null;
+  fornecedores: CotacaoFornecedorPayload[];
+}
+
+export interface CotacaoRespostaItemPayload {
   solicitacao_item_id: string;
   valor_unitario: number;
+  marca_modelo?: string | null;
+  prazo_entrega_dias?: number | null;
   observacoes?: string | null;
 }
 
-export interface CotacaoPayload {
-  company_id?: string;
-  solicitacao_compra_id: string;
+export interface CotacaoRespostaFornecedorPayload {
   fornecedor_id: string;
-  data_recebimento: string;
-  validade_proposta?: string | null;
   prazo_entrega_dias?: number | null;
   condicao_pagamento?: string | null;
-  frete?: string | null;
   observacoes?: string | null;
-  itens: CotacaoItemPayload[];
+  itens: CotacaoRespostaItemPayload[];
+}
+
+export interface CotacaoRegistrarRespostasPayload {
+  fornecedores: CotacaoRespostaFornecedorPayload[];
+}
+
+export interface CotacaoEscolherFornecedorPayload {
+  fornecedor_id: string;
+  criterio_decisao?: string | null;
+  justificativa: string;
 }
 
 export interface CotacaoFilters {
+  solicitacao_id?: string;
   solicitacao_compra_id?: string;
-  fornecedor_id?: string;
   status?: CotacaoStatus | '';
 }
 
 export interface MapaComparativoItemQuoteApi {
-  cotacao_id: string;
-  cotacao_codigo?: string | null;
+  cotacao_fornecedor_id: string;
+  fornecedor_id: string;
   fornecedor_nome?: string | null;
-  status?: CotacaoStatus | null;
+  status?: CotacaoFornecedorStatus | null;
   valor_unitario: string | number;
   valor_total: string | number;
+  marca_modelo?: string | null;
+  prazo_entrega_dias?: string | number | null;
   melhor_valor: boolean;
 }
 
@@ -266,11 +324,12 @@ export interface MapaComparativoItemApi {
   unidade: string;
   quantidade: string | number;
   ordem: number;
-  melhor_cotacao_id?: string | null;
+  melhor_fornecedor_id?: string | null;
   comparativos: MapaComparativoItemQuoteApi[];
 }
 
 export interface MapaComparativoApi {
+  cotacao: CotacaoApi;
   solicitacao: {
     id: string;
     company_id: string;
@@ -283,12 +342,13 @@ export interface MapaComparativoApi {
     centro_custo_nome?: string | null;
   };
   resumo: {
-    total_cotacoes: number;
-    total_cotacoes_comparaveis: number;
-    cotacao_menor_total?: CotacaoApi | null;
-    cotacao_selecionada?: CotacaoApi | null;
+    total_fornecedores: number;
+    total_respostas: number;
+    fornecedor_menor_total?: CotacaoFornecedorApi | null;
+    fornecedor_vencedor?: CotacaoFornecedorApi | null;
+    mapa?: CotacaoMapaApi | null;
   };
-  cotacoes: CotacaoApi[];
+  fornecedores: CotacaoFornecedorApi[];
   itens: MapaComparativoItemApi[];
 }
 
@@ -401,35 +461,44 @@ export const erpApi = {
     list: async (filters: CotacaoFilters = {}): Promise<CotacaoApi[]> =>
       (await request<ApiListResponse<CotacaoApi>>(
         `/cotacoes${buildQueryString({
-          solicitacao_compra_id: filters.solicitacao_compra_id,
-          fornecedor_id: filters.fornecedor_id,
+          solicitacao_id: filters.solicitacao_id || filters.solicitacao_compra_id,
           status: filters.status || undefined
         })}`
       )).data,
     get: async (id: string): Promise<CotacaoApi> =>
       (await request<ApiItemResponse<CotacaoApi>>(`/cotacoes/${id}`)).data,
-    create: async (payload: CotacaoPayload): Promise<CotacaoApi> =>
+    create: async (payload: CotacaoCreatePayload): Promise<CotacaoApi> =>
       (await request<ApiItemResponse<CotacaoApi>>('/cotacoes', {
         method: 'POST',
         body: JSON.stringify(payload)
       })).data,
-    update: async (id: string, payload: Partial<CotacaoPayload>): Promise<CotacaoApi> =>
+    update: async (id: string, payload: Partial<CotacaoCreatePayload>): Promise<CotacaoApi> =>
       (await request<ApiItemResponse<CotacaoApi>>(`/cotacoes/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data,
     transition: async (
       id: string,
-      action: 'receber' | 'desclassificar' | 'selecionar' | 'cancelar',
-      payload: Record<string, string | null> = {}
+      action: 'enviar-fornecedores' | 'registrar-respostas' | 'gerar-mapa' | 'escolher-fornecedor' | 'cancelar',
+      payload: Record<string, unknown> = {}
     ): Promise<CotacaoApi> =>
       (await request<ApiItemResponse<CotacaoApi>>(`/cotacoes/${id}/${action}`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data,
-    mapaComparativo: async (solicitacaoCompraId: string): Promise<MapaComparativoApi> =>
+    registrarRespostas: async (id: string, payload: CotacaoRegistrarRespostasPayload): Promise<CotacaoApi> =>
+      (await request<ApiItemResponse<CotacaoApi>>(`/cotacoes/${id}/registrar-respostas`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    escolherFornecedor: async (id: string, payload: CotacaoEscolherFornecedorPayload): Promise<CotacaoApi> =>
+      (await request<ApiItemResponse<CotacaoApi>>(`/cotacoes/${id}/escolher-fornecedor`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    mapaComparativo: async (id: string, mode: 'cotacao' | 'solicitacao' = 'cotacao'): Promise<MapaComparativoApi> =>
       (await request<ApiItemResponse<MapaComparativoApi>>(
-        `/cotacoes/mapa-comparativo${buildQueryString({ solicitacao_compra_id: solicitacaoCompraId })}`
+        `/cotacoes/mapa-comparativo${buildQueryString(mode === 'cotacao' ? { cotacao_id: id } : { solicitacao_id: id })}`
       )).data
   }
 };
