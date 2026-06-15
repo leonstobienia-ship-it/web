@@ -62,6 +62,7 @@ Migrations atuais:
 - `004_solicitacoes_compra_mvp`: cabecalho, itens, status e indices da Solicitacao de Compra MVP.
 - `005_cotacoes_mapa_comparativo`: primeira base de cotacoes e itens cotados.
 - `006_cotacoes_fluxo_formal_v34b`: cotacao agregada, fornecedores participantes e mapa comparativo formal.
+- `007_pedidos_compra_mvp`: pedido de compra MVP e itens herdados da cotacao vencedora.
 
 Nao ha migration `003` na V3.3C porque as restricoes de duplicidade dos cadastros mestres ja existem nas migrations anteriores.
 
@@ -197,6 +198,50 @@ npm.cmd run smoke:cotacoes
 ```
 
 O smoke cria dados locais com marcador `DEV_LOCAL_V3_4B`, cria uma cotacao formal com dois fornecedores, registra respostas, valida o mapa comparativo e escolhe o fornecedor vencedor.
+
+## Pedido de Compra V3.4C
+
+A V3.4C libera escrita local para Pedido de Compra gerado a partir de cotacao com fornecedor vencedor:
+
+- cabecalho em `pedidos_compra`;
+- itens em `pedidos_compra_itens`;
+- heranca de solicitacao, cotacao, fornecedor, obra e centro de custo;
+- bloqueio de pedido ativo duplicado por cotacao;
+- transicoes de status sem `DELETE` fisico.
+
+Endpoints:
+
+| Endpoint | Uso |
+|---|---|
+| `GET /pedidos-compra` | Lista pedidos, com filtros opcionais por `status`, `fornecedor_id`, `obra_id` e `centro_custo_id` |
+| `GET /pedidos-compra/:id` | Detalhe com itens herdados |
+| `POST /pedidos-compra/gerar-da-cotacao` | Gera pedido `RASCUNHO` a partir de cotacao vencedora |
+| `PATCH /pedidos-compra/:id` | Atualiza campos basicos enquanto `RASCUNHO` |
+| `PATCH /pedidos-compra/:id/emitir` | `RASCUNHO -> EMITIDO` |
+| `PATCH /pedidos-compra/:id/enviar-fornecedor` | `EMITIDO -> ENVIADO_FORNECEDOR` |
+| `PATCH /pedidos-compra/:id/confirmar` | `ENVIADO_FORNECEDOR -> CONFIRMADO` |
+| `PATCH /pedidos-compra/:id/cancelar` | Cancela status permitido |
+
+Status controlados:
+
+- `RASCUNHO`
+- `EMITIDO`
+- `ENVIADO_FORNECEDOR`
+- `CONFIRMADO`
+- `PARCIALMENTE_RECEBIDO`
+- `RECEBIDO`
+- `CANCELADO`
+
+`PARCIALMENTE_RECEBIDO` e `RECEBIDO` ficam reservados para etapa futura. A V3.4C nao implementa recebimento, nota fiscal, contas a pagar, programacao bancaria ou pagamento.
+
+Smoke test:
+
+```powershell
+cd server
+npm.cmd run smoke:pedidos
+```
+
+O smoke cria dados locais com marcador `DEV_LOCAL_V3_4C`, gera pedido a partir de cotacao vencedora, valida itens herdados, executa transicoes ate `CONFIRMADO` e valida duplicidade com `409`.
 
 ## Estabilizacao V3.3C
 

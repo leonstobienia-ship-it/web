@@ -10,6 +10,7 @@
     "smoke:cadastros": "npm run build && node dist/scripts/smokeCadastros.js",
     "smoke:solicitacoes": "npm run build && node dist/scripts/smokeSolicitacoesCompra.js",
     "smoke:cotacoes": "npm run build && node dist/scripts/smokeCotacoes.js",
+    "smoke:pedidos": "npm run build && node dist/scripts/smokePedidosCompra.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

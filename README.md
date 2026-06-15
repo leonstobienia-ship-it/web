@@ -450,6 +450,76 @@ Teste manual do frontend:
 8. Gere o mapa comparativo.
 9. Escolha o fornecedor vencedor com justificativa.
 
+## V3.4C - Pedido de Compra MVP
+
+A V3.4C implementa Pedido de Compra local gerado a partir de cotação formal com fornecedor vencedor escolhido. A etapa não implementa nota fiscal, contas a pagar, programação bancária, pagamento, SharePoint, Entra, automações ou `DELETE` físico.
+
+Aplicar migrations locais:
+
+```powershell
+docker compose up -d postgres
+cd server
+npm.cmd run migrate
+```
+
+Rodar backend:
+
+```powershell
+cd server
+npm.cmd run build
+npm.cmd start
+```
+
+Rodar frontend:
+
+```powershell
+npm.cmd run web:dev
+```
+
+Endpoints de pedidos:
+
+```text
+GET    /pedidos-compra
+GET    /pedidos-compra/:id
+POST   /pedidos-compra/gerar-da-cotacao
+PATCH  /pedidos-compra/:id
+PATCH  /pedidos-compra/:id/emitir
+PATCH  /pedidos-compra/:id/enviar-fornecedor
+PATCH  /pedidos-compra/:id/confirmar
+PATCH  /pedidos-compra/:id/cancelar
+```
+
+Fluxo V3.4C:
+
+```text
+Cotação FORNECEDOR_ESCOLHIDO -> Pedido RASCUNHO
+RASCUNHO -> EMITIDO
+EMITIDO -> ENVIADO_FORNECEDOR
+ENVIADO_FORNECEDOR -> CONFIRMADO
+RASCUNHO | EMITIDO | ENVIADO_FORNECEDOR -> CANCELADO
+```
+
+Smoke test:
+
+```powershell
+cd server
+npm.cmd run smoke:pedidos
+```
+
+O smoke cria um cenário local com marcador `DEV_LOCAL_V3_4C`, gera pedido a partir de cotação com fornecedor vencedor, valida itens herdados, executa transições até `CONFIRMADO` e confirma bloqueio de duplicidade com HTTP `409`.
+
+Teste manual do frontend:
+
+1. Suba PostgreSQL local e backend.
+2. Rode `npm.cmd run web:dev`.
+3. Abra `http://127.0.0.1:5173`.
+4. Acesse `Pedidos de Compra`.
+5. Gere pedido a partir de cotação com fornecedor vencedor.
+6. Confira itens herdados e valor total.
+7. Edite dados básicos enquanto `RASCUNHO`.
+8. Emita, envie ao fornecedor e confirme.
+9. Teste o bloqueio de duplicidade e o cancelamento em status permitido.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

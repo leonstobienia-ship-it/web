@@ -1063,6 +1063,107 @@ textarea {
   min-height: 40px;
 }
 
+.enac-pedidos-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 20px;
+  align-items: start;
+}
+
+.enac-pedidos-main,
+.enac-pedidos-panel,
+.enac-pedido-detail {
+  display: grid;
+  gap: 16px;
+}
+
+.enac-pedido-form {
+  position: sticky;
+  top: 18px;
+}
+
+.enac-pedidos-table,
+.enac-pedidos-itens-table {
+  min-width: 920px;
+}
+
+.enac-pedido-row-selected {
+  background: #f8fafc;
+}
+
+.enac-pedido-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.enac-pedido-status--rascunho {
+  background: #f1f3f5;
+  color: #566170;
+}
+
+.enac-pedido-status--emitido,
+.enac-pedido-status--enviado-fornecedor {
+  background: #e5f0fb;
+  color: #245a7f;
+}
+
+.enac-pedido-status--confirmado {
+  background: #e7f4ea;
+  color: #1f6b35;
+}
+
+.enac-pedido-status--parcialmente-recebido,
+.enac-pedido-status--recebido {
+  background: #eeeafd;
+  color: #563c8f;
+}
+
+.enac-pedido-status--cancelado {
+  background: #eceff3;
+  color: #68717d;
+}
+
+.enac-pedido-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.enac-pedido-meta div,
+.enac-pedido-cotacao-preview {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #e1e7ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-pedido-meta span,
+.enac-pedido-cotacao-preview p {
+  margin: 0;
+  color: #607086;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.enac-pedido-actions {
+  justify-content: flex-start;
+}
+
+.enac-pedido-edit-form {
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
 .enac-cotacao-form {
   position: sticky;
   top: 18px;
@@ -1168,6 +1269,10 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .enac-pedidos-layout {
+    grid-template-columns: 1fr;
+  }
+
   .enac-solicitacoes-filters {
     grid-template-columns: 1fr;
   }
@@ -1184,11 +1289,19 @@ code {
     position: static;
   }
 
+  .enac-pedido-form {
+    position: static;
+  }
+
   .enac-solicitacao-span-2 {
     grid-column: auto;
   }
 
   .enac-solicitacao-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-pedido-meta {
     grid-template-columns: 1fr;
   }
 

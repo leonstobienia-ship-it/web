@@ -352,6 +352,90 @@ export interface MapaComparativoApi {
   itens: MapaComparativoItemApi[];
 }
 
+export type PedidoCompraStatus =
+  | 'RASCUNHO'
+  | 'EMITIDO'
+  | 'ENVIADO_FORNECEDOR'
+  | 'CONFIRMADO'
+  | 'PARCIALMENTE_RECEBIDO'
+  | 'RECEBIDO'
+  | 'CANCELADO';
+
+export interface PedidoCompraItemApi {
+  id: string;
+  pedido_id: string;
+  solicitacao_item_id?: string | null;
+  cotacao_item_id?: string | null;
+  descricao: string;
+  unidade: string;
+  quantidade: string | number;
+  valor_unitario: string | number;
+  valor_total: string | number;
+  observacoes?: string | null;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PedidoCompraApi {
+  id: string;
+  company_id: string;
+  solicitacao_id?: string | null;
+  solicitacao_compra_id?: string | null;
+  cotacao_id?: string | null;
+  fornecedor_id: string;
+  obra_id?: string | null;
+  centro_custo_id?: string | null;
+  codigo: string;
+  numero?: string | null;
+  titulo: string;
+  status: PedidoCompraStatus;
+  data_emissao?: string | null;
+  data_entrega_prevista?: string | null;
+  condicao_pagamento?: string | null;
+  valor_total: string | number;
+  observacoes?: string | null;
+  created_at: string;
+  updated_at: string;
+  solicitacao_codigo?: string | null;
+  solicitacao_titulo?: string | null;
+  cotacao_codigo?: string | null;
+  cotacao_titulo?: string | null;
+  fornecedor_nome?: string | null;
+  fornecedor_cpf_cnpj?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  itens_count?: number;
+  itens?: PedidoCompraItemApi[];
+}
+
+export interface PedidoCompraFilters {
+  status?: PedidoCompraStatus | '';
+  fornecedor_id?: string;
+  obra_id?: string;
+  centro_custo_id?: string;
+}
+
+export interface GerarPedidoCompraPayload {
+  company_id?: string;
+  cotacao_id: string;
+  titulo?: string | null;
+  data_emissao?: string | null;
+  data_entrega_prevista?: string | null;
+  condicao_pagamento?: string | null;
+  observacoes?: string | null;
+}
+
+export interface PedidoCompraUpdatePayload {
+  titulo?: string;
+  data_emissao?: string | null;
+  data_entrega_prevista?: string | null;
+  condicao_pagamento?: string | null;
+  observacoes?: string | null;
+}
+
 export type CadastroPayload = Record<string, string | number | null | undefined>;
 
 const apiBaseUrl = (import.meta.env.VITE_ENAC_ERP_API_BASE_URL || 'http://127.0.0.1:3333').replace(/\/+$/, '');
@@ -500,5 +584,35 @@ export const erpApi = {
       (await request<ApiItemResponse<MapaComparativoApi>>(
         `/cotacoes/mapa-comparativo${buildQueryString(mode === 'cotacao' ? { cotacao_id: id } : { solicitacao_id: id })}`
       )).data
+  },
+  pedidosCompra: {
+    list: async (filters: PedidoCompraFilters = {}): Promise<PedidoCompraApi[]> =>
+      (await request<ApiListResponse<PedidoCompraApi>>(
+        `/pedidos-compra${buildQueryString({
+          status: filters.status || undefined,
+          fornecedor_id: filters.fornecedor_id,
+          obra_id: filters.obra_id,
+          centro_custo_id: filters.centro_custo_id
+        })}`
+      )).data,
+    get: async (id: string): Promise<PedidoCompraApi> =>
+      (await request<ApiItemResponse<PedidoCompraApi>>(`/pedidos-compra/${id}`)).data,
+    gerarDaCotacao: async (payload: GerarPedidoCompraPayload): Promise<PedidoCompraApi> =>
+      (await request<ApiItemResponse<PedidoCompraApi>>('/pedidos-compra/gerar-da-cotacao', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: PedidoCompraUpdatePayload): Promise<PedidoCompraApi> =>
+      (await request<ApiItemResponse<PedidoCompraApi>>(`/pedidos-compra/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    transition: async (
+      id: string,
+      action: 'emitir' | 'enviar-fornecedor' | 'confirmar' | 'cancelar'
+    ): Promise<PedidoCompraApi> =>
+      (await request<ApiItemResponse<PedidoCompraApi>>(`/pedidos-compra/${id}/${action}`, {
+        method: 'PATCH'
+      })).data
   }
 };

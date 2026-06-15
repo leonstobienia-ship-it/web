@@ -7,6 +7,7 @@ import { handleEmpresas } from './modules/empresas/empresas.routes.js';
 import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.js';
 import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.routes.js';
 import { handleObras } from './modules/obras/obras.routes.js';
+import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
 import { handleUsuarios } from './modules/usuarios/usuarios.routes.js';
 import { sendNoContent } from './http.js';
@@ -27,7 +28,8 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/obras', handler: handleObras },
   { basePath: '/centros-custo', handler: handleCentrosCusto },
   { basePath: '/solicitacoes-compra', handler: handleSolicitacoesCompra },
-  { basePath: '/cotacoes', handler: handleCotacoes }
+  { basePath: '/cotacoes', handler: handleCotacoes },
+  { basePath: '/pedidos-compra', handler: handlePedidosCompra }
 ];
 
 const findHandler = (pathname: string): RouteHandler | undefined => {
