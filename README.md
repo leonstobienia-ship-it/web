@@ -36,6 +36,88 @@ Na correcao pos-validacao da V3.0C, a aba `Requisições` passou a carregar os i
 
 Na V3.0D, a mesma correcao de leitura apos reload foi estendida para as listas cadastrais ja exibidas na interface: Clientes passam a ser derivados das obras reais da `Lista 01 - Controle de Obras ENAC`, Obras usam a Lista 01 real e Fornecedores usam a `Lista 06 - Fornecedores e Prestadores`. Administracao, usuarios, alcadas, historico e requisicoes mantem a leitura SharePoint ja existente. Nao houve nova escrita, alteracao de permissao, alteracao de listas/colunas, Power Automate ou criacao de novas telas.
 
+## V3.2 - Fundação Operacional ERP
+
+A V3.2 cria a fundação técnica para sair do blueprint V3.1 e preparar o ERP ENAC real com React, Node.js, PostgreSQL, Entra ID e SharePoint documental. A etapa não substitui o sistema atual, não executa escrita real no SharePoint, não altera permissões Entra, não cria automações e não aplica migration em produção.
+
+Objetivo da V3.2:
+
+- Separar a futura arquitetura modular do frontend.
+- Criar backend mínimo em Node.js/TypeScript.
+- Criar modelo inicial PostgreSQL em migration versionada.
+- Criar modelos TypeScript iniciais das entidades do ERP.
+- Documentar diagnóstico, módulos MVP, modelo de dados e checklist de aceite.
+
+Estrutura criada:
+
+```text
+web/src/app
+web/src/components
+web/src/features
+web/src/layouts
+web/src/pages
+web/src/services
+web/src/types
+web/src/utils
+server/src
+server/src/config
+server/src/db
+server/src/auth
+server/src/modules
+database/migrations
+database/schema
+docs/erp
+tests/erp
+```
+
+Frontend:
+
+```powershell
+npm run web:dev
+npm run web:build
+```
+
+Backend:
+
+```powershell
+cd server
+npm install
+npm run build
+npm start
+```
+
+Endpoint inicial:
+
+```http
+GET /health
+```
+
+Retorno esperado:
+
+```json
+{
+  "status": "ok",
+  "service": "enac-erp-api",
+  "timestamp": "ISO-8601",
+  "environment": "development"
+}
+```
+
+PostgreSQL:
+
+- Migration inicial: `database/migrations/001_init_core.sql`.
+- Documentação de schema: `database/schema/v3.2-modelo-inicial.md`.
+- Status: preparado para ambiente local/controlado, ainda não aplicado em produção.
+- A V3.2 não exige `DATABASE_URL`; o backend apenas informa se a variável está configurada.
+
+Próximos passos:
+
+- Extrair gradualmente o portal V3.1 de `web/src/main.tsx` para páginas/layouts/features.
+- Criar ambiente PostgreSQL local seguro e validar a migration.
+- Definir RLS, auditoria append-only e outbox antes de integrações externas.
+- Implementar endpoints reais de cadastros mestres.
+- Planejar migração controlada das listas/planilhas existentes sem interromper a operação atual.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
