@@ -53,7 +53,12 @@ npm run migrate
 npm run seed
 ```
 
-`migrate` executa `database/migrations/001_init_core.sql` apenas se `schema_migrations` ainda nao tiver `001_init_core`.
+`migrate` executa todas as migrations `database/migrations/*.sql` em ordem, registrando cada uma em `schema_migrations`.
+
+Migrations atuais:
+
+- `001_init_core`: fundacao do modelo ERP.
+- `002_cadastros_mestres`: campos e validacoes para clientes, fornecedores, centros de custo e obras.
 
 `seed` cria:
 
@@ -65,7 +70,7 @@ npm run seed
 - obra dev;
 - centros de custo dev.
 
-## Endpoints somente leitura
+## Endpoints V3.3A somente leitura
 
 | Endpoint | Origem |
 |---|---|
@@ -77,3 +82,24 @@ npm run seed
 | `GET /centros-custo` | `centros_custo` |
 
 Escrita via API permanece fora do escopo da V3.3A.
+
+## Escrita local V3.3B
+
+A V3.3B libera escrita apenas para cadastros mestres no PostgreSQL local:
+
+- clientes;
+- fornecedores;
+- centros de custo;
+- obras.
+
+Operacoes permitidas:
+
+- `GET`
+- `POST`
+- `PATCH`
+- `PATCH /:id/inativar`
+- `PATCH /:id/reativar`
+
+Nao existe `DELETE` fisico. Inativacao e reativacao sao feitas por `status`.
+
+As queries usam parametros do `pg` e o backend valida campos obrigatorios, UUID, `status`, `tipo_pessoa`, UF, datas e numeros antes de gravar.

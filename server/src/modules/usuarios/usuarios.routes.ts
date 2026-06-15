@@ -1,10 +1,10 @@
 import type { ServerResponse } from 'node:http';
 import { query } from '../../db/client.js';
-import { sendJson } from '../health/health.routes.js';
+import { methodNotAllowed, sendJson } from '../../http.js';
 
 export const handleUsuarios = async (method: string, res: ServerResponse): Promise<void> => {
   if (method !== 'GET') {
-    sendJson(res, 405, { status: 'method_not_allowed', allowed: ['GET'] });
+    methodNotAllowed(res, ['GET']);
     return;
   }
 
@@ -18,6 +18,6 @@ export const handleUsuarios = async (method: string, res: ServerResponse): Promi
 
     sendJson(res, 200, { data: result.rows });
   } catch (error) {
-    sendJson(res, 503, { status: 'error', message: error instanceof Error ? error.message : String(error) });
+    sendJson(res, 503, { status: 'error', code: 'database_error', message: error instanceof Error ? error.message : String(error) });
   }
 };

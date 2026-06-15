@@ -1,22 +1,34 @@
-import type { ServerResponse } from 'node:http';
-import { query } from '../../db/client.js';
-import { sendJson } from '../health/health.routes.js';
+import { createMasterCadastroHandler } from '../common/masterCrud.js';
 
-export const handleCentrosCusto = async (method: string, res: ServerResponse): Promise<void> => {
-  if (method !== 'GET') {
-    sendJson(res, 405, { status: 'method_not_allowed', allowed: ['GET'] });
-    return;
-  }
-
-  try {
-    const result = await query(`
-      select id, company_id, codigo, nome, conta_analitica, status, created_at, updated_at
-      from centros_custo
-      order by codigo
-    `);
-
-    sendJson(res, 200, { data: result.rows });
-  } catch (error) {
-    sendJson(res, 503, { status: 'error', message: error instanceof Error ? error.message : String(error) });
-  }
-};
+export const handleCentrosCusto = createMasterCadastroHandler({
+  entityName: 'Centro de custo',
+  table: 'centros_custo',
+  basePath: '/centros-custo',
+  selectColumns: [
+    'id',
+    'company_id',
+    'codigo',
+    'nome',
+    'tipo',
+    'conta_analitica',
+    'observacoes',
+    'status',
+    'created_at',
+    'updated_at'
+  ],
+  fields: [
+    { column: 'company_id', required: true, kind: 'uuid' },
+    { column: 'codigo', required: true },
+    { column: 'nome', required: true },
+    {
+      column: 'tipo',
+      required: true,
+      kind: 'enum',
+      enumValues: ['administrativo', 'obra', 'operacional', 'financeiro', 'comercial']
+    },
+    { column: 'conta_analitica' },
+    { column: 'observacoes' },
+    { column: 'status', kind: 'status' }
+  ],
+  orderBy: 'codigo'
+});

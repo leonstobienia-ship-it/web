@@ -49,18 +49,23 @@ export interface Usuario extends RegistroAuditavel {
 
 export interface Cliente extends RegistroAuditavel {
   nome: string;
+  tipoPessoa?: 'fisica' | 'juridica';
   cpfCnpj?: string;
   email?: string;
   telefone?: string;
+  endereco?: string;
   responsavel?: string;
   observacoes?: string;
 }
 
 export interface Fornecedor extends RegistroAuditavel {
   nome: string;
+  tipoPessoa?: 'fisica' | 'juridica';
   cpfCnpj?: string;
+  categoria?: string;
   email?: string;
   telefone?: string;
+  endereco?: string;
   contato?: string;
   pix?: string;
   dadosBancarios?: string;
@@ -71,8 +76,10 @@ export interface CentroCusto extends RegistroAuditavel {
   codigo: string;
   nome: string;
   empresaId: UUID;
+  tipo?: 'administrativo' | 'obra' | 'operacional' | 'financeiro' | 'comercial';
   siteId?: UUID;
   contaAnalitica?: string;
+  observacoes?: string;
 }
 
 export interface Obra extends RegistroAuditavel {
@@ -83,9 +90,14 @@ export interface Obra extends RegistroAuditavel {
   centroCustoId?: UUID;
   siteId?: UUID;
   endereco?: string;
+  cidade?: string;
+  uf?: string;
+  responsavel?: string;
   gestorId?: UUID;
   dataInicioPrevista?: string;
   dataFimPrevista?: string;
+  valorPrevisto?: number;
+  observacoes?: string;
 }
 
 export interface ContratoCliente extends RegistroAuditavel {

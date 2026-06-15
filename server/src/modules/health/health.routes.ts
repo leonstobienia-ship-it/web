@@ -1,16 +1,16 @@
 import type { ServerResponse } from 'node:http';
 import { readEnv } from '../../config/env.js';
 import { getDatabaseState, query } from '../../db/client.js';
+import { methodNotAllowed, sendJson } from '../../http.js';
 
-export const sendJson = (res: ServerResponse, statusCode: number, payload: unknown): void => {
-  res.writeHead(statusCode, {
-    'content-type': 'application/json; charset=utf-8',
-    'cache-control': 'no-store'
-  });
-  res.end(JSON.stringify(payload));
-};
+export { sendJson } from '../../http.js';
 
-export const handleHealth = (_method: string, res: ServerResponse): void => {
+export const handleHealth = (method: string, res: ServerResponse): void => {
+  if (method !== 'GET') {
+    methodNotAllowed(res, ['GET']);
+    return;
+  }
+
   const env = readEnv();
 
   sendJson(res, 200, {
@@ -22,7 +22,12 @@ export const handleHealth = (_method: string, res: ServerResponse): void => {
   });
 };
 
-export const handleHealthDb = async (_method: string, res: ServerResponse): Promise<void> => {
+export const handleHealthDb = async (method: string, res: ServerResponse): Promise<void> => {
+  if (method !== 'GET') {
+    methodNotAllowed(res, ['GET']);
+    return;
+  }
+
   try {
     const result = await query<{ ok: number; database_name: string }>('select 1 as ok, current_database() as database_name');
 

@@ -1,22 +1,41 @@
-import type { ServerResponse } from 'node:http';
-import { query } from '../../db/client.js';
-import { sendJson } from '../health/health.routes.js';
+import { createMasterCadastroHandler } from '../common/masterCrud.js';
 
-export const handleFornecedores = async (method: string, res: ServerResponse): Promise<void> => {
-  if (method !== 'GET') {
-    sendJson(res, 405, { status: 'method_not_allowed', allowed: ['GET'] });
-    return;
-  }
-
-  try {
-    const result = await query(`
-      select id, company_id, nome, cpf_cnpj, email, telefone, contato, pix, observacoes, status, created_at, updated_at
-      from fornecedores
-      order by nome
-    `);
-
-    sendJson(res, 200, { data: result.rows });
-  } catch (error) {
-    sendJson(res, 503, { status: 'error', message: error instanceof Error ? error.message : String(error) });
-  }
-};
+export const handleFornecedores = createMasterCadastroHandler({
+  entityName: 'Fornecedor',
+  table: 'fornecedores',
+  basePath: '/fornecedores',
+  selectColumns: [
+    'id',
+    'company_id',
+    'nome',
+    'tipo_pessoa',
+    'cpf_cnpj',
+    'categoria',
+    'email',
+    'telefone',
+    'endereco',
+    'contato',
+    'pix',
+    'dados_bancarios',
+    'observacoes',
+    'status',
+    'created_at',
+    'updated_at'
+  ],
+  fields: [
+    { column: 'company_id', required: true, kind: 'uuid' },
+    { column: 'nome', required: true },
+    { column: 'tipo_pessoa', required: true, kind: 'tipo_pessoa' },
+    { column: 'cpf_cnpj' },
+    { column: 'categoria', required: true },
+    { column: 'email' },
+    { column: 'telefone' },
+    { column: 'endereco' },
+    { column: 'contato' },
+    { column: 'pix' },
+    { column: 'dados_bancarios' },
+    { column: 'observacoes' },
+    { column: 'status', kind: 'status' }
+  ],
+  orderBy: 'nome'
+});

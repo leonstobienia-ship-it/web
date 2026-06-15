@@ -13,7 +13,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -334,6 +335,186 @@ select {
   margin-bottom: 8px;
 }
 
+.enac-cadastros-page {
+  display: grid;
+  gap: 18px;
+}
+
+.enac-cadastros-page .enac-web-lead {
+  margin-bottom: 4px;
+}
+
+.enac-cadastros-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cadastros-context span {
+  color: #607086;
+}
+
+.enac-cadastros-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.enac-cadastros-tabs button,
+.enac-cadastro-toolbar button,
+.enac-cadastro-actions button,
+.enac-cadastro-row-actions button {
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.enac-cadastros-tabs button {
+  min-height: 38px;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #243244;
+  border: 1px solid #d9e0e7;
+}
+
+.enac-cadastros-tabs button.is-active {
+  background: #245a7f;
+  border-color: #245a7f;
+  color: #ffffff;
+}
+
+.enac-cadastro-resource {
+  display: grid;
+  gap: 14px;
+}
+
+.enac-cadastro-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.enac-cadastro-toolbar h2,
+.enac-cadastro-form-head h3 {
+  margin: 0;
+}
+
+.enac-cadastro-toolbar p {
+  margin: 4px 0 0;
+  color: #607086;
+}
+
+.enac-cadastro-toolbar button,
+.enac-cadastro-actions button {
+  min-height: 40px;
+  padding: 0 16px;
+  background: #245a7f;
+  color: #ffffff;
+}
+
+.enac-cadastro-secondary,
+.enac-cadastro-row-actions button {
+  min-height: 34px;
+  padding: 0 10px;
+  background: #e8edf3;
+  color: #243244;
+}
+
+.enac-cadastro-form {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cadastro-form-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.enac-cadastro-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.enac-cadastro-form-grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-cadastro-form-grid label span {
+  color: #34475d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.enac-cadastro-form-grid input,
+.enac-cadastro-form-grid select,
+.enac-cadastro-form-grid textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #17212f;
+}
+
+.enac-cadastro-form-grid textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.enac-cadastro-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.enac-cadastro-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.enac-cadastro-empty {
+  padding: 18px;
+  border: 1px dashed #c7d2df;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #465a70;
+}
+
+.enac-cadastro-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cadastro-table {
+  min-width: 880px;
+}
+
+.enac-cadastro-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 code {
   padding: 2px 5px;
   border-radius: 4px;
@@ -366,5 +547,18 @@ code {
 
   .enac-web-roadmap {
     grid-template-columns: 1fr;
+  }
+
+  .enac-cadastro-toolbar {
+    align-items: stretch;
+  }
+
+  .enac-cadastro-toolbar button,
+  .enac-cadastro-actions button {
+    width: 100%;
+  }
+
+  .enac-cadastro-actions {
+    justify-content: stretch;
   }
 }

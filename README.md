@@ -188,6 +188,81 @@ Seguranca da V3.3A:
 - Nao ha alteracao Entra.
 - Nao ha automacoes.
 
+## V3.3B - Cadastros mestres operacionais
+
+A V3.3B transforma clientes, fornecedores, centros de custo e obras em cadastros operacionais locais do ERP ENAC. A fonte de dados continua sendo o PostgreSQL local `enac_erp_dev`; nao ha SharePoint, Entra, automacoes, banco de producao ou `DELETE` fisico nesta etapa.
+
+Rodar backend:
+
+```powershell
+cd server
+npm install
+npm run migrate
+npm run build
+npm start
+```
+
+Rodar frontend:
+
+```powershell
+npm run web:dev
+```
+
+Configure o frontend local com:
+
+```text
+VITE_ENAC_ERP_API_BASE_URL=http://127.0.0.1:3333
+```
+
+Testar saude:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:3333/health
+Invoke-RestMethod http://127.0.0.1:3333/health/db
+```
+
+Endpoints de cadastros:
+
+```text
+GET    /clientes
+GET    /clientes/:id
+POST   /clientes
+PATCH  /clientes/:id
+PATCH  /clientes/:id/inativar
+PATCH  /clientes/:id/reativar
+
+GET    /fornecedores
+GET    /fornecedores/:id
+POST   /fornecedores
+PATCH  /fornecedores/:id
+PATCH  /fornecedores/:id/inativar
+PATCH  /fornecedores/:id/reativar
+
+GET    /centros-custo
+GET    /centros-custo/:id
+POST   /centros-custo
+PATCH  /centros-custo/:id
+PATCH  /centros-custo/:id/inativar
+PATCH  /centros-custo/:id/reativar
+
+GET    /obras
+GET    /obras/:id
+POST   /obras
+PATCH  /obras/:id
+PATCH  /obras/:id/inativar
+PATCH  /obras/:id/reativar
+```
+
+Testar cadastros no frontend:
+
+1. Suba o PostgreSQL local com `docker compose up -d postgres`.
+2. Rode `npm run migrate` no diretorio `server`.
+3. Rode `npm start` no diretorio `server`.
+4. Rode `npm run web:dev` na raiz.
+5. Abra a aba `Cadastros` e valide clientes, fornecedores, centros de custo e obras.
+
+Todos os dados de teste da V3.3B devem conter o marcador `DEV_LOCAL_V3_3B`. `.env` permanece local e ignorado.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

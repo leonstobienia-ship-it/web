@@ -7,26 +7,44 @@ import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.j
 import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.routes.js';
 import { handleObras } from './modules/obras/obras.routes.js';
 import { handleUsuarios } from './modules/usuarios/usuarios.routes.js';
-import type { ServerResponse } from 'node:http';
+import { sendNoContent } from './http.js';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
-type RouteHandler = (method: string, res: ServerResponse) => void | Promise<void>;
+type RouteHandler = (req: IncomingMessage, res: ServerResponse, url: URL) => void | Promise<void>;
 
 const routes: Record<string, RouteHandler> = {
-  '/health': handleHealth,
-  '/health/db': handleHealthDb,
-  '/empresas': handleEmpresas,
-  '/usuarios': handleUsuarios,
-  '/clientes': handleClientes,
-  '/fornecedores': handleFornecedores,
-  '/obras': handleObras,
-  '/centros-custo': handleCentrosCusto
+  '/health': (req, res) => handleHealth(req.method || 'GET', res),
+  '/health/db': (req, res) => handleHealthDb(req.method || 'GET', res),
+  '/empresas': (req, res) => handleEmpresas(req.method || 'GET', res),
+  '/usuarios': (req, res) => handleUsuarios(req.method || 'GET', res)
+};
+
+const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
+  { basePath: '/clientes', handler: handleClientes },
+  { basePath: '/fornecedores', handler: handleFornecedores },
+  { basePath: '/obras', handler: handleObras },
+  { basePath: '/centros-custo', handler: handleCentrosCusto }
+];
+
+const findHandler = (pathname: string): RouteHandler | undefined => {
+  const exactHandler = routes[pathname];
+  if (exactHandler) {
+    return exactHandler;
+  }
+
+  return prefixedRoutes.find((route) => pathname === route.basePath || pathname.startsWith(`${route.basePath}/`))?.handler;
 };
 
 const env = readEnv();
 
 const server = createServer((req, res) => {
+  if ((req.method || '').toUpperCase() === 'OPTIONS') {
+    sendNoContent(res);
+    return;
+  }
+
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-  const handler = routes[url.pathname];
+  const handler = findHandler(url.pathname);
 
   if (!handler) {
     sendJson(res, 404, {
@@ -37,7 +55,7 @@ const server = createServer((req, res) => {
     return;
   }
 
-  Promise.resolve(handler(req.method || 'GET', res)).catch((error) => {
+  Promise.resolve(handler(req, res, url)).catch((error) => {
     sendJson(res, 500, {
       status: 'error',
       service: 'enac-erp-api',

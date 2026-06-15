@@ -4,6 +4,7 @@ import { PublicClientApplication, type AccountInfo } from '@azure/msal-browser';
 import { EnacSistema } from '@enacSistema/components/EnacSistema';
 import { SharePointEnacRepository } from '@enacSistema/services/SharePointEnacRepository';
 import { SharePointFetchClient } from './sharePointFetchClient';
+import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
 import './styles.css';
 
 const readonlyInventoryClientId = '0dab19b3-8e48-4f89-ad94-1446b08d3781';
@@ -37,7 +38,7 @@ const flagsEscritaWebV30B = {
   registrarHistoricoWebV30B: import.meta.env.VITE_ENAC_REGISTRAR_HISTORICO_WEB_V30B === 'true'
 };
 
-type WebSection = 'visao' | 'estrutura' | 'mvp' | 'fluxos' | 'dados' | 'seguranca' | 'implantacao' | 'sistema';
+type WebSection = 'visao' | 'cadastros' | 'estrutura' | 'mvp' | 'fluxos' | 'dados' | 'seguranca' | 'implantacao' | 'sistema';
 
 interface IOperationalState {
   loading: boolean;
@@ -81,6 +82,7 @@ class WebErrorBoundary extends React.Component<{ children: React.ReactNode }, IW
 
 const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'visao', label: 'Visão geral' },
+  { key: 'cadastros', label: 'Cadastros' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
   { key: 'fluxos', label: 'Workflows' },
@@ -341,6 +343,10 @@ function WebPortal(): JSX.Element {
 }
 
 function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpenSystem: () => void }): JSX.Element {
+  if (section === 'cadastros') {
+    return <CadastrosOperacionais />;
+  }
+
   if (section === 'estrutura') {
     return (
       <Page title="Arquitetura alvo do ERP" eyebrow="PostgreSQL + API + SharePoint documental">
