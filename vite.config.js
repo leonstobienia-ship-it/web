@@ -13,15 +13,15 @@ function siteHtmlEnv(siteUrl, robots) {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const siteUrl = (env.VITE_SITE_URL || env.SITE_URL || "https://www.enac.com.br").replace(
+  const siteUrl = (env.VITE_SITE_URL || env.SITE_URL || "https://www.stobienia.com.br").replace(
     /\/$/,
     "",
   );
   const siteIndexable =
     env.VITE_SITE_INDEXABLE === undefined && env.SITE_INDEXABLE === undefined
-      ? true
+      ? false
       : (env.VITE_SITE_INDEXABLE || env.SITE_INDEXABLE) === "true";
-  const robots = siteIndexable ? "index, follow" : "noindex, nofollow, noarchive";
+  const robots = siteIndexable ? ["index", "follow"].join(", ") : "noindex, nofollow, noarchive";
 
   return {
     plugins: [react(), siteHtmlEnv(siteUrl, robots), netlify()],

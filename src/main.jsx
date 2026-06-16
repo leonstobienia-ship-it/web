@@ -26,9 +26,9 @@ import { SITE_ROBOTS, siteUrl } from "./config/site.js";
 import "./styles.css";
 
 const ASSET = "/assets/";
-const defaultTitle = "ENAC Empreendimentos | Obras industriais, logísticas e comerciais";
+const defaultTitle = "ENAC Empreendimentos | Construção comercial, industrial e logística";
 const defaultDescription =
-  "ENAC Empreendimentos: diagnóstico, projeto executivo, gestão de fornecedores e execução de obras industriais, logísticas, comerciais, hoteleiras e concessionárias.";
+  "Engenharia e construção para obras comerciais, industriais, logísticas, hoteleiras e corporativas com escopo, prazo e fornecedores coordenados.";
 const privacyTitle = "Política de Privacidade | ENAC Empreendimentos";
 const privacyDescription =
   "Política de Privacidade da ENAC Empreendimentos para tratamento de dados enviados por formulários de contato comercial.";
@@ -53,40 +53,40 @@ const method = [
   {
     icon: ClipboardList,
     title: "Diagnóstico de viabilidade",
-    text: "Leitura técnica do terreno, operação, prazo, restrições e prioridades do cliente.",
+    text: "Leitura técnica do terreno, da operação, do prazo e das restrições antes da obra avançar.",
   },
   {
     icon: Layers3,
     title: "Projeto executivo coordenado",
-    text: "Compatibilização de disciplinas para reduzir improviso, retrabalho e ruído em obra.",
+    text: "Compatibilização das disciplinas para reduzir improviso, retrabalho e ruído no canteiro.",
   },
   {
     icon: CalendarCheck,
-    title: "Obra com ritmo de operação",
+    title: "Execução com ritmo controlado",
     text: "Cronograma, suprimentos, fornecedores e canteiro acompanhados com governança objetiva.",
   },
   {
     icon: CheckCircle2,
     title: "Entrega pronta para uso",
-    text: "Finalização orientada a funcionamento, segurança, documentação e transição operacional.",
+    text: "Finalização orientada ao funcionamento, à segurança, à documentação e à transição operacional.",
   },
 ];
 
 const differentiators = [
   {
     icon: Target,
-    title: "Escopo claro antes do canteiro",
-    text: "A tomada de decisão parte de briefing, restrições, prioridade de operação e critérios de entrega.",
+    title: "Escopo definido antes da execução",
+    text: "Briefing, prioridades, restrições e critérios de entrega alinhados antes da obra avançar.",
   },
   {
     icon: Building2,
-    title: "Execução orientada ao uso",
-    text: "A obra é conduzida pensando no empreendimento funcionando, não apenas na etapa construtiva.",
+    title: "Coordenação técnica e operacional",
+    text: "Projetos, fornecedores e campo conduzidos com uma visão integrada do empreendimento.",
   },
   {
     icon: ShieldCheck,
-    title: "Gestão de risco e segurança",
-    text: "Rotina de acompanhamento técnico para reduzir improvisos, impactos e paradas desnecessárias.",
+    title: "Entrega pensada para uso real",
+    text: "Finalização considerando funcionamento, segurança, documentação e operação.",
   },
 ];
 
@@ -96,7 +96,7 @@ const sectors = [
     name: "Logística e distribuição",
     icon: Warehouse,
     image: `${ASSET}hero-distribuicao.webp`,
-    lead: "Galpões, centros de distribuição, parques logísticos e estruturas frigorificadas.",
+    lead: "Galpões, centros de distribuição, parques logísticos e estruturas frigorificadas com operação planejada desde o início.",
     evidence: ["Bandeirantes Business Park", "Libra Terminais", "Logimaster", "Pepsico"],
     needs: ["Fluxo de docas", "Pé-direito e piso industrial", "Expansão futura"],
   },
@@ -105,7 +105,7 @@ const sectors = [
     name: "Indústrias",
     icon: Factory,
     image: `${ASSET}hero-industrial.webp`,
-    lead: "Obras de alta complexidade com integração entre produção, infraestrutura e segurança.",
+    lead: "Obras de alta complexidade que exigem integração entre produção, infraestrutura, segurança e continuidade operacional.",
     evidence: ["Heineken", "Honda", "JBS", "Quartzolit", "Takasago"],
     needs: ["Continuidade operacional", "Infraestrutura crítica", "Segurança de canteiro"],
   },
@@ -114,7 +114,7 @@ const sectors = [
     name: "Varejo alimentar",
     icon: ShoppingCart,
     image: `${ASSET}segmento-supermercados.webp`,
-    lead: "Supermercados e atacados que precisam abrir, ampliar ou reformar com prazo controlado.",
+    lead: "Supermercados, atacados e lojas que precisam abrir, ampliar ou reformar com prazo controlado.",
     evidence: ["Makro", "Mambo", "Stock Atacadista", "Swift", "Coop"],
     needs: ["Abertura rápida", "Adequação de loja", "Obra em área urbana"],
   },
@@ -123,7 +123,7 @@ const sectors = [
     name: "Hotelaria",
     icon: Hotel,
     image: `${ASSET}hero-hoteis.webp`,
-    lead: "Hotéis, resorts e torres corporativas com exigência de acabamento e experiência de uso.",
+    lead: "Hotéis, resorts e torres corporativas com exigência de acabamento, conforto e experiência de uso.",
     evidence: ["Royal Palm Plaza", "Royal Palm Tower", "Sheraton", "Euro Suit"],
     needs: ["Acabamento técnico", "Conforto do usuário", "Entrega por etapas"],
   },
@@ -132,7 +132,7 @@ const sectors = [
     name: "Concessionárias",
     icon: Car,
     image: `${ASSET}segmento-concessionarias.webp`,
-    lead: "Showrooms e oficinas com padrão de marca, exposição, circulação e pós-venda.",
+    lead: "Showrooms e oficinas com padrão de marca, exposição, circulação e operação de pós-venda.",
     evidence: ["Tempo Volkswagen", "Ford Indaiatuba", "VW Valinhos"],
     needs: ["Padrão de montadora", "Oficina e showroom", "Fluxo de atendimento"],
   },
@@ -469,12 +469,13 @@ function App() {
           </div>
           <div className="hero-content">
             <span className="kicker">
-              <span>Engenharia para empreendimentos em operação</span>
+              <span>Engenharia para obras complexas</span>
             </span>
-            <h1>Da decisão de construir à obra pronta para uso.</h1>
+            <h1>Da decisão à operação, a obra sob controle.</h1>
             <p>
-              A ENAC combina projeto executivo, gestão de fornecedores e execução de campo para
-              entregar obras comerciais, industriais e logísticas com previsibilidade.
+              A ENAC estrutura, coordena e executa obras comerciais, industriais, logísticas e
+              hoteleiras com planejamento técnico, controle de fornecedores e foco na entrega
+              operacional.
             </p>
             <div className="hero-actions">
               <a className="button primary" href="#contato">
@@ -491,13 +492,13 @@ function App() {
         <section className="section about" id="quem-somos">
           <div className="about-copy">
             <span className="kicker">Quem somos</span>
-            <h2>Uma construtora para empreendimentos que precisam sair do papel e operar.</h2>
+            <h2>Uma construtora para empreendimentos que precisam sair do projeto e entrar em operação.</h2>
             <p>
-              A ENAC atua no mercado construtor oferecendo uma gama completa de serviços para
-              entregar obras prontas para uso. A empresa coordena parceiros, fornecedores e
-              execução técnica para que cada etapa avance com prazo, segurança e previsibilidade.
-              A trajetória reúne mais de 300 empreendimentos e +1.000.000 m² executados em
-              diferentes segmentos.
+              A ENAC atua na construção de empreendimentos comerciais, industriais, logísticos,
+              hoteleiros e corporativos. Mais do que executar obra, coordena escopo, projetos,
+              fornecedores e canteiro para reduzir improvisos e conduzir cada etapa com
+              previsibilidade. A trajetória reúne mais de 300 empreendimentos e +1.000.000 m²
+              executados em diferentes segmentos.
             </p>
           </div>
         </section>
@@ -505,7 +506,7 @@ function App() {
         <section className="section differentiators" id="diferenciais">
           <div className="section-heading narrow">
             <span className="kicker">Diferenciais</span>
-            <h2>O valor está em organizar a obra antes que ela vire urgência.</h2>
+            <h2>O resultado da obra começa antes do canteiro.</h2>
           </div>
           <div className="differentiator-grid">
             {differentiators.map((item) => {
@@ -524,12 +525,11 @@ function App() {
         <section className="section method" id="metodo">
           <div className="section-heading">
             <span className="kicker">Método</span>
-            <h2>Um fluxo de obra pensado para reduzir incerteza.</h2>
+            <h2>Um processo claro para reduzir risco, retrabalho e urgência.</h2>
             <p>
-              Cada obra começa com diagnóstico técnico, definição clara de escopo e coordenação
-              das disciplinas envolvidas. A ENAC estrutura o processo para reduzir improvisos,
-              controlar fornecedores e conduzir a execução com previsibilidade até a entrega
-              operacional.
+              Cada obra começa com diagnóstico técnico, definição de escopo e coordenação das
+              disciplinas envolvidas. A ENAC organiza o processo para controlar fornecedores,
+              reduzir interferências e conduzir a execução até a entrega pronta para uso.
             </p>
           </div>
           <div className="method-rail">
@@ -550,7 +550,7 @@ function App() {
         <section className="section sectors" id="atuacao">
           <div className="section-heading narrow">
             <span className="kicker">Atuação</span>
-            <h2>Cada segmento começa por uma necessidade diferente.</h2>
+            <h2>Cada segmento exige uma resposta técnica diferente.</h2>
           </div>
           <div className="sector-layout">
             <div className="sector-tabs" role="tablist" aria-label="Segmentos de atuação">
@@ -599,10 +599,11 @@ function App() {
         <section className="section projects" id="obras">
           <div className="section-heading">
             <span className="kicker">Obras</span>
-            <h2>Obras executadas que demonstram escala, prazo e complexidade.</h2>
+            <h2>Obras que demonstram escala, prazo e capacidade de execução.</h2>
             <p>
-              As obras em destaque combinam escala, segmento e referência visual para facilitar a
-              leitura do tipo de empreendimento executado.
+              O portfólio reúne empreendimentos comerciais, logísticos, industriais e hoteleiros
+              executados em diferentes níveis de complexidade, sempre com foco em entrega,
+              operação e controle.
             </p>
           </div>
           <div className="project-table" aria-label="Obras em destaque">
@@ -639,7 +640,7 @@ function App() {
         <section className="section clients" id="clientes">
           <div className="section-heading narrow">
             <span className="kicker">Clientes</span>
-            <h2>Empresas que exigem obra com padrão, prazo e controle.</h2>
+            <h2>Empresas que precisam de obra com padrão, prazo e controle.</h2>
           </div>
           <div className="client-logo-grid" aria-label="Clientes atendidos">
             {clients.map((client) => (
@@ -653,8 +654,8 @@ function App() {
         <section className="section contact" id="contato">
           <div className="contact-panel">
             <span className="kicker">Campinas, SP</span>
-            <h2>Vamos transformar a demanda em um briefing técnico.</h2>
-            <p>R. Professor Moacyr Santos de Campos, 643, Campinas-SP.</p>
+            <h2>Vamos transformar sua demanda em um briefing técnico?</h2>
+            <p>Envie os dados iniciais da obra para avaliarmos escopo, localização, prazo e próximos passos.</p>
             <div className="contact-links">
               <a href="tel:+551932387185">
                 <Phone size={18} aria-hidden="true" />
@@ -754,7 +755,7 @@ function App() {
 
       <footer className="site-footer">
         <img src={`${ASSET}logo-enac-footer.webp`} alt="ENAC" />
-        <p>Prazo como prioridade. Construção como propósito.</p>
+        <p>Construção com método, controle e previsibilidade.</p>
         <nav aria-label="Rodapé">
           {navItems.map((item) => (
             <a key={item.href} href={item.href}>

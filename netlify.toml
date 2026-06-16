@@ -3,10 +3,15 @@ command = "npm run build"
 publish = "dist"
 
 [build.environment]
-SITE_URL = "https://www.enac.com.br"
-SITE_INDEXABLE = "true"
-VITE_SITE_URL = "https://www.enac.com.br"
-VITE_SITE_INDEXABLE = "true"
+SITE_URL = "https://www.stobienia.com.br"
+SITE_INDEXABLE = "false"
+VITE_SITE_URL = "https://www.stobienia.com.br"
+VITE_SITE_INDEXABLE = "false"
+
+[[headers]]
+for = "/*"
+[headers.values]
+  X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[redirects]]
 from = "/quem-somos/"

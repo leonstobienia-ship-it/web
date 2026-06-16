@@ -3,13 +3,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
-const siteUrl = (process.env.VITE_SITE_URL || process.env.SITE_URL || "https://www.enac.com.br").replace(
+const siteUrl = (process.env.VITE_SITE_URL || process.env.SITE_URL || "https://www.stobienia.com.br").replace(
   /\/$/,
   "",
 );
 const siteIndexable =
   process.env.VITE_SITE_INDEXABLE === undefined && process.env.SITE_INDEXABLE === undefined
-    ? true
+    ? false
     : (process.env.VITE_SITE_INDEXABLE || process.env.SITE_INDEXABLE) === "true";
 
 const publicDir = join(root, "public");
