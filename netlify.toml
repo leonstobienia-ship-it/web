@@ -194,12 +194,6 @@ status = 301
 force = true
 
 [[redirects]]
-from = "/politica-de-privacidade"
-to = "/politica-de-privacidade/"
-status = 301
-force = true
-
-[[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
