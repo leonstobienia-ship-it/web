@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { readEnv } from './config/env.js';
+import { handleAlcadas, handleEscopos, handlePerfis, handlePerfisEscopos, handleUsuariosPerfis } from './modules/acessos/acessos.routes.js';
 import { handleCentrosCusto } from './modules/centrosCusto/centrosCusto.routes.js';
 import { handleClientes } from './modules/clientes/clientes.routes.js';
 import { handleContasPagar } from './modules/contasPagar/contasPagar.routes.js';
@@ -33,7 +34,12 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/cotacoes', handler: handleCotacoes },
   { basePath: '/pedidos-compra', handler: handlePedidosCompra },
   { basePath: '/notas-fiscais-entrada', handler: handleNotasFiscaisEntrada },
-  { basePath: '/contas-pagar', handler: handleContasPagar }
+  { basePath: '/contas-pagar', handler: handleContasPagar },
+  { basePath: '/perfis', handler: handlePerfis },
+  { basePath: '/escopos', handler: handleEscopos },
+  { basePath: '/perfis-escopos', handler: handlePerfisEscopos },
+  { basePath: '/usuarios-perfis', handler: handleUsuariosPerfis },
+  { basePath: '/alcadas', handler: handleAlcadas }
 ];
 
 const findHandler = (pathname: string): RouteHandler | undefined => {

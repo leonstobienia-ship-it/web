@@ -1338,6 +1338,38 @@ textarea {
   border-top: 1px solid #e7edf3;
 }
 
+.enac-acessos-page {
+  display: grid;
+  gap: 18px;
+}
+
+.enac-acessos-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.enac-acessos-main,
+.enac-acessos-side {
+  display: grid;
+  gap: 16px;
+}
+
+.enac-acessos-table {
+  min-width: 880px;
+}
+
+.enac-acessos-check {
+  align-items: center;
+  display: flex !important;
+  gap: 8px;
+}
+
+.enac-acessos-check input {
+  width: auto !important;
+}
+
 code {
   padding: 2px 5px;
   border-radius: 4px;
@@ -1398,6 +1430,10 @@ code {
   }
 
   .enac-finance-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-acessos-grid {
     grid-template-columns: 1fr;
   }
 

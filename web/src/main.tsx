@@ -4,6 +4,7 @@ import { PublicClientApplication, type AccountInfo } from '@azure/msal-browser';
 import { EnacSistema } from '@enacSistema/components/EnacSistema';
 import { SharePointEnacRepository } from '@enacSistema/services/SharePointEnacRepository';
 import { SharePointFetchClient } from './sharePointFetchClient';
+import { AcessosPage } from './features/acessos/AcessosPage';
 import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
 import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
@@ -51,6 +52,7 @@ type WebSection =
   | 'pedidos-compra'
   | 'notas-entrada'
   | 'contas-pagar'
+  | 'administracao'
   | 'estrutura'
   | 'mvp'
   | 'fluxos'
@@ -107,6 +109,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'pedidos-compra', label: 'Pedidos de Compra' },
   { key: 'notas-entrada', label: 'Notas Fiscais' },
   { key: 'contas-pagar', label: 'Contas a Pagar' },
+  { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
   { key: 'fluxos', label: 'Workflows' },
@@ -389,6 +392,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'contas-pagar') {
     return <ContasPagarPage />;
+  }
+
+  if (section === 'administracao') {
+    return <AcessosPage />;
   }
 
   if (section === 'estrutura') {

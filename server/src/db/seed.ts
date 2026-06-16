@@ -1,6 +1,6 @@
 import { closePool, getPool } from './client.js';
 
-const marker = 'DEV_LOCAL_V3_3A';
+const marker = 'DEV_LOCAL_V3_5B';
 
 const run = async (): Promise<void> => {
   const pool = getPool();
@@ -21,7 +21,7 @@ const run = async (): Promise<void> => {
     );
     const companyId = empresa.rows[0].id;
 
-    const perfis = ['DIRETORIA', 'PLANEJAMENTO', 'COMPRAS', 'FINANCEIRO', 'ENGENHARIA'];
+    const perfis = ['ADMIN', 'DIRETORIA', 'PLANEJAMENTO', 'COMPRAS', 'FINANCEIRO', 'CAMPO'];
     const perfilIds = new Map<string, string>();
 
     for (const perfil of perfis) {
@@ -38,23 +38,51 @@ const run = async (): Promise<void> => {
       perfilIds.set(perfil, result.rows[0].id);
     }
 
-    const usuarios = [
-      ['Leon DEV', 'leon.dev@enac.local', 'DIRETORIA'],
-      ['Gustavo DEV', 'gustavo.dev@enac.local', 'ENGENHARIA'],
-      ['Matheus DEV', 'matheus.dev@enac.local', 'FINANCEIRO'],
-      ['Kemilly DEV', 'kemilly.dev@enac.local', 'COMPRAS']
+    const usuarios: Array<[string, string, string[]]> = [
+      ['Leon DEV', 'leon.dev.v35b@enac.local', ['DIRETORIA', 'ADMIN']],
+      ['Gustavo DEV', 'gustavo.dev.v35b@enac.local', ['PLANEJAMENTO']],
+      ['Matheus DEV', 'matheus.dev.v35b@enac.local', ['COMPRAS', 'FINANCEIRO']],
+      ['Kemilly DEV', 'kemilly.dev.v35b@enac.local', ['PLANEJAMENTO', 'CAMPO']],
+      ['Davison DEV', 'davison.dev.v35b@enac.local', ['CAMPO', 'PLANEJAMENTO']]
     ];
 
-    for (const [nome, email, perfil] of usuarios) {
-      const perfilId = perfilIds.get(perfil);
-      await client.query(
+    for (const [nome, email, perfisUsuario] of usuarios) {
+      const principalPerfil = perfisUsuario[0];
+      const perfilId = perfilIds.get(principalPerfil);
+      const usuario = await client.query<{ id: string }>(
         `
         insert into usuarios (company_id, nome, email, perfil_principal_id, perfil_ids, cargo_funcao, ativo, status)
         values ($1, $2, $3, $4, array[$4]::uuid[], $5, true, 'ativo')
         on conflict (email)
         do update set nome = excluded.nome, perfil_principal_id = excluded.perfil_principal_id, perfil_ids = excluded.perfil_ids, cargo_funcao = excluded.cargo_funcao, updated_at = now()
+        returning id
         `,
-        [companyId, `${nome} - ${marker}`, email, perfilId, `${perfil} ${marker}`]
+        [companyId, `${nome} - ${marker}`, email, perfilId, `${perfisUsuario.join(' ')} ${marker}`]
+      );
+
+      for (const perfil of perfisUsuario) {
+        const vinculoPerfilId = perfilIds.get(perfil);
+        if (!vinculoPerfilId) {
+          continue;
+        }
+        await client.query(
+          `
+          insert into usuarios_perfis (usuario_id, perfil_id, principal, status)
+          values ($1, $2, $3, 'ativo')
+          on conflict (usuario_id, perfil_id)
+          do update set principal = excluded.principal, status = 'ativo', updated_at = now()
+          `,
+          [usuario.rows[0].id, vinculoPerfilId, perfil === principalPerfil]
+        );
+      }
+
+      await client.query(
+        `
+        update usuarios
+        set perfil_ids = $1::uuid[], updated_at = now()
+        where id = $2
+        `,
+        [perfisUsuario.map((perfil) => perfilIds.get(perfil)).filter(Boolean), usuario.rows[0].id]
       );
     }
 

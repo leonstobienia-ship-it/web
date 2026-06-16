@@ -101,6 +101,147 @@ export interface UsuarioApi {
   ativo: boolean;
   status: string;
   perfil_principal?: string | null;
+  perfis?: Array<{ id: string; nome: string; principal: boolean; status: string }>;
+}
+
+export type AcessoStatus = 'ativo' | 'inativo';
+
+export interface PerfilApi {
+  id: string;
+  company_id: string;
+  nome: string;
+  descricao?: string | null;
+  escopo_padrao?: string | null;
+  status: AcessoStatus | string;
+  escopos_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EscopoApi {
+  id: string;
+  company_id: string;
+  modulo: string;
+  acao: string;
+  descricao?: string | null;
+  status: AcessoStatus | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UsuarioPerfilApi {
+  id: string;
+  usuario_id: string;
+  usuario_nome?: string | null;
+  usuario_email?: string | null;
+  perfil_id: string;
+  perfil_nome?: string | null;
+  principal: boolean;
+  status: AcessoStatus | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PerfilEscopoApi {
+  id: string;
+  perfil_id: string;
+  perfil_nome?: string | null;
+  escopo_id: string;
+  modulo?: string | null;
+  acao?: string | null;
+  escopo_descricao?: string | null;
+  status: AcessoStatus | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AlcadaApi {
+  id: string;
+  company_id: string;
+  usuario_id?: string | null;
+  usuario_nome?: string | null;
+  perfil_id?: string | null;
+  perfil_nome?: string | null;
+  modulo: string;
+  tipo_documento: string;
+  acao: string;
+  obra_id?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  valor_minimo: string | number;
+  valor_maximo?: string | number | null;
+  efeito: 'PERMITIR' | 'NEGAR' | string;
+  observacoes?: string | null;
+  status: AcessoStatus | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PerfilPayload {
+  company_id?: string;
+  nome: string;
+  descricao?: string | null;
+  escopo_padrao?: string | null;
+  status?: AcessoStatus;
+}
+
+export interface EscopoPayload {
+  company_id?: string;
+  modulo: string;
+  acao: string;
+  descricao?: string | null;
+  status?: AcessoStatus;
+}
+
+export interface UsuarioPerfilPayload {
+  usuario_id: string;
+  perfil_id: string;
+  principal?: boolean;
+  status?: AcessoStatus;
+}
+
+export interface PerfilEscopoPayload {
+  perfil_id: string;
+  escopo_id: string;
+  status?: AcessoStatus;
+}
+
+export interface AlcadaPayload {
+  company_id?: string;
+  usuario_id?: string | null;
+  perfil_id?: string | null;
+  modulo: string;
+  tipo_documento: string;
+  acao: string;
+  obra_id?: string | null;
+  centro_custo_id?: string | null;
+  valor_minimo: number;
+  valor_maximo?: number | null;
+  efeito?: 'PERMITIR' | 'NEGAR';
+  observacoes?: string | null;
+  status?: AcessoStatus;
+}
+
+export interface ValidarAlcadaPayload {
+  usuario_id: string;
+  modulo: string;
+  tipo_documento: string;
+  acao: string;
+  valor: number;
+  obra_id?: string | null;
+  centro_custo_id?: string | null;
+}
+
+export interface ValidarAlcadaResponse {
+  aprovado: boolean;
+  decisao: 'PERMITIDO' | 'NEGADO' | string;
+  motivo: string;
+  usuario: UsuarioApi;
+  perfis: PerfilApi[];
+  regra?: AlcadaApi | null;
 }
 
 export type SolicitacaoCompraStatus =
@@ -654,6 +795,70 @@ export const erpApi = {
   },
   usuarios: {
     list: async (): Promise<UsuarioApi[]> => (await request<ApiListResponse<UsuarioApi>>('/usuarios')).data
+  },
+  perfis: {
+    list: async (filters: { status?: AcessoStatus | '' } = {}): Promise<PerfilApi[]> =>
+      (await request<ApiListResponse<PerfilApi>>(`/perfis${buildQueryString({ status: filters.status || undefined })}`)).data,
+    get: async (id: string): Promise<PerfilApi> => (await request<ApiItemResponse<PerfilApi>>(`/perfis/${id}`)).data,
+    create: async (payload: PerfilPayload): Promise<PerfilApi> =>
+      (await request<ApiItemResponse<PerfilApi>>('/perfis', { method: 'POST', body: JSON.stringify(payload) })).data,
+    update: async (id: string, payload: Partial<PerfilPayload>): Promise<PerfilApi> =>
+      (await request<ApiItemResponse<PerfilApi>>(`/perfis/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })).data,
+    inativar: async (id: string): Promise<PerfilApi> =>
+      (await request<ApiItemResponse<PerfilApi>>(`/perfis/${id}/inativar`, { method: 'PATCH' })).data,
+    reativar: async (id: string): Promise<PerfilApi> =>
+      (await request<ApiItemResponse<PerfilApi>>(`/perfis/${id}/reativar`, { method: 'PATCH' })).data
+  },
+  escopos: {
+    list: async (filters: { status?: AcessoStatus | ''; modulo?: string } = {}): Promise<EscopoApi[]> =>
+      (await request<ApiListResponse<EscopoApi>>(
+        `/escopos${buildQueryString({ status: filters.status || undefined, modulo: filters.modulo || undefined })}`
+      )).data,
+    create: async (payload: EscopoPayload): Promise<EscopoApi> =>
+      (await request<ApiItemResponse<EscopoApi>>('/escopos', { method: 'POST', body: JSON.stringify(payload) })).data,
+    update: async (id: string, payload: Partial<EscopoPayload>): Promise<EscopoApi> =>
+      (await request<ApiItemResponse<EscopoApi>>(`/escopos/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })).data,
+    inativar: async (id: string): Promise<EscopoApi> =>
+      (await request<ApiItemResponse<EscopoApi>>(`/escopos/${id}/inativar`, { method: 'PATCH' })).data,
+    reativar: async (id: string): Promise<EscopoApi> =>
+      (await request<ApiItemResponse<EscopoApi>>(`/escopos/${id}/reativar`, { method: 'PATCH' })).data
+  },
+  usuariosPerfis: {
+    list: async (): Promise<UsuarioPerfilApi[]> => (await request<ApiListResponse<UsuarioPerfilApi>>('/usuarios-perfis')).data,
+    create: async (payload: UsuarioPerfilPayload): Promise<UsuarioPerfilApi> =>
+      (await request<ApiItemResponse<UsuarioPerfilApi>>('/usuarios-perfis', { method: 'POST', body: JSON.stringify(payload) })).data,
+    inativar: async (id: string): Promise<UsuarioPerfilApi> =>
+      (await request<ApiItemResponse<UsuarioPerfilApi>>(`/usuarios-perfis/${id}/inativar`, { method: 'PATCH' })).data,
+    reativar: async (id: string): Promise<UsuarioPerfilApi> =>
+      (await request<ApiItemResponse<UsuarioPerfilApi>>(`/usuarios-perfis/${id}/reativar`, { method: 'PATCH' })).data
+  },
+  perfisEscopos: {
+    list: async (): Promise<PerfilEscopoApi[]> => (await request<ApiListResponse<PerfilEscopoApi>>('/perfis-escopos')).data,
+    create: async (payload: PerfilEscopoPayload): Promise<PerfilEscopoApi> =>
+      (await request<ApiItemResponse<PerfilEscopoApi>>('/perfis-escopos', { method: 'POST', body: JSON.stringify(payload) })).data,
+    inativar: async (id: string): Promise<PerfilEscopoApi> =>
+      (await request<ApiItemResponse<PerfilEscopoApi>>(`/perfis-escopos/${id}/inativar`, { method: 'PATCH' })).data,
+    reativar: async (id: string): Promise<PerfilEscopoApi> =>
+      (await request<ApiItemResponse<PerfilEscopoApi>>(`/perfis-escopos/${id}/reativar`, { method: 'PATCH' })).data
+  },
+  alcadas: {
+    list: async (filters: { status?: AcessoStatus | ''; modulo?: string } = {}): Promise<AlcadaApi[]> =>
+      (await request<ApiListResponse<AlcadaApi>>(
+        `/alcadas${buildQueryString({ status: filters.status || undefined, modulo: filters.modulo || undefined })}`
+      )).data,
+    create: async (payload: AlcadaPayload): Promise<AlcadaApi> =>
+      (await request<ApiItemResponse<AlcadaApi>>('/alcadas', { method: 'POST', body: JSON.stringify(payload) })).data,
+    update: async (id: string, payload: Partial<AlcadaPayload>): Promise<AlcadaApi> =>
+      (await request<ApiItemResponse<AlcadaApi>>(`/alcadas/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })).data,
+    inativar: async (id: string): Promise<AlcadaApi> =>
+      (await request<ApiItemResponse<AlcadaApi>>(`/alcadas/${id}/inativar`, { method: 'PATCH' })).data,
+    reativar: async (id: string): Promise<AlcadaApi> =>
+      (await request<ApiItemResponse<AlcadaApi>>(`/alcadas/${id}/reativar`, { method: 'PATCH' })).data,
+    validar: async (payload: ValidarAlcadaPayload): Promise<ValidarAlcadaResponse> =>
+      (await request<ApiItemResponse<ValidarAlcadaResponse>>('/alcadas/validar', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data
   },
   clientes: makeResource<ClienteApi>('/clientes'),
   fornecedores: makeResource<FornecedorApi>('/fornecedores'),

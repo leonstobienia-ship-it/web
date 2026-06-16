@@ -621,6 +621,60 @@ npx.cmd tsc -p web/tsconfig.json --noEmit
 npx.cmd tsc -p tsconfig.json --noEmit
 ```
 
+## V3.5B - Perfis, Escopos e Alçadas
+
+A V3.5B implementa a fundacao local de usuarios, perfis, escopos e alcadas para futuras aprovacoes do ERP ENAC. A etapa nao implementa programacao bancaria, liberacao financeira, pagamento, baixa, integracao bancaria, SharePoint real, Entra real, Power Automate ou `DELETE` fisico.
+
+Aplicar migrations locais:
+
+```powershell
+docker compose up -d postgres
+cd server
+npm.cmd run migrate
+```
+
+Endpoints administrativos:
+
+```text
+GET    /perfis
+POST   /perfis
+PATCH  /perfis/:id
+PATCH  /perfis/:id/inativar
+PATCH  /perfis/:id/reativar
+
+GET    /escopos
+POST   /escopos
+PATCH  /escopos/:id
+PATCH  /escopos/:id/inativar
+PATCH  /escopos/:id/reativar
+
+GET    /usuarios-perfis
+POST   /usuarios-perfis
+PATCH  /usuarios-perfis/:id/inativar
+PATCH  /usuarios-perfis/:id/reativar
+
+GET    /perfis-escopos
+POST   /perfis-escopos
+PATCH  /perfis-escopos/:id/inativar
+PATCH  /perfis-escopos/:id/reativar
+
+GET    /alcadas
+POST   /alcadas
+PATCH  /alcadas/:id
+PATCH  /alcadas/:id/inativar
+PATCH  /alcadas/:id/reativar
+POST   /alcadas/validar
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:acessos
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_5B`, valida criacao/listagem de perfis e escopos, vinculos usuario-perfil e perfil-escopo, criacao de alcada, regra de PLANEJAMENTO ate R$ 20.000, bloqueio acima de R$ 20.000 e DIRETORIA acima de R$ 20.000.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
