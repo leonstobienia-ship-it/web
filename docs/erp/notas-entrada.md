@@ -12,4 +12,4 @@ A rota canonica e:
 /notas-fiscais-entrada
 ```
 
-O alias local `/notas-entrada` foi preservado apenas para compatibilidade com validacoes anteriores.
+Na auditoria V3.5A.1, o alias local antigo deixou de ser rota funcional. Use somente a rota canonica acima.

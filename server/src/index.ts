@@ -8,7 +8,6 @@ import { handleEmpresas } from './modules/empresas/empresas.routes.js';
 import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.js';
 import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.routes.js';
 import { handleNotasFiscaisEntrada } from './modules/notasFiscaisEntrada/notasFiscaisEntrada.routes.js';
-import { handleNotasEntrada } from './modules/notasEntrada/notasEntrada.routes.js';
 import { handleObras } from './modules/obras/obras.routes.js';
 import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
@@ -34,7 +33,6 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/cotacoes', handler: handleCotacoes },
   { basePath: '/pedidos-compra', handler: handlePedidosCompra },
   { basePath: '/notas-fiscais-entrada', handler: handleNotasFiscaisEntrada },
-  { basePath: '/notas-entrada', handler: handleNotasEntrada },
   { basePath: '/contas-pagar', handler: handleContasPagar }
 ];
 

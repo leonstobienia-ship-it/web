@@ -603,6 +603,24 @@ Teste manual do frontend:
 9. Verifique a conta `PROVISIONADA`.
 10. Teste duplicidade para a mesma nota/parcela.
 
+## V3.5A.1 - Auditoria do contrato canonico da Nota Fiscal de Entrada
+
+A V3.5A.1 confirma que Nota Fiscal de Entrada usa somente `/notas-fiscais-entrada` como rota funcional. A criacao/provisionamento da nota permanece gerando Conta a Pagar com status `PROVISIONADA`. A etapa nao implementa programacao bancaria, liberacao financeira, pagamento, baixa, perfis, escopos, alcadas, integracao bancaria, SharePoint, Entra, automacoes ou `DELETE` fisico.
+
+Validacoes da auditoria:
+
+```powershell
+cd server
+npm.cmd run build
+npm.cmd run migrate
+npm.cmd run smoke:notas
+npm.cmd run smoke:contas-pagar
+cd ..
+npm.cmd run web:build
+npx.cmd tsc -p web/tsconfig.json --noEmit
+npx.cmd tsc -p tsconfig.json --noEmit
+```
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

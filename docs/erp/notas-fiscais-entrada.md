@@ -65,11 +65,13 @@ PATCH  /notas-fiscais-entrada/:id/provisionar-conta-pagar
 PATCH  /notas-fiscais-entrada/:id/cancelar
 ```
 
-Alias preservado:
+Contrato canonico V3.5A.1:
 
 ```text
-/notas-entrada
+/notas-fiscais-entrada e a unica rota funcional de Nota Fiscal de Entrada.
 ```
+
+Aliases historicos locais nao devem ser usados nem expostos como endpoint funcional.
 
 ## Smoke
 

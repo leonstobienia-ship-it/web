@@ -21,6 +21,8 @@ interface ContaPagar {
   status: string;
   valor_original: string | number;
   valor_aberto: string | number;
+  forma_pagamento_prevista?: string | null;
+  observacoes?: string | null;
 }
 
 interface SmokeResult {
@@ -85,7 +87,10 @@ const findApprovedNota = async (): Promise<NotaEntrada> => {
 
 const findProvisionedConta = async (): Promise<ContaPagar | undefined> => {
   const contas = (await requestJson<ApiListResponse<ContaPagar>>('/contas-pagar?status=PROVISIONADA')).data;
-  return contas.find((item) => item.numero_documento.includes(marker));
+  return contas.find((item) => {
+    const searchable = `${item.numero_documento} ${item.forma_pagamento_prevista || ''} ${item.observacoes || ''}`;
+    return searchable.includes(marker);
+  });
 };
 
 const run = async (): Promise<void> => {

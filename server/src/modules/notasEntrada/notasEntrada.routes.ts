@@ -838,7 +838,7 @@ const handleError = (res: ServerResponse, error: unknown): void => {
 
 export const handleNotasEntrada = async (req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> => {
   const method = req.method || 'GET';
-  const basePath = url.pathname.startsWith('/notas-fiscais-entrada') ? '/notas-fiscais-entrada' : '/notas-entrada';
+  const basePath = '/notas-fiscais-entrada';
   const relativePath = url.pathname === basePath ? '' : url.pathname.slice(basePath.length);
   const parts = relativePath.split('/').filter(Boolean);
 
