@@ -69,11 +69,10 @@ img {
   align-items: center;
   gap: 26px;
   padding: 14px 5vw;
-  background:
-    linear-gradient(rgba(18, 19, 18, 0.96), rgba(18, 19, 18, 0.96)),
-    url("/assets/hero-industrial.webp") center / cover;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(18px);
+  background: rgba(18, 22, 21, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(16px);
 }
 
 .brand img {
@@ -139,7 +138,8 @@ img {
   z-index: 49;
   display: grid;
   padding: 12px 5vw;
-  background: var(--charcoal);
+  background: rgba(18, 22, 21, 0.96);
+  backdrop-filter: blur(16px);
   color: var(--white);
 }
 
