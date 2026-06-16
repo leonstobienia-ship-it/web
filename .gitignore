@@ -10,6 +10,9 @@ dist
 # Local logs
 *.log
 
+# Local extraction workspace
+.tmp/
+
 # Environment
 .env
 .env.*

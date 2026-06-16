@@ -26,6 +26,7 @@ import { SITE_ROBOTS, siteUrl } from "./config/site.js";
 import "./styles.css";
 
 const ASSET = "/assets/";
+const SITE_IMAGE = "/images/site/";
 const defaultTitle = "ENAC Empreendimentos | Construção comercial, industrial e logística";
 const defaultDescription =
   "Engenharia e construção para obras comerciais, industriais, logísticas, hoteleiras e corporativas com escopo, prazo e fornecedores coordenados.";
@@ -95,85 +96,118 @@ const sectors = [
     key: "logistica",
     name: "Logística e distribuição",
     icon: Warehouse,
-    image: `${ASSET}hero-distribuicao.webp`,
+    image: `${SITE_IMAGE}obras/fulwood-bandeirantes/fulwood-bandeirantes-capa-aerea.webp`,
+    alt: "Vista aérea de galpões logísticos com pátio operacional e infraestrutura de acesso.",
     lead: "Galpões, centros de distribuição, parques logísticos e estruturas frigorificadas com operação planejada desde o início.",
-    evidence: ["Bandeirantes Business Park", "Libra Terminais", "Logimaster", "Pepsico"],
+    evidence: ["Galpões logísticos", "Centros de distribuição", "Pátios operacionais", "Acesso rodoviário"],
     needs: ["Fluxo de docas", "Pé-direito e piso industrial", "Expansão futura"],
   },
   {
     key: "industria",
     name: "Indústrias",
     icon: Factory,
-    image: `${ASSET}hero-industrial.webp`,
+    image: `${SITE_IMAGE}obras/cnh-sorocaba/cnh-sorocaba-fachada-corporativa.webp`,
+    alt: "Fachada corporativa envidraçada de unidade industrial com áreas de operação.",
     lead: "Obras de alta complexidade que exigem integração entre produção, infraestrutura, segurança e continuidade operacional.",
-    evidence: ["Heineken", "Honda", "JBS", "Quartzolit", "Takasago"],
+    evidence: ["Unidades industriais", "Áreas corporativas", "Infraestrutura crítica", "Ambientes de apoio"],
     needs: ["Continuidade operacional", "Infraestrutura crítica", "Segurança de canteiro"],
   },
   {
     key: "varejo",
-    name: "Varejo alimentar",
+    name: "Varejo alimentar e atacarejo",
     icon: ShoppingCart,
-    image: `${ASSET}segmento-supermercados.webp`,
-    lead: "Supermercados, atacados e lojas que precisam abrir, ampliar ou reformar com prazo controlado.",
-    evidence: ["Makro", "Mambo", "Stock Atacadista", "Swift", "Coop"],
+    image: `${SITE_IMAGE}obras/varejo-alimentar/varejo-makro-capa-aerea.webp`,
+    alt: "Vista aérea de unidade de atacarejo com estacionamento, acessos e implantação operacional.",
+    lead: "Obras para supermercados, atacarejos e operações de varejo alimentar, com atenção a fluxo de clientes, áreas de atendimento, infraestrutura operacional e prazos de implantação.",
+    evidence: ["Supermercados", "Atacarejos", "Áreas de atendimento", "Implantação operacional"],
     needs: ["Abertura rápida", "Adequação de loja", "Obra em área urbana"],
   },
   {
     key: "hospitalidade",
     name: "Hotelaria",
     icon: Hotel,
-    image: `${ASSET}hero-hoteis.webp`,
+    image: `${SITE_IMAGE}obras/royal-palm-plaza/royal-palm-plaza-hotelaria-card.webp`,
+    alt: "Fachada lateral de empreendimento hoteleiro com acesso coberto, paisagismo e arquitetura de alto padrão.",
     lead: "Hotéis, resorts e torres corporativas com exigência de acabamento, conforto e experiência de uso.",
-    evidence: ["Royal Palm Plaza", "Royal Palm Tower", "Sheraton", "Euro Suit"],
+    evidence: ["Resorts", "Hotéis urbanos", "Áreas de lazer", "Ambientes de alto padrão"],
     needs: ["Acabamento técnico", "Conforto do usuário", "Entrega por etapas"],
   },
   {
     key: "concessionarias",
     name: "Concessionárias",
     icon: Car,
-    image: `${ASSET}segmento-concessionarias.webp`,
+    image: `${SITE_IMAGE}obras/concessionarias-tempo/tempo-valinhos-fachada-principal.webp`,
+    alt: "Fachada de concessionária com showroom, área externa e identidade visual corporativa.",
     lead: "Showrooms e oficinas com padrão de marca, exposição, circulação e operação de pós-venda.",
-    evidence: ["Tempo Volkswagen", "Ford Indaiatuba", "VW Valinhos"],
+    evidence: ["Showrooms", "Oficinas", "Padrão de montadora", "Fluxo de atendimento"],
     needs: ["Padrão de montadora", "Oficina e showroom", "Fluxo de atendimento"],
   },
 ];
 
 const projects = [
   {
-    name: "Makro Campinas",
-    scale: "11.000 m² construídos",
-    type: "2 meses de construção",
-    image: `${ASSET}segmento-supermercados.webp`,
+    name: "Fulwood Bandeirantes Business Park",
+    segment: "Logística e galpões",
+    description:
+      "Conjunto de galpões logísticos com implantação de grande escala, áreas operacionais, acessos e infraestrutura voltada à operação empresarial.",
+    image: `${SITE_IMAGE}obras/fulwood-bandeirantes/fulwood-bandeirantes-capa-aerea.webp`,
+    alt: "Vista aérea do Fulwood Bandeirantes Business Park com galpões logísticos e infraestrutura operacional.",
   },
   {
-    name: "Royal Palm Plaza Resort",
-    scale: "110.000 m² construídos",
-    type: "Hotelaria",
-    image: `${ASSET}hero-hoteis.webp`,
+    name: "Unidade industrial em Sorocaba",
+    segment: "Indústria",
+    description:
+      "Obra industrial com áreas corporativas, fachada técnica, ambientes internos e infraestrutura voltada à operação de grande porte.",
+    image: `${SITE_IMAGE}obras/cnh-sorocaba/cnh-sorocaba-fachada-corporativa.webp`,
+    alt: "Fachada corporativa envidraçada de unidade industrial com intervenção executada pela ENAC.",
   },
   {
-    name: "Bandeirantes Business Park",
-    scale: "34.000 m² construídos",
-    type: "Logística",
-    image: `${ASSET}hero-distribuicao.webp`,
+    name: "Empreendimento logístico próximo a Viracopos",
+    segment: "Logística e galpões",
+    description:
+      "Empreendimento logístico com galpões, áreas administrativas, pátios operacionais e acesso rodoviário próximo ao Aeroporto de Viracopos.",
+    image: `${SITE_IMAGE}obras/bresco-viracopos/bresco-viracopos-capa-aerea.webp`,
+    alt: "Vista aérea de empreendimento logístico próximo ao Aeroporto de Viracopos, com galpões, áreas administrativas e acesso rodoviário.",
   },
   {
-    name: "Tempo Volkswagen",
-    scale: "4.500 m² construídos",
-    type: "Concessionária",
-    image: `${ASSET}segmento-concessionarias.webp`,
+    name: "Empreendimento logístico em Sorocaba",
+    segment: "Indústria e logística",
+    description:
+      "Empreendimento industrial/logístico em Sorocaba, com áreas operacionais, infraestrutura externa e implantação voltada ao uso corporativo.",
+    image: `${SITE_IMAGE}obras/aedi-aurora-sorocaba/aedi-aurora-capa-aerea.webp`,
+    alt: "Vista aérea de empreendimento logístico com galpões, pátio operacional e acesso rodoviário.",
   },
   {
-    name: "Bresco Viracopos",
-    scale: "9.240 m² construídos",
-    type: "Indústria",
-    image: `${ASSET}segmento-industrias.webp`,
+    name: "Varejo alimentar e atacarejo",
+    segment: "Varejo alimentar",
+    description:
+      "Obras para supermercados, atacarejos e operações de varejo alimentar, com atenção a fluxo de clientes, áreas de atendimento, infraestrutura operacional e prazos de implantação.",
+    image: `${SITE_IMAGE}obras/varejo-alimentar/varejo-makro-capa-aerea.webp`,
+    alt: "Vista aérea de unidade de atacarejo com estacionamento, acessos e implantação operacional.",
   },
   {
-    name: "The Royal Indaiatuba",
-    scale: "12.000 m² construídos",
-    type: "Hotelaria",
-    image: `${ASSET}segmento-hoteis.webp`,
+    name: "Concessionárias automotivas",
+    segment: "Concessionárias e showrooms automotivos",
+    description:
+      "Empreendimentos automotivos com showroom, áreas técnicas, fachada comercial e operação voltada ao atendimento ao público.",
+    image: `${SITE_IMAGE}obras/concessionarias-tempo/tempo-valinhos-fachada-principal.webp`,
+    alt: "Fachada de concessionária executada pela ENAC, com showroom, área externa e identidade visual corporativa.",
+  },
+  {
+    name: "Empreendimento hoteleiro em Campinas",
+    segment: "Hotelaria e resorts",
+    description:
+      "Empreendimento hoteleiro com múltiplas edificações, áreas de lazer, auditório, acessos e infraestrutura externa.",
+    image: `${SITE_IMAGE}obras/royal-palm-plaza/royal-palm-plaza-capa-fachada.webp`,
+    alt: "Fachada principal de empreendimento hoteleiro em Campinas, com arquitetura de alto padrão, acesso e paisagismo.",
+  },
+  {
+    name: "Centro médico em Campinas",
+    segment: "Saúde e interiores corporativos",
+    description:
+      "Ambiente de recepção e atendimento com acabamento interno, controle de acesso, organização de fluxo e entrega pronta para operação.",
+    image: `${SITE_IMAGE}obras/centro-medico-campinas/centro-medico-campinas-capa-fachada.webp`,
+    alt: "Fachada do Centro Médico Campinas com acesso de recepção e comunicação visual.",
   },
 ];
 
@@ -205,7 +239,13 @@ const clients = [
   { name: "Pirelli", logo: `${ASSET}clients/pirelli.png` },
   { name: "Eaton", logo: `${ASSET}clients/eaton.png` },
   { name: "DHL", logo: `${ASSET}clients/dhl.png` },
-  { name: "Cobasi", logo: `${ASSET}clients/cobasi.png` },
+  { name: "Cobasi", logo: `${SITE_IMAGE}clientes/logo-cobasi.png`, alt: "Logo Cobasi." },
+  { name: "Ecopátio", logo: `${SITE_IMAGE}clientes/logo-ecopatio.png`, alt: "Logo Ecopátio." },
+  {
+    name: "Centro Médico Campinas",
+    logo: `${SITE_IMAGE}clientes/logo-centro-medico-campinas.png`,
+    alt: "Logo Centro Médico Campinas.",
+  },
   { name: "Coop", logo: `${ASSET}clients/coop.png` },
 ];
 
@@ -465,7 +505,10 @@ function App() {
       <main id="inicio">
         <section className="hero">
           <div className="hero-media">
-            <img src={`${ASSET}hero-distribuicao.webp`} alt="Centro de distribuição construído pela ENAC" />
+            <img
+              src={`${SITE_IMAGE}hero/hero-fulwood-bandeirantes-business-park.webp`}
+              alt="Vista aérea de condomínio de galpões logísticos, com implantação de grande escala e áreas operacionais."
+            />
           </div>
           <div className="hero-content">
             <span className="kicker">
@@ -575,7 +618,7 @@ function App() {
             <article className="sector-detail">
               <img
                 src={selectedSector.image}
-                alt={`Empreendimento de ${selectedSector.name.toLowerCase()} executado pela ENAC`}
+                alt={selectedSector.alt}
                 loading="lazy"
               />
               <div className="sector-copy">
@@ -610,12 +653,12 @@ function App() {
             {projects.map((project) => (
               <article key={project.name}>
                 <figure>
-                  <img src={project.image} alt={`Imagem da obra ${project.name}`} loading="lazy" />
+                  <img src={project.image} alt={project.alt} loading="lazy" />
                 </figure>
                 <div className="project-body">
                   <h3>{project.name}</h3>
-                  <p>{project.scale}</p>
-                  <span>{project.type}</span>
+                  <p>{project.description}</p>
+                  <span>{project.segment}</span>
                 </div>
               </article>
             ))}
@@ -645,7 +688,7 @@ function App() {
           <div className="client-logo-grid" aria-label="Clientes atendidos">
             {clients.map((client) => (
               <figure key={client.name}>
-                <img src={client.logo} alt={client.name} loading="lazy" />
+                <img src={client.logo} alt={client.alt ?? client.name} loading="lazy" />
               </figure>
             ))}
           </div>
