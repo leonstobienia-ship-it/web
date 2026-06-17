@@ -16,6 +16,7 @@ import {
 type ProgramacaoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 type ItemStatus = 'ATIVA' | 'REMOVIDA' | 'CANCELADA';
 type LiberacaoStatus = 'PENDENTE_LIBERACAO' | 'LIBERADA' | 'BLOQUEADA_LIBERACAO' | 'CANCELADA';
+type ConferenciaStatus = 'PENDENTE_CONFERENCIA' | 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA';
 
 interface PgErrorLike {
   code?: string;
@@ -27,6 +28,7 @@ interface ProgramacaoForUpdate extends QueryResultRow {
   company_id: string;
   status: ProgramacaoStatus;
   liberacao_status: LiberacaoStatus;
+  conferencia_status: ConferenciaStatus;
   data_prevista: string;
   fornecedor_id: string | null;
   obra_id: string | null;
@@ -37,6 +39,9 @@ interface ProgramacaoForUpdate extends QueryResultRow {
   liberado_por: string | null;
   liberado_em: string | null;
   bloqueio_liberacao_motivo: string | null;
+  conferido_por: string | null;
+  conferido_em: string | null;
+  bloqueio_conferencia_motivo: string | null;
 }
 
 interface ContaProgramacaoRow extends QueryResultRow {
@@ -98,6 +103,35 @@ interface LiberacaoHistoricoRow extends QueryResultRow {
   created_at: string;
 }
 
+interface ConferenciaHistoricoRow extends QueryResultRow {
+  id: string;
+  programacao_id: string;
+  acao: string;
+  status_anterior: string;
+  status_novo: string;
+  conferencia_status: string;
+  usuario_id: string | null;
+  usuario_nome: string | null;
+  valor_total_conferido: string;
+  quantidade_contas: number;
+  checklist: Record<string, unknown> | null;
+  observacoes: string | null;
+  resultado: string;
+  motivo: string | null;
+  created_at: string;
+}
+
+interface ConferenciaChecklist {
+  fornecedor_conferido: boolean;
+  documento_fiscal_conferido: boolean;
+  valor_conferido: boolean;
+  vencimento_conferido: boolean;
+  obra_conferida: boolean;
+  centro_custo_conferido: boolean;
+  forma_pagamento_prevista_conferida: boolean;
+  ressalva: boolean;
+}
+
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const activeProgramacaoStatuses: ProgramacaoStatus[] = ['RASCUNHO', 'SUBMETIDA', 'APROVADA', 'LIBERADA'];
 const approvedStatuses = new Set(['APROVADO_TECNICO', 'APROVADO_DIRETORIA']);
@@ -135,6 +169,14 @@ const optionalUsuarioId = (payload: Record<string, unknown>): string | null => {
     return null;
   }
   return assertUuid(usuario, 'usuario_id');
+};
+
+const requiredUsuarioId = (payload: Record<string, unknown>): string => {
+  const usuarioId = optionalUsuarioId(payload);
+  if (!usuarioId) {
+    throw new HttpError(400, 'validation_error', 'Campo obrigatorio ausente: usuario_id.');
+  }
+  return usuarioId;
 };
 
 const normalizeAprovacaoAction = (action: string): AcaoAprovacao => {
@@ -184,6 +226,7 @@ const fetchProgramacaoForUpdate = async (client: PoolClient, id: string): Promis
       company_id,
       status,
       liberacao_status,
+      conferencia_status,
       data_prevista,
       fornecedor_id,
       obra_id,
@@ -193,7 +236,10 @@ const fetchProgramacaoForUpdate = async (client: PoolClient, id: string): Promis
       quantidade_contas,
       liberado_por,
       liberado_em,
-      bloqueio_liberacao_motivo
+      bloqueio_liberacao_motivo,
+      conferido_por,
+      conferido_em,
+      bloqueio_conferencia_motivo
     from programacoes_pagamento
     where id = $1
     for update
@@ -212,6 +258,7 @@ const fetchProgramacao = async (id: string) => {
       pp.codigo,
       pp.status,
       pp.liberacao_status,
+      pp.conferencia_status,
       pp.data_prevista,
       pp.fornecedor_id,
       f.nome as fornecedor_nome,
@@ -241,6 +288,16 @@ const fetchProgramacao = async (id: string) => {
       pp.liberacao_alcada_origem,
       pp.liberacao_status_anterior,
       pp.bloqueio_liberacao_motivo,
+      pp.conferido_por,
+      conferente.nome as conferido_por_nome,
+      pp.conferido_em,
+      pp.conferencia_observacoes,
+      pp.conferencia_checklist,
+      pp.conferencia_valor_total,
+      pp.conferencia_quantidade_contas,
+      pp.conferencia_status_anterior,
+      pp.conferencia_status_novo,
+      pp.bloqueio_conferencia_motivo,
       pp.submetido_por,
       submetido.nome as submetido_por_nome,
       pp.submetido_em,
@@ -277,6 +334,7 @@ const fetchProgramacao = async (id: string) => {
     left join centros_custo cc on cc.id = pp.centro_custo_id
     left join usuarios aprovador on aprovador.id = pp.aprovado_por
     left join usuarios liberador on liberador.id = pp.liberado_por
+    left join usuarios conferente on conferente.id = pp.conferido_por
     left join usuarios submetido on submetido.id = pp.submetido_por
     left join usuarios cancelador on cancelador.id = pp.cancelado_por
     left join programacoes_pagamento_itens ppi on ppi.programacao_id = pp.id and ppi.status = 'ATIVA'
@@ -285,7 +343,7 @@ const fetchProgramacao = async (id: string) => {
     left join obras co on co.id = cp.obra_id
     left join centros_custo ccc on ccc.id = cp.centro_custo_id
     where pp.id = $1
-    group by pp.id, f.id, o.id, cc.id, aprovador.id, liberador.id, submetido.id, cancelador.id
+    group by pp.id, f.id, o.id, cc.id, aprovador.id, liberador.id, conferente.id, submetido.id, cancelador.id
     `,
     [id]
   );
@@ -323,6 +381,7 @@ const listProgramacoes = async (url: URL) => {
       pp.codigo,
       pp.status,
       pp.liberacao_status,
+      pp.conferencia_status,
       pp.data_prevista,
       pp.fornecedor_id,
       f.nome as fornecedor_nome,
@@ -343,6 +402,12 @@ const listProgramacoes = async (url: URL) => {
       pp.liberacao_valor_total,
       pp.liberacao_quantidade_contas,
       pp.bloqueio_liberacao_motivo,
+      pp.conferido_por,
+      conferente.nome as conferido_por_nome,
+      pp.conferido_em,
+      pp.conferencia_valor_total,
+      pp.conferencia_quantidade_contas,
+      pp.bloqueio_conferencia_motivo,
       pp.created_at,
       pp.updated_at
     from programacoes_pagamento pp
@@ -350,6 +415,7 @@ const listProgramacoes = async (url: URL) => {
     left join obras o on o.id = pp.obra_id
     left join centros_custo cc on cc.id = pp.centro_custo_id
     left join usuarios liberador on liberador.id = pp.liberado_por
+    left join usuarios conferente on conferente.id = pp.conferido_por
     ${where}
     order by pp.data_prevista asc, pp.created_at desc
     `,
@@ -574,6 +640,36 @@ const fetchLiberacoes = async (programacaoId: string): Promise<LiberacaoHistoric
   return result.rows;
 };
 
+const fetchConferencias = async (programacaoId: string): Promise<ConferenciaHistoricoRow[]> => {
+  assertUuid(programacaoId, 'id');
+  const result = await getPool().query<ConferenciaHistoricoRow>(
+    `
+    select
+      ppc.id,
+      ppc.programacao_id,
+      ppc.acao,
+      ppc.status_anterior,
+      ppc.status_novo,
+      ppc.conferencia_status,
+      ppc.usuario_id,
+      u.nome as usuario_nome,
+      ppc.valor_total_conferido,
+      ppc.quantidade_contas,
+      ppc.checklist,
+      ppc.observacoes,
+      ppc.resultado,
+      ppc.motivo,
+      ppc.created_at
+    from programacoes_pagamento_conferencias ppc
+    left join usuarios u on u.id = ppc.usuario_id
+    where ppc.programacao_id = $1
+    order by ppc.created_at desc
+    `,
+    [programacaoId]
+  );
+  return result.rows;
+};
+
 const insertLiberacaoHistorico = async (
   client: PoolClient,
   programacao: ProgramacaoForUpdate,
@@ -614,6 +710,55 @@ const insertLiberacaoHistorico = async (
       Number(programacao.quantidade_contas),
       origemAlcada,
       justificativa,
+      resultado,
+      motivo
+    ]
+  );
+};
+
+const insertConferenciaHistorico = async (
+  client: PoolClient,
+  programacao: ProgramacaoForUpdate,
+  acao: 'CONFERIR_FINANCEIRO' | 'DEVOLVER_CONFERENCIA',
+  statusNovo: ProgramacaoStatus,
+  conferenciaStatus: Extract<ConferenciaStatus, 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA'>,
+  usuarioId: string,
+  checklist: ConferenciaChecklist | null,
+  observacoes: string | null,
+  resultado: 'PERMITIDO' | 'NEGADO',
+  motivo: string | null
+): Promise<void> => {
+  await client.query(
+    `
+    insert into programacoes_pagamento_conferencias (
+      programacao_id,
+      company_id,
+      acao,
+      status_anterior,
+      status_novo,
+      conferencia_status,
+      usuario_id,
+      valor_total_conferido,
+      quantidade_contas,
+      checklist,
+      observacoes,
+      resultado,
+      motivo
+    )
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13)
+    `,
+    [
+      programacao.id,
+      programacao.company_id,
+      acao,
+      programacao.status,
+      statusNovo,
+      conferenciaStatus,
+      usuarioId,
+      Number(programacao.valor_total),
+      Number(programacao.quantidade_contas),
+      checklist ? JSON.stringify(checklist) : null,
+      observacoes,
       resultado,
       motivo
     ]
@@ -700,6 +845,98 @@ const getBloqueiosLiberacao = async (client: PoolClient, programacao: Programaca
   }
 
   return bloqueios;
+};
+
+const parseConferenciaChecklist = (payload: Record<string, unknown>): ConferenciaChecklist => {
+  const raw = payload.checklist;
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new HttpError(400, 'validation_error', 'Checklist financeiro obrigatorio para conferencia.');
+  }
+
+  const checklistPayload = raw as Record<string, unknown>;
+  const requiredFields: Array<keyof Omit<ConferenciaChecklist, 'ressalva'>> = [
+    'fornecedor_conferido',
+    'documento_fiscal_conferido',
+    'valor_conferido',
+    'vencimento_conferido',
+    'obra_conferida',
+    'centro_custo_conferido',
+    'forma_pagamento_prevista_conferida'
+  ];
+
+  const missing = requiredFields.filter((field) => checklistPayload[field] !== true);
+  if (missing.length > 0) {
+    throw new HttpError(400, 'validation_error', 'Checklist financeiro incompleto para conferencia.', missing);
+  }
+
+  const checklist: ConferenciaChecklist = {
+    fornecedor_conferido: true,
+    documento_fiscal_conferido: true,
+    valor_conferido: true,
+    vencimento_conferido: true,
+    obra_conferida: true,
+    centro_custo_conferido: true,
+    forma_pagamento_prevista_conferida: true,
+    ressalva: checklistPayload.ressalva === true
+  };
+
+  if (checklist.ressalva) {
+    const observacoes = optionalText(payload, 'observacoes') || optionalText(payload, 'justificativa');
+    if (!observacoes) {
+      throw new HttpError(400, 'validation_error', 'Observacao obrigatoria quando houver ressalva na conferencia.');
+    }
+  }
+
+  return checklist;
+};
+
+const validarEscopoConferencia = async (
+  client: PoolClient,
+  companyId: string,
+  usuarioId: string,
+  acao: 'conferir_financeiro' | 'devolver_conferencia'
+): Promise<{ permitido: boolean; motivo: string }> => {
+  const usuario = await client.query<{ id: string; company_id: string }>(
+    `
+    select id, company_id
+    from usuarios
+    where id = $1 and status = 'ativo' and ativo = true
+    `,
+    [usuarioId]
+  );
+  if (!usuario.rows[0]) {
+    throw new HttpError(404, 'not_found', 'Usuario ativo nao encontrado para conferencia financeira.');
+  }
+  if (usuario.rows[0].company_id !== companyId) {
+    throw new HttpError(400, 'validation_error', 'Usuario pertence a outra empresa.');
+  }
+
+  const escopo = await client.query<{ id: string }>(
+    `
+    select e.id
+    from usuarios_perfis up
+    join perfis p on p.id = up.perfil_id and p.status = 'ativo'
+    join perfis_escopos pe on pe.perfil_id = p.id and pe.status = 'ativo'
+    join escopos_acesso e on e.id = pe.escopo_id and e.status = 'ativo'
+    where up.usuario_id = $1
+      and up.status = 'ativo'
+      and p.company_id = $2
+      and e.company_id = $2
+      and e.modulo = 'programacoes-pagamento'
+      and e.acao = $3
+    limit 1
+    `,
+    [usuarioId, companyId, acao]
+  );
+
+  if (!escopo.rows[0]) {
+    return {
+      permitido: false,
+      motivo: `Usuario sem escopo ativo para ${acao.replace(/_/g, ' ')} em programacoes-pagamento.`
+    };
+  }
+
+  return { permitido: true, motivo: 'Escopo ativo confirmado.' };
 };
 
 const adicionarContaTx = async (
@@ -1158,6 +1395,242 @@ const liberarProgramacao = async (id: string, payload: Record<string, unknown>) 
   }
 };
 
+const conferirFinanceiro = async (id: string, payload: Record<string, unknown>) => {
+  assertUuid(id, 'id');
+  assertAllowedFields(payload, ['usuario_id', 'usuarioId', 'observacoes', 'justificativa', 'checklist']);
+  const usuarioId = requiredUsuarioId(payload);
+  const observacoes = optionalText(payload, 'observacoes') || optionalText(payload, 'justificativa');
+  const checklist = parseConferenciaChecklist(payload);
+  const client = await getPool().connect();
+  let committed = false;
+
+  try {
+    await client.query('begin');
+    const programacao = await fetchProgramacaoForUpdate(client, id);
+    if (!programacao) {
+      throw new HttpError(404, 'not_found', 'Programacao de pagamento nao encontrada.');
+    }
+    if (programacao.status !== 'LIBERADA') {
+      throw new HttpError(409, 'status_conflict', `Programacao em status ${programacao.status} nao permite conferencia financeira.`);
+    }
+    if (programacao.conferencia_status === 'CONFERIDA' || programacao.conferido_em) {
+      throw new HttpError(409, 'status_conflict', 'Programacao ja possui conferencia financeira final.');
+    }
+
+    const permissao = await validarEscopoConferencia(client, programacao.company_id, usuarioId, 'conferir_financeiro');
+    const auditPayload = {
+      usuario_id: usuarioId,
+      modulo: 'programacoes-pagamento',
+      acao: 'conferir_financeiro',
+      valor: Number(programacao.valor_total),
+      quantidade_contas: Number(programacao.quantidade_contas),
+      checklist,
+      observacoes,
+      status_anterior: programacao.status,
+      status_novo: programacao.status,
+      conferencia_status_anterior: programacao.conferencia_status
+    };
+
+    if (!permissao.permitido) {
+      await client.query(
+        `
+        update programacoes_pagamento
+        set conferencia_status = 'BLOQUEADA_CONFERENCIA',
+            bloqueio_conferencia_motivo = $1,
+            conferencia_observacoes = $2,
+            conferencia_checklist = $3::jsonb,
+            conferencia_status_anterior = $4,
+            conferencia_status_novo = 'BLOQUEADA_CONFERENCIA',
+            updated_by = $5,
+            updated_at = now()
+        where id = $6
+        `,
+        [permissao.motivo, observacoes, JSON.stringify(checklist), programacao.conferencia_status, usuarioId, id]
+      );
+      await insertConferenciaHistorico(
+        client,
+        programacao,
+        'CONFERIR_FINANCEIRO',
+        programacao.status,
+        'BLOQUEADA_CONFERENCIA',
+        usuarioId,
+        checklist,
+        observacoes,
+        'NEGADO',
+        permissao.motivo
+      );
+      await registrarAuditoria(client, programacao.company_id, 'programacao_pagamento', id, 'bloquear_conferencia', {
+        ...auditPayload,
+        resultado: 'NEGADO',
+        motivo: permissao.motivo,
+        conferencia_status_novo: 'BLOQUEADA_CONFERENCIA'
+      }, usuarioId);
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(403, 'permissao_conferencia_bloqueada', permissao.motivo, auditPayload);
+    }
+
+    const bloqueios = await getBloqueiosLiberacao(client, programacao);
+    if (bloqueios.length > 0) {
+      throw new HttpError(409, 'conferencia_bloqueada', 'Programacao nao atende aos criterios de conferencia financeira final.', bloqueios);
+    }
+
+    await client.query(
+      `
+      update programacoes_pagamento
+      set conferencia_status = 'CONFERIDA',
+          conferido_por = $1,
+          conferido_em = now(),
+          conferencia_observacoes = $2,
+          conferencia_checklist = $3::jsonb,
+          conferencia_valor_total = valor_total,
+          conferencia_quantidade_contas = quantidade_contas,
+          conferencia_status_anterior = $4,
+          conferencia_status_novo = 'CONFERIDA',
+          bloqueio_conferencia_motivo = null,
+          updated_by = $1,
+          updated_at = now()
+      where id = $5
+      `,
+      [usuarioId, observacoes, JSON.stringify(checklist), programacao.conferencia_status, id]
+    );
+    await insertConferenciaHistorico(
+      client,
+      programacao,
+      'CONFERIR_FINANCEIRO',
+      programacao.status,
+      'CONFERIDA',
+      usuarioId,
+      checklist,
+      observacoes,
+      'PERMITIDO',
+      permissao.motivo
+    );
+    await registrarAuditoria(client, programacao.company_id, 'programacao_pagamento', id, 'conferir_financeiro', {
+      ...auditPayload,
+      resultado: 'PERMITIDO',
+      motivo: permissao.motivo,
+      conferencia_status_novo: 'CONFERIDA'
+    }, usuarioId);
+    await client.query('commit');
+    committed = true;
+    return fetchProgramacao(id);
+  } catch (error) {
+    if (!committed) {
+      await client.query('rollback');
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const devolverConferencia = async (id: string, payload: Record<string, unknown>) => {
+  assertUuid(id, 'id');
+  assertAllowedFields(payload, ['usuario_id', 'usuarioId', 'observacoes', 'justificativa']);
+  const usuarioId = requiredUsuarioId(payload);
+  const observacoes = optionalText(payload, 'observacoes') || optionalText(payload, 'justificativa');
+  if (!observacoes) {
+    throw new HttpError(400, 'validation_error', 'Observacao ou justificativa obrigatoria para devolver conferencia.');
+  }
+  const client = await getPool().connect();
+  let committed = false;
+
+  try {
+    await client.query('begin');
+    const programacao = await fetchProgramacaoForUpdate(client, id);
+    if (!programacao) {
+      throw new HttpError(404, 'not_found', 'Programacao de pagamento nao encontrada.');
+    }
+    if (programacao.status !== 'LIBERADA') {
+      throw new HttpError(409, 'status_conflict', `Programacao em status ${programacao.status} nao permite devolver conferencia.`);
+    }
+    if (programacao.conferencia_status === 'CONFERIDA' || programacao.conferido_em) {
+      throw new HttpError(409, 'status_conflict', 'Programacao conferida nao pode ser devolvida nesta etapa.');
+    }
+
+    const permissao = await validarEscopoConferencia(client, programacao.company_id, usuarioId, 'devolver_conferencia');
+    const auditPayload = {
+      usuario_id: usuarioId,
+      modulo: 'programacoes-pagamento',
+      acao: 'devolver_conferencia',
+      valor: Number(programacao.valor_total),
+      quantidade_contas: Number(programacao.quantidade_contas),
+      observacoes,
+      status_anterior: programacao.status,
+      status_novo: programacao.status,
+      conferencia_status_anterior: programacao.conferencia_status
+    };
+
+    if (!permissao.permitido) {
+      await insertConferenciaHistorico(
+        client,
+        programacao,
+        'DEVOLVER_CONFERENCIA',
+        programacao.status,
+        'BLOQUEADA_CONFERENCIA',
+        usuarioId,
+        null,
+        observacoes,
+        'NEGADO',
+        permissao.motivo
+      );
+      await registrarAuditoria(client, programacao.company_id, 'programacao_pagamento', id, 'bloquear_devolucao_conferencia', {
+        ...auditPayload,
+        resultado: 'NEGADO',
+        motivo: permissao.motivo,
+        conferencia_status_novo: 'BLOQUEADA_CONFERENCIA'
+      }, usuarioId);
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(403, 'permissao_conferencia_bloqueada', permissao.motivo, auditPayload);
+    }
+
+    await client.query(
+      `
+      update programacoes_pagamento
+      set conferencia_status = 'DEVOLVIDA',
+          conferencia_observacoes = $1,
+          conferencia_status_anterior = $2,
+          conferencia_status_novo = 'DEVOLVIDA',
+          bloqueio_conferencia_motivo = null,
+          updated_by = $3,
+          updated_at = now()
+      where id = $4
+      `,
+      [observacoes, programacao.conferencia_status, usuarioId, id]
+    );
+    await insertConferenciaHistorico(
+      client,
+      programacao,
+      'DEVOLVER_CONFERENCIA',
+      programacao.status,
+      'DEVOLVIDA',
+      usuarioId,
+      null,
+      observacoes,
+      'PERMITIDO',
+      permissao.motivo
+    );
+    await registrarAuditoria(client, programacao.company_id, 'programacao_pagamento', id, 'devolver_conferencia', {
+      ...auditPayload,
+      resultado: 'PERMITIDO',
+      motivo: permissao.motivo,
+      conferencia_status_novo: 'DEVOLVIDA'
+    }, usuarioId);
+    await client.query('commit');
+    committed = true;
+    return fetchProgramacao(id);
+  } catch (error) {
+    if (!committed) {
+      await client.query('rollback');
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const reprovarProgramacao = async (id: string, payload: Record<string, unknown>) => {
   assertUuid(id, 'id');
   assertAllowedFields(payload, ['usuario_id', 'usuarioId', 'observacoes', 'justificativa']);
@@ -1318,6 +1791,16 @@ export const handleProgramacoesPagamento = async (req: IncomingMessage, res: Ser
       return;
     }
 
+    if (parts.length === 2 && parts[1] === 'conferencias') {
+      const [id] = parts;
+      if (method !== 'GET') {
+        methodNotAllowed(res, ['GET']);
+        return;
+      }
+      sendJson(res, 200, { data: await fetchConferencias(id) });
+      return;
+    }
+
     if (parts.length === 2 && method === 'PATCH') {
       const [id, action] = parts;
       if (action === 'submeter') {
@@ -1326,6 +1809,14 @@ export const handleProgramacoesPagamento = async (req: IncomingMessage, res: Ser
       }
       if (action === 'liberar') {
         sendJson(res, 200, { data: await liberarProgramacao(id, await readJsonBody(req)) });
+        return;
+      }
+      if (action === 'conferir-financeiro') {
+        sendJson(res, 200, { data: await conferirFinanceiro(id, await readJsonBody(req)) });
+        return;
+      }
+      if (action === 'devolver-conferencia') {
+        sendJson(res, 200, { data: await devolverConferencia(id, await readJsonBody(req)) });
         return;
       }
       if (['aprovar-tecnico', 'aprovar-diretoria'].includes(action)) {

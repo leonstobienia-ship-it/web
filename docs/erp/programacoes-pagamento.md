@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para uma data prevista de pagamento, aprova a programacao por alcada e registra a liberacao final para execucao futura, sem executar pagamento, baixa, liberacao bancaria real, CNAB ou integracao com banco.
+O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para uma data prevista de pagamento, aprova a programacao por alcada, registra a liberacao final para execucao futura e realiza a conferencia financeira final pre-baixa, sem executar pagamento, baixa, liberacao bancaria real, CNAB ou integracao com banco.
 
 ## Regras funcionais
 
@@ -17,6 +17,10 @@ O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para um
 - A V3.5E permite liberar somente programacao `APROVADA`.
 - `LIBERADA` indica liberacao final gerencial/financeira para execucao futura, ainda sem pagamento real.
 - Bloqueio por alcada insuficiente na liberacao fica registrado como `BLOQUEADA_LIBERACAO`.
+- A V3.5F permite conferir financeiramente somente programacao `LIBERADA`.
+- A conferencia pode ficar `PENDENTE_CONFERENCIA`, `CONFERIDA`, `BLOQUEADA_CONFERENCIA` ou `DEVOLVIDA`.
+- Conferencia financeira bloqueia programacao nao liberada, cancelada, reprovada, sem itens, com conta inativa/cancelada, divergencia pendente, sem aprovacao interna ou usuario sem permissao.
+- `CONFERIDA` registra prontidao para futura baixa manual, mas nao altera Conta a Pagar, nao baixa, nao paga e nao marca `PAGA`.
 - `REPROVADA` e `CANCELADA` liberam logicamente as contas para nova programacao futura.
 
 ## Modelo
@@ -39,6 +43,7 @@ Cabeçalho da programação:
 - justificativa;
 - campos de aprovacao por alcada;
 - campos de liberacao final;
+- campos de conferencia financeira final pre-baixa;
 - campos de submissao e cancelamento lógico.
 
 Campos de liberacao final da V3.5E:
@@ -53,6 +58,19 @@ Campos de liberacao final da V3.5E:
 - `liberacao_status_anterior`;
 - `bloqueio_liberacao_motivo`.
 
+Campos de conferencia financeira da V3.5F:
+
+- `conferencia_status`;
+- `conferido_por`;
+- `conferido_em`;
+- `conferencia_observacoes`;
+- `conferencia_checklist`;
+- `conferencia_valor_total`;
+- `conferencia_quantidade_contas`;
+- `conferencia_status_anterior`;
+- `conferencia_status_novo`;
+- `bloqueio_conferencia_motivo`.
+
 ### `programacoes_pagamento_liberacoes`
 
 Historico de tentativas de liberacao:
@@ -66,6 +84,24 @@ Historico de tentativas de liberacao:
 - quantidade de contas;
 - origem da alcada;
 - justificativa;
+- resultado;
+- motivo;
+- data/hora.
+
+### `programacoes_pagamento_conferencias`
+
+Historico de tentativas de conferencia:
+
+- programacao;
+- empresa;
+- acao;
+- status anterior e novo da programacao;
+- status da conferencia;
+- usuario;
+- valor total conferido;
+- quantidade de contas;
+- checklist financeiro;
+- observacoes;
 - resultado;
 - motivo;
 - data/hora.
@@ -104,6 +140,8 @@ Acoes:
 aprovar_tecnico
 aprovar_diretoria
 liberar
+conferir_financeiro
+devolver_conferencia
 ```
 
 Seeds locais:
@@ -112,6 +150,7 @@ Seeds locais:
 - `DIRETORIA`: `aprovar_diretoria` acima de R$ 20.000,00.
 - `FINANCEIRO`: `liberar` de R$ 0,00 ate R$ 20.000,00;
 - `DIRETORIA`: `liberar` acima de R$ 20.000,00.
+- `FINANCEIRO` e `DIRETORIA`: escopo de conferencia financeira e devolucao de conferencia.
 
 ## Contrato REST
 
@@ -127,6 +166,9 @@ PATCH /programacoes-pagamento/:id/aprovar-tecnico
 PATCH /programacoes-pagamento/:id/aprovar-diretoria
 PATCH /programacoes-pagamento/:id/liberar
 GET   /programacoes-pagamento/:id/liberacoes
+PATCH /programacoes-pagamento/:id/conferir-financeiro
+PATCH /programacoes-pagamento/:id/devolver-conferencia
+GET   /programacoes-pagamento/:id/conferencias
 PATCH /programacoes-pagamento/:id/reprovar
 PATCH /programacoes-pagamento/:id/cancelar
 ```
@@ -138,6 +180,7 @@ PATCH /programacoes-pagamento/:id/pagar
 PATCH /programacoes-pagamento/:id/baixar
 PATCH /programacoes-pagamento/:id/gerar-cnab
 PATCH /programacoes-pagamento/:id/executar-pagamento
+PATCH /programacoes-pagamento/:id/integracao-bancaria
 ```
 
 ## Auditoria

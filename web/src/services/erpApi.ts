@@ -770,6 +770,18 @@ export interface ContaPagarUpdatePayload {
 }
 
 export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
+export type ProgramacaoPagamentoConferenciaStatus = 'PENDENTE_CONFERENCIA' | 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA';
+
+export interface ProgramacaoPagamentoConferenciaChecklist {
+  fornecedor_conferido: boolean;
+  documento_fiscal_conferido: boolean;
+  valor_conferido: boolean;
+  vencimento_conferido: boolean;
+  obra_conferida: boolean;
+  centro_custo_conferido: boolean;
+  forma_pagamento_prevista_conferida: boolean;
+  ressalva?: boolean;
+}
 
 export interface ContaPagarElegibilidadeApi extends ContaPagarApi {
   ativo: boolean;
@@ -810,6 +822,7 @@ export interface ProgramacaoPagamentoApi {
   codigo: string;
   status: ProgramacaoPagamentoStatus;
   liberacao_status?: 'PENDENTE_LIBERACAO' | 'LIBERADA' | 'BLOQUEADA_LIBERACAO' | 'CANCELADA' | null;
+  conferencia_status?: ProgramacaoPagamentoConferenciaStatus | null;
   data_prevista: string;
   fornecedor_id?: string | null;
   fornecedor_nome?: string | null;
@@ -839,6 +852,16 @@ export interface ProgramacaoPagamentoApi {
   liberacao_alcada_origem?: string | null;
   liberacao_status_anterior?: string | null;
   bloqueio_liberacao_motivo?: string | null;
+  conferido_por?: string | null;
+  conferido_por_nome?: string | null;
+  conferido_em?: string | null;
+  conferencia_observacoes?: string | null;
+  conferencia_checklist?: ProgramacaoPagamentoConferenciaChecklist | null;
+  conferencia_valor_total?: string | number | null;
+  conferencia_quantidade_contas?: number | null;
+  conferencia_status_anterior?: string | null;
+  conferencia_status_novo?: string | null;
+  bloqueio_conferencia_motivo?: string | null;
   submetido_por?: string | null;
   submetido_por_nome?: string | null;
   submetido_em?: string | null;
@@ -863,6 +886,24 @@ export interface ProgramacaoPagamentoLiberacaoApi {
   quantidade_contas: number;
   origem_alcada?: string | null;
   justificativa?: string | null;
+  resultado: string;
+  motivo?: string | null;
+  created_at: string;
+}
+
+export interface ProgramacaoPagamentoConferenciaApi {
+  id: string;
+  programacao_id: string;
+  acao: string;
+  status_anterior: string;
+  status_novo: string;
+  conferencia_status: ProgramacaoPagamentoConferenciaStatus | string;
+  usuario_id?: string | null;
+  usuario_nome?: string | null;
+  valor_total_conferido: string | number;
+  quantidade_contas: number;
+  checklist?: ProgramacaoPagamentoConferenciaChecklist | null;
+  observacoes?: string | null;
   resultado: string;
   motivo?: string | null;
   created_at: string;
@@ -895,8 +936,13 @@ export interface ProgramacaoPagamentoContaPayload {
 
 export interface ProgramacaoPagamentoActionPayload {
   usuario_id?: string | null;
+  usuarioId?: string | null;
   observacoes?: string | null;
   justificativa?: string | null;
+}
+
+export interface ProgramacaoPagamentoConferenciaPayload extends ProgramacaoPagamentoActionPayload {
+  checklist: ProgramacaoPagamentoConferenciaChecklist;
 }
 
 export type CadastroPayload = Record<string, string | number | null | undefined>;
@@ -1290,8 +1336,20 @@ export const erpApi = {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data,
+    conferirFinanceiro: async (id: string, payload: ProgramacaoPagamentoConferenciaPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/conferir-financeiro`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    devolverConferencia: async (id: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/devolver-conferencia`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
     liberacoes: async (id: string): Promise<ProgramacaoPagamentoLiberacaoApi[]> =>
       (await request<ApiListResponse<ProgramacaoPagamentoLiberacaoApi>>(`/programacoes-pagamento/${id}/liberacoes`)).data,
+    conferencias: async (id: string): Promise<ProgramacaoPagamentoConferenciaApi[]> =>
+      (await request<ApiListResponse<ProgramacaoPagamentoConferenciaApi>>(`/programacoes-pagamento/${id}/conferencias`)).data,
     aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<ProgramacaoPagamentoApi> =>
       (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/${action}`, {
         method: 'PATCH',

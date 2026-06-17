@@ -768,6 +768,35 @@ npm.cmd run smoke:liberacoes-programacao
 
 O smoke usa marcador `DEV_LOCAL_V3_5E`, valida bloqueio de rascunho/submetida/cancelada, liberacao de programacao aprovada, bloqueio por alcada insuficiente, liberacao da diretoria acima de R$ 20.000, ausencia de pagamento/baixa, rotas proibidas ausentes, historico e auditoria.
 
+## V3.5F - Conferencia Financeira Final Pre-Baixa
+
+A V3.5F adiciona a conferencia financeira final de Programacoes de Pagamento `LIBERADA`. A etapa registra conferente, data/hora, checklist financeiro, observacao, valor total conferido, quantidade de contas, status anterior/novo, historico e auditoria, preparando a programacao para futura baixa manual sem executar pagamento e sem baixar Conta a Pagar.
+
+Migration:
+
+```text
+database/migrations/013_conferencia_financeira_pre_baixa_v35f.sql
+```
+
+Endpoints novos:
+
+```text
+PATCH /programacoes-pagamento/:id/conferir-financeiro
+PATCH /programacoes-pagamento/:id/devolver-conferencia
+GET   /programacoes-pagamento/:id/conferencias
+```
+
+A V3.5F nao cria endpoints `/pagar`, `/baixar`, `/gerar-cnab`, `/executar-pagamento` ou integracao bancaria. A conferencia nao altera `valor_aberto`, nao marca Conta a Pagar como `PAGA`, nao gera CNAB, nao integra banco e nao usa `DELETE` fisico.
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:conferencia-financeira
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_5F`, valida bloqueio de programacao nao liberada/cancelada, conferencia de programacao liberada, bloqueio de usuario sem permissao, historico, auditoria, ausencia de pagamento/baixa, rotas proibidas ausentes e `DELETE` fisico ausente.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

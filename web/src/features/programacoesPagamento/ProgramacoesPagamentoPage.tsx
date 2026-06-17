@@ -5,6 +5,7 @@ import {
   type FornecedorApi,
   type ObraApi,
   type ProgramacaoPagamentoApi,
+  type ProgramacaoPagamentoConferenciaChecklist,
   type ProgramacaoPagamentoStatus,
   type UsuarioApi
 } from '../../services/erpApi';
@@ -16,7 +17,7 @@ interface ProgramacaoForm {
   justificativa: string;
 }
 
-const marker = 'DEV_LOCAL_V3_5E';
+const marker = 'DEV_LOCAL_V3_5F';
 
 const statusLabels: Record<ProgramacaoPagamentoStatus, string> = {
   RASCUNHO: 'Rascunho',
@@ -35,6 +36,24 @@ const aprovacaoLabels: Record<string, string> = {
   DEVOLVIDO: 'Devolvido',
   BLOQUEADO_ALCADA: 'Bloqueado por alçada'
 };
+
+const conferenciaLabels: Record<string, string> = {
+  PENDENTE_CONFERENCIA: 'Pendente',
+  CONFERIDA: 'Conferida',
+  BLOQUEADA_CONFERENCIA: 'Bloqueada',
+  DEVOLVIDA: 'Devolvida'
+};
+
+const initialChecklist = (): ProgramacaoPagamentoConferenciaChecklist => ({
+  fornecedor_conferido: true,
+  documento_fiscal_conferido: true,
+  valor_conferido: true,
+  vencimento_conferido: true,
+  obra_conferida: true,
+  centro_custo_conferido: true,
+  forma_pagamento_prevista_conferida: true,
+  ressalva: false
+});
 
 const addDays = (days: number): string => {
   const value = new Date();
@@ -215,7 +234,7 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Programação de Pagamento</h1>
       <p className="enac-web-lead">
-        Programação local de contas aprovadas com aprovação por alçada e liberação final para execução futura.
+        Programação local de contas aprovadas com alçada, liberação final e conferência financeira pré-baixa.
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando programações locais.</div>}
@@ -259,6 +278,15 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
                   usuario_id: actionUserId,
                   justificativa: `${marker} - liberacao final local sem execucao financeira`
                 }), 'Programação liberada para execução futura.')}
+                onConferirFinanceiro={(checklist, observacoes) => void runAction(() => erpApi.programacoesPagamento.conferirFinanceiro(selectedProgramacao.id, {
+                  usuario_id: actionUserId,
+                  observacoes,
+                  checklist
+                }), 'Conferência financeira registrada.')}
+                onDevolverConferencia={(observacoes) => void runAction(() => erpApi.programacoesPagamento.devolverConferencia(selectedProgramacao.id, {
+                  usuario_id: actionUserId,
+                  observacoes
+                }), 'Conferência devolvida.')}
                 onCancelar={() => void runAction(() => erpApi.programacoesPagamento.cancelar(selectedProgramacao.id, {
                   usuario_id: actionUserId || null,
                   justificativa: `${marker} - cancelamento logico`
@@ -392,6 +420,8 @@ function ProgramacaoDetail({
   onApproveDiretoria,
   onReprovar,
   onLiberar,
+  onConferirFinanceiro,
+  onDevolverConferencia,
   onCancelar,
   onRemoveConta
 }: {
@@ -405,10 +435,34 @@ function ProgramacaoDetail({
   onApproveDiretoria: () => void;
   onReprovar: () => void;
   onLiberar: () => void;
+  onConferirFinanceiro: (checklist: ProgramacaoPagamentoConferenciaChecklist, observacoes: string) => void;
+  onDevolverConferencia: (observacoes: string) => void;
   onCancelar: () => void;
   onRemoveConta: (contaPagarId: string) => void;
 }): JSX.Element {
   const contas = programacao.contas || [];
+  const [conferenciaObservacoes, setConferenciaObservacoes] = React.useState<string>(`${marker} - conferencia financeira final pre-baixa`);
+  const [conferenciaChecklist, setConferenciaChecklist] = React.useState<ProgramacaoPagamentoConferenciaChecklist>(initialChecklist());
+  const podeConferir = programacao.status === 'LIBERADA' && programacao.conferencia_status !== 'CONFERIDA';
+  const checklistFields: Array<{ key: keyof Omit<ProgramacaoPagamentoConferenciaChecklist, 'ressalva'>; label: string }> = [
+    { key: 'fornecedor_conferido', label: 'Fornecedor' },
+    { key: 'documento_fiscal_conferido', label: 'Documento fiscal' },
+    { key: 'valor_conferido', label: 'Valor' },
+    { key: 'vencimento_conferido', label: 'Vencimento' },
+    { key: 'obra_conferida', label: 'Obra' },
+    { key: 'centro_custo_conferido', label: 'Centro de custo' },
+    { key: 'forma_pagamento_prevista_conferida', label: 'Forma prevista' }
+  ];
+
+  React.useEffect(() => {
+    setConferenciaObservacoes(`${marker} - conferencia financeira final pre-baixa`);
+    setConferenciaChecklist(initialChecklist());
+  }, [programacao.id]);
+
+  const updateChecklist = (key: keyof ProgramacaoPagamentoConferenciaChecklist, value: boolean): void => {
+    setConferenciaChecklist((current) => ({ ...current, [key]: value }));
+  };
+
   return (
     <section className="enac-finance-detail">
       <div className="enac-cadastro-toolbar">
@@ -431,6 +485,10 @@ function ProgramacaoDetail({
         <div><span>Liberado por</span><strong>{programacao.liberado_por_nome || '-'}</strong></div>
         <div><span>Liberado em</span><strong>{formatDateTime(programacao.liberado_em)}</strong></div>
         <div><span>Valor liberado</span><strong>{programacao.liberacao_valor_total ? formatMoney(programacao.liberacao_valor_total) : '-'}</strong></div>
+        <div><span>Conferência</span><strong>{conferenciaLabels[programacao.conferencia_status || ''] || programacao.conferencia_status || '-'}</strong></div>
+        <div><span>Conferente</span><strong>{programacao.conferido_por_nome || '-'}</strong></div>
+        <div><span>Conferido em</span><strong>{formatDateTime(programacao.conferido_em)}</strong></div>
+        <div><span>Valor conferido</span><strong>{programacao.conferencia_valor_total ? formatMoney(programacao.conferencia_valor_total) : '-'}</strong></div>
       </div>
 
       {programacao.bloqueio_alcada_motivo && (
@@ -439,10 +497,19 @@ function ProgramacaoDetail({
       {programacao.bloqueio_liberacao_motivo && (
         <div className="enac-web-alert enac-web-alert--compact">{programacao.bloqueio_liberacao_motivo}</div>
       )}
+      {programacao.bloqueio_conferencia_motivo && (
+        <div className="enac-web-alert enac-web-alert--compact">{programacao.bloqueio_conferencia_motivo}</div>
+      )}
       {programacao.liberacao_justificativa && (
         <div className="enac-finance-preview">
           <span className="enac-web-card-label">Justificativa da liberação</span>
           <p>{programacao.liberacao_justificativa}</p>
+        </div>
+      )}
+      {programacao.conferencia_observacoes && (
+        <div className="enac-finance-preview">
+          <span className="enac-web-card-label">Observações da conferência</span>
+          <p>{programacao.conferencia_observacoes}</p>
         </div>
       )}
 
@@ -461,6 +528,53 @@ function ProgramacaoDetail({
         {programacao.status === 'APROVADA' && <button type="button" onClick={onLiberar} disabled={saving || !actionUserId}>Liberar programação</button>}
         {programacao.status !== 'CANCELADA' && <button type="button" className="enac-cadastro-secondary" onClick={onCancelar} disabled={saving}>Cancelar</button>}
       </div>
+
+      {podeConferir && (
+        <div className="enac-finance-preview enac-conferencia-panel">
+          <div>
+            <span className="enac-web-card-label">Conferência financeira</span>
+            <p>Status atual: {conferenciaLabels[programacao.conferencia_status || ''] || programacao.conferencia_status || 'Pendente'}</p>
+          </div>
+          <div className="enac-conferencia-checklist">
+            {checklistFields.map((field) => (
+              <label key={field.key}>
+                <input
+                  type="checkbox"
+                  checked={conferenciaChecklist[field.key]}
+                  onChange={(event) => updateChecklist(field.key, event.target.checked)}
+                  disabled={saving}
+                />
+                <span>{field.label}</span>
+              </label>
+            ))}
+            <label>
+              <input
+                type="checkbox"
+                checked={conferenciaChecklist.ressalva === true}
+                onChange={(event) => updateChecklist('ressalva', event.target.checked)}
+                disabled={saving}
+              />
+              <span>Ressalva</span>
+            </label>
+          </div>
+          <label className="enac-conferencia-observacao">
+            <span>Observações</span>
+            <textarea
+              value={conferenciaObservacoes}
+              onChange={(event) => setConferenciaObservacoes(event.target.value)}
+              disabled={saving}
+            />
+          </label>
+          <div className="enac-cadastro-row-actions enac-conferencia-actions">
+            <button type="button" onClick={() => onConferirFinanceiro(conferenciaChecklist, conferenciaObservacoes)} disabled={saving || !actionUserId}>
+              Conferir financeiro
+            </button>
+            <button type="button" className="enac-cadastro-secondary" onClick={() => onDevolverConferencia(conferenciaObservacoes)} disabled={saving || !actionUserId || !conferenciaObservacoes.trim()}>
+              Devolver conferência
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="enac-cadastro-table-wrap">
         <table className="enac-web-table enac-programacao-table">
