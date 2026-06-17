@@ -1120,6 +1120,80 @@ export interface RiscoPendenciaAlertaPayload {
   };
 }
 
+export type AuditoriaSeveridade = 'INFO' | 'MEDIA' | 'ALTA' | 'CRITICA' | string;
+
+export interface AuditoriaFilters {
+  [key: string]: string | undefined;
+  periodo_de?: string;
+  periodo_ate?: string;
+  usuario_id?: string;
+  modulo?: string;
+  acao?: string;
+  entidade?: string;
+  entidade_id?: string;
+  obra_id?: string;
+  contrato_id?: string;
+  centro_custo_id?: string;
+  severidade?: string;
+  resultado?: string;
+  texto?: string;
+  limit?: string;
+}
+
+export interface AuditoriaEventoApi {
+  [key: string]: unknown;
+  id: string;
+  company_id?: string | null;
+  empresa_nome?: string | null;
+  entidade: string;
+  entidade_id?: string | null;
+  acao: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+  created_by?: string | null;
+  usuario_nome?: string | null;
+  usuario_email?: string | null;
+  modulo: string;
+  tipo_documento?: string | null;
+  resultado: string;
+  severidade: AuditoriaSeveridade;
+  obra_id?: string | null;
+  contrato_id?: string | null;
+  centro_custo_id?: string | null;
+  status_anterior?: string | null;
+  status_novo?: string | null;
+  descricao_resumida?: string | null;
+}
+
+export interface AuditoriaResumoApi {
+  total: number;
+  criticos: number;
+  bloqueios_alcada: number;
+  aprovacoes: number;
+  reprovacoes: number;
+  cancelamentos: number;
+  baixas_manuais: number;
+  usuarios_distintos: number;
+  modulos_distintos: number;
+  primeiro_evento?: string | null;
+  ultimo_evento?: string | null;
+}
+
+export interface AuditoriaModuloApi {
+  modulo: string;
+  total: number;
+  criticos: number;
+  bloqueios: number;
+  aprovacoes: number;
+  negativas: number;
+  ultimo_evento?: string | null;
+}
+
+export interface AuditoriaDetalheApi {
+  evento: AuditoriaEventoApi;
+  timeline: AuditoriaEventoApi[];
+}
+
 export type CentralTarefaManualStatus = 'ABERTA' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA';
 export type CentralTarefaPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 export type CentralTarefaTipo = 'MANUAL' | 'APROVACAO' | 'PENDENCIA' | 'OPERACIONAL' | 'ALERTA' | string;
@@ -2865,6 +2939,34 @@ export const erpApi = {
         method: 'POST',
         body: JSON.stringify(payload)
       })).data
+  },
+  auditoria: {
+    eventos: async (filters: AuditoriaFilters = {}): Promise<AuditoriaEventoApi[]> =>
+      (await request<ApiListResponse<AuditoriaEventoApi>>(
+        `/auditoria/eventos${buildQueryString(filters)}`
+      )).data,
+    get: async (id: string): Promise<AuditoriaDetalheApi> =>
+      (await request<ApiItemResponse<AuditoriaDetalheApi>>(`/auditoria/eventos/${id}`)).data,
+    entidade: async (tipo: string, id: string, filters: AuditoriaFilters = {}): Promise<AuditoriaEventoApi[]> =>
+      (await request<ApiListResponse<AuditoriaEventoApi>>(
+        `/auditoria/entidade/${encodeURIComponent(tipo)}/${encodeURIComponent(id)}${buildQueryString(filters)}`
+      )).data,
+    usuario: async (usuarioId: string, filters: AuditoriaFilters = {}): Promise<AuditoriaEventoApi[]> =>
+      (await request<ApiListResponse<AuditoriaEventoApi>>(
+        `/auditoria/usuario/${usuarioId}${buildQueryString(filters)}`
+      )).data,
+    modulos: async (filters: AuditoriaFilters = {}): Promise<AuditoriaModuloApi[]> =>
+      (await request<ApiListResponse<AuditoriaModuloApi>>(
+        `/auditoria/modulos${buildQueryString(filters)}`
+      )).data,
+    resumo: async (filters: AuditoriaFilters = {}): Promise<AuditoriaResumoApi> =>
+      (await request<ApiItemResponse<AuditoriaResumoApi>>(
+        `/auditoria/resumo${buildQueryString(filters)}`
+      )).data,
+    eventosCriticos: async (filters: AuditoriaFilters = {}): Promise<AuditoriaEventoApi[]> =>
+      (await request<ApiListResponse<AuditoriaEventoApi>>(
+        `/auditoria/eventos-criticos${buildQueryString(filters)}`
+      )).data
   },
   centralTarefas: {
     resumo: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefasResumoApi> =>

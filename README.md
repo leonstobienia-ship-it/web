@@ -1326,6 +1326,43 @@ npm.cmd run smoke:central-tarefas
 
 A V3.12 nao aprova documentos automaticamente, nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
 
+## V3.13 - Auditoria Geral, Logs e Rastreabilidade
+
+A V3.13 cria uma camada administrativa read-only sobre `auditoria_eventos`, com filtros, resumo, eventos criticos, detalhe do evento e timeline por entidade. A etapa consolida rastreabilidade por modulo, usuario, acao, entidade, periodo, severidade e resultado, sem editar ou excluir logs.
+
+Migration criada:
+
+```text
+database/migrations/023_auditoria_logs_rastreabilidade_v313.sql
+```
+
+Endpoints criados:
+
+```http
+GET /auditoria/eventos
+GET /auditoria/eventos/:id
+GET /auditoria/entidade/:tipo/:id
+GET /auditoria/usuario/:usuarioId
+GET /auditoria/modulos
+GET /auditoria/resumo
+GET /auditoria/eventos-criticos
+```
+
+Frontend:
+
+```text
+web/src/features/auditoria/AuditoriaLogsPage.tsx
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:auditoria
+```
+
+A V3.13 nao executa pagamento, nao cria baixa nova, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
+
 ## Protótipo
 
 Abra no navegador:

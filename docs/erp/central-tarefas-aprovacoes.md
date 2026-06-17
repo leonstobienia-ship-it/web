@@ -74,6 +74,20 @@ Toda mudanca de estado manual grava:
 - historico em `central_tarefas_manuais_historico`;
 - evento em `auditoria_eventos`.
 
+## Integracao com Auditoria Geral
+
+A partir da V3.13, os eventos da central tambem aparecem na tela `Auditoria e Logs`.
+
+Eventos de `central_tarefa_manual` podem ser rastreados por:
+
+- modulo `central-tarefas`;
+- entidade `central_tarefa_manual`;
+- entidade_id da tarefa manual;
+- usuario que executou a acao;
+- acao `criar`, `marcar-vista`, `iniciar`, `concluir` ou `cancelar`.
+
+A Auditoria Geral apenas consulta esses eventos. Ela nao altera tarefa, nao conclui tarefa e nao apaga log.
+
 ## Limites
 
 - Nao ha pagamento.

@@ -5,6 +5,7 @@ import { EnacSistema } from '@enacSistema/components/EnacSistema';
 import { SharePointEnacRepository } from '@enacSistema/services/SharePointEnacRepository';
 import { SharePointFetchClient } from './sharePointFetchClient';
 import { AcessosPage } from './features/acessos/AcessosPage';
+import { AuditoriaLogsPage } from './features/auditoria/AuditoriaLogsPage';
 import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
 import { CentralTarefasPage } from './features/centralTarefas/CentralTarefasPage';
 import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
@@ -70,6 +71,7 @@ type WebSection =
   | 'dashboard-executivo'
   | 'riscos-pendencias'
   | 'central-tarefas'
+  | 'auditoria'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -136,6 +138,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'dashboard-executivo', label: 'Dashboard Executivo' },
   { key: 'riscos-pendencias', label: 'Riscos e Pendências' },
   { key: 'central-tarefas', label: 'Central de Tarefas' },
+  { key: 'auditoria', label: 'Auditoria e Logs' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -455,6 +458,10 @@ function ContentSection({ section, onOpenSystem, onNavigate }: { section: WebSec
 
   if (section === 'central-tarefas') {
     return <CentralTarefasPage onNavigate={(target) => onNavigate(target as WebSection)} />;
+  }
+
+  if (section === 'auditoria') {
+    return <AuditoriaLogsPage />;
   }
 
   if (section === 'administracao') {
