@@ -824,6 +824,37 @@ export interface ContaPagarBaixaApi {
   created_at: string;
 }
 
+export interface RelatorioFinanceiroFilters {
+  [key: string]: string | undefined;
+  periodo_de?: string;
+  periodo_ate?: string;
+  fornecedor_id?: string;
+  obra_id?: string;
+  centro_custo_id?: string;
+  status?: string;
+  vencimento_de?: string;
+  vencimento_ate?: string;
+  valor_min?: string;
+  valor_max?: string;
+}
+
+export interface RelatorioContaResumoApi {
+  totais: Record<string, string | number | null>;
+  por_status: Array<Record<string, string | number | null>>;
+  por_vencimento: Array<Record<string, string | number | boolean | null>>;
+  baixas_manuais_por_periodo: Array<Record<string, string | number | null>>;
+}
+
+export interface RelatorioProgramacaoResumoApi {
+  totais: Record<string, string | number | null>;
+  por_status: Array<Record<string, string | number | null>>;
+  programacoes: Array<Record<string, string | number | null>>;
+}
+
+export type RelatorioAgrupadoApi = Record<string, string | number | null>;
+export type RelatorioAgingApi = Record<string, string | number | null>;
+export type RelatorioFluxoPrevistoApi = Record<string, string | number | null>;
+
 export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 export type ProgramacaoPagamentoConferenciaStatus = 'PENDENTE_CONFERENCIA' | 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA';
 
@@ -1432,5 +1463,35 @@ export const erpApi = {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data
+  },
+  relatoriosFinanceiros: {
+    contasResumo: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioContaResumoApi> =>
+      (await request<ApiItemResponse<RelatorioContaResumoApi>>(
+        `/relatorios-financeiros/contas-pagar/resumo${buildQueryString(filters)}`
+      )).data,
+    contasAging: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioAgingApi[]> =>
+      (await request<ApiListResponse<RelatorioAgingApi>>(
+        `/relatorios-financeiros/contas-pagar/aging${buildQueryString(filters)}`
+      )).data,
+    contasPorFornecedor: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioAgrupadoApi[]> =>
+      (await request<ApiListResponse<RelatorioAgrupadoApi>>(
+        `/relatorios-financeiros/contas-pagar/por-fornecedor${buildQueryString(filters)}`
+      )).data,
+    contasPorObra: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioAgrupadoApi[]> =>
+      (await request<ApiListResponse<RelatorioAgrupadoApi>>(
+        `/relatorios-financeiros/contas-pagar/por-obra${buildQueryString(filters)}`
+      )).data,
+    contasPorCentroCusto: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioAgrupadoApi[]> =>
+      (await request<ApiListResponse<RelatorioAgrupadoApi>>(
+        `/relatorios-financeiros/contas-pagar/por-centro-custo${buildQueryString(filters)}`
+      )).data,
+    programacoesResumo: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioProgramacaoResumoApi> =>
+      (await request<ApiItemResponse<RelatorioProgramacaoResumoApi>>(
+        `/relatorios-financeiros/programacoes/resumo${buildQueryString(filters)}`
+      )).data,
+    fluxoPrevisto: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioFluxoPrevistoApi[]> =>
+      (await request<ApiListResponse<RelatorioFluxoPrevistoApi>>(
+        `/relatorios-financeiros/fluxo-previsto${buildQueryString(filters)}`
+      )).data
   }
 };

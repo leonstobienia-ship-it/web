@@ -826,6 +826,43 @@ npm.cmd run smoke:baixa-manual
 
 O smoke usa marcador `DEV_LOCAL_V3_5G`, valida bloqueio de conta sem conferencia, baixa de conta aprovada/liberada/conferida, duplicidade bloqueada, valor divergente bloqueado, usuario sem permissao, aprovacao da Diretoria acima de R$ 20.000, estorno com historico, auditoria, rotas proibidas ausentes e `DELETE` fisico ausente.
 
+## V3.5H - Relatorios Financeiros / Contas a Pagar
+
+A V3.5H adiciona relatórios financeiros em modo somente leitura para Contas a Pagar, Programações, Liberações, Conferências e Baixas Manuais. A etapa nao cria operacao financeira nova, nao cria pagamento, nao cria baixa adicional, nao gera CNAB, nao integra banco e nao usa `DELETE` fisico.
+
+Migration:
+
+```text
+Nao ha migration. A V3.5H usa consultas parametrizadas sobre as tabelas existentes.
+```
+
+Endpoints novos:
+
+```text
+GET /relatorios-financeiros/contas-pagar/resumo
+GET /relatorios-financeiros/contas-pagar/aging
+GET /relatorios-financeiros/contas-pagar/por-fornecedor
+GET /relatorios-financeiros/contas-pagar/por-obra
+GET /relatorios-financeiros/contas-pagar/por-centro-custo
+GET /relatorios-financeiros/programacoes/resumo
+GET /relatorios-financeiros/fluxo-previsto
+```
+
+Filtros suportados:
+
+```text
+periodo_de, periodo_ate, fornecedor_id, obra_id, centro_custo_id, status, vencimento_de, vencimento_ate, valor_min, valor_max
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:relatorios-financeiros
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_5H`, valida resumo, aging, agrupamentos por fornecedor/obra/centro de custo, fluxo previsto, filtros, ausencia de mutacao de dados, rotas financeiras proibidas ausentes e `DELETE` fisico ausente.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

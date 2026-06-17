@@ -12,6 +12,7 @@ import { handleNotasFiscaisEntrada } from './modules/notasFiscaisEntrada/notasFi
 import { handleObras } from './modules/obras/obras.routes.js';
 import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
 import { handleProgramacoesPagamento } from './modules/programacoesPagamento/programacoesPagamento.routes.js';
+import { handleRelatoriosFinanceiros } from './modules/relatoriosFinanceiros/relatoriosFinanceiros.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
 import { handleUsuarios } from './modules/usuarios/usuarios.routes.js';
 import { sendNoContent } from './http.js';
@@ -37,6 +38,7 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/notas-fiscais-entrada', handler: handleNotasFiscaisEntrada },
   { basePath: '/contas-pagar', handler: handleContasPagar },
   { basePath: '/programacoes-pagamento', handler: handleProgramacoesPagamento },
+  { basePath: '/relatorios-financeiros', handler: handleRelatoriosFinanceiros },
   { basePath: '/perfis', handler: handlePerfis },
   { basePath: '/escopos', handler: handleEscopos },
   { basePath: '/perfis-escopos', handler: handlePerfisEscopos },

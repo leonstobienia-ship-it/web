@@ -1352,6 +1352,83 @@ textarea {
   overflow: auto;
 }
 
+.enac-report-page {
+  display: grid;
+  gap: 18px;
+}
+
+.enac-report-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.enac-report-filters label {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-report-filters span {
+  color: #34475d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.enac-report-filters input,
+.enac-report-filters select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #17212f;
+}
+
+.enac-report-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.enac-report-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dce5ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-report-card span {
+  color: #607086;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.enac-report-card strong {
+  color: #17212f;
+  font-size: 20px;
+}
+
+.enac-report-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.enac-report-section {
+  display: grid;
+  gap: 10px;
+}
+
+.enac-report-table th,
+.enac-report-table td {
+  vertical-align: top;
+}
+
 .enac-finance-edit-form {
   border: 1px solid #d9e0e7;
   border-radius: 8px;
@@ -1593,6 +1670,11 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .enac-report-filters,
+  .enac-report-cards {
+    grid-template-columns: 1fr;
+  }
+
   .enac-cotacoes-selector {
     grid-template-columns: 1fr;
   }
@@ -1633,6 +1715,7 @@ code {
   .enac-solicitacao-item-title button,
   .enac-solicitacao-detail-actions button,
   .enac-solicitacoes-filters button,
+  .enac-report-filters button,
   .enac-cotacoes-selector button {
     width: 100%;
   }
