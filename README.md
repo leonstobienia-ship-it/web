@@ -863,6 +863,46 @@ npm.cmd run smoke:relatorios-financeiros
 
 O smoke usa marcador `DEV_LOCAL_V3_5H`, valida resumo, aging, agrupamentos por fornecedor/obra/centro de custo, fluxo previsto, filtros, ausencia de mutacao de dados, rotas financeiras proibidas ausentes e `DELETE` fisico ausente.
 
+## V3.6 - Medições e Faturamento
+
+A V3.6 adiciona Medições de Obra, Itens de Medição e Pedido Interno de Faturamento em PostgreSQL local. O fluxo registra medição, itens, aprovação por alçada, pedido de faturamento e faturamento manual informado externamente. A etapa não emite NFS-e real, não integra prefeitura, não gera boleto, não cria cobrança bancária e não baixa recebível automaticamente.
+
+Migration:
+
+```text
+database/migrations/016_medicoes_faturamento_v36.sql
+```
+
+Endpoints novos:
+
+```text
+GET    /medicoes
+GET    /medicoes/:id
+POST   /medicoes
+PATCH  /medicoes/:id
+PATCH  /medicoes/:id/enviar
+PATCH  /medicoes/:id/aprovar
+PATCH  /medicoes/:id/devolver
+PATCH  /medicoes/:id/cancelar
+POST   /medicoes/:id/itens
+PATCH  /medicoes/:id/itens/:itemId
+PATCH  /medicoes/:id/itens/:itemId/inativar
+POST   /pedidos-faturamento
+GET    /pedidos-faturamento
+GET    /pedidos-faturamento/:id
+PATCH  /pedidos-faturamento/:id/aprovar
+PATCH  /pedidos-faturamento/:id/marcar-faturado-manualmente
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:medicoes-faturamento
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_6`, valida bloqueio de envio sem item, cálculo por itens ativos, inativação lógica, aprovação por alçada, pedido somente de medição aprovada, registro manual de faturamento externo, ausência de criação automática de recebível, auditoria, rotas fiscais/bancárias proibidas ausentes e `DELETE` físico ausente.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

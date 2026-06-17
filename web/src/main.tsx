@@ -8,6 +8,7 @@ import { AcessosPage } from './features/acessos/AcessosPage';
 import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
 import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
+import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/MedicoesFaturamentoPage';
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
 import { PedidosCompraPage } from './features/pedidosCompra/PedidosCompraPage';
 import { ProgramacoesPagamentoPage } from './features/programacoesPagamento/ProgramacoesPagamentoPage';
@@ -56,6 +57,7 @@ type WebSection =
   | 'contas-pagar'
   | 'programacoes-pagamento'
   | 'relatorios-financeiros'
+  | 'medicoes-faturamento'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -115,6 +117,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'contas-pagar', label: 'Contas a Pagar' },
   { key: 'programacoes-pagamento', label: 'Programação de Pagamento' },
   { key: 'relatorios-financeiros', label: 'Relatórios Financeiros' },
+  { key: 'medicoes-faturamento', label: 'Medições e Faturamento' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -406,6 +409,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'relatorios-financeiros') {
     return <RelatoriosFinanceirosPage />;
+  }
+
+  if (section === 'medicoes-faturamento') {
+    return <MedicoesFaturamentoPage />;
   }
 
   if (section === 'administracao') {

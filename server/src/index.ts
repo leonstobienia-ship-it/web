@@ -8,6 +8,7 @@ import { handleCotacoes } from './modules/cotacoes/cotacoes.routes.js';
 import { handleEmpresas } from './modules/empresas/empresas.routes.js';
 import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.js';
 import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.routes.js';
+import { handleMedicoes, handlePedidosFaturamento } from './modules/medicoesFaturamento/medicoesFaturamento.routes.js';
 import { handleNotasFiscaisEntrada } from './modules/notasFiscaisEntrada/notasFiscaisEntrada.routes.js';
 import { handleObras } from './modules/obras/obras.routes.js';
 import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
@@ -39,6 +40,8 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/contas-pagar', handler: handleContasPagar },
   { basePath: '/programacoes-pagamento', handler: handleProgramacoesPagamento },
   { basePath: '/relatorios-financeiros', handler: handleRelatoriosFinanceiros },
+  { basePath: '/medicoes', handler: handleMedicoes },
+  { basePath: '/pedidos-faturamento', handler: handlePedidosFaturamento },
   { basePath: '/perfis', handler: handlePerfis },
   { basePath: '/escopos', handler: handleEscopos },
   { basePath: '/perfis-escopos', handler: handlePerfisEscopos },

@@ -1563,6 +1563,53 @@ textarea {
   resize: vertical;
 }
 
+.enac-medicoes-page {
+  display: grid;
+  gap: 18px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.enac-medicoes-layout {
+  align-items: start;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.enac-medicoes-page .enac-cadastro-table-wrap {
+  max-width: 100%;
+}
+
+.enac-medicoes-table {
+  min-width: 1020px;
+}
+
+.enac-medicoes-table td span {
+  color: #607086;
+  font-size: 12px;
+}
+
+.enac-medicao-detail {
+  gap: 16px;
+}
+
+.enac-medicao-item-form {
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  padding: 14px;
+  background: #ffffff;
+}
+
+.enac-medicoes-warning {
+  border-color: #f1c77b;
+  background: #fff8e8;
+}
+
+.enac-medicoes-warning p {
+  margin: 0;
+  color: #5c4213;
+}
+
 .enac-conferencia-actions {
   justify-content: flex-start;
 }

@@ -1031,6 +1031,211 @@ export interface ProgramacaoPagamentoConferenciaPayload extends ProgramacaoPagam
   checklist: ProgramacaoPagamentoConferenciaChecklist;
 }
 
+export type MedicaoStatus =
+  | 'RASCUNHO'
+  | 'SUBMETIDA'
+  | 'EM_ANALISE'
+  | 'APROVADA'
+  | 'DEVOLVIDA'
+  | 'CANCELADA'
+  | 'FATURAMENTO_SOLICITADO'
+  | 'FATURADO_MANUALMENTE';
+
+export type PedidoFaturamentoStatus = 'SOLICITADO' | 'APROVADO' | 'FATURADO_MANUALMENTE' | 'CANCELADO';
+
+export interface MedicaoItemApi {
+  id: string;
+  medicao_id: string;
+  descricao: string;
+  unidade: string;
+  quantidade: string | number;
+  valor_unitario: string | number;
+  valor_total: string | number;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  etapa_servico?: string | null;
+  status: 'ATIVO' | 'INATIVO' | string;
+  inativado_por?: string | null;
+  inativado_em?: string | null;
+  inativacao_motivo?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PedidoFaturamentoResumoApi {
+  id: string;
+  codigo: string;
+  status: PedidoFaturamentoStatus;
+  valor_solicitado: string | number;
+  data_solicitacao: string;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_em?: string | null;
+  faturado_manual_por?: string | null;
+  faturado_manual_em?: string | null;
+  faturado_manual_data?: string | null;
+  faturado_manual_observacoes?: string | null;
+}
+
+export interface MedicaoApi {
+  id: string;
+  company_id: string;
+  obra_id: string;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  cliente_id: string;
+  cliente_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  contrato_cliente_id?: string | null;
+  contrato_escopo?: string | null;
+  numero: string;
+  competencia: string;
+  periodo_inicio: string;
+  periodo_fim: string;
+  valor_medido?: string | number;
+  valor_bruto: string | number;
+  valor_retido?: string | number;
+  retencoes_previstas: string | number;
+  impostos_estimados: string | number;
+  valor_liquido_previsto: string | number;
+  percentual_fisico?: string | number | null;
+  status: MedicaoStatus;
+  responsavel_id?: string | null;
+  responsavel_nome?: string | null;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
+  submetido_por?: string | null;
+  submetido_por_nome?: string | null;
+  submetido_em?: string | null;
+  devolvido_por?: string | null;
+  devolvido_por_nome?: string | null;
+  devolvido_em?: string | null;
+  devolucao_motivo?: string | null;
+  cancelado_por?: string | null;
+  cancelado_por_nome?: string | null;
+  cancelado_em?: string | null;
+  cancelamento_motivo?: string | null;
+  faturamento_solicitado_por?: string | null;
+  faturamento_solicitado_por_nome?: string | null;
+  faturamento_solicitado_em?: string | null;
+  faturado_manual_por?: string | null;
+  faturado_manual_por_nome?: string | null;
+  faturado_manual_em?: string | null;
+  faturado_manual_data?: string | null;
+  faturado_manual_observacoes?: string | null;
+  observacoes?: string | null;
+  created_at: string;
+  updated_at: string;
+  itens_ativos?: number;
+  itens?: MedicaoItemApi[];
+  pedido_faturamento?: PedidoFaturamentoResumoApi | null;
+}
+
+export interface PedidoFaturamentoApi {
+  id: string;
+  medicao_id: string;
+  medicao_numero?: string | null;
+  company_id: string;
+  cliente_id: string;
+  cliente_nome?: string | null;
+  obra_id: string;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  codigo: string;
+  valor_solicitado: string | number;
+  data_solicitacao: string;
+  responsavel_id?: string | null;
+  responsavel_nome?: string | null;
+  status: PedidoFaturamentoStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
+  faturado_manual_por?: string | null;
+  faturado_manual_por_nome?: string | null;
+  faturado_manual_em?: string | null;
+  faturado_manual_data?: string | null;
+  faturado_manual_observacoes?: string | null;
+  observacoes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MedicaoFilters {
+  status?: MedicaoStatus | '';
+  obra_id?: string;
+  cliente_id?: string;
+  competencia_de?: string;
+  competencia_ate?: string;
+}
+
+export interface MedicaoPayload {
+  company_id: string;
+  obra_id: string;
+  cliente_id: string;
+  centro_custo_id?: string | null;
+  numero?: string | null;
+  competencia: string;
+  periodo_inicio: string;
+  periodo_fim: string;
+  contrato_escopo?: string | null;
+  responsavel_id?: string | null;
+  usuario_id?: string | null;
+  observacoes?: string | null;
+  retencoes_previstas?: number;
+  impostos_estimados?: number;
+}
+
+export type MedicaoUpdatePayload = Partial<Omit<MedicaoPayload, 'company_id'>>;
+
+export interface MedicaoItemPayload {
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  valor_unitario: number;
+  centro_custo_id?: string | null;
+  etapa_servico?: string | null;
+  usuario_id?: string | null;
+}
+
+export interface MedicaoActionPayload {
+  usuario_id: string;
+  observacoes?: string | null;
+  justificativa?: string | null;
+  motivo?: string | null;
+}
+
+export interface PedidoFaturamentoPayload {
+  medicao_id: string;
+  valor_solicitado?: number;
+  data_solicitacao?: string;
+  responsavel_id?: string | null;
+  usuario_id?: string | null;
+  observacoes?: string | null;
+}
+
+export interface PedidoFaturamentoFilters {
+  status?: PedidoFaturamentoStatus | '';
+  medicao_id?: string;
+  cliente_id?: string;
+  obra_id?: string;
+}
+
+export interface PedidoFaturamentoManualPayload {
+  usuario_id: string;
+  data_faturamento: string;
+  observacoes: string;
+}
+
 export type CadastroPayload = Record<string, string | number | null | undefined>;
 
 const apiBaseUrl = (import.meta.env.VITE_ENAC_ERP_API_BASE_URL || 'http://127.0.0.1:3333').replace(/\/+$/, '');
@@ -1460,6 +1665,93 @@ export const erpApi = {
       })).data,
     cancelar: async (id: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
       (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data
+  },
+  medicoes: {
+    list: async (filters: MedicaoFilters = {}): Promise<MedicaoApi[]> =>
+      (await request<ApiListResponse<MedicaoApi>>(
+        `/medicoes${buildQueryString({
+          status: filters.status || undefined,
+          obra_id: filters.obra_id,
+          cliente_id: filters.cliente_id,
+          competencia_de: filters.competencia_de,
+          competencia_ate: filters.competencia_ate
+        })}`
+      )).data,
+    get: async (id: string): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}`)).data,
+    create: async (payload: MedicaoPayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>('/medicoes', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: MedicaoUpdatePayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    enviar: async (id: string, payload: MedicaoActionPayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}/enviar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    aprovar: async (id: string, payload: AprovacaoPayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}/aprovar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    devolver: async (id: string, payload: MedicaoActionPayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}/devolver`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelar: async (id: string, payload: MedicaoActionPayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    addItem: async (id: string, payload: MedicaoItemPayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}/itens`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    updateItem: async (id: string, itemId: string, payload: Partial<MedicaoItemPayload>): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}/itens/${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    inativarItem: async (id: string, itemId: string, payload: MedicaoActionPayload): Promise<MedicaoApi> =>
+      (await request<ApiItemResponse<MedicaoApi>>(`/medicoes/${id}/itens/${itemId}/inativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data
+  },
+  pedidosFaturamento: {
+    list: async (filters: PedidoFaturamentoFilters = {}): Promise<PedidoFaturamentoApi[]> =>
+      (await request<ApiListResponse<PedidoFaturamentoApi>>(
+        `/pedidos-faturamento${buildQueryString({
+          status: filters.status || undefined,
+          medicao_id: filters.medicao_id,
+          cliente_id: filters.cliente_id,
+          obra_id: filters.obra_id
+        })}`
+      )).data,
+    get: async (id: string): Promise<PedidoFaturamentoApi> =>
+      (await request<ApiItemResponse<PedidoFaturamentoApi>>(`/pedidos-faturamento/${id}`)).data,
+    create: async (payload: PedidoFaturamentoPayload): Promise<PedidoFaturamentoApi> =>
+      (await request<ApiItemResponse<PedidoFaturamentoApi>>('/pedidos-faturamento', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    aprovar: async (id: string, payload: AprovacaoPayload): Promise<PedidoFaturamentoApi> =>
+      (await request<ApiItemResponse<PedidoFaturamentoApi>>(`/pedidos-faturamento/${id}/aprovar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    marcarFaturadoManualmente: async (id: string, payload: PedidoFaturamentoManualPayload): Promise<PedidoFaturamentoApi> =>
+      (await request<ApiItemResponse<PedidoFaturamentoApi>>(`/pedidos-faturamento/${id}/marcar-faturado-manualmente`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data
