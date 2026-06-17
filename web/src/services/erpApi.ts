@@ -855,6 +855,79 @@ export type RelatorioAgrupadoApi = Record<string, string | number | null>;
 export type RelatorioAgingApi = Record<string, string | number | null>;
 export type RelatorioFluxoPrevistoApi = Record<string, string | number | null>;
 
+export interface PrevistoRealizadoFilters {
+  [key: string]: string | undefined;
+  obra_id?: string;
+  cliente_id?: string;
+  centro_custo_id?: string;
+  contrato_id?: string;
+  competencia_de?: string;
+  competencia_ate?: string;
+}
+
+export interface PrevistoRealizadoObraResumoApi {
+  [key: string]: string | number | boolean | null | undefined;
+  obra_id: string;
+  obra_codigo: string;
+  obra_nome: string;
+  obra_status: string;
+  cliente_id?: string | null;
+  cliente_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  orcamento_id?: string | null;
+  orcamento_codigo?: string | null;
+  valor_contratado: string | number;
+  valor_aditado: string | number;
+  valor_total_contratado: string | number;
+  orcamento_previsto: string | number;
+  custo_comprometido: string | number;
+  custo_realizado: string | number;
+  custo_baixado_manual: string | number;
+  receita_medida: string | number;
+  receita_faturada_manual: string | number;
+  margem_prevista: string | number;
+  margem_realizada: string | number;
+  desvio_absoluto: string | number;
+  desvio_percentual?: string | number | null;
+  saldo_contratual: string | number;
+  saldo_orcamentario: string | number;
+  saldo_a_faturar: string | number;
+  alerta_sem_orcamento_aprovado: boolean;
+  alerta_sem_contrato_ativo: boolean;
+  alerta_custo_acima_previsto: boolean;
+  alerta_faturamento_abaixo_previsto: boolean;
+  alerta_margem_negativa: boolean;
+}
+
+export interface PrevistoRealizadoCurvaApi {
+  [key: string]: string | number | null;
+  competencia: string;
+  previsto: string | number;
+  realizado: string | number;
+  faturado: string | number;
+  baixado_manual: string | number;
+  diferenca_mensal: string | number;
+  acumulado_previsto: string | number;
+  acumulado_realizado: string | number;
+  acumulado_faturado: string | number;
+}
+
+export type PrevistoRealizadoAgrupamentoApi = Record<string, string | number | null>;
+
+export interface PrevistoRealizadoDetalheFinanceiroApi {
+  totais: Record<string, string | number | null>;
+  [key: string]: Record<string, string | number | null> | Array<Record<string, string | number | null>>;
+}
+
+export interface PrevistoRealizadoPortfolioApi {
+  totais: Record<string, string | number | null>;
+  alertas: Record<string, number>;
+  formulas: Record<string, string>;
+  obras: PrevistoRealizadoObraResumoApi[];
+}
+
 export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 export type ProgramacaoPagamentoConferenciaStatus = 'PENDENTE_CONFERENCIA' | 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA';
 
@@ -2391,6 +2464,34 @@ export const erpApi = {
     fluxoPrevisto: async (filters: RelatorioFinanceiroFilters = {}): Promise<RelatorioFluxoPrevistoApi[]> =>
       (await request<ApiListResponse<RelatorioFluxoPrevistoApi>>(
         `/relatorios-financeiros/fluxo-previsto${buildQueryString(filters)}`
+      )).data
+  },
+  previstoRealizado: {
+    obras: async (filters: PrevistoRealizadoFilters = {}): Promise<PrevistoRealizadoObraResumoApi[]> =>
+      (await request<ApiListResponse<PrevistoRealizadoObraResumoApi>>(
+        `/previsto-realizado/obras${buildQueryString(filters)}`
+      )).data,
+    obraResumo: async (obraId: string, filters: PrevistoRealizadoFilters = {}): Promise<PrevistoRealizadoObraResumoApi> =>
+      (await request<ApiItemResponse<PrevistoRealizadoObraResumoApi>>(
+        `/previsto-realizado/obras/${obraId}/resumo${buildQueryString(filters)}`
+      )).data,
+    curva: async (obraId: string, filters: PrevistoRealizadoFilters = {}): Promise<PrevistoRealizadoCurvaApi[]> =>
+      (await request<ApiListResponse<PrevistoRealizadoCurvaApi>>(
+        `/previsto-realizado/obras/${obraId}/curva${buildQueryString(filters)}`
+      )).data,
+    pacotes: async (obraId: string): Promise<PrevistoRealizadoAgrupamentoApi[]> =>
+      (await request<ApiListResponse<PrevistoRealizadoAgrupamentoApi>>(`/previsto-realizado/obras/${obraId}/pacotes`)).data,
+    centrosCusto: async (obraId: string): Promise<PrevistoRealizadoAgrupamentoApi[]> =>
+      (await request<ApiListResponse<PrevistoRealizadoAgrupamentoApi>>(`/previsto-realizado/obras/${obraId}/centros-custo`)).data,
+    contratos: async (obraId: string): Promise<PrevistoRealizadoAgrupamentoApi[]> =>
+      (await request<ApiListResponse<PrevistoRealizadoAgrupamentoApi>>(`/previsto-realizado/obras/${obraId}/contratos`)).data,
+    faturamento: async (obraId: string): Promise<PrevistoRealizadoDetalheFinanceiroApi> =>
+      (await request<ApiItemResponse<PrevistoRealizadoDetalheFinanceiroApi>>(`/previsto-realizado/obras/${obraId}/faturamento`)).data,
+    custos: async (obraId: string): Promise<PrevistoRealizadoDetalheFinanceiroApi> =>
+      (await request<ApiItemResponse<PrevistoRealizadoDetalheFinanceiroApi>>(`/previsto-realizado/obras/${obraId}/custos`)).data,
+    portfolioResumo: async (filters: PrevistoRealizadoFilters = {}): Promise<PrevistoRealizadoPortfolioApi> =>
+      (await request<ApiItemResponse<PrevistoRealizadoPortfolioApi>>(
+        `/previsto-realizado/portfolio/resumo${buildQueryString(filters)}`
       )).data
   }
 };

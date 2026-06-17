@@ -1178,6 +1178,39 @@ Na V2.8D, foi preparada a limpeza controlada dos dados transacionais de teste id
 
 Na V2.8D1, foi corrigido o dry-run da limpeza controlada apos Leon observar falha de leitura por parameter set em todos os seis candidatos. A leitura passou a usar `Get-PnPListItem -Id` por item whitelistado, sem combinar `-Query` e `-Fields`, e os relatorios passaram a destacar leitura, bloqueios, erros, totais e autorizacao para execucao. O dry-run anterior fica invalido para autorizar limpeza; execucao real continua bloqueada ate novo dry-run limpo e revisado por Leon.
 
+## V3.9 - Previsto x Realizado e Margem por Obra
+
+A V3.9 cria uma camada gerencial local, somente leitura, para comparar contratos, aditivos aprovados, orcamento base aprovado, pacotes orcamentarios, compras, notas fiscais de entrada, contas a pagar, baixas manuais ja existentes, medicoes e faturamento manual.
+
+Endpoints criados:
+
+```http
+GET /previsto-realizado/obras
+GET /previsto-realizado/obras/:obraId/resumo
+GET /previsto-realizado/obras/:obraId/curva
+GET /previsto-realizado/obras/:obraId/pacotes
+GET /previsto-realizado/obras/:obraId/centros-custo
+GET /previsto-realizado/obras/:obraId/contratos
+GET /previsto-realizado/obras/:obraId/faturamento
+GET /previsto-realizado/obras/:obraId/custos
+GET /previsto-realizado/portfolio/resumo
+```
+
+Frontend:
+
+```text
+web/src/features/previstoRealizado/PrevistoRealizadoPage.tsx
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:previsto-realizado
+```
+
+A V3.9 nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
+
 ## Protótipo
 
 Abra no navegador:

@@ -13,6 +13,7 @@ import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/Medicoes
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
 import { OrcamentosPlanejamentoPage } from './features/orcamentosPlanejamento/OrcamentosPlanejamentoPage';
 import { PedidosCompraPage } from './features/pedidosCompra/PedidosCompraPage';
+import { PrevistoRealizadoPage } from './features/previstoRealizado/PrevistoRealizadoPage';
 import { ProgramacoesPagamentoPage } from './features/programacoesPagamento/ProgramacoesPagamentoPage';
 import { RelatoriosFinanceirosPage } from './features/relatoriosFinanceiros/RelatoriosFinanceirosPage';
 import { SolicitacoesCompraPage } from './features/solicitacoesCompra/SolicitacoesCompraPage';
@@ -62,6 +63,7 @@ type WebSection =
   | 'contratos-obra'
   | 'orcamentos-planejamento'
   | 'medicoes-faturamento'
+  | 'previsto-realizado'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -124,6 +126,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'contratos-obra', label: 'Contratos de Obra' },
   { key: 'orcamentos-planejamento', label: 'Orçamentos e Planejamento' },
   { key: 'medicoes-faturamento', label: 'Medições e Faturamento' },
+  { key: 'previsto-realizado', label: 'Previsto x Realizado' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -427,6 +430,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'medicoes-faturamento') {
     return <MedicoesFaturamentoPage />;
+  }
+
+  if (section === 'previsto-realizado') {
+    return <PrevistoRealizadoPage />;
   }
 
   if (section === 'administracao') {

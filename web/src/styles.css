@@ -1532,6 +1532,22 @@ textarea {
   color: #17212f;
 }
 
+.enac-report-filters button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 14px;
+  background: #245a7f;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.enac-report-filters button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .enac-report-cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1572,6 +1588,92 @@ textarea {
 .enac-report-table th,
 .enac-report-table td {
   vertical-align: top;
+}
+
+.enac-pr-alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.enac-pr-alerts span {
+  padding: 8px 10px;
+  border: 1px solid #f0c978;
+  border-radius: 999px;
+  background: #fff8e8;
+  color: #5c4213;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.enac-pr-chart-body {
+  display: grid;
+  gap: 12px;
+}
+
+.enac-pr-chart-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #dce5ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-pr-chart-row > strong {
+  grid-row: span 3;
+  color: #17212f;
+}
+
+.enac-pr-metric {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 136px;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.enac-pr-metric span {
+  color: #607086;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.enac-pr-metric strong {
+  justify-self: end;
+  color: #17212f;
+  font-size: 13px;
+}
+
+.enac-pr-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8edf3;
+}
+
+.enac-pr-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.enac-pr-bar-fill--previsto {
+  background: #245a7f;
+}
+
+.enac-pr-bar-fill--realizado {
+  background: #8a5a28;
+}
+
+.enac-pr-bar-fill--faturado {
+  background: #4f7d55;
+}
+
+.enac-pr-table {
+  min-width: 940px;
 }
 
 .enac-finance-edit-form {
@@ -1886,6 +1988,23 @@ code {
   .enac-report-filters,
   .enac-report-cards {
     grid-template-columns: 1fr;
+  }
+
+  .enac-pr-chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-pr-chart-row > strong {
+    grid-row: auto;
+  }
+
+  .enac-pr-metric {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+
+  .enac-pr-metric strong {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .enac-cotacoes-selector {

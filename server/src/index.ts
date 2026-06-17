@@ -15,6 +15,7 @@ import { handleObras } from './modules/obras/obras.routes.js';
 import { handleOrcamentosObra } from './modules/orcamentosObra/orcamentosObra.routes.js';
 import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
 import { handlePlanejamentoExecutivo } from './modules/planejamentoExecutivo/planejamentoExecutivo.routes.js';
+import { handlePrevistoRealizado } from './modules/previstoRealizado/previstoRealizado.routes.js';
 import { handleProgramacoesPagamento } from './modules/programacoesPagamento/programacoesPagamento.routes.js';
 import { handleRelatoriosFinanceiros } from './modules/relatoriosFinanceiros/relatoriosFinanceiros.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
@@ -46,6 +47,7 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/contratos-obra', handler: handleContratosObra },
   { basePath: '/orcamentos-obra', handler: handleOrcamentosObra },
   { basePath: '/planejamento-executivo', handler: handlePlanejamentoExecutivo },
+  { basePath: '/previsto-realizado', handler: handlePrevistoRealizado },
   { basePath: '/medicoes', handler: handleMedicoes },
   { basePath: '/pedidos-faturamento', handler: handlePedidosFaturamento },
   { basePath: '/perfis', handler: handlePerfis },

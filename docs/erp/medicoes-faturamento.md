@@ -111,6 +111,12 @@ A migration V3.6 cria escopos e regras locais para o modulo `medicoes-faturament
 - Auditoria e gravada em `auditoria_eventos`.
 - Rotas fiscais e bancarias reais nao existem.
 
+## Relatorio gerencial V3.9
+
+A V3.9 consome medicoes aprovadas, medicoes com faturamento solicitado, medicoes faturadas manualmente e pedidos de faturamento `FATURADO_MANUALMENTE` para calcular receita medida, receita faturada manualmente, saldo a faturar e margem realizada.
+
+Essa leitura nao emite documento fiscal, nao integra prefeitura, nao gera boleto, nao cria cobranca e nao baixa recebivel. As formulas completas ficam em `docs/erp/previsto-realizado-margem-obra.md`.
+
 ## Smoke
 
 ```powershell

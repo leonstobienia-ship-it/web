@@ -137,6 +137,12 @@ CANCELADO
 
 A consulta e informativa na V3.8. Ela nao bloqueia medicao, faturamento, compra ou financeiro.
 
+## Relatorio gerencial V3.9
+
+A V3.9 passa a consumir o orcamento aprovado vigente, pacotes, itens e cronograma fisico-financeiro como fonte de previsto para `GET /previsto-realizado/...`.
+
+Essa leitura nao altera orcamentos, nao aprova revisoes, nao bloqueia planejamento e nao cria operacao financeira. O detalhe de formulas fica em `docs/erp/previsto-realizado-margem-obra.md`.
+
 ## Segurança operacional
 
 - Nao ha `DELETE` fisico.
