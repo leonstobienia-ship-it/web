@@ -139,6 +139,24 @@ interface ISectionGroup {
   items: ISectionItem[];
 }
 
+type UserProfileKey = 'Campo' | 'Diretoria' | 'Planejamento' | 'Compras' | 'Financeiro' | 'Admin';
+
+interface IUserProfileOption {
+  key: UserProfileKey;
+  userName: string;
+  profileLabel: string;
+  description: string;
+}
+
+const userProfileOptions: IUserProfileOption[] = [
+  { key: 'Campo', userName: 'Leon Estevão Stobienia', profileLabel: 'Campo / Engenharia', description: 'Homologação local com foco operacional de obra' },
+  { key: 'Diretoria', userName: 'Leon Estevão Stobienia', profileLabel: 'Diretoria / Decisão', description: 'Indicadores, aprovações e visão executiva' },
+  { key: 'Planejamento', userName: 'Gustavo', profileLabel: 'Planejamento / Engenharia', description: 'Contratos, orçamento, medições e desvios' },
+  { key: 'Compras', userName: 'Matheus', profileLabel: 'Compras / Suprimentos', description: 'Solicitações, cotações, pedidos e fornecedores' },
+  { key: 'Financeiro', userName: 'Matheus', profileLabel: 'Financeiro / Controladoria', description: 'Notas, contas, programação e relatórios financeiros' },
+  { key: 'Admin', userName: 'Admin teste', profileLabel: 'Administração / Acessos', description: 'Usuários, perfis, escopos, alçadas e auditoria' }
+];
+
 const sectionGroups: ISectionGroup[] = [
   {
     title: 'Operação',
@@ -186,8 +204,14 @@ const sectionGroups: ISectionGroup[] = [
     items: [
       { key: 'dashboard-executivo', label: 'Dashboard Executivo', shortLabel: 'Dashboard', description: 'Visão de diretoria, margem e alertas críticos', profile: 'Diretoria' },
       { key: 'homologacao', label: 'Homologação', description: 'Seed local e roteiros de validação por perfil', profile: 'Todos' },
-      { key: 'auditoria', label: 'Auditoria e Logs', description: 'Consulta rastreável de eventos do ERP', profile: 'Admin' },
-      { key: 'administracao', label: 'Administração', description: 'Usuários, perfis, escopos e alçadas locais', profile: 'Admin' }
+      { key: 'auditoria', label: 'Auditoria e Logs', description: 'Consulta rastreável de eventos do ERP', profile: 'Admin' }
+    ]
+  },
+  {
+    title: 'Administração',
+    tone: 'Acessos, perfis e alçadas',
+    items: [
+      { key: 'administracao', label: 'Administração de Acessos', shortLabel: 'Acessos', description: 'Usuários, perfis, escopos e limites de alçada', profile: 'Admin' }
     ]
   },
   {
@@ -199,8 +223,14 @@ const sectionGroups: ISectionGroup[] = [
       { key: 'fluxos', label: 'Workflows', description: 'Fluxos-mãe e regras de operação', profile: 'Admin' },
       { key: 'dados', label: 'Modelo de dados', description: 'Entidades e fronteiras transacionais', profile: 'Admin' },
       { key: 'seguranca', label: 'Segurança', description: 'Papéis, RLS, auditoria e menor privilégio', profile: 'Admin' },
-      { key: 'implantacao', label: 'Roadmap', description: 'Fases, integrações futuras e relatórios', profile: 'Diretoria' },
-      { key: 'sistema', label: 'Sistema atual', description: 'Webpart operacional legada controlada', profile: 'Admin' }
+      { key: 'implantacao', label: 'Roadmap', description: 'Fases, integrações futuras e relatórios', profile: 'Diretoria' }
+    ]
+  },
+  {
+    title: 'Legado',
+    tone: 'Consulta controlada',
+    items: [
+      { key: 'sistema', label: 'Legado — consulta', shortLabel: 'Legado', description: 'Webpart antiga mantida apenas para consulta', profile: 'Admin' }
     ]
   }
 ];
@@ -395,8 +425,11 @@ async function createOperationalState(): Promise<IOperationalState> {
 function WebPortal(): JSX.Element {
   const [section, setSection] = React.useState<WebSection>('visao');
   const [operationalState, setOperationalState] = React.useState<IOperationalState>({ loading: false });
+  const [activeProfileKey, setActiveProfileKey] = React.useState<UserProfileKey>('Campo');
   const currentSection = sectionByKey.get(section) || sections[0];
   const currentGroup = sectionGroups.find((group) => group.items.some((item) => item.key === section));
+  const [openGroupTitles, setOpenGroupTitles] = React.useState<Set<string>>(() => new Set([currentGroup?.title || 'Operação']));
+  const activeProfile = userProfileOptions.find((profile) => profile.key === activeProfileKey) || userProfileOptions[0];
 
   React.useEffect(() => {
     const authResponse = window.location.hash.indexOf('code=') >= 0 ||
@@ -419,6 +452,34 @@ function WebPortal(): JSX.Element {
         });
       });
   }, []);
+
+  React.useEffect(() => {
+    if (!currentGroup) {
+      return;
+    }
+
+    setOpenGroupTitles((previous) => {
+      if (previous.has(currentGroup.title)) {
+        return previous;
+      }
+
+      const next = new Set(previous);
+      next.add(currentGroup.title);
+      return next;
+    });
+  }, [currentGroup?.title]);
+
+  const toggleGroup = (title: string): void => {
+    setOpenGroupTitles((previous) => {
+      const next = new Set(previous);
+      if (next.has(title)) {
+        next.delete(title);
+      } else {
+        next.add(title);
+      }
+      return next;
+    });
+  };
 
   const abrirSistema = async (): Promise<void> => {
     setSection('sistema');
@@ -445,27 +506,43 @@ function WebPortal(): JSX.Element {
           <span>ERP operacional local</span>
         </div>
         <nav className="enac-web-nav-groups">
-          {sectionGroups.map((group) => (
-            <section className="enac-web-nav-group" key={group.title} aria-label={group.title}>
-              <div className="enac-web-nav-group-head">
-                <strong>{group.title}</strong>
-                <span>{group.tone}</span>
-              </div>
-              {group.items.map((item) => (
+          {sectionGroups.map((group) => {
+            const groupActive = group.items.some((item) => item.key === section);
+            const groupOpen = groupActive || openGroupTitles.has(group.title);
+            return (
+              <section className={`enac-web-nav-group ${groupActive ? 'is-active-group' : ''}`} key={group.title} aria-label={group.title}>
                 <button
-                  key={item.key}
                   type="button"
-                  data-section={item.key}
-                  className={section === item.key ? 'is-active' : ''}
-                  aria-current={section === item.key ? 'page' : undefined}
-                  onClick={() => item.key === 'sistema' ? abrirSistema() : setSection(item.key)}
+                  className="enac-web-nav-group-toggle"
+                  aria-expanded={groupOpen}
+                  onClick={() => toggleGroup(group.title)}
                 >
-                  <span>{item.shortLabel || item.label}</span>
-                  <small>{item.profile}</small>
+                  <span>
+                    <strong>{group.title}</strong>
+                    <small>{group.tone}</small>
+                  </span>
+                  <em>{groupOpen ? 'Recolher' : 'Abrir'}</em>
                 </button>
-              ))}
-            </section>
-          ))}
+                {groupOpen && (
+                  <div className="enac-web-nav-items">
+                    {group.items.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        data-section={item.key}
+                        className={section === item.key ? 'is-active' : ''}
+                        aria-current={section === item.key ? 'page' : undefined}
+                        onClick={() => item.key === 'sistema' ? abrirSistema() : setSection(item.key)}
+                      >
+                        <span>{item.shortLabel || item.label}</span>
+                        <small>{item.profile}</small>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </nav>
       </aside>
       <main className="enac-web-main">
@@ -475,24 +552,40 @@ function WebPortal(): JSX.Element {
             <strong>{currentSection.label}</strong>
             <small>{currentSection.description}</small>
           </div>
-          <label className="enac-web-mobile-jump">
-            <span>Módulo</span>
-            <select
-              value={section}
-              onChange={(event) => {
-                const next = event.target.value as WebSection;
-                next === 'sistema' ? void abrirSistema() : setSection(next);
-              }}
-            >
-              {sectionGroups.map((group) => (
-                <optgroup key={group.title} label={group.title}>
-                  {group.items.map((item) => (
-                    <option key={item.key} value={item.key}>{item.label}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
+          <div className="enac-web-user-panel" aria-label="Usuário e perfil ativo">
+            <div className="enac-web-user-summary">
+              <span>Usuário</span>
+              <strong>{activeProfile.userName}</strong>
+              <small>Homologação local</small>
+            </div>
+            <label className="enac-web-profile-select">
+              <span>Perfil ativo</span>
+              <select value={activeProfileKey} onChange={(event) => setActiveProfileKey(event.target.value as UserProfileKey)}>
+                {userProfileOptions.map((profile) => (
+                  <option key={profile.key} value={profile.key}>{profile.profileLabel}</option>
+                ))}
+              </select>
+              <small>{activeProfile.description}</small>
+            </label>
+            <label className="enac-web-module-jump">
+              <span>Navegar para tela</span>
+              <select
+                value={section}
+                onChange={(event) => {
+                  const next = event.target.value as WebSection;
+                  next === 'sistema' ? void abrirSistema() : setSection(next);
+                }}
+              >
+                {sectionGroups.map((group) => (
+                  <optgroup key={group.title} label={group.title}>
+                    {group.items.map((item) => (
+                      <option key={item.key} value={item.key}>{item.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          </div>
         </header>
         {section !== 'sistema' && <ContentSection section={section} onOpenSystem={abrirSistema} onNavigate={setSection} />}
         {section === 'sistema' && (
@@ -729,10 +822,10 @@ function ContentSection({ section, onOpenSystem, onNavigate }: { section: WebSec
           <div>
             <p>
               A recomendação consolidada é evoluir o Sistema ENAC para um ERP verticalizado de
-              engenharia/obras, gestão patrimonial/locação e financeiro operacional. O sistema atual
-              de compras e pagamentos permanece como base de aprendizado e operação controlada.
+              engenharia/obras, gestão patrimonial/locação e financeiro operacional. A tela legada
+              permanece disponível apenas como consulta controlada durante a homologação.
             </p>
-            <button type="button" onClick={onOpenSystem}>Abrir sistema atual</button>
+            <button type="button" onClick={onOpenSystem}>Abrir legado para consulta</button>
           </div>
           <dl>
             <div><dt>MVP</dt><dd>7 frentes</dd></div>
@@ -779,12 +872,24 @@ function Page({ eyebrow, title, children }: { eyebrow: string; title: string; ch
 
 function OperationalSection({ state, onOpenSystem }: { state: IOperationalState; onOpenSystem: () => void }): JSX.Element {
   if (state.loading) {
-    return <Page title="Sistema ENAC" eyebrow="Carregando"><p>Preparando autenticação Microsoft Entra.</p></Page>;
+    return (
+      <Page title="Legado — consulta" eyebrow="Carregando">
+        <div className="enac-web-alert">
+          <strong>Tela legada mantida apenas para consulta.</strong>
+          <p>O ERP operacional atual está nos módulos da navegação principal.</p>
+        </div>
+        <p>Preparando autenticação Microsoft Entra.</p>
+      </Page>
+    );
   }
 
   if (state.error || !state.account || !state.repository) {
     return (
-      <Page title="Sistema ENAC" eyebrow="Configuração necessária">
+      <Page title="Legado — consulta" eyebrow="Configuração necessária">
+        <div className="enac-web-alert">
+          <strong>Tela legada mantida apenas para consulta.</strong>
+          <p>O ERP operacional atual está nos módulos da navegação principal.</p>
+        </div>
         <div className="enac-web-alert">
           <strong>{state.error || 'A autenticação ainda não foi iniciada.'}</strong>
           <p>Configure as variáveis no ambiente local ou no Netlify e cadastre a URL de retorno no Microsoft Entra.</p>
@@ -796,6 +901,10 @@ function OperationalSection({ state, onOpenSystem }: { state: IOperationalState;
 
   return (
     <>
+      <div className="enac-web-alert enac-web-alert--compact">
+        <strong>Tela legada mantida apenas para consulta.</strong>
+        <p>O ERP operacional atual está nos módulos da navegação principal.</p>
+      </div>
       {escritaWebV30BSolicitada && bloqueiosEscritaWebV30B.length > 0 && (
         <div className="enac-web-alert enac-web-alert--compact">
           <strong>Escrita V3.0b bloqueada por configuração.</strong>

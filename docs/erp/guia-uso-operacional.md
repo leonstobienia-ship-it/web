@@ -10,8 +10,10 @@ A navegacao do ERP ENAC esta organizada por areas:
 | Compras | Cadastros, Solicitacoes de Compra, Cotacoes, Pedidos de Compra |
 | Financeiro | Notas Fiscais de Entrada, Contas a Pagar, Programacoes de Pagamento, Relatorios Financeiros |
 | Obras | Contratos de Obra, Orcamentos e Planejamento, Medicoes e Faturamento, Previsto x Realizado |
-| Gestao | Dashboard Executivo, Auditoria e Logs, Administracao |
-| Base ERP | Arquitetura, MVP ERP, Workflows, Modelo de dados, Seguranca, Roadmap, Sistema atual |
+| Gestao | Dashboard Executivo, Homologacao, Auditoria e Logs |
+| Administracao | Administracao de Acessos |
+| Base ERP | Arquitetura, MVP ERP, Workflows, Modelo de dados, Seguranca, Roadmap |
+| Legado | Legado - consulta |
 
 ## Uso por perfil
 
@@ -74,7 +76,7 @@ Objetivo: registrar demandas, evidencias, medicoes e bloqueios operacionais.
 
 Priorizar:
 
-- Administracao;
+- Administracao de Acessos;
 - Auditoria e Logs;
 - Documentos e Anexos;
 - Seguranca.
@@ -84,8 +86,11 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 ## Padroes de tela
 
 - Cabecalho da aplicacao mostra area e modulo ativo.
-- Menu lateral exibe agrupamento por area e perfil predominante.
-- Em telas menores, o seletor de modulo no topo facilita a troca de contexto.
+- Cabecalho mostra usuario de homologacao e perfil ativo.
+- Menu lateral exibe grupos recolhiveis por area, mantendo o grupo ativo aberto.
+- O seletor secundario `Navegar para tela` facilita troca de contexto sem competir com usuario/perfil.
+- `Administracao de Acessos` concentra usuarios, perfis, escopos e alcadas.
+- `Legado - consulta` identifica a tela antiga como apoio de consulta, nao como sistema atual.
 - Cards resumem indicadores principais.
 - Tabelas mantem rolagem horizontal quando o conteudo e largo.
 - Botoes desabilitados indicam bloqueio visual sem remover o contexto da acao.

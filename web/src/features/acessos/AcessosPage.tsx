@@ -68,10 +68,10 @@ interface ValidacaoForm {
 }
 
 const adminTabs: Array<{ key: AdminTab; label: string }> = [
-  { key: 'usuarios', label: 'Usuarios' },
+  { key: 'usuarios', label: 'Usuários' },
   { key: 'perfis', label: 'Perfis' },
   { key: 'escopos', label: 'Escopos' },
-  { key: 'alcadas', label: 'Alcadas' }
+  { key: 'alcadas', label: 'Alçadas' }
 ];
 
 const modules = [
@@ -177,6 +177,12 @@ export function AcessosPage(): JSX.Element {
   const [message, setMessage] = React.useState<string>('');
 
   const companyId = empresas[0]?.id || '';
+  const accessSummary = [
+    { label: 'Usuários', value: usuarios.length, detail: 'cadastros locais' },
+    { label: 'Perfis', value: perfis.length, detail: 'papéis operacionais' },
+    { label: 'Escopos', value: escopos.length, detail: 'ações por módulo' },
+    { label: 'Alçadas', value: alcadas.length, detail: 'limites ativos e inativos' }
+  ];
 
   const loadAll = React.useCallback(async (): Promise<void> => {
     const [
@@ -348,10 +354,11 @@ export function AcessosPage(): JSX.Element {
 
   return (
     <section className="enac-web-page enac-acessos-page">
-      <p className="enac-web-eyebrow">PostgreSQL local</p>
-      <h1>Perfis, escopos e alçadas</h1>
+      <p className="enac-web-eyebrow">Administração de Acessos</p>
+      <h1>Usuários, Perfis, Escopos e Alçadas</h1>
       <p className="enac-web-lead">
-        Administração local de acesso e regras de alçada para futuras aprovações de compra, NF e contas a pagar, sem pagamento ou baixa.
+        Cadastre usuários, perfis, escopos e limites de alçada para controlar aprovações do ERP.
+        Esta tela usa os endpoints locais existentes e não altera regras financeiras, pagamento ou baixa.
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando matriz de acesso.</div>}
@@ -364,6 +371,16 @@ export function AcessosPage(): JSX.Element {
 
       {!loading && companyId && (
         <>
+          <div className="enac-acessos-summary" aria-label="Resumo da administração de acessos">
+            {accessSummary.map((item) => (
+              <article key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+                <small>{item.detail}</small>
+              </article>
+            ))}
+          </div>
+
           <div className="enac-cadastros-tabs" role="tablist" aria-label="Administracao de acessos">
             {adminTabs.map((tab) => (
               <button

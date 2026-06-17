@@ -72,7 +72,37 @@ npm.cmd run smoke:homologacao
 
 A tela `Gestao > Homologacao` exibe o pacote assistido em modo somente leitura, com sequencia de sessoes, criterios, checklist resumido e atalhos para os modulos principais.
 
-V3.18 deve ser aberta somente depois da coleta real de feedback, triagem e priorizacao dos itens.
+## V3.18A-D - Correcoes de Homologacao: Topbar, Menu e Acessos
+
+A V3.18A-D aplica ajustes de usabilidade levantados na homologacao visual, sem criar backend, migration, endpoint ou regra de negocio nova.
+
+Principais ajustes:
+
+- topbar com usuario e perfil ativo visiveis;
+- seletor secundario `Navegar para tela`, sem `Modulo` como controle dominante;
+- menu lateral recolhivel por grupos, mantendo o grupo ativo aberto;
+- grupo `Administracao` com item `Administracao de Acessos`;
+- tela de acessos com resumo de Usuarios, Perfis, Escopos e Alcadas;
+- item antigo tratado como `Legado - consulta`.
+
+Documentos:
+
+- `docs/v3.18a-d-homologacao-navegacao-acessos.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18a-d-homologacao-navegacao-acessos.md`
+
+Limites mantidos:
+
+- sem pagamento real;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo;
+- sem `DELETE` fisico.
 
 ## Arquitetura prevista
 

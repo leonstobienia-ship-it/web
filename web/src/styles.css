@@ -103,24 +103,6 @@ button {
   gap: 5px;
 }
 
-.enac-web-nav-group-head {
-  display: grid;
-  gap: 2px;
-  padding: 0 6px 4px;
-}
-
-.enac-web-nav-group-head strong {
-  color: #31465b;
-  font-size: 12px;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.enac-web-nav-group-head span {
-  color: #7a8796;
-  font-size: 11px;
-}
-
 .enac-web-nav button,
 .enac-web-hero button,
 .enac-web-alert button,
@@ -170,6 +152,55 @@ button {
   color: var(--enac-primary);
 }
 
+.enac-web-nav-group-toggle {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  min-height: 40px !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  padding: 7px 8px !important;
+  background: #f8fafc !important;
+  color: #31465b !important;
+}
+
+.enac-web-nav-group-toggle:hover,
+.enac-web-nav-group.is-active-group .enac-web-nav-group-toggle {
+  border-color: var(--enac-border);
+  background: #eef3f7 !important;
+}
+
+.enac-web-nav-group-toggle > span {
+  display: grid;
+  gap: 2px;
+}
+
+.enac-web-nav-group-toggle strong {
+  color: #31465b;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.enac-web-nav-group-toggle small {
+  color: #7a8796 !important;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: normal !important;
+}
+
+.enac-web-nav-group-toggle em {
+  align-self: center;
+  color: #6b7a8a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.enac-web-nav-items {
+  display: grid;
+  gap: 5px;
+}
+
 .enac-web-main {
   display: grid;
   align-content: start;
@@ -181,7 +212,7 @@ button {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  grid-template-columns: minmax(0, 1fr) minmax(460px, 0.9fr);
   gap: 16px;
   align-items: center;
   min-height: 72px;
@@ -198,7 +229,9 @@ button {
 }
 
 .enac-web-topbar span,
-.enac-web-mobile-jump span {
+.enac-web-profile-select span,
+.enac-web-module-jump span,
+.enac-web-user-summary span {
   color: var(--enac-muted);
   font-size: 12px;
   font-weight: 800;
@@ -216,12 +249,44 @@ button {
   overflow-wrap: anywhere;
 }
 
-.enac-web-mobile-jump {
+.enac-web-user-panel {
   display: grid;
-  gap: 6px;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(190px, 1fr) minmax(160px, 0.9fr);
+  gap: 10px;
+  align-items: start;
 }
 
-.enac-web-mobile-jump select {
+.enac-web-user-summary,
+.enac-web-profile-select,
+.enac-web-module-jump {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.enac-web-user-summary {
+  min-height: 58px;
+  padding: 8px 10px;
+  border: 1px solid var(--enac-border);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.enac-web-user-summary strong {
+  min-width: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.enac-web-user-summary small,
+.enac-web-profile-select small {
+  color: #607086;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.enac-web-profile-select select,
+.enac-web-module-jump select {
   width: 100%;
   min-height: 38px;
   border: 1px solid var(--enac-border-strong);
@@ -2251,6 +2316,38 @@ button {
   gap: 18px;
 }
 
+.enac-acessos-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.enac-acessos-summary article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-acessos-summary span {
+  color: #607086;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.enac-acessos-summary strong {
+  color: #17212f;
+  font-size: 22px;
+}
+
+.enac-acessos-summary small {
+  color: #53657a;
+}
+
 .enac-acessos-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
@@ -3494,7 +3591,7 @@ code {
 
 @media (max-width: 1180px) {
   .enac-web-shell {
-    grid-template-columns: 236px minmax(0, 1fr);
+    grid-template-columns: 252px minmax(0, 1fr);
   }
 
   .enac-web-nav {
@@ -3506,13 +3603,21 @@ code {
     gap: 2px;
   }
 
+  .enac-web-nav-group-toggle {
+    grid-template-columns: 1fr !important;
+  }
+
   .enac-web-nav button small {
     white-space: normal;
   }
 
   .enac-web-topbar {
-    grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+    grid-template-columns: minmax(0, 1fr);
     padding-inline: 24px;
+  }
+
+  .enac-web-user-panel {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .enac-web-page {
@@ -3555,6 +3660,10 @@ code {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
+  .enac-web-nav-group-toggle {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
   .enac-web-topbar {
     position: static;
     grid-template-columns: 1fr;
@@ -3575,7 +3684,9 @@ code {
   }
 
   .enac-web-profile-map,
-  .enac-web-profile-actions {
+  .enac-web-profile-actions,
+  .enac-web-user-panel,
+  .enac-acessos-summary {
     grid-template-columns: 1fr;
   }
 
