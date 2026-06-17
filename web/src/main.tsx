@@ -11,6 +11,7 @@ import { ContratosObraPage } from './features/contratosObra/ContratosObraPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
 import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/MedicoesFaturamentoPage';
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
+import { OrcamentosPlanejamentoPage } from './features/orcamentosPlanejamento/OrcamentosPlanejamentoPage';
 import { PedidosCompraPage } from './features/pedidosCompra/PedidosCompraPage';
 import { ProgramacoesPagamentoPage } from './features/programacoesPagamento/ProgramacoesPagamentoPage';
 import { RelatoriosFinanceirosPage } from './features/relatoriosFinanceiros/RelatoriosFinanceirosPage';
@@ -59,6 +60,7 @@ type WebSection =
   | 'programacoes-pagamento'
   | 'relatorios-financeiros'
   | 'contratos-obra'
+  | 'orcamentos-planejamento'
   | 'medicoes-faturamento'
   | 'administracao'
   | 'estrutura'
@@ -120,6 +122,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'programacoes-pagamento', label: 'Programação de Pagamento' },
   { key: 'relatorios-financeiros', label: 'Relatórios Financeiros' },
   { key: 'contratos-obra', label: 'Contratos de Obra' },
+  { key: 'orcamentos-planejamento', label: 'Orçamentos e Planejamento' },
   { key: 'medicoes-faturamento', label: 'Medições e Faturamento' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
@@ -416,6 +419,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'contratos-obra') {
     return <ContratosObraPage />;
+  }
+
+  if (section === 'orcamentos-planejamento') {
+    return <OrcamentosPlanejamentoPage />;
   }
 
   if (section === 'medicoes-faturamento') {

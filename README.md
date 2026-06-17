@@ -955,6 +955,60 @@ npm.cmd run smoke:contratos-obra
 
 O smoke usa marcador `DEV_LOCAL_V3_7`, valida contrato em rascunho, item de escopo, inativação lógica, ativação, criação/submissão/aprovação de aditivo, bloqueio de medição com aditivo não aprovado, vínculo com medição e pedido de faturamento, auditoria, rotas proibidas e ausência de `DELETE` físico.
 
+## V3.8 - Orçamento Base da Obra e Planejamento Executivo
+
+A V3.8 adiciona Orçamento Base da Obra, Pacotes, Itens Orçamentários, Cronograma Físico-Financeiro e Planejamento Executivo em PostgreSQL local. O fluxo vincula obra, contrato ativo, centro de custo, orçamento, pacotes, itens, compras/medições/faturamento por consulta e margem prevista. A etapa não emite NFS-e real, não integra prefeitura, não gera boleto, não integra banco, não executa pagamento, não cria CNAB e não usa `DELETE` físico.
+
+Migration:
+
+```text
+database/migrations/018_orcamento_base_planejamento_executivo_v38.sql
+```
+
+Endpoints novos:
+
+```text
+GET    /orcamentos-obra
+GET    /orcamentos-obra/:id
+POST   /orcamentos-obra
+PATCH  /orcamentos-obra/:id
+PATCH  /orcamentos-obra/:id/enviar-revisao
+PATCH  /orcamentos-obra/:id/aprovar
+PATCH  /orcamentos-obra/:id/bloquear
+PATCH  /orcamentos-obra/:id/cancelar
+GET    /orcamentos-obra/:id/pacotes
+POST   /orcamentos-obra/:id/pacotes
+PATCH  /orcamentos-obra/:id/pacotes/:pacoteId
+PATCH  /orcamentos-obra/:id/pacotes/:pacoteId/inativar
+GET    /orcamentos-obra/:id/itens
+POST   /orcamentos-obra/:id/itens
+PATCH  /orcamentos-obra/:id/itens/:itemId
+PATCH  /orcamentos-obra/:id/itens/:itemId/inativar
+GET    /orcamentos-obra/:id/cronograma
+POST   /orcamentos-obra/:id/cronograma
+PATCH  /orcamentos-obra/:id/cronograma/:cronogramaId
+PATCH  /orcamentos-obra/:id/cronograma/:cronogramaId/inativar
+GET    /orcamentos-obra/:id/resumo
+GET    /obras/:id/orcamento-vigente
+GET    /planejamento-executivo
+GET    /planejamento-executivo/:id
+POST   /planejamento-executivo
+PATCH  /planejamento-executivo/:id
+PATCH  /planejamento-executivo/:id/ativar
+PATCH  /planejamento-executivo/:id/revisar
+PATCH  /planejamento-executivo/:id/encerrar
+PATCH  /planejamento-executivo/:id/cancelar
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:orcamento-planejamento
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_8`, valida orçamento em rascunho, pacote, itens, cronograma, resumo, envio para revisão, aprovação, unicidade de orçamento vigente por obra, consulta de vigente por obra, planejamento executivo, auditoria, rotas proibidas e ausência de `DELETE` físico.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

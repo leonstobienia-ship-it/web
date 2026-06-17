@@ -12,7 +12,9 @@ import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.
 import { handleMedicoes, handlePedidosFaturamento } from './modules/medicoesFaturamento/medicoesFaturamento.routes.js';
 import { handleNotasFiscaisEntrada } from './modules/notasFiscaisEntrada/notasFiscaisEntrada.routes.js';
 import { handleObras } from './modules/obras/obras.routes.js';
+import { handleOrcamentosObra } from './modules/orcamentosObra/orcamentosObra.routes.js';
 import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
+import { handlePlanejamentoExecutivo } from './modules/planejamentoExecutivo/planejamentoExecutivo.routes.js';
 import { handleProgramacoesPagamento } from './modules/programacoesPagamento/programacoesPagamento.routes.js';
 import { handleRelatoriosFinanceiros } from './modules/relatoriosFinanceiros/relatoriosFinanceiros.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
@@ -42,6 +44,8 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/programacoes-pagamento', handler: handleProgramacoesPagamento },
   { basePath: '/relatorios-financeiros', handler: handleRelatoriosFinanceiros },
   { basePath: '/contratos-obra', handler: handleContratosObra },
+  { basePath: '/orcamentos-obra', handler: handleOrcamentosObra },
+  { basePath: '/planejamento-executivo', handler: handlePlanejamentoExecutivo },
   { basePath: '/medicoes', handler: handleMedicoes },
   { basePath: '/pedidos-faturamento', handler: handlePedidosFaturamento },
   { basePath: '/perfis', handler: handlePerfis },

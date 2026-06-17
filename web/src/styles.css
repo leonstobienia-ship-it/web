@@ -344,6 +344,20 @@ textarea {
   margin-bottom: 4px;
 }
 
+.enac-cadastros-header,
+.enac-cadastros-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.enac-cadastros-header h1,
+.enac-cadastros-detail-header h2 {
+  margin-top: 0;
+}
+
 .enac-cadastros-context {
   display: flex;
   flex-wrap: wrap;
@@ -357,6 +371,137 @@ textarea {
 
 .enac-cadastros-context span {
   color: #607086;
+}
+
+.enac-cadastros-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(420px, 1.25fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.enac-cadastros-form,
+.enac-cadastros-list,
+.enac-cadastros-detail {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-cadastros-form h2,
+.enac-cadastros-form h3,
+.enac-cadastros-list h2,
+.enac-cadastros-list h3 {
+  margin: 0;
+}
+
+.enac-cadastros-form label,
+.enac-cadastros-context label {
+  display: grid;
+  gap: 6px;
+  color: #34475d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.enac-cadastros-form input,
+.enac-cadastros-form select,
+.enac-cadastros-form textarea,
+.enac-cadastros-context select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #17212f;
+}
+
+.enac-cadastros-form textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.enac-cadastros-form button,
+.enac-cadastros-header button,
+.enac-cadastros-list button,
+.enac-actions button,
+.enac-inline-actions button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 12px;
+  background: #245a7f;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.enac-cadastros-form button:disabled,
+.enac-cadastros-header button:disabled,
+.enac-cadastros-list button:disabled,
+.enac-actions button:disabled,
+.enac-inline-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.enac-cadastros-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.enac-cadastros-list th,
+.enac-cadastros-list td {
+  border-bottom: 1px solid #e2e8ef;
+  padding: 9px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.enac-form-full {
+  grid-column: 1 / -1;
+}
+
+.enac-actions,
+.enac-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.enac-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.enac-kpi-grid article {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.enac-kpi-grid span {
+  color: #607086;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.enac-kpi-grid strong {
+  color: #17212f;
+  font-size: 18px;
 }
 
 .enac-cadastros-tabs {
@@ -1707,6 +1852,27 @@ code {
 
   .enac-finance-layout {
     grid-template-columns: 1fr;
+  }
+
+  .enac-cadastros-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .enac-cadastros-context {
+    align-items: stretch;
+  }
+
+  .enac-cadastros-context label {
+    min-width: 0;
+    flex: 1 1 180px;
+  }
+
+  .enac-cadastros-list {
+    overflow-x: auto;
+  }
+
+  .enac-cadastros-list table {
+    min-width: 560px;
   }
 
   .enac-acessos-grid {

@@ -1,6 +1,10 @@
 import { createMasterCadastroHandler } from '../common/masterCrud.js';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { methodNotAllowed, sendError, sendJson } from '../../http.js';
+import { assertUuid } from '../aprovacoes/aprovacoes.service.js';
+import { getOrcamentoVigentePorObra } from '../orcamentosObra/orcamentosObra.routes.js';
 
-export const handleObras = createMasterCadastroHandler({
+const handleObrasCrud = createMasterCadastroHandler({
   entityName: 'Obra',
   table: 'obras',
   basePath: '/obras',
@@ -41,3 +45,30 @@ export const handleObras = createMasterCadastroHandler({
   ],
   orderBy: 'codigo'
 });
+
+export const handleObras = async (req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> => {
+  const method = req.method || 'GET';
+  const relativePath = url.pathname === '/obras' ? '' : url.pathname.slice('/obras'.length);
+  const parts = relativePath.split('/').filter(Boolean);
+
+  if (parts.length === 2 && parts[1] === 'orcamento-vigente') {
+    if (method !== 'GET') {
+      methodNotAllowed(res, ['GET']);
+      return;
+    }
+    try {
+      const obraId = assertUuid(parts[0], 'id');
+      const vigente = await getOrcamentoVigentePorObra(obraId);
+      if (!vigente) {
+        sendError(res, 404, 'not_found', 'Obra nao possui orcamento aprovado vigente.');
+        return;
+      }
+      sendJson(res, 200, { data: vigente });
+    } catch (error) {
+      sendError(res, 400, 'validation_error', error instanceof Error ? error.message : String(error));
+    }
+    return;
+  }
+
+  await handleObrasCrud(req, res, url);
+};

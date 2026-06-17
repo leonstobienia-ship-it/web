@@ -22,6 +22,7 @@
     "smoke:relatorios-financeiros": "npm run build && node dist/scripts/smokeRelatoriosFinanceiros.js",
     "smoke:medicoes-faturamento": "npm run build && node dist/scripts/smokeMedicoesFaturamento.js",
     "smoke:contratos-obra": "npm run build && node dist/scripts/smokeContratosObra.js",
+    "smoke:orcamento-planejamento": "npm run build && node dist/scripts/smokeOrcamentoPlanejamento.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

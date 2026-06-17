@@ -96,6 +96,7 @@ A migration V3.7 cria escopos e regras locais para o modulo `contratos-obra`:
 
 - `medicoes_obra` passa a aceitar `contrato_obra_id` e `contrato_obra_aditivo_id`.
 - `pedidos_faturamento` passa a aceitar `contrato_obra_id` e `contrato_obra_aditivo_id`.
+- A partir da V3.8, `orcamentos_obra` pode apontar para contrato de obra ativo da mesma obra.
 - Se a obra possui contrato ativo, a medicao deve apontar para contrato ativo compativel.
 - Aditivo informado precisa estar aprovado.
 - O valor acumulado das medicoes ativas nao pode ultrapassar `valor_total_contratado`.

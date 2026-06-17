@@ -1163,6 +1163,240 @@ export interface ContratoObraActionPayload {
   motivo?: string | null;
 }
 
+export type OrcamentoObraStatus = 'RASCUNHO' | 'EM_REVISAO' | 'APROVADO' | 'BLOQUEADO' | 'CANCELADO';
+export type OrcamentoItemTipo = 'MATERIAL' | 'MAO_DE_OBRA' | 'EQUIPAMENTO' | 'SERVICO' | 'OUTROS';
+export type PlanejamentoExecutivoStatus = 'RASCUNHO' | 'ATIVO' | 'REVISADO' | 'ENCERRADO' | 'CANCELADO';
+
+export interface OrcamentoObraPacoteApi {
+  id: string;
+  orcamento_id: string;
+  codigo: string;
+  nome: string;
+  descricao?: string | null;
+  etapa?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  ordem?: number | null;
+  status: 'ATIVO' | 'INATIVO' | string;
+  valor_total_previsto?: string | number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrcamentoObraItemApi {
+  id: string;
+  orcamento_id: string;
+  pacote_id?: string | null;
+  pacote_codigo?: string | null;
+  pacote_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  tipo: OrcamentoItemTipo;
+  codigo?: string | null;
+  descricao: string;
+  unidade: string;
+  quantidade: string | number;
+  valor_unitario_previsto: string | number;
+  valor_total_previsto: string | number;
+  insumo_descricao?: string | null;
+  mao_obra_categoria?: string | null;
+  equipamento_descricao?: string | null;
+  observacoes?: string | null;
+  status: 'ATIVO' | 'INATIVO' | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrcamentoObraCronogramaApi {
+  id: string;
+  orcamento_id: string;
+  pacote_id?: string | null;
+  pacote_codigo?: string | null;
+  pacote_nome?: string | null;
+  competencia: string;
+  valor_previsto: string | number;
+  percentual_fisico_previsto?: string | number | null;
+  observacoes?: string | null;
+  status: 'ATIVO' | 'INATIVO' | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrcamentoObraApi {
+  id: string;
+  company_id: string;
+  obra_id: string;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  cliente_id?: string | null;
+  cliente_nome?: string | null;
+  contrato_obra_id?: string | null;
+  contrato_obra_numero?: string | null;
+  contrato_obra_valor_total?: string | number | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  codigo: string;
+  versao: string;
+  descricao: string;
+  competencia_base?: string | null;
+  valor_previsto_total: string | number;
+  valor_material: string | number;
+  valor_mao_obra: string | number;
+  valor_equipamento: string | number;
+  valor_servico: string | number;
+  valor_outros: string | number;
+  margem_prevista_percentual?: string | number | null;
+  observacoes?: string | null;
+  status: OrcamentoObraStatus;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  bloqueio_motivo?: string | null;
+  cancelamento_motivo?: string | null;
+  created_at: string;
+  updated_at: string;
+  pacotes?: OrcamentoObraPacoteApi[];
+  itens?: OrcamentoObraItemApi[];
+  cronograma?: OrcamentoObraCronogramaApi[];
+}
+
+export interface OrcamentoObraResumoApi {
+  id: string;
+  codigo: string;
+  status: OrcamentoObraStatus;
+  valor_previsto_total: string | number;
+  valor_material: string | number;
+  valor_mao_obra: string | number;
+  valor_equipamento: string | number;
+  valor_servico: string | number;
+  valor_outros: string | number;
+  valor_total_contratado?: string | number | null;
+  diferenca_contrato_orcamento?: string | number | null;
+  total_cronograma: string | number;
+  valor_compras_realizado: string | number;
+  valor_medido_realizado: string | number;
+  valor_faturado_realizado: string | number;
+  totais_por_tipo?: Array<{ tipo: OrcamentoItemTipo; valor_total: string | number }>;
+  totais_por_pacote?: Array<{ pacote_id: string; pacote_codigo: string; pacote_nome: string; valor_total: string | number }>;
+}
+
+export interface OrcamentoObraFilters {
+  status?: OrcamentoObraStatus | '';
+  obra_id?: string;
+  contrato_obra_id?: string;
+}
+
+export interface OrcamentoObraPayload {
+  company_id: string;
+  obra_id: string;
+  contrato_obra_id?: string | null;
+  centro_custo_id?: string | null;
+  codigo: string;
+  versao?: string | null;
+  descricao: string;
+  competencia_base?: string | null;
+  margem_prevista_percentual?: number | null;
+  observacoes?: string | null;
+  usuario_id?: string | null;
+}
+
+export type OrcamentoObraUpdatePayload = Partial<Omit<OrcamentoObraPayload, 'company_id' | 'obra_id'>>;
+
+export interface OrcamentoObraPacotePayload {
+  codigo: string;
+  nome: string;
+  descricao?: string | null;
+  etapa?: string | null;
+  centro_custo_id?: string | null;
+  ordem?: number | null;
+  usuario_id?: string | null;
+}
+
+export interface OrcamentoObraItemPayload {
+  pacote_id?: string | null;
+  centro_custo_id?: string | null;
+  tipo: OrcamentoItemTipo;
+  codigo?: string | null;
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  valor_unitario_previsto: number;
+  insumo_descricao?: string | null;
+  mao_obra_categoria?: string | null;
+  equipamento_descricao?: string | null;
+  observacoes?: string | null;
+  usuario_id?: string | null;
+}
+
+export interface OrcamentoObraCronogramaPayload {
+  pacote_id?: string | null;
+  competencia: string;
+  valor_previsto: number;
+  percentual_fisico_previsto?: number | null;
+  observacoes?: string | null;
+  usuario_id?: string | null;
+}
+
+export interface OrcamentoObraActionPayload {
+  usuario_id: string;
+  observacoes?: string | null;
+  justificativa?: string | null;
+  motivo?: string | null;
+}
+
+export interface PlanejamentoExecutivoApi {
+  id: string;
+  company_id: string;
+  obra_id: string;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  orcamento_id?: string | null;
+  orcamento_codigo?: string | null;
+  orcamento_versao?: string | null;
+  contrato_obra_id?: string | null;
+  contrato_obra_numero?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  etapa: string;
+  descricao?: string | null;
+  data_inicio_prevista: string;
+  data_fim_prevista: string;
+  responsavel_id?: string | null;
+  responsavel_nome?: string | null;
+  observacoes?: string | null;
+  status: PlanejamentoExecutivoStatus;
+  revisao_motivo?: string | null;
+  encerramento_motivo?: string | null;
+  cancelamento_motivo?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlanejamentoExecutivoFilters {
+  status?: PlanejamentoExecutivoStatus | '';
+  obra_id?: string;
+  orcamento_id?: string;
+}
+
+export interface PlanejamentoExecutivoPayload {
+  company_id: string;
+  obra_id: string;
+  orcamento_id?: string | null;
+  contrato_obra_id?: string | null;
+  centro_custo_id?: string | null;
+  etapa: string;
+  descricao?: string | null;
+  data_inicio_prevista: string;
+  data_fim_prevista: string;
+  responsavel_id?: string | null;
+  observacoes?: string | null;
+  usuario_id?: string | null;
+}
+
+export type PlanejamentoExecutivoUpdatePayload = Partial<Omit<PlanejamentoExecutivoPayload, 'company_id' | 'obra_id'>>;
+
 export type MedicaoStatus =
   | 'RASCUNHO'
   | 'SUBMETIDA'
@@ -1899,6 +2133,145 @@ export const erpApi = {
       })).data,
     cancelarAditivo: async (id: string, aditivoId: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
       (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/aditivos/${aditivoId}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data
+  },
+  orcamentosObra: {
+    list: async (filters: OrcamentoObraFilters = {}): Promise<OrcamentoObraApi[]> =>
+      (await request<ApiListResponse<OrcamentoObraApi>>(
+        `/orcamentos-obra${buildQueryString({
+          status: filters.status || undefined,
+          obra_id: filters.obra_id,
+          contrato_obra_id: filters.contrato_obra_id
+        })}`
+      )).data,
+    get: async (id: string): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}`)).data,
+    create: async (payload: OrcamentoObraPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>('/orcamentos-obra', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: OrcamentoObraUpdatePayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    enviarRevisao: async (id: string, payload: OrcamentoObraActionPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/enviar-revisao`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    aprovar: async (id: string, payload: OrcamentoObraActionPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/aprovar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    bloquear: async (id: string, payload: OrcamentoObraActionPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/bloquear`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelar: async (id: string, payload: OrcamentoObraActionPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    pacotes: async (id: string): Promise<OrcamentoObraPacoteApi[]> =>
+      (await request<ApiListResponse<OrcamentoObraPacoteApi>>(`/orcamentos-obra/${id}/pacotes`)).data,
+    addPacote: async (id: string, payload: OrcamentoObraPacotePayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/pacotes`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    updatePacote: async (id: string, pacoteId: string, payload: Partial<OrcamentoObraPacotePayload>): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/pacotes/${pacoteId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    inativarPacote: async (id: string, pacoteId: string, payload: OrcamentoObraActionPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/pacotes/${pacoteId}/inativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    itens: async (id: string): Promise<OrcamentoObraItemApi[]> =>
+      (await request<ApiListResponse<OrcamentoObraItemApi>>(`/orcamentos-obra/${id}/itens`)).data,
+    addItem: async (id: string, payload: OrcamentoObraItemPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/itens`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    updateItem: async (id: string, itemId: string, payload: Partial<OrcamentoObraItemPayload>): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/itens/${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    inativarItem: async (id: string, itemId: string, payload: OrcamentoObraActionPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/itens/${itemId}/inativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cronograma: async (id: string): Promise<OrcamentoObraCronogramaApi[]> =>
+      (await request<ApiListResponse<OrcamentoObraCronogramaApi>>(`/orcamentos-obra/${id}/cronograma`)).data,
+    addCronograma: async (id: string, payload: OrcamentoObraCronogramaPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/cronograma`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    updateCronograma: async (id: string, cronogramaId: string, payload: Partial<OrcamentoObraCronogramaPayload>): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/cronograma/${cronogramaId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    inativarCronograma: async (id: string, cronogramaId: string, payload: OrcamentoObraActionPayload): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/orcamentos-obra/${id}/cronograma/${cronogramaId}/inativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    resumo: async (id: string): Promise<OrcamentoObraResumoApi> =>
+      (await request<ApiItemResponse<OrcamentoObraResumoApi>>(`/orcamentos-obra/${id}/resumo`)).data,
+    vigentePorObra: async (obraId: string): Promise<OrcamentoObraApi> =>
+      (await request<ApiItemResponse<OrcamentoObraApi>>(`/obras/${obraId}/orcamento-vigente`)).data
+  },
+  planejamentoExecutivo: {
+    list: async (filters: PlanejamentoExecutivoFilters = {}): Promise<PlanejamentoExecutivoApi[]> =>
+      (await request<ApiListResponse<PlanejamentoExecutivoApi>>(
+        `/planejamento-executivo${buildQueryString({
+          status: filters.status || undefined,
+          obra_id: filters.obra_id,
+          orcamento_id: filters.orcamento_id
+        })}`
+      )).data,
+    get: async (id: string): Promise<PlanejamentoExecutivoApi> =>
+      (await request<ApiItemResponse<PlanejamentoExecutivoApi>>(`/planejamento-executivo/${id}`)).data,
+    create: async (payload: PlanejamentoExecutivoPayload): Promise<PlanejamentoExecutivoApi> =>
+      (await request<ApiItemResponse<PlanejamentoExecutivoApi>>('/planejamento-executivo', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: PlanejamentoExecutivoUpdatePayload): Promise<PlanejamentoExecutivoApi> =>
+      (await request<ApiItemResponse<PlanejamentoExecutivoApi>>(`/planejamento-executivo/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    ativar: async (id: string, payload: OrcamentoObraActionPayload): Promise<PlanejamentoExecutivoApi> =>
+      (await request<ApiItemResponse<PlanejamentoExecutivoApi>>(`/planejamento-executivo/${id}/ativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    revisar: async (id: string, payload: OrcamentoObraActionPayload): Promise<PlanejamentoExecutivoApi> =>
+      (await request<ApiItemResponse<PlanejamentoExecutivoApi>>(`/planejamento-executivo/${id}/revisar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    encerrar: async (id: string, payload: OrcamentoObraActionPayload): Promise<PlanejamentoExecutivoApi> =>
+      (await request<ApiItemResponse<PlanejamentoExecutivoApi>>(`/planejamento-executivo/${id}/encerrar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelar: async (id: string, payload: OrcamentoObraActionPayload): Promise<PlanejamentoExecutivoApi> =>
+      (await request<ApiItemResponse<PlanejamentoExecutivoApi>>(`/planejamento-executivo/${id}/cancelar`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data
