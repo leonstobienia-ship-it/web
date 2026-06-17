@@ -8,7 +8,8 @@ import {
   type FornecedorApi,
   type MapaComparativoApi,
   type SolicitacaoCompraApi,
-  type SolicitacaoCompraItemApi
+  type SolicitacaoCompraItemApi,
+  type UsuarioApi
 } from '../../services/erpApi';
 
 interface CreateFormState {
@@ -35,6 +36,15 @@ const statusLabels: Record<CotacaoStatus, string> = {
   MAPA_GERADO: 'Mapa gerado',
   FORNECEDOR_ESCOLHIDO: 'Fornecedor escolhido',
   CANCELADA: 'Cancelada'
+};
+
+const aprovacaoLabels: Record<string, string> = {
+  PENDENTE_APROVACAO: 'Pendente',
+  APROVADO_TECNICO: 'Aprovado técnico',
+  APROVADO_DIRETORIA: 'Aprovado diretoria',
+  REPROVADO: 'Reprovado',
+  DEVOLVIDO: 'Devolvido',
+  BLOQUEADO_ALCADA: 'Bloqueado por alçada'
 };
 
 const solicitacaoStatusLabels: Record<string, string> = {
@@ -118,6 +128,7 @@ export function CotacoesMapaPage(): JSX.Element {
   const [empresas, setEmpresas] = React.useState<EmpresaApi[]>([]);
   const [solicitacoes, setSolicitacoes] = React.useState<SolicitacaoCompraApi[]>([]);
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
+  const [usuarios, setUsuarios] = React.useState<UsuarioApi[]>([]);
   const [selectedSolicitacaoId, setSelectedSolicitacaoId] = React.useState<string>('');
   const [selectedSolicitacao, setSelectedSolicitacao] = React.useState<SolicitacaoCompraApi | null>(null);
   const [cotacoes, setCotacoes] = React.useState<CotacaoApi[]>([]);
@@ -127,6 +138,7 @@ export function CotacoesMapaPage(): JSX.Element {
   const [supplierSelection, setSupplierSelection] = React.useState<Set<string>>(new Set());
   const [responses, setResponses] = React.useState<ResponseState>({});
   const [justificativa, setJustificativa] = React.useState<string>(`${marker} - menor valor total escolhido no mapa`);
+  const [approvalUserId, setApprovalUserId] = React.useState<string>('');
   const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
@@ -166,15 +178,18 @@ export function CotacoesMapaPage(): JSX.Element {
     Promise.all([
       erpApi.empresas.list(),
       erpApi.solicitacoesCompra.list(),
-      erpApi.fornecedores.list()
+      erpApi.fornecedores.list(),
+      erpApi.usuarios.list()
     ])
-      .then(([empresasResponse, solicitacoesResponse, fornecedoresResponse]) => {
+      .then(([empresasResponse, solicitacoesResponse, fornecedoresResponse, usuariosResponse]) => {
         if (!active) {
           return;
         }
         setEmpresas(empresasResponse);
         setSolicitacoes(solicitacoesResponse);
         setFornecedores(fornecedoresResponse.filter((fornecedor) => fornecedor.status !== 'inativo'));
+        setUsuarios(usuariosResponse.filter((usuario) => usuario.status !== 'inativo' && usuario.ativo !== false));
+        setApprovalUserId((current) => current || usuariosResponse.find((usuario) => usuario.email === 'gustavo.dev.v35b@enac.local')?.id || usuariosResponse[0]?.id || '');
         const firstEligible = solicitacoesResponse.find((solicitacao) => solicitacao.status !== 'CANCELADA') || solicitacoesResponse[0];
         setSelectedSolicitacaoId(firstEligible?.id || '');
       })
@@ -380,6 +395,29 @@ export function CotacoesMapaPage(): JSX.Element {
     }
   };
 
+  const approveCotacao = async (cotacao: CotacaoApi, action: 'aprovar-tecnico' | 'aprovar-diretoria'): Promise<void> => {
+    if (saving || !approvalUserId) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const updated = await erpApi.cotacoes.aprovar(cotacao.id, action, {
+        usuario_id: approvalUserId,
+        observacoes: `${marker} - aprovacao local por alcada`
+      });
+      setSelectedCotacao(updated);
+      setMessage('Aprovação registrada.');
+      await refresh(updated.id);
+    } catch (approveError) {
+      setError(getErrorMessage(approveError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const selectedWinner = mapa?.resumo.fornecedor_vencedor;
   const lowerTotalSupplier = mapa?.resumo.fornecedor_menor_total;
 
@@ -471,6 +509,29 @@ export function CotacoesMapaPage(): JSX.Element {
                     {statusLabels[selectedCotacao.status]}
                   </span>
                 </div>
+
+                <div className="enac-cotacoes-summary">
+                  <dl>
+                    <div><dt>Aprovação</dt><dd>{selectedCotacao.aprovacao_status ? aprovacaoLabels[selectedCotacao.aprovacao_status] || selectedCotacao.aprovacao_status : '-'}</dd></div>
+                    <div><dt>Aprovador</dt><dd>{selectedCotacao.aprovado_por_nome || '-'}</dd></div>
+                  </dl>
+                </div>
+
+                {['MAPA_GERADO', 'FORNECEDOR_ESCOLHIDO'].includes(selectedCotacao.status) && (
+                  <div className="enac-cadastro-row-actions">
+                    <label>
+                      <span>Aprovador</span>
+                      <select value={approvalUserId} onChange={(event) => setApprovalUserId(event.target.value)} disabled={saving}>
+                        <option value="">Selecione</option>
+                        {usuarios.map((usuario) => (
+                          <option key={usuario.id} value={usuario.id}>{usuario.nome} - {usuario.perfil_principal || 'perfil'}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <button type="button" onClick={() => void approveCotacao(selectedCotacao, 'aprovar-tecnico')} disabled={saving || !approvalUserId}>Aprovar técnico</button>
+                    <button type="button" onClick={() => void approveCotacao(selectedCotacao, 'aprovar-diretoria')} disabled={saving || !approvalUserId}>Aprovar diretoria</button>
+                  </div>
+                )}
 
                 <FornecedoresTable fornecedores={selectedCotacao.fornecedores || []} />
 
@@ -589,6 +650,7 @@ function CotacoesTable({
             <th>Código</th>
             <th>Título</th>
             <th>Status</th>
+            <th>Aprovação</th>
             <th>Fornecedores</th>
             <th>Vencedor</th>
             <th>Ações</th>
@@ -604,6 +666,7 @@ function CotacoesTable({
                   {statusLabels[cotacao.status]}
                 </span>
               </td>
+              <td>{cotacao.aprovacao_status ? aprovacaoLabels[cotacao.aprovacao_status] || cotacao.aprovacao_status : '-'}</td>
               <td>{cotacao.fornecedores_count || 0}</td>
               <td>{cotacao.fornecedor_vencedor_nome || '-'}</td>
               <td>

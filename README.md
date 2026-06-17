@@ -675,6 +675,34 @@ npm.cmd run smoke:acessos
 
 O smoke usa marcador `DEV_LOCAL_V3_5B`, valida criacao/listagem de perfis e escopos, vinculos usuario-perfil e perfil-escopo, criacao de alcada, regra de PLANEJAMENTO ate R$ 20.000, bloqueio acima de R$ 20.000 e DIRETORIA acima de R$ 20.000.
 
+## V3.5C - Aprovações por Alçada nos Documentos
+
+A V3.5C integra as regras locais de alçada aos documentos operacionais: Solicitação de Compra, Cotação, Pedido de Compra, Nota Fiscal de Entrada e Conta a Pagar. A etapa não implementa programação bancária, liberação bancária, pagamento, baixa, integração bancária, SharePoint, Entra, Power Automate ou `DELETE` físico.
+
+Endpoints de aprovação:
+
+```text
+PATCH /solicitacoes-compra/:id/aprovar-tecnico
+PATCH /solicitacoes-compra/:id/aprovar-diretoria
+PATCH /cotacoes/:id/aprovar-tecnico
+PATCH /cotacoes/:id/aprovar-diretoria
+PATCH /pedidos-compra/:id/aprovar-tecnico
+PATCH /pedidos-compra/:id/aprovar-diretoria
+PATCH /notas-fiscais-entrada/:id/aprovar-tecnico
+PATCH /notas-fiscais-entrada/:id/aprovar-diretoria
+PATCH /contas-pagar/:id/aprovar-tecnico
+PATCH /contas-pagar/:id/aprovar-diretoria
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:aprovacoes
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_5C`, valida bloqueio por alçada, aprovação técnica/diretoria, cotação aprovada antes do pedido, bloqueio de emissão de pedido sem aprovação, aprovação de NF, aprovação interna de conta a pagar e ausência de rotas de programação, pagamento e baixa.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

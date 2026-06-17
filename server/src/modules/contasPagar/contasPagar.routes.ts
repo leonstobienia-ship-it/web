@@ -2,6 +2,14 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { PoolClient, QueryResultRow } from 'pg';
 import { getPool } from '../../db/client.js';
 import { HttpError, isHttpError, methodNotAllowed, readJsonBody, sendError, sendJson } from '../../http.js';
+import {
+  getPayloadDecisaoAprovacao,
+  normalizarAcaoAprovacao,
+  persistirBloqueioAlcada,
+  registrarAuditoria,
+  statusAprovacaoPorAcao,
+  validarAlcadaDocumento
+} from '../aprovacoes/aprovacoes.service.js';
 
 type ContaPagarStatus = 'PROVISIONADA' | 'APROVADA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'PAGA' | 'CANCELADA';
 
@@ -26,7 +34,12 @@ interface NotaEntradaRow extends QueryResultRow {
 
 interface ContaRow extends QueryResultRow {
   id: string;
+  company_id: string;
+  obra_id: string | null;
+  centro_custo_id: string | null;
   status: ContaPagarStatus;
+  valor_original: string;
+  aprovacao_status: string | null;
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -168,6 +181,11 @@ const fetchConta = async (client: PoolClient, id: string) => {
       cp.valor_original,
       cp.valor_aberto,
       cp.status,
+      cp.aprovacao_status,
+      cp.aprovado_por,
+      cp.aprovado_em,
+      cp.aprovacao_observacoes,
+      cp.bloqueio_alcada_motivo,
       cp.forma_pagamento_prevista,
       cp.observacoes,
       cp.created_at,
@@ -181,13 +199,15 @@ const fetchConta = async (client: PoolClient, id: string) => {
       o.codigo as obra_codigo,
       o.nome as obra_nome,
       cc.codigo as centro_custo_codigo,
-      cc.nome as centro_custo_nome
+      cc.nome as centro_custo_nome,
+      aprovador.nome as aprovado_por_nome
     from contas_pagar cp
     join notas_fiscais_entrada n on n.id = cp.nota_entrada_id
     join pedidos_compra p on p.id = cp.pedido_id
     join fornecedores f on f.id = cp.fornecedor_id
     left join obras o on o.id = cp.obra_id
     left join centros_custo cc on cc.id = cp.centro_custo_id
+    left join usuarios aprovador on aprovador.id = cp.aprovado_por
     where cp.id = $1
     `,
     [id]
@@ -248,6 +268,11 @@ const listContas = async (url: URL): Promise<QueryResultRow[]> => {
       cp.valor_original,
       cp.valor_aberto,
       cp.status,
+      cp.aprovacao_status,
+      cp.aprovado_por,
+      cp.aprovado_em,
+      cp.aprovacao_observacoes,
+      cp.bloqueio_alcada_motivo,
       cp.forma_pagamento_prevista,
       cp.observacoes,
       cp.created_at,
@@ -259,13 +284,15 @@ const listContas = async (url: URL): Promise<QueryResultRow[]> => {
       o.codigo as obra_codigo,
       o.nome as obra_nome,
       cc.codigo as centro_custo_codigo,
-      cc.nome as centro_custo_nome
+      cc.nome as centro_custo_nome,
+      aprovador.nome as aprovado_por_nome
     from contas_pagar cp
     join notas_fiscais_entrada n on n.id = cp.nota_entrada_id
     join pedidos_compra p on p.id = cp.pedido_id
     join fornecedores f on f.id = cp.fornecedor_id
     left join obras o on o.id = cp.obra_id
     left join centros_custo cc on cc.id = cp.centro_custo_id
+    left join usuarios aprovador on aprovador.id = cp.aprovado_por
     ${where}
     order by cp.data_vencimento asc, cp.created_at desc
     `,
@@ -355,7 +382,7 @@ const gerarContaDaNota = async (payload: Record<string, unknown>) => {
 const fetchContaForUpdate = async (client: PoolClient, id: string): Promise<ContaRow | undefined> => {
   const result = await client.query<ContaRow>(
     `
-    select id, status
+    select id, company_id, obra_id, centro_custo_id, status, valor_original, aprovacao_status
     from contas_pagar
     where id = $1 and nota_entrada_id is not null
     for update
@@ -416,6 +443,84 @@ const updateConta = async (id: string, payload: Record<string, unknown>) => {
     return conta;
   } catch (error) {
     await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const aprovarContaPagar = async (id: string, action: string, payload: Record<string, unknown>) => {
+  assertUuid(id, 'id');
+  const acao = normalizarAcaoAprovacao(action);
+  const decisao = getPayloadDecisaoAprovacao(payload);
+  const aprovacaoStatus = statusAprovacaoPorAcao(acao);
+  const client = await getPool().connect();
+  let committed = false;
+
+  try {
+    await client.query('begin');
+    const existing = await fetchContaForUpdate(client, id);
+    if (!existing) {
+      throw new HttpError(404, 'not_found', 'Conta a pagar nao encontrada.');
+    }
+    if (existing.status !== 'PROVISIONADA') {
+      throw new HttpError(409, 'status_conflict', `Conta em status ${existing.status} nao permite aprovacao.`);
+    }
+
+    const valor = Number(existing.valor_original);
+    const validacao = await validarAlcadaDocumento(client, {
+      companyId: existing.company_id,
+      usuarioId: decisao.usuarioId,
+      modulo: 'contas-pagar',
+      tipoDocumento: 'CONTA_PAGAR',
+      acao,
+      valor,
+      obraId: existing.obra_id,
+      centroCustoId: existing.centro_custo_id
+    });
+    const auditPayload = {
+      usuario_id: decisao.usuarioId,
+      modulo: 'contas-pagar',
+      tipo_documento: 'CONTA_PAGAR',
+      acao,
+      valor,
+      resultado: validacao.decisao,
+      motivo: validacao.motivo,
+      observacoes: decisao.observacoes
+    };
+
+    if (!validacao.aprovado) {
+      await persistirBloqueioAlcada(client, 'contas_pagar', id, validacao.motivo, decisao.observacoes, decisao.usuarioId);
+      await registrarAuditoria(client, existing.company_id, 'conta_pagar', id, 'bloquear_alcada', auditPayload, decisao.usuarioId);
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(403, 'alcada_bloqueada', validacao.motivo, auditPayload);
+    }
+
+    await client.query(
+      `
+      update contas_pagar
+      set
+        status = 'APROVADA',
+        aprovacao_status = $1,
+        aprovado_por = $2,
+        aprovado_em = now(),
+        aprovacao_observacoes = $3,
+        bloqueio_alcada_motivo = null,
+        updated_at = now()
+      where id = $4
+      `,
+      [aprovacaoStatus, decisao.usuarioId, decisao.observacoes, id]
+    );
+    await registrarAuditoria(client, existing.company_id, 'conta_pagar', id, acao, auditPayload, decisao.usuarioId);
+    const conta = await fetchConta(client, id);
+    await client.query('commit');
+    committed = true;
+    return conta;
+  } catch (error) {
+    if (!committed) {
+      await client.query('rollback');
+    }
     throw error;
   } finally {
     client.release();
@@ -542,6 +647,11 @@ export const handleContasPagar = async (req: IncomingMessage, res: ServerRespons
 
     if (parts.length === 2 && method === 'PATCH') {
       const [id, action] = parts;
+      if (['aprovar-tecnico', 'aprovar-diretoria'].includes(action)) {
+        const payload = await readJsonBody(req);
+        sendJson(res, 200, { data: await aprovarContaPagar(id, action, payload) });
+        return;
+      }
       sendJson(res, 200, { data: await transitionConta(id, action) });
       return;
     }

@@ -65,6 +65,15 @@ const statusLabels: Record<SolicitacaoCompraStatus, string> = {
   CANCELADA: 'Cancelada'
 };
 
+const aprovacaoLabels: Record<string, string> = {
+  PENDENTE_APROVACAO: 'Pendente',
+  APROVADO_TECNICO: 'Aprovado técnico',
+  APROVADO_DIRETORIA: 'Aprovado diretoria',
+  REPROVADO: 'Reprovado',
+  DEVOLVIDO: 'Devolvido',
+  BLOQUEADO_ALCADA: 'Bloqueado por alçada'
+};
+
 const prioridadeLabels: Record<SolicitacaoCompraPrioridade, string> = {
   BAIXA: 'Baixa',
   NORMAL: 'Normal',
@@ -177,6 +186,7 @@ export function SolicitacoesCompraPage(): JSX.Element {
   const [statusFilter, setStatusFilter] = React.useState<SolicitacaoCompraStatus | ''>('');
   const [prioridadeFilter, setPrioridadeFilter] = React.useState<SolicitacaoCompraPrioridade | ''>('');
   const [obraFilter, setObraFilter] = React.useState<string>('');
+  const [approvalUserId, setApprovalUserId] = React.useState<string>('');
   const [loadingRefs, setLoadingRefs] = React.useState<boolean>(true);
   const [loadingList, setLoadingList] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
@@ -218,6 +228,7 @@ export function SolicitacoesCompraPage(): JSX.Element {
         setObras(obrasResponse);
         setCentrosCusto(centrosResponse);
         setUsuarios(usuariosResponse);
+        setApprovalUserId((current) => current || usuariosResponse.find((usuario) => usuario.email === 'gustavo.dev.v35b@enac.local')?.id || usuariosResponse[0]?.id || '');
       })
       .catch((loadError) => {
         if (active) {
@@ -412,6 +423,30 @@ export function SolicitacoesCompraPage(): JSX.Element {
     }
   };
 
+  const approveSolicitacao = async (solicitacao: SolicitacaoCompraApi, action: 'aprovar-tecnico' | 'aprovar-diretoria'): Promise<void> => {
+    if (saving || !approvalUserId) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const updated = await erpApi.solicitacoesCompra.aprovar(solicitacao.id, action, {
+        usuario_id: approvalUserId,
+        observacoes: 'DEV_LOCAL_V3_5C - aprovacao local por alcada'
+      });
+      setSelected(updated);
+      setMessage('Aprovação registrada.');
+      await loadSolicitacoes();
+    } catch (approveError) {
+      setError(getErrorMessage(approveError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const totalForm = items.reduce((total, item) => total + itemTotal(item), 0);
   const referenciasCarregadas = !loadingRefs && Boolean(empresa) && obras.length > 0 && centrosCusto.length > 0 && usuarios.length > 0;
 
@@ -505,6 +540,7 @@ export function SolicitacoesCompraPage(): JSX.Element {
                         <th>Obra</th>
                         <th>Prioridade</th>
                         <th>Status</th>
+                        <th>Aprovação</th>
                         <th>Total</th>
                         <th>Ações</th>
                       </tr>
@@ -521,6 +557,7 @@ export function SolicitacoesCompraPage(): JSX.Element {
                               {statusLabels[solicitacao.status]}
                             </span>
                           </td>
+                          <td>{solicitacao.aprovacao_status ? aprovacaoLabels[solicitacao.aprovacao_status] || solicitacao.aprovacao_status : '-'}</td>
                           <td>{formatMoney(solicitacao.valor_estimado_total)}</td>
                           <td>
                             <div className="enac-cadastro-row-actions">
@@ -549,7 +586,11 @@ export function SolicitacoesCompraPage(): JSX.Element {
                 <SolicitacaoDetail
                   solicitacao={selected}
                   saving={saving}
+                  usuarios={usuarios}
+                  approvalUserId={approvalUserId}
                   onEdit={() => void openEdit(selected)}
+                  onApprovalUserChange={setApprovalUserId}
+                  onApprove={(action) => void approveSolicitacao(selected, action)}
                   onTransition={(action) => void transition(selected, action)}
                 />
               )}
@@ -703,16 +744,25 @@ export function SolicitacoesCompraPage(): JSX.Element {
 function SolicitacaoDetail({
   solicitacao,
   saving,
+  usuarios,
+  approvalUserId,
   onEdit,
+  onApprovalUserChange,
+  onApprove,
   onTransition
 }: {
   solicitacao: SolicitacaoCompraApi;
   saving: boolean;
+  usuarios: UsuarioApi[];
+  approvalUserId: string;
   onEdit: () => void;
+  onApprovalUserChange: (value: string) => void;
+  onApprove: (action: 'aprovar-tecnico' | 'aprovar-diretoria') => void;
   onTransition: (action: TransitionAction) => void;
 }): JSX.Element {
   const actions = getTransitionActions(solicitacao.status);
   const canEdit = solicitacao.status !== 'CANCELADA' && solicitacao.status !== 'APROVADA_PARA_COTACAO';
+  const canApprove = ['ENVIADA', 'EM_ANALISE'].includes(solicitacao.status);
 
   return (
     <article className="enac-solicitacao-detail">
@@ -733,6 +783,8 @@ function SolicitacaoDetail({
         <div><dt>Prioridade</dt><dd>{prioridadeLabels[solicitacao.prioridade]}</dd></div>
         <div><dt>Necessidade</dt><dd>{formatDate(solicitacao.data_necessidade)}</dd></div>
         <div><dt>Total</dt><dd>{formatMoney(solicitacao.valor_estimado_total)}</dd></div>
+        <div><dt>Aprovação</dt><dd>{solicitacao.aprovacao_status ? aprovacaoLabels[solicitacao.aprovacao_status] || solicitacao.aprovacao_status : '-'}</dd></div>
+        <div><dt>Aprovador</dt><dd>{solicitacao.aprovado_por_nome || '-'}</dd></div>
       </dl>
 
       <section>
@@ -776,6 +828,19 @@ function SolicitacaoDetail({
       </section>
 
       <footer className="enac-solicitacao-detail-actions">
+        {canApprove && (
+          <label>
+            <span>Aprovador</span>
+            <select value={approvalUserId} onChange={(event) => onApprovalUserChange(event.target.value)} disabled={saving}>
+              <option value="">Selecione</option>
+              {usuarios.map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>{usuario.nome} - {usuario.perfil_principal || 'perfil'}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        {canApprove && <button type="button" onClick={() => onApprove('aprovar-tecnico')} disabled={saving || !approvalUserId}>Aprovar técnico</button>}
+        {canApprove && <button type="button" onClick={() => onApprove('aprovar-diretoria')} disabled={saving || !approvalUserId}>Aprovar diretoria</button>}
         {canEdit && <button type="button" className="enac-cadastro-secondary" onClick={onEdit} disabled={saving}>Editar</button>}
         {actions.map((action) => (
           <button

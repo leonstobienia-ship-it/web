@@ -254,6 +254,21 @@ export type SolicitacaoCompraStatus =
 
 export type SolicitacaoCompraPrioridade = 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE';
 
+export type AprovacaoStatus =
+  | 'PENDENTE_APROVACAO'
+  | 'APROVADO_TECNICO'
+  | 'APROVADO_DIRETORIA'
+  | 'REPROVADO'
+  | 'DEVOLVIDO'
+  | 'BLOQUEADO_ALCADA';
+
+export type AprovacaoAction = 'aprovar-tecnico' | 'aprovar-diretoria';
+
+export interface AprovacaoPayload {
+  usuario_id: string;
+  observacoes?: string | null;
+}
+
 export interface SolicitacaoCompraItemApi {
   id: string;
   solicitacao_id: string;
@@ -280,6 +295,12 @@ export interface SolicitacaoCompraApi {
   prioridade: SolicitacaoCompraPrioridade;
   data_necessidade: string;
   status: SolicitacaoCompraStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
   valor_estimado_total: string | number;
   observacoes?: string | null;
   created_at: string;
@@ -387,6 +408,12 @@ export interface CotacaoApi {
   recomendada?: boolean;
   justificativa?: string | null;
   status: CotacaoStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
   observacoes?: string | null;
   created_at: string;
   updated_at: string;
@@ -531,6 +558,12 @@ export interface PedidoCompraApi {
   numero?: string | null;
   titulo: string;
   status: PedidoCompraStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
   data_emissao?: string | null;
   data_entrega_prevista?: string | null;
   condicao_pagamento?: string | null;
@@ -615,6 +648,12 @@ export interface NotaEntradaApi {
   valor_impostos: string | number;
   valor_total: string | number;
   status: NotaEntradaStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
   observacoes?: string | null;
   created_at: string;
   updated_at: string;
@@ -676,6 +715,12 @@ export interface ContaPagarApi {
   valor_original: string | number;
   valor_aberto: string | number;
   status: ContaPagarStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
   forma_pagamento_prevista?: string | null;
   observacoes?: string | null;
   created_at: string;
@@ -891,6 +936,11 @@ export const erpApi = {
     ): Promise<SolicitacaoCompraApi> =>
       (await request<ApiItemResponse<SolicitacaoCompraApi>>(`/solicitacoes-compra/${id}/${action}`, {
         method: 'PATCH'
+      })).data,
+    aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<SolicitacaoCompraApi> =>
+      (await request<ApiItemResponse<SolicitacaoCompraApi>>(`/solicitacoes-compra/${id}/${action}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
       })).data
   },
   cotacoes: {
@@ -932,6 +982,11 @@ export const erpApi = {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data,
+    aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<CotacaoApi> =>
+      (await request<ApiItemResponse<CotacaoApi>>(`/cotacoes/${id}/${action}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
     mapaComparativo: async (id: string, mode: 'cotacao' | 'solicitacao' = 'cotacao'): Promise<MapaComparativoApi> =>
       (await request<ApiItemResponse<MapaComparativoApi>>(
         `/cotacoes/mapa-comparativo${buildQueryString(mode === 'cotacao' ? { cotacao_id: id } : { solicitacao_id: id })}`
@@ -965,6 +1020,11 @@ export const erpApi = {
     ): Promise<PedidoCompraApi> =>
       (await request<ApiItemResponse<PedidoCompraApi>>(`/pedidos-compra/${id}/${action}`, {
         method: 'PATCH'
+      })).data,
+    aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<PedidoCompraApi> =>
+      (await request<ApiItemResponse<PedidoCompraApi>>(`/pedidos-compra/${id}/${action}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
       })).data
   },
   notasEntrada: {
@@ -1009,6 +1069,11 @@ export const erpApi = {
       (await request<ApiItemResponse<ProvisionarContaPagarResponse>>(`/notas-fiscais-entrada/${id}/provisionar-conta-pagar`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
+      })).data,
+    aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<NotaEntradaApi> =>
+      (await request<ApiItemResponse<NotaEntradaApi>>(`/notas-fiscais-entrada/${id}/${action}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
       })).data
   },
   contasPagar: {
@@ -1045,6 +1110,11 @@ export const erpApi = {
     ): Promise<ContaPagarApi> =>
       (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/${action}`, {
         method: 'PATCH'
+      })).data,
+    aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/${action}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
       })).data
   }
 };

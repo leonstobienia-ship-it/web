@@ -2,6 +2,14 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { PoolClient, QueryResultRow } from 'pg';
 import { getPool } from '../../db/client.js';
 import { HttpError, isHttpError, methodNotAllowed, readJsonBody, sendError, sendJson } from '../../http.js';
+import {
+  getPayloadDecisaoAprovacao,
+  normalizarAcaoAprovacao,
+  persistirBloqueioAlcada,
+  registrarAuditoria,
+  statusAprovacaoPorAcao,
+  validarAlcadaDocumento
+} from '../aprovacoes/aprovacoes.service.js';
 
 type NotaEntradaStatus = 'RASCUNHO' | 'CONFERIDA' | 'DIVERGENTE' | 'APROVADA' | 'PROVISIONADA' | 'CANCELADA';
 
@@ -34,7 +42,14 @@ interface PedidoItemRow extends QueryResultRow {
 
 interface NotaRow extends QueryResultRow {
   id: string;
+  company_id: string;
+  pedido_id: string;
+  obra_id: string | null;
+  centro_custo_id: string | null;
   status: NotaEntradaStatus;
+  valor_total: string;
+  pedido_valor_total: string;
+  aprovacao_status: string | null;
 }
 
 interface NotaItemInput {
@@ -312,6 +327,11 @@ const fetchNota = async (client: PoolClient, id: string) => {
       n.valor_impostos,
       n.valor_total,
       n.status,
+      n.aprovacao_status,
+      n.aprovado_por,
+      n.aprovado_em,
+      n.aprovacao_observacoes,
+      n.bloqueio_alcada_motivo,
       n.observacoes,
       n.created_at,
       n.updated_at,
@@ -322,12 +342,14 @@ const fetchNota = async (client: PoolClient, id: string) => {
       o.codigo as obra_codigo,
       o.nome as obra_nome,
       cc.codigo as centro_custo_codigo,
-      cc.nome as centro_custo_nome
+      cc.nome as centro_custo_nome,
+      aprovador.nome as aprovado_por_nome
     from notas_fiscais_entrada n
     join pedidos_compra p on p.id = n.pedido_id
     join fornecedores f on f.id = n.fornecedor_id
     left join obras o on o.id = n.obra_id
     left join centros_custo cc on cc.id = n.centro_custo_id
+    left join usuarios aprovador on aprovador.id = n.aprovado_por
     where n.id = $1
     `,
     [id]
@@ -418,6 +440,11 @@ const listNotas = async (url: URL): Promise<QueryResultRow[]> => {
       n.data_entrada,
       n.valor_total,
       n.status,
+      n.aprovacao_status,
+      n.aprovado_por,
+      n.aprovado_em,
+      n.aprovacao_observacoes,
+      n.bloqueio_alcada_motivo,
       n.observacoes,
       n.created_at,
       n.updated_at,
@@ -427,15 +454,17 @@ const listNotas = async (url: URL): Promise<QueryResultRow[]> => {
       o.nome as obra_nome,
       cc.codigo as centro_custo_codigo,
       cc.nome as centro_custo_nome,
+      aprovador.nome as aprovado_por_nome,
       count(i.id)::int as itens_count
     from notas_fiscais_entrada n
     join pedidos_compra p on p.id = n.pedido_id
     join fornecedores f on f.id = n.fornecedor_id
     left join obras o on o.id = n.obra_id
     left join centros_custo cc on cc.id = n.centro_custo_id
+    left join usuarios aprovador on aprovador.id = n.aprovado_por
     left join notas_fiscais_entrada_itens i on i.nota_id = n.id
     ${where}
-    group by n.id, p.codigo, f.nome, o.codigo, o.nome, cc.codigo, cc.nome
+    group by n.id, p.codigo, f.nome, o.codigo, o.nome, cc.codigo, cc.nome, aprovador.nome
     order by n.created_at desc
     `,
     params
@@ -532,9 +561,19 @@ const createNota = async (payload: Record<string, unknown>) => {
 const fetchNotaForUpdate = async (client: PoolClient, id: string): Promise<NotaRow | undefined> => {
   const result = await client.query<NotaRow>(
     `
-    select id, status
-    from notas_fiscais_entrada
-    where id = $1
+    select
+      n.id,
+      n.company_id,
+      n.pedido_id,
+      n.obra_id,
+      n.centro_custo_id,
+      n.status,
+      n.valor_total,
+      p.valor_total as pedido_valor_total,
+      n.aprovacao_status
+    from notas_fiscais_entrada n
+    join pedidos_compra p on p.id = n.pedido_id
+    where n.id = $1
     for update
     `,
     [id]
@@ -608,6 +647,103 @@ const updateNota = async (id: string, payload: Record<string, unknown>) => {
     return nota;
   } catch (error) {
     await client.query('rollback');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+const aprovarNotaPorAlcada = async (id: string, action: string, payload: Record<string, unknown>) => {
+  assertUuid(id, 'id');
+  const acao = normalizarAcaoAprovacao(action);
+  const decisao = getPayloadDecisaoAprovacao(payload);
+  const aprovacaoStatus = statusAprovacaoPorAcao(acao);
+  const client = await getPool().connect();
+  let committed = false;
+
+  try {
+    await client.query('begin');
+    const existing = await fetchNotaForUpdate(client, id);
+    if (!existing) {
+      throw new HttpError(404, 'not_found', 'Nota de entrada nao encontrada.');
+    }
+    if (existing.status !== 'CONFERIDA') {
+      throw new HttpError(409, 'status_conflict', `Nota em status ${existing.status} nao permite aprovacao por alcada.`);
+    }
+
+    const valor = Number(existing.valor_total);
+    const pedidoValor = Number(existing.pedido_valor_total);
+    const auditBase = {
+      usuario_id: decisao.usuarioId,
+      modulo: 'notas-fiscais-entrada',
+      tipo_documento: 'NOTA_FISCAL_ENTRADA',
+      acao,
+      valor,
+      pedido_valor_total: pedidoValor,
+      observacoes: decisao.observacoes
+    };
+
+    if (Math.abs(valor - pedidoValor) > 0.01) {
+      const motivo = 'Valor da nota fiscal diverge do valor do pedido de compra.';
+      await persistirBloqueioAlcada(client, 'notas_fiscais_entrada', id, motivo, decisao.observacoes, decisao.usuarioId);
+      await registrarAuditoria(client, existing.company_id, 'nota_fiscal_entrada', id, 'bloquear_divergencia_pedido', {
+        ...auditBase,
+        resultado: 'BLOQUEADO',
+        motivo
+      }, decisao.usuarioId);
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(409, 'documento_divergente', motivo, auditBase);
+    }
+
+    const validacao = await validarAlcadaDocumento(client, {
+      companyId: existing.company_id,
+      usuarioId: decisao.usuarioId,
+      modulo: 'notas-fiscais-entrada',
+      tipoDocumento: 'NOTA_FISCAL_ENTRADA',
+      acao,
+      valor,
+      obraId: existing.obra_id,
+      centroCustoId: existing.centro_custo_id
+    });
+    const auditPayload = {
+      ...auditBase,
+      resultado: validacao.decisao,
+      motivo: validacao.motivo
+    };
+
+    if (!validacao.aprovado) {
+      await persistirBloqueioAlcada(client, 'notas_fiscais_entrada', id, validacao.motivo, decisao.observacoes, decisao.usuarioId);
+      await registrarAuditoria(client, existing.company_id, 'nota_fiscal_entrada', id, 'bloquear_alcada', auditPayload, decisao.usuarioId);
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(403, 'alcada_bloqueada', validacao.motivo, auditPayload);
+    }
+
+    await client.query(
+      `
+      update notas_fiscais_entrada
+      set
+        status = 'APROVADA',
+        aprovacao_status = $1,
+        aprovado_por = $2,
+        aprovado_em = now(),
+        aprovacao_observacoes = $3,
+        bloqueio_alcada_motivo = null,
+        updated_at = now()
+      where id = $4
+      `,
+      [aprovacaoStatus, decisao.usuarioId, decisao.observacoes, id]
+    );
+    await registrarAuditoria(client, existing.company_id, 'nota_fiscal_entrada', id, acao, auditPayload, decisao.usuarioId);
+    const nota = await fetchNota(client, id);
+    await client.query('commit');
+    committed = true;
+    return nota;
+  } catch (error) {
+    if (!committed) {
+      await client.query('rollback');
+    }
     throw error;
   } finally {
     client.release();
@@ -901,6 +1037,11 @@ export const handleNotasEntrada = async (req: IncomingMessage, res: ServerRespon
       if (action === 'provisionar-conta-pagar') {
         const payload = await readJsonBody(req);
         sendJson(res, 200, { data: await provisionarContaPagar(id, payload) });
+        return;
+      }
+      if (['aprovar-tecnico', 'aprovar-diretoria'].includes(action)) {
+        const payload = await readJsonBody(req);
+        sendJson(res, 200, { data: await aprovarNotaPorAlcada(id, action, payload) });
         return;
       }
       sendJson(res, 200, { data: await transitionNota(id, action) });

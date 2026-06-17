@@ -6,7 +6,8 @@ import {
   type FornecedorApi,
   type NotaEntradaApi,
   type NotaEntradaStatus,
-  type ObraApi
+  type ObraApi,
+  type UsuarioApi
 } from '../../services/erpApi';
 
 interface ContaFilters {
@@ -33,6 +34,15 @@ const statusLabels: Record<ContaPagarStatus, string> = {
   PROGRAMADA: 'Programada',
   PAGA: 'Paga',
   CANCELADA: 'Cancelada'
+};
+
+const aprovacaoLabels: Record<string, string> = {
+  PENDENTE_APROVACAO: 'Pendente',
+  APROVADO_TECNICO: 'Aprovado técnico',
+  APROVADO_DIRETORIA: 'Aprovado diretoria',
+  REPROVADO: 'Reprovado',
+  DEVOLVIDO: 'Devolvido',
+  BLOQUEADO_ALCADA: 'Bloqueado por alçada'
 };
 
 const notaStatusLabels: Record<NotaEntradaStatus, string> = {
@@ -93,6 +103,7 @@ const canCancel = (conta: ContaPagarApi): boolean => conta.status === 'PROVISION
 export function ContasPagarPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
   const [obras, setObras] = React.useState<ObraApi[]>([]);
+  const [usuarios, setUsuarios] = React.useState<UsuarioApi[]>([]);
   const [notasAprovadas, setNotasAprovadas] = React.useState<NotaEntradaApi[]>([]);
   const [selectedNota, setSelectedNota] = React.useState<NotaEntradaApi | null>(null);
   const [contas, setContas] = React.useState<ContaPagarApi[]>([]);
@@ -100,6 +111,7 @@ export function ContasPagarPage(): JSX.Element {
   const [filters, setFilters] = React.useState<ContaFilters>(emptyFilters());
   const [form, setForm] = React.useState<ContaForm>(emptyContaForm());
   const [editForm, setEditForm] = React.useState<ContaForm>(buildEditForm(null));
+  const [approvalUserId, setApprovalUserId] = React.useState<string>('');
   const [cancelTarget, setCancelTarget] = React.useState<ContaPagarApi | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
@@ -111,18 +123,21 @@ export function ContasPagarPage(): JSX.Element {
   }, []);
 
   const loadReferences = React.useCallback(async (): Promise<void> => {
-    const [fornecedoresResponse, obrasResponse, notasResponse] = await Promise.all([
+    const [fornecedoresResponse, obrasResponse, notasResponse, usuariosResponse] = await Promise.all([
       erpApi.fornecedores.list(),
       erpApi.obras.list(),
-      erpApi.notasEntrada.list({ status: 'APROVADA' })
+      erpApi.notasEntrada.list({ status: 'APROVADA' }),
+      erpApi.usuarios.list()
     ]);
     setFornecedores(fornecedoresResponse.filter((fornecedor) => fornecedor.status !== 'inativo'));
     setObras(obrasResponse.filter((obra) => obra.status !== 'inativo'));
+    setUsuarios(usuariosResponse.filter((usuario) => usuario.status !== 'inativo' && usuario.ativo !== false));
     setNotasAprovadas(notasResponse);
     setForm((current) => ({
       ...current,
       nota_entrada_id: current.nota_entrada_id || notasResponse[0]?.id || ''
     }));
+    setApprovalUserId((current) => current || usuariosResponse.find((usuario) => usuario.email === 'matheus.dev.v35b@enac.local')?.id || usuariosResponse[0]?.id || '');
   }, []);
 
   React.useEffect(() => {
@@ -279,6 +294,28 @@ export function ContasPagarPage(): JSX.Element {
     }
   };
 
+  const approveConta = async (conta: ContaPagarApi, action: 'aprovar-tecnico' | 'aprovar-diretoria'): Promise<void> => {
+    if (saving || !approvalUserId) {
+      return;
+    }
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const updated = await erpApi.contasPagar.aprovar(conta.id, action, {
+        usuario_id: approvalUserId,
+        observacoes: `${marker} - aprovacao interna local sem pagamento`
+      });
+      setSelectedConta(updated);
+      setMessage('Aprovação registrada.');
+      await refresh(updated.id);
+    } catch (approveError) {
+      setError(getErrorMessage(approveError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="enac-web-page enac-finance-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
@@ -320,8 +357,12 @@ export function ContasPagarPage(): JSX.Element {
                 editForm={editForm}
                 saving={saving}
                 cancelTarget={cancelTarget}
+                usuarios={usuarios}
+                approvalUserId={approvalUserId}
                 onEditChange={updateEditForm}
                 onSave={(event) => void saveConta(event)}
+                onApprovalUserChange={setApprovalUserId}
+                onApprove={(conta, action) => void approveConta(conta, action)}
                 onTransition={(conta, action) => action === 'cancelar' ? setCancelTarget(conta) : void transition(conta, action)}
                 onConfirmCancel={(conta) => void transition(conta, 'cancelar')}
                 onDismissCancel={() => setCancelTarget(null)}
@@ -443,6 +484,7 @@ function ContasTable({
           <tr>
             <th>Documento</th>
             <th>Status</th>
+            <th>Aprovação</th>
             <th>Fornecedor</th>
             <th>Vencimento</th>
             <th>Valor aberto</th>
@@ -454,6 +496,7 @@ function ContasTable({
             <tr key={conta.id} className={selectedId === conta.id ? 'enac-finance-row-selected' : ''}>
               <td><strong>{conta.numero_documento}</strong></td>
               <td><span className={`enac-finance-status enac-finance-status--${statusClass(conta.status)}`}>{statusLabels[conta.status]}</span></td>
+              <td>{conta.aprovacao_status ? aprovacaoLabels[conta.aprovacao_status] || conta.aprovacao_status : '-'}</td>
               <td>{conta.fornecedor_nome}</td>
               <td>{formatDate(conta.data_vencimento)}</td>
               <td>{formatMoney(conta.valor_aberto)}</td>
@@ -471,8 +514,12 @@ function ContaDetail({
   editForm,
   saving,
   cancelTarget,
+  usuarios,
+  approvalUserId,
   onEditChange,
   onSave,
+  onApprovalUserChange,
+  onApprove,
   onTransition,
   onConfirmCancel,
   onDismissCancel
@@ -481,8 +528,12 @@ function ContaDetail({
   editForm: ContaForm;
   saving: boolean;
   cancelTarget: ContaPagarApi | null;
+  usuarios: UsuarioApi[];
+  approvalUserId: string;
   onEditChange: (field: keyof ContaForm, value: string) => void;
   onSave: (event: React.FormEvent) => void;
+  onApprovalUserChange: (value: string) => void;
+  onApprove: (conta: ContaPagarApi, action: 'aprovar-tecnico' | 'aprovar-diretoria') => void;
   onTransition: (conta: ContaPagarApi, action: 'cancelar') => void;
   onConfirmCancel: (conta: ContaPagarApi) => void;
   onDismissCancel: () => void;
@@ -505,7 +556,25 @@ function ContaDetail({
         <div><span>Centro de custo</span><strong>{conta.centro_custo_codigo || '-'}</strong></div>
         <div><span>Vencimento</span><strong>{formatDate(conta.data_vencimento)}</strong></div>
         <div><span>Valor aberto</span><strong>{formatMoney(conta.valor_aberto)}</strong></div>
+        <div><span>Aprovação</span><strong>{conta.aprovacao_status ? aprovacaoLabels[conta.aprovacao_status] || conta.aprovacao_status : '-'}</strong></div>
+        <div><span>Aprovador</span><strong>{conta.aprovado_por_nome || '-'}</strong></div>
       </div>
+
+      {conta.status === 'PROVISIONADA' && (
+        <div className="enac-cadastro-row-actions enac-finance-actions">
+          <label>
+            <span>Aprovador</span>
+            <select value={approvalUserId} onChange={(event) => onApprovalUserChange(event.target.value)} disabled={saving}>
+              <option value="">Selecione</option>
+              {usuarios.map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>{usuario.nome} - {usuario.perfil_principal || 'perfil'}</option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={() => onApprove(conta, 'aprovar-tecnico')} disabled={saving || !approvalUserId}>Aprovar técnico</button>
+          <button type="button" onClick={() => onApprove(conta, 'aprovar-diretoria')} disabled={saving || !approvalUserId}>Aprovar diretoria</button>
+        </div>
+      )}
 
       <div className="enac-cadastro-row-actions enac-finance-actions">
         {canCancel(conta) && <button type="button" onClick={() => onTransition(conta, 'cancelar')} disabled={saving}>Cancelar</button>}

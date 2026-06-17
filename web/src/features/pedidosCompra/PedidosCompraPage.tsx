@@ -7,7 +7,8 @@ import {
   type FornecedorApi,
   type ObraApi,
   type PedidoCompraApi,
-  type PedidoCompraStatus
+  type PedidoCompraStatus,
+  type UsuarioApi
 } from '../../services/erpApi';
 
 interface PedidoFilters {
@@ -44,6 +45,15 @@ const statusLabels: Record<PedidoCompraStatus, string> = {
   PARCIALMENTE_RECEBIDO: 'Parcialmente recebido',
   RECEBIDO: 'Recebido',
   CANCELADO: 'Cancelado'
+};
+
+const aprovacaoLabels: Record<string, string> = {
+  PENDENTE_APROVACAO: 'Pendente',
+  APROVADO_TECNICO: 'Aprovado técnico',
+  APROVADO_DIRETORIA: 'Aprovado diretoria',
+  REPROVADO: 'Reprovado',
+  DEVOLVIDO: 'Devolvido',
+  BLOQUEADO_ALCADA: 'Bloqueado por alçada'
 };
 
 const emptyFilters = (): PedidoFilters => ({
@@ -94,6 +104,7 @@ export function PedidosCompraPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
   const [obras, setObras] = React.useState<ObraApi[]>([]);
   const [centrosCusto, setCentrosCusto] = React.useState<CentroCustoApi[]>([]);
+  const [usuarios, setUsuarios] = React.useState<UsuarioApi[]>([]);
   const [cotacoesElegiveis, setCotacoesElegiveis] = React.useState<CotacaoApi[]>([]);
   const [pedidos, setPedidos] = React.useState<PedidoCompraApi[]>([]);
   const [selectedPedido, setSelectedPedido] = React.useState<PedidoCompraApi | null>(null);
@@ -101,6 +112,7 @@ export function PedidosCompraPage(): JSX.Element {
   const [filters, setFilters] = React.useState<PedidoFilters>(emptyFilters());
   const [generateForm, setGenerateForm] = React.useState<GenerateForm>(emptyGenerateForm());
   const [editForm, setEditForm] = React.useState<EditForm>(buildEditForm(null));
+  const [approvalUserId, setApprovalUserId] = React.useState<string>('');
   const [cancelTarget, setCancelTarget] = React.useState<PedidoCompraApi | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
@@ -115,22 +127,25 @@ export function PedidosCompraPage(): JSX.Element {
   }, []);
 
   const loadReferences = React.useCallback(async (): Promise<void> => {
-    const [empresasResponse, fornecedoresResponse, obrasResponse, centrosResponse, cotacoesResponse] = await Promise.all([
+    const [empresasResponse, fornecedoresResponse, obrasResponse, centrosResponse, cotacoesResponse, usuariosResponse] = await Promise.all([
       erpApi.empresas.list(),
       erpApi.fornecedores.list(),
       erpApi.obras.list(),
       erpApi.centrosCusto.list(),
-      erpApi.cotacoes.list({ status: 'FORNECEDOR_ESCOLHIDO' })
+      erpApi.cotacoes.list({ status: 'FORNECEDOR_ESCOLHIDO' }),
+      erpApi.usuarios.list()
     ]);
     setEmpresas(empresasResponse);
     setFornecedores(fornecedoresResponse.filter((fornecedor) => fornecedor.status !== 'inativo'));
     setObras(obrasResponse.filter((obra) => obra.status !== 'inativo'));
     setCentrosCusto(centrosResponse.filter((centro) => centro.status !== 'inativo'));
-    setCotacoesElegiveis(cotacoesResponse);
+    setUsuarios(usuariosResponse.filter((usuario) => usuario.status !== 'inativo' && usuario.ativo !== false));
+    setCotacoesElegiveis(cotacoesResponse.filter((cotacao) => ['APROVADO_TECNICO', 'APROVADO_DIRETORIA'].includes(String(cotacao.aprovacao_status || ''))));
     setGenerateForm((current) => ({
       ...current,
-      cotacao_id: current.cotacao_id || cotacoesResponse[0]?.id || ''
+      cotacao_id: current.cotacao_id || cotacoesResponse.find((cotacao) => ['APROVADO_TECNICO', 'APROVADO_DIRETORIA'].includes(String(cotacao.aprovacao_status || '')))?.id || ''
     }));
+    setApprovalUserId((current) => current || usuariosResponse.find((usuario) => usuario.email === 'gustavo.dev.v35b@enac.local')?.id || usuariosResponse[0]?.id || '');
   }, []);
 
   React.useEffect(() => {
@@ -287,6 +302,28 @@ export function PedidosCompraPage(): JSX.Element {
     }
   };
 
+  const approvePedido = async (pedido: PedidoCompraApi, action: 'aprovar-tecnico' | 'aprovar-diretoria'): Promise<void> => {
+    if (saving || !approvalUserId) {
+      return;
+    }
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const updated = await erpApi.pedidosCompra.aprovar(pedido.id, action, {
+        usuario_id: approvalUserId,
+        observacoes: `${marker} - aprovacao local por alcada`
+      });
+      setSelectedPedido(updated);
+      setMessage('Aprovação registrada.');
+      await refresh(updated.id);
+    } catch (approveError) {
+      setError(getErrorMessage(approveError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="enac-web-page enac-pedidos-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
@@ -336,8 +373,12 @@ export function PedidosCompraPage(): JSX.Element {
                 editForm={editForm}
                 saving={saving}
                 cancelTarget={cancelTarget}
+                usuarios={usuarios}
+                approvalUserId={approvalUserId}
                 onEditChange={(field, value) => setEditForm((current) => ({ ...current, [field]: value }))}
                 onSave={(event) => void savePedido(event)}
+                onApprovalUserChange={setApprovalUserId}
+                onApprove={(pedido, action) => void approvePedido(pedido, action)}
                 onTransition={(pedido, action) => action === 'cancelar' ? setCancelTarget(pedido) : void transition(pedido, action)}
                 onConfirmCancel={(pedido) => void transition(pedido, 'cancelar')}
                 onDismissCancel={() => setCancelTarget(null)}
@@ -502,6 +543,7 @@ function PedidosTable({
             <th>Código</th>
             <th>Título</th>
             <th>Status</th>
+            <th>Aprovação</th>
             <th>Fornecedor</th>
             <th>Obra</th>
             <th>Total</th>
@@ -518,6 +560,7 @@ function PedidosTable({
                   {statusLabels[pedido.status]}
                 </span>
               </td>
+              <td>{pedido.aprovacao_status ? aprovacaoLabels[pedido.aprovacao_status] || pedido.aprovacao_status : '-'}</td>
               <td>{pedido.fornecedor_nome}</td>
               <td>{pedido.obra_codigo || '-'}</td>
               <td>{formatMoney(pedido.valor_total)}</td>
@@ -537,8 +580,12 @@ function PedidoDetail({
   editForm,
   saving,
   cancelTarget,
+  usuarios,
+  approvalUserId,
   onEditChange,
   onSave,
+  onApprovalUserChange,
+  onApprove,
   onTransition,
   onConfirmCancel,
   onDismissCancel
@@ -547,8 +594,12 @@ function PedidoDetail({
   editForm: EditForm;
   saving: boolean;
   cancelTarget: PedidoCompraApi | null;
+  usuarios: UsuarioApi[];
+  approvalUserId: string;
   onEditChange: (field: keyof EditForm, value: string) => void;
   onSave: (event: React.FormEvent) => void;
+  onApprovalUserChange: (value: string) => void;
+  onApprove: (pedido: PedidoCompraApi, action: 'aprovar-tecnico' | 'aprovar-diretoria') => void;
   onTransition: (pedido: PedidoCompraApi, action: 'emitir' | 'enviar-fornecedor' | 'confirmar' | 'cancelar') => void;
   onConfirmCancel: (pedido: PedidoCompraApi) => void;
   onDismissCancel: () => void;
@@ -573,7 +624,25 @@ function PedidoDetail({
         <div><span>Centro de custo</span><strong>{pedido.centro_custo_codigo || '-'}</strong></div>
         <div><span>Emissão</span><strong>{formatDate(pedido.data_emissao)}</strong></div>
         <div><span>Entrega</span><strong>{formatDate(pedido.data_entrega_prevista)}</strong></div>
+        <div><span>Aprovação</span><strong>{pedido.aprovacao_status ? aprovacaoLabels[pedido.aprovacao_status] || pedido.aprovacao_status : '-'}</strong></div>
+        <div><span>Aprovador</span><strong>{pedido.aprovado_por_nome || '-'}</strong></div>
       </div>
+
+      {pedido.status === 'RASCUNHO' && (
+        <div className="enac-cadastro-row-actions enac-pedido-actions">
+          <label>
+            <span>Aprovador</span>
+            <select value={approvalUserId} onChange={(event) => onApprovalUserChange(event.target.value)} disabled={saving}>
+              <option value="">Selecione</option>
+              {usuarios.map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>{usuario.nome} - {usuario.perfil_principal || 'perfil'}</option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={() => onApprove(pedido, 'aprovar-tecnico')} disabled={saving || !approvalUserId}>Aprovar técnico</button>
+          <button type="button" onClick={() => onApprove(pedido, 'aprovar-diretoria')} disabled={saving || !approvalUserId}>Aprovar diretoria</button>
+        </div>
+      )}
 
       <div className="enac-cadastro-row-actions enac-pedido-actions">
         {pedido.status === 'RASCUNHO' && <button type="button" onClick={() => onTransition(pedido, 'emitir')} disabled={saving}>Emitir</button>}

@@ -14,6 +14,7 @@
     "smoke:notas": "npm run build && node dist/scripts/smokeNotasEntrada.js",
     "smoke:contas-pagar": "npm run build && node dist/scripts/smokeContasPagar.js",
     "smoke:acessos": "npm run build && node dist/scripts/smokeAcessos.js",
+    "smoke:aprovacoes": "npm run build && node dist/scripts/smokeAprovacoes.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

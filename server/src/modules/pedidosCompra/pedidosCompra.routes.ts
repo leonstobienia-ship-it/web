@@ -3,6 +3,14 @@ import { randomUUID } from 'node:crypto';
 import type { PoolClient, QueryResultRow } from 'pg';
 import { getPool } from '../../db/client.js';
 import { HttpError, isHttpError, methodNotAllowed, readJsonBody, sendError, sendJson } from '../../http.js';
+import {
+  getPayloadDecisaoAprovacao,
+  normalizarAcaoAprovacao,
+  persistirBloqueioAlcada,
+  registrarAuditoria,
+  statusAprovacaoPorAcao,
+  validarAlcadaDocumento
+} from '../aprovacoes/aprovacoes.service.js';
 
 type PedidoStatus =
   | 'RASCUNHO'
@@ -20,13 +28,19 @@ interface PgErrorLike {
 
 interface PedidoRow extends QueryResultRow {
   id: string;
+  company_id: string;
+  obra_id: string | null;
+  centro_custo_id: string | null;
   status: PedidoStatus;
+  valor_total: string;
+  aprovacao_status: string | null;
 }
 
 interface CotacaoSourceRow extends QueryResultRow {
   cotacao_id: string;
   company_id: string;
   cotacao_status: string;
+  cotacao_aprovacao_status: string | null;
   cotacao_codigo: string;
   cotacao_titulo: string;
   solicitacao_id: string;
@@ -159,6 +173,11 @@ const fetchPedido = async (client: PoolClient, id: string) => {
       p.numero,
       p.titulo,
       p.status,
+      p.aprovacao_status,
+      p.aprovado_por,
+      p.aprovado_em,
+      p.aprovacao_observacoes,
+      p.bloqueio_alcada_motivo,
       p.data_emissao,
       p.data_entrega_prevista,
       p.condicao_pagamento,
@@ -175,13 +194,15 @@ const fetchPedido = async (client: PoolClient, id: string) => {
       o.codigo as obra_codigo,
       o.nome as obra_nome,
       cc.codigo as centro_custo_codigo,
-      cc.nome as centro_custo_nome
+      cc.nome as centro_custo_nome,
+      aprovador.nome as aprovado_por_nome
     from pedidos_compra p
     left join solicitacoes_compra s on s.id = p.solicitacao_id
     left join cotacoes c on c.id = p.cotacao_id
     join fornecedores f on f.id = p.fornecedor_id
     left join obras o on o.id = p.obra_id
     left join centros_custo cc on cc.id = p.centro_custo_id
+    left join usuarios aprovador on aprovador.id = p.aprovado_por
     where p.id = $1
     `,
     [id]
@@ -265,6 +286,11 @@ const listPedidos = async (url: URL): Promise<QueryResultRow[]> => {
       p.numero,
       p.titulo,
       p.status,
+      p.aprovacao_status,
+      p.aprovado_por,
+      p.aprovado_em,
+      p.aprovacao_observacoes,
+      p.bloqueio_alcada_motivo,
       p.data_emissao,
       p.data_entrega_prevista,
       p.condicao_pagamento,
@@ -279,6 +305,7 @@ const listPedidos = async (url: URL): Promise<QueryResultRow[]> => {
       o.nome as obra_nome,
       cc.codigo as centro_custo_codigo,
       cc.nome as centro_custo_nome,
+      aprovador.nome as aprovado_por_nome,
       count(i.id)::int as itens_count
     from pedidos_compra p
     left join solicitacoes_compra s on s.id = p.solicitacao_id
@@ -286,9 +313,10 @@ const listPedidos = async (url: URL): Promise<QueryResultRow[]> => {
     join fornecedores f on f.id = p.fornecedor_id
     left join obras o on o.id = p.obra_id
     left join centros_custo cc on cc.id = p.centro_custo_id
+    left join usuarios aprovador on aprovador.id = p.aprovado_por
     left join pedidos_compra_itens i on i.pedido_id = p.id
     ${where}
-    group by p.id, s.codigo, c.codigo, f.nome, o.codigo, o.nome, cc.codigo, cc.nome
+    group by p.id, s.codigo, c.codigo, f.nome, o.codigo, o.nome, cc.codigo, cc.nome, aprovador.nome
     order by p.created_at desc
     `,
     params
@@ -307,6 +335,7 @@ const fetchCotacaoSource = async (
       c.id as cotacao_id,
       c.company_id,
       c.status as cotacao_status,
+      c.aprovacao_status as cotacao_aprovacao_status,
       c.codigo as cotacao_codigo,
       c.titulo as cotacao_titulo,
       c.solicitacao_compra_id as solicitacao_id,
@@ -334,6 +363,9 @@ const fetchCotacaoSource = async (
   }
   if (cotacao.cotacao_status !== 'FORNECEDOR_ESCOLHIDO') {
     throw new HttpError(409, 'status_conflict', 'Cotacao precisa estar com fornecedor vencedor escolhido.');
+  }
+  if (!['APROVADO_TECNICO', 'APROVADO_DIRETORIA'].includes(String(cotacao.cotacao_aprovacao_status || ''))) {
+    throw new HttpError(409, 'approval_required', 'Cotacao exige aprovacao por alcada antes de gerar pedido de compra.');
   }
   if (!cotacao.fornecedor_vencedor_id) {
     throw new HttpError(400, 'validation_error', 'Cotacao nao possui fornecedor vencedor.');
@@ -481,9 +513,10 @@ const gerarPedidoDaCotacao = async (payload: Record<string, unknown>) => {
         prazo_entrega,
         condicao_pagamento,
         valor_total,
-        observacoes
+        observacoes,
+        aprovacao_status
       )
-      values ($1, $2, $2, $3, $4, $5, $6, $7, $7, $8, 'RASCUNHO', $9, $10, $11, $12, $13, $14)
+      values ($1, $2, $2, $3, $4, $5, $6, $7, $7, $8, 'RASCUNHO', $9, $10, $11, $12, $13, $14, 'PENDENTE_APROVACAO')
       returning id
       `,
       [
@@ -519,7 +552,7 @@ const gerarPedidoDaCotacao = async (payload: Record<string, unknown>) => {
 const fetchPedidoForUpdate = async (client: PoolClient, id: string): Promise<PedidoRow | undefined> => {
   const result = await client.query<PedidoRow>(
     `
-    select id, status
+    select id, company_id, obra_id, centro_custo_id, status, valor_total, aprovacao_status
     from pedidos_compra
     where id = $1
     for update
@@ -588,6 +621,83 @@ const updatePedido = async (id: string, payload: Record<string, unknown>) => {
   }
 };
 
+const aprovarPedido = async (id: string, action: string, payload: Record<string, unknown>) => {
+  assertUuid(id, 'id');
+  const acao = normalizarAcaoAprovacao(action);
+  const decisao = getPayloadDecisaoAprovacao(payload);
+  const aprovacaoStatus = statusAprovacaoPorAcao(acao);
+  const client = await getPool().connect();
+  let committed = false;
+
+  try {
+    await client.query('begin');
+    const existing = await fetchPedidoForUpdate(client, id);
+    if (!existing) {
+      throw new HttpError(404, 'not_found', 'Pedido de compra nao encontrado.');
+    }
+    if (existing.status !== 'RASCUNHO') {
+      throw new HttpError(409, 'status_conflict', `Pedido em status ${existing.status} nao permite aprovacao.`);
+    }
+
+    const valor = Number(existing.valor_total);
+    const validacao = await validarAlcadaDocumento(client, {
+      companyId: existing.company_id,
+      usuarioId: decisao.usuarioId,
+      modulo: 'pedidos-compra',
+      tipoDocumento: 'PEDIDO_COMPRA',
+      acao,
+      valor,
+      obraId: existing.obra_id,
+      centroCustoId: existing.centro_custo_id
+    });
+    const auditPayload = {
+      usuario_id: decisao.usuarioId,
+      modulo: 'pedidos-compra',
+      tipo_documento: 'PEDIDO_COMPRA',
+      acao,
+      valor,
+      resultado: validacao.decisao,
+      motivo: validacao.motivo,
+      observacoes: decisao.observacoes
+    };
+
+    if (!validacao.aprovado) {
+      await persistirBloqueioAlcada(client, 'pedidos_compra', id, validacao.motivo, decisao.observacoes, decisao.usuarioId);
+      await registrarAuditoria(client, existing.company_id, 'pedido_compra', id, 'bloquear_alcada', auditPayload, decisao.usuarioId);
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(403, 'alcada_bloqueada', validacao.motivo, auditPayload);
+    }
+
+    await client.query(
+      `
+      update pedidos_compra
+      set
+        aprovacao_status = $1,
+        aprovado_por = $2,
+        aprovado_em = now(),
+        aprovacao_observacoes = $3,
+        bloqueio_alcada_motivo = null,
+        updated_at = now()
+      where id = $4
+      `,
+      [aprovacaoStatus, decisao.usuarioId, decisao.observacoes, id]
+    );
+    await registrarAuditoria(client, existing.company_id, 'pedido_compra', id, acao, auditPayload, decisao.usuarioId);
+    const pedido = await fetchPedido(client, id);
+    await client.query('commit');
+    committed = true;
+    return pedido;
+  } catch (error) {
+    if (!committed) {
+      await client.query('rollback');
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const transitionPedido = async (id: string, action: string) => {
   assertUuid(id, 'id');
   const transition = transitions[action];
@@ -596,6 +706,7 @@ const transitionPedido = async (id: string, action: string) => {
   }
 
   const client = await getPool().connect();
+  let committed = false;
   try {
     await client.query('begin');
     const existing = await fetchPedidoForUpdate(client, id);
@@ -609,6 +720,16 @@ const transitionPedido = async (id: string, action: string) => {
         `Transicao ilegal: ${existing.status} -> ${transition.to}.`
       );
     }
+    if (action === 'emitir' && !['APROVADO_TECNICO', 'APROVADO_DIRETORIA'].includes(String(existing.aprovacao_status || ''))) {
+      await registrarAuditoria(client, existing.company_id, 'pedido_compra', id, 'emitir_bloqueado_aprovacao', {
+        status: existing.status,
+        aprovacao_status: existing.aprovacao_status,
+        motivo: 'Pedido exige aprovacao por alcada antes de EMITIDO.'
+      });
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(409, 'approval_required', 'Pedido exige aprovacao por alcada antes de EMITIDO.');
+    }
 
     await client.query(
       `
@@ -620,9 +741,12 @@ const transitionPedido = async (id: string, action: string) => {
     );
     const pedido = await fetchPedido(client, id);
     await client.query('commit');
+    committed = true;
     return pedido;
   } catch (error) {
-    await client.query('rollback');
+    if (!committed) {
+      await client.query('rollback');
+    }
     throw error;
   } finally {
     client.release();
@@ -708,6 +832,11 @@ export const handlePedidosCompra = async (req: IncomingMessage, res: ServerRespo
 
     if (parts.length === 2 && method === 'PATCH') {
       const [id, action] = parts;
+      if (['aprovar-tecnico', 'aprovar-diretoria'].includes(action)) {
+        const payload = await readJsonBody(req);
+        sendJson(res, 200, { data: await aprovarPedido(id, action, payload) });
+        return;
+      }
       sendJson(res, 200, { data: await transitionPedido(id, action) });
       return;
     }

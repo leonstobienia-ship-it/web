@@ -7,7 +7,8 @@ import {
   type NotaEntradaApi,
   type NotaEntradaStatus,
   type ObraApi,
-  type PedidoCompraApi
+  type PedidoCompraApi,
+  type UsuarioApi
 } from '../../services/erpApi';
 
 interface NotaFilters {
@@ -43,6 +44,15 @@ const statusLabels: Record<NotaEntradaStatus, string> = {
   APROVADA: 'Aprovada',
   PROVISIONADA: 'Provisionada',
   CANCELADA: 'Cancelada'
+};
+
+const aprovacaoLabels: Record<string, string> = {
+  PENDENTE_APROVACAO: 'Pendente',
+  APROVADO_TECNICO: 'Aprovado técnico',
+  APROVADO_DIRETORIA: 'Aprovado diretoria',
+  REPROVADO: 'Reprovado',
+  DEVOLVIDO: 'Devolvido',
+  BLOQUEADO_ALCADA: 'Bloqueado por alçada'
 };
 
 const emptyFilters = (): NotaFilters => ({
@@ -127,6 +137,7 @@ export function NotasEntradaPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
   const [obras, setObras] = React.useState<ObraApi[]>([]);
   const [centrosCusto, setCentrosCusto] = React.useState<CentroCustoApi[]>([]);
+  const [usuarios, setUsuarios] = React.useState<UsuarioApi[]>([]);
   const [pedidosElegiveis, setPedidosElegiveis] = React.useState<PedidoCompraApi[]>([]);
   const [selectedPedido, setSelectedPedido] = React.useState<PedidoCompraApi | null>(null);
   const [notas, setNotas] = React.useState<NotaEntradaApi[]>([]);
@@ -134,6 +145,7 @@ export function NotasEntradaPage(): JSX.Element {
   const [filters, setFilters] = React.useState<NotaFilters>(emptyFilters());
   const [form, setForm] = React.useState<NotaForm>(emptyNotaForm());
   const [editForm, setEditForm] = React.useState<NotaForm>(buildEditForm(null));
+  const [approvalUserId, setApprovalUserId] = React.useState<string>('');
   const [cancelTarget, setCancelTarget] = React.useState<NotaEntradaApi | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
@@ -147,25 +159,28 @@ export function NotasEntradaPage(): JSX.Element {
   }, []);
 
   const loadReferences = React.useCallback(async (): Promise<void> => {
-    const [empresasResponse, fornecedoresResponse, obrasResponse, centrosResponse, pedidosEmitidos, pedidosEnviados, pedidosConfirmados] = await Promise.all([
+    const [empresasResponse, fornecedoresResponse, obrasResponse, centrosResponse, pedidosEmitidos, pedidosEnviados, pedidosConfirmados, usuariosResponse] = await Promise.all([
       erpApi.empresas.list(),
       erpApi.fornecedores.list(),
       erpApi.obras.list(),
       erpApi.centrosCusto.list(),
       erpApi.pedidosCompra.list({ status: 'EMITIDO' }),
       erpApi.pedidosCompra.list({ status: 'ENVIADO_FORNECEDOR' }),
-      erpApi.pedidosCompra.list({ status: 'CONFIRMADO' })
+      erpApi.pedidosCompra.list({ status: 'CONFIRMADO' }),
+      erpApi.usuarios.list()
     ]);
     const pedidosResponse = [...pedidosEmitidos, ...pedidosEnviados, ...pedidosConfirmados];
     setEmpresas(empresasResponse);
     setFornecedores(fornecedoresResponse.filter((fornecedor) => fornecedor.status !== 'inativo'));
     setObras(obrasResponse.filter((obra) => obra.status !== 'inativo'));
     setCentrosCusto(centrosResponse.filter((centro) => centro.status !== 'inativo'));
+    setUsuarios(usuariosResponse.filter((usuario) => usuario.status !== 'inativo' && usuario.ativo !== false));
     setPedidosElegiveis(pedidosResponse);
     setForm((current) => ({
       ...current,
       pedido_id: current.pedido_id || pedidosResponse[0]?.id || ''
     }));
+    setApprovalUserId((current) => current || usuariosResponse.find((usuario) => usuario.email === 'matheus.dev.v35b@enac.local')?.id || usuariosResponse[0]?.id || '');
   }, []);
 
   React.useEffect(() => {
@@ -357,6 +372,28 @@ export function NotasEntradaPage(): JSX.Element {
     }
   };
 
+  const approveNota = async (nota: NotaEntradaApi, action: 'aprovar-tecnico' | 'aprovar-diretoria'): Promise<void> => {
+    if (saving || !approvalUserId) {
+      return;
+    }
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const updated = await erpApi.notasEntrada.aprovar(nota.id, action, {
+        usuario_id: approvalUserId,
+        observacoes: `${marker} - aprovacao local por alcada`
+      });
+      setSelectedNota(updated);
+      setMessage('Aprovação registrada.');
+      await refresh(updated.id);
+    } catch (approveError) {
+      setError(getErrorMessage(approveError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="enac-web-page enac-finance-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
@@ -407,8 +444,12 @@ export function NotasEntradaPage(): JSX.Element {
                 editForm={editForm}
                 saving={saving}
                 cancelTarget={cancelTarget}
+                usuarios={usuarios}
+                approvalUserId={approvalUserId}
                 onEditChange={updateEditForm}
                 onSave={(event) => void saveNota(event)}
+                onApprovalUserChange={setApprovalUserId}
+                onApprove={(nota, action) => void approveNota(nota, action)}
                 onTransition={(nota, action) => action === 'cancelar' ? setCancelTarget(nota) : void transition(nota, action)}
                 onConfirmCancel={(nota) => void transition(nota, 'cancelar')}
                 onDismissCancel={() => setCancelTarget(null)}
@@ -579,6 +620,7 @@ function NotasTable({
           <tr>
             <th>Número</th>
             <th>Status</th>
+            <th>Aprovação</th>
             <th>Fornecedor</th>
             <th>Pedido</th>
             <th>Emissão</th>
@@ -591,6 +633,7 @@ function NotasTable({
             <tr key={nota.id} className={selectedId === nota.id ? 'enac-finance-row-selected' : ''}>
               <td><strong>{nota.numero}{nota.serie ? `/${nota.serie}` : ''}</strong></td>
               <td><span className={`enac-finance-status enac-finance-status--${statusClass(nota.status)}`}>{statusLabels[nota.status]}</span></td>
+              <td>{nota.aprovacao_status ? aprovacaoLabels[nota.aprovacao_status] || nota.aprovacao_status : '-'}</td>
               <td>{nota.fornecedor_nome}</td>
               <td>{nota.pedido_codigo}</td>
               <td>{formatDate(nota.data_emissao)}</td>
@@ -609,8 +652,12 @@ function NotaDetail({
   editForm,
   saving,
   cancelTarget,
+  usuarios,
+  approvalUserId,
   onEditChange,
   onSave,
+  onApprovalUserChange,
+  onApprove,
   onTransition,
   onConfirmCancel,
   onDismissCancel
@@ -619,8 +666,12 @@ function NotaDetail({
   editForm: NotaForm;
   saving: boolean;
   cancelTarget: NotaEntradaApi | null;
+  usuarios: UsuarioApi[];
+  approvalUserId: string;
   onEditChange: (field: keyof NotaForm, value: string) => void;
   onSave: (event: React.FormEvent) => void;
+  onApprovalUserChange: (value: string) => void;
+  onApprove: (nota: NotaEntradaApi, action: 'aprovar-tecnico' | 'aprovar-diretoria') => void;
   onTransition: (
     nota: NotaEntradaApi,
     action: 'conferir' | 'marcar-divergente' | 'reabrir-rascunho' | 'aprovar' | 'provisionar-conta-pagar' | 'cancelar'
@@ -646,13 +697,30 @@ function NotaDetail({
         <div><span>Emissão</span><strong>{formatDate(nota.data_emissao)}</strong></div>
         <div><span>Entrada</span><strong>{formatDate(nota.data_entrada)}</strong></div>
         <div><span>Chave</span><strong>{nota.chave_acesso || '-'}</strong></div>
+        <div><span>Aprovação</span><strong>{nota.aprovacao_status ? aprovacaoLabels[nota.aprovacao_status] || nota.aprovacao_status : '-'}</strong></div>
+        <div><span>Aprovador</span><strong>{nota.aprovado_por_nome || '-'}</strong></div>
       </div>
+
+      {nota.status === 'CONFERIDA' && (
+        <div className="enac-cadastro-row-actions enac-finance-actions">
+          <label>
+            <span>Aprovador</span>
+            <select value={approvalUserId} onChange={(event) => onApprovalUserChange(event.target.value)} disabled={saving}>
+              <option value="">Selecione</option>
+              {usuarios.map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>{usuario.nome} - {usuario.perfil_principal || 'perfil'}</option>
+              ))}
+            </select>
+          </label>
+          <button type="button" onClick={() => onApprove(nota, 'aprovar-tecnico')} disabled={saving || !approvalUserId}>Aprovar técnico</button>
+          <button type="button" onClick={() => onApprove(nota, 'aprovar-diretoria')} disabled={saving || !approvalUserId}>Aprovar diretoria</button>
+        </div>
+      )}
 
       <div className="enac-cadastro-row-actions enac-finance-actions">
         {nota.status === 'RASCUNHO' && <button type="button" onClick={() => onTransition(nota, 'conferir')} disabled={saving}>Conferir</button>}
         {nota.status === 'RASCUNHO' && <button type="button" onClick={() => onTransition(nota, 'marcar-divergente')} disabled={saving}>Marcar divergente</button>}
         {nota.status === 'DIVERGENTE' && <button type="button" onClick={() => onTransition(nota, 'reabrir-rascunho')} disabled={saving}>Reabrir rascunho</button>}
-        {nota.status === 'CONFERIDA' && <button type="button" onClick={() => onTransition(nota, 'aprovar')} disabled={saving}>Aprovar</button>}
         {nota.status === 'APROVADA' && <button type="button" onClick={() => onTransition(nota, 'provisionar-conta-pagar')} disabled={saving}>Provisionar conta a pagar</button>}
         {canCancel(nota) && <button type="button" onClick={() => onTransition(nota, 'cancelar')} disabled={saving}>Cancelar</button>}
       </div>

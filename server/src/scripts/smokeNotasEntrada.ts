@@ -20,6 +20,8 @@ interface CentroCusto {
 
 interface Usuario {
   id: string;
+  email?: string;
+  perfil_principal?: string | null;
 }
 
 interface Fornecedor {
@@ -45,6 +47,7 @@ interface Cotacao {
   id: string;
   codigo: string;
   status: string;
+  aprovacao_status?: string | null;
 }
 
 interface MapaComparativo {
@@ -57,6 +60,7 @@ interface PedidoCompra {
   id: string;
   codigo: string;
   status: string;
+  aprovacao_status?: string | null;
   valor_total: string | number;
   itens?: Array<{ id: string }>;
 }
@@ -138,6 +142,14 @@ const getFirst = async <T>(endpoint: string, label: string): Promise<T> => {
   return first;
 };
 
+const findUsuario = (usuarios: Usuario[], email: string, perfil: string): Usuario => {
+  const usuario = usuarios.find((item) => item.email === email) || usuarios.find((item) => item.perfil_principal === perfil);
+  if (!usuario) {
+    throw new Error(`Usuario seed ${email}/${perfil} nao encontrado.`);
+  }
+  return usuario;
+};
+
 const transitionSolicitacao = async (
   solicitacao: SolicitacaoCompra,
   action: string,
@@ -201,6 +213,7 @@ const createConfirmedPedido = async (
   obra: Obra,
   centroCusto: CentroCusto,
   usuario: Usuario,
+  aprovador: Usuario,
   fornecedores: Fornecedor[],
   results: SmokeResult[]
 ): Promise<PedidoCompra> => {
@@ -285,6 +298,16 @@ const createConfirmedPedido = async (
     criterio_decisao: 'MENOR_PRECO',
     justificativa: `${marker} - vencedor para nota`
   });
+  cotacao = (await requestJson<ApiItemResponse<Cotacao>>(`/cotacoes/${cotacao.id}/aprovar-tecnico`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      usuario_id: aprovador.id,
+      observacoes: `${marker} - aprovacao tecnica para pedido da nota`
+    })
+  })).data;
+  if (cotacao.aprovacao_status !== 'APROVADO_TECNICO') {
+    throw new Error(`Cotacao aprovacao_status ${cotacao.aprovacao_status}, esperado APROVADO_TECNICO.`);
+  }
   results.push({ etapa: 'Cotacao com vencedor', ok: true, detalhe: cotacao.codigo });
 
   let pedido = (await requestJson<ApiItemResponse<PedidoCompra>>('/pedidos-compra/gerar-da-cotacao', {
@@ -296,6 +319,16 @@ const createConfirmedPedido = async (
       observacoes: `${marker} - pedido local sem pagamento`
     })
   })).data;
+  pedido = (await requestJson<ApiItemResponse<PedidoCompra>>(`/pedidos-compra/${pedido.id}/aprovar-tecnico`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      usuario_id: aprovador.id,
+      observacoes: `${marker} - aprovacao tecnica para emitir pedido da nota`
+    })
+  })).data;
+  if (pedido.aprovacao_status !== 'APROVADO_TECNICO') {
+    throw new Error(`Pedido aprovacao_status ${pedido.aprovacao_status}, esperado APROVADO_TECNICO.`);
+  }
   pedido = await transitionPedido(pedido, 'emitir', 'EMITIDO');
   pedido = await transitionPedido(pedido, 'enviar-fornecedor', 'ENVIADO_FORNECEDOR');
   pedido = await transitionPedido(pedido, 'confirmar', 'CONFIRMADO');
@@ -321,13 +354,18 @@ const run = async (): Promise<void> => {
   const empresa = await getFirst<Empresa>('/empresas', 'empresas');
   const obra = await getFirst<Obra>('/obras', 'obras');
   const centroCusto = await getFirst<CentroCusto>('/centros-custo', 'centros-custo');
-  const usuario = await getFirst<Usuario>('/usuarios', 'usuarios');
+  const usuarios = (await requestJson<ApiListResponse<Usuario>>('/usuarios')).data;
+  const usuario = usuarios[0];
+  const planejamento = findUsuario(usuarios, 'gustavo.dev.v35b@enac.local', 'PLANEJAMENTO');
+  if (!usuario) {
+    throw new Error('Nenhum usuario local encontrado.');
+  }
   const fornecedores = (await requestJson<ApiListResponse<Fornecedor>>('/fornecedores')).data;
   if (fornecedores.length < 2) {
     throw new Error('Smoke V3.5A exige ao menos 2 fornecedores locais.');
   }
 
-  const pedido = await createConfirmedPedido(empresa, obra, centroCusto, usuario, fornecedores, results);
+  const pedido = await createConfirmedPedido(empresa, obra, centroCusto, usuario, planejamento, fornecedores, results);
   const pedidoDetalhado = await requestJson<ApiItemResponse<PedidoCompra>>(`/pedidos-compra/${pedido.id}`);
   if (!Array.isArray(pedidoDetalhado.data.itens) || pedidoDetalhado.data.itens.length !== 2) {
     throw new Error('Pedido confirmado nao retornou itens para nota.');
