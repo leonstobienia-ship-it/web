@@ -87,6 +87,7 @@ const formatDateTime = (value: string | null | undefined): string =>
 const statusClass = (status: string): string => status.toLowerCase().replace(/_/g, '-');
 
 const isActiveDraft = (programacao: ProgramacaoPagamentoApi | null): boolean => programacao?.status === 'RASCUNHO';
+type ProgramacaoView = 'consulta' | 'novo' | 'detalhe';
 
 export function ProgramacoesPagamentoPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
@@ -102,6 +103,7 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<ProgramacaoView>('consulta');
 
   const loadAll = React.useCallback(async (nextStatus = statusFilter): Promise<void> => {
     const [empresasResponse, fornecedoresResponse, obrasResponse, usuariosResponse] = await Promise.all([
@@ -189,6 +191,7 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
       justificativa: form.justificativa || null,
       usuario_id: actionUserId || null
     }), 'Programação criada em rascunho.');
+    setActiveView('detalhe');
     setForm(emptyForm());
   };
 
@@ -222,6 +225,7 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
     setMessage('');
     try {
       setSelectedProgramacao(await erpApi.programacoesPagamento.get(programacao.id));
+      setActiveView('detalhe');
     } catch (detailError) {
       setError(getErrorMessage(detailError));
     } finally {
@@ -242,8 +246,23 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
       {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
 
       {!loading && (
-        <div className="enac-finance-layout">
-          <section className="enac-finance-main" aria-label="Lista e detalhe de programações de pagamento">
+        <div className="enac-module-workspace">
+          <div className="enac-ui-tabs" role="tablist" aria-label="Programações de pagamento">
+            <button type="button" className={activeView === 'consulta' ? 'is-active' : ''} onClick={() => setActiveView('consulta')}>
+              Consulta
+            </button>
+            <button type="button" className={activeView === 'novo' ? 'is-active' : ''} onClick={() => setActiveView('novo')}>
+              Novo registro
+            </button>
+            <button type="button" className={activeView === 'detalhe' ? 'is-active' : ''} onClick={() => setActiveView('detalhe')}>
+              Detalhes
+            </button>
+          </div>
+
+          {activeView !== 'novo' && (
+          <section className="enac-finance-main enac-module-panel" aria-label="Lista e detalhe de programações de pagamento">
+            {activeView === 'consulta' && (
+              <>
             <ProgramacaoFilters status={statusFilter} saving={saving} onStatusChange={updateStatusFilter} onRefresh={() => void refresh()} />
             <ProgramacoesTable
               programacoes={programacoes}
@@ -251,7 +270,10 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
               saving={saving}
               onSelect={(programacao) => void selectProgramacao(programacao)}
             />
-            {selectedProgramacao && (
+              </>
+            )}
+            {activeView === 'detalhe' && selectedProgramacao && (
+              <>
               <ProgramacaoDetail
                 programacao={selectedProgramacao}
                 usuarios={usuarios}
@@ -293,16 +315,22 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
                 }), 'Programação cancelada logicamente.')}
                 onRemoveConta={(contaPagarId) => void removeConta(contaPagarId)}
               />
+              <ContasElegiveisTable
+                contas={contas}
+                selectedProgramacao={selectedProgramacao}
+                saving={saving}
+                onAdd={(conta) => void addConta(conta)}
+              />
+              </>
             )}
-            <ContasElegiveisTable
-              contas={contas}
-              selectedProgramacao={selectedProgramacao}
-              saving={saving}
-              onAdd={(conta) => void addConta(conta)}
-            />
+            {activeView === 'detalhe' && !selectedProgramacao && (
+              <div className="enac-cadastro-empty">Selecione uma programação na aba Consulta para visualizar detalhes e contas elegíveis.</div>
+            )}
           </section>
+          )}
 
-          <aside className="enac-finance-panel" aria-label="Criar programação de pagamento">
+          {activeView === 'novo' && (
+          <section className="enac-finance-panel enac-module-panel" aria-label="Criar programação de pagamento">
             <form className="enac-cadastro-form enac-finance-form" onSubmit={(event) => void createDraft(event)}>
               <div className="enac-cadastro-form-head"><h3>Novo rascunho</h3></div>
               <div className="enac-cadastro-form-grid">
@@ -340,7 +368,8 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
                 </select>
               </label>
             </div>
-          </aside>
+          </section>
+          )}
         </div>
       )}
     </section>

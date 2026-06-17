@@ -61,7 +61,7 @@ button {
 
 .enac-web-shell {
   display: grid;
-  grid-template-columns: 286px minmax(0, 1fr);
+  grid-template-columns: 272px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -80,12 +80,21 @@ button {
 
 .enac-web-brand {
   display: grid;
-  gap: 4px;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: center;
   padding: 0 6px 18px;
 }
 
+.enac-web-brand img {
+  grid-row: span 2;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
 .enac-web-brand strong {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .enac-web-brand span {
@@ -113,7 +122,7 @@ button {
 
 .enac-web-nav button {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   width: 100%;
@@ -128,6 +137,24 @@ button {
 .enac-web-nav button span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.enac-web-nav button i,
+.enac-web-nav-group-toggle i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  border: 1px solid #d6dfe8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #245a7f;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .enac-web-nav button small {
@@ -154,7 +181,7 @@ button {
 
 .enac-web-nav-group-toggle {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-columns: minmax(0, 1fr) 24px !important;
   min-height: 40px !important;
   border: 1px solid transparent !important;
   border-radius: 6px !important;
@@ -171,7 +198,9 @@ button {
 
 .enac-web-nav-group-toggle > span {
   display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
   gap: 2px;
+  align-items: center;
 }
 
 .enac-web-nav-group-toggle strong {
@@ -182,6 +211,7 @@ button {
 }
 
 .enac-web-nav-group-toggle small {
+  grid-column: 2;
   color: #7a8796 !important;
   font-size: 11px;
   font-weight: 700;
@@ -189,9 +219,12 @@ button {
 }
 
 .enac-web-nav-group-toggle em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   align-self: center;
   color: #6b7a8a;
-  font-size: 11px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 800;
 }
@@ -212,7 +245,7 @@ button {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(460px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
   gap: 16px;
   align-items: center;
   min-height: 72px;
@@ -230,7 +263,6 @@ button {
 
 .enac-web-topbar span,
 .enac-web-profile-select span,
-.enac-web-module-jump span,
 .enac-web-user-summary span {
   color: var(--enac-muted);
   font-size: 12px;
@@ -251,14 +283,13 @@ button {
 
 .enac-web-user-panel {
   display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(190px, 1fr) minmax(160px, 0.9fr);
+  grid-template-columns: minmax(150px, 0.8fr) minmax(210px, 1fr);
   gap: 10px;
   align-items: start;
 }
 
 .enac-web-user-summary,
-.enac-web-profile-select,
-.enac-web-module-jump {
+.enac-web-profile-select {
   display: grid;
   gap: 5px;
   min-width: 0;
@@ -285,8 +316,7 @@ button {
   line-height: 1.25;
 }
 
-.enac-web-profile-select select,
-.enac-web-module-jump select {
+.enac-web-profile-select select {
   width: 100%;
   min-height: 38px;
   border: 1px solid var(--enac-border-strong);
@@ -298,7 +328,7 @@ button {
 
 .enac-web-page {
   box-sizing: border-box;
-  width: min(1240px, 100%);
+  width: min(1440px, 100%);
   margin: 0 auto;
   padding: 34px 32px 48px;
 }
@@ -487,7 +517,7 @@ button {
 
 .enac-web-table th,
 .enac-web-table td {
-  padding: 13px 14px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--enac-border);
   text-align: left;
   vertical-align: top;
@@ -506,6 +536,52 @@ button {
 
 .enac-web-table strong {
   color: var(--enac-text);
+}
+
+.enac-ui-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--enac-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-ui-tabs button {
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0 12px;
+  background: transparent;
+  color: #34475d;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.enac-ui-tabs button:hover,
+.enac-ui-tabs button.is-active {
+  border-color: #c8d2dc;
+  background: #e8edf3;
+  color: #102a43;
+}
+
+.enac-module-workspace,
+.enac-module-panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.enac-module-panel {
+  align-content: start;
+}
+
+.enac-module-panel .enac-pedido-form,
+.enac-module-panel .enac-finance-form {
+  position: static;
 }
 
 .enac-web-profile-map {
@@ -2407,6 +2483,10 @@ button {
   grid-template-columns: minmax(0, 1.35fr) minmax(380px, 0.65fr);
 }
 
+.enac-risk-layout--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .enac-risk-form-panel {
   min-width: 0;
 }
@@ -3599,12 +3679,12 @@ code {
   }
 
   .enac-web-nav button {
-    grid-template-columns: 1fr;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
     gap: 2px;
   }
 
   .enac-web-nav-group-toggle {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) 24px !important;
   }
 
   .enac-web-nav button small {
@@ -3617,7 +3697,7 @@ code {
   }
 
   .enac-web-user-panel {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .enac-web-page {
@@ -3657,7 +3737,7 @@ code {
   }
 
   .enac-web-nav-group button {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
   }
 
   .enac-web-nav-group-toggle {

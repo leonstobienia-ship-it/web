@@ -112,6 +112,7 @@ const statusClass = (status: string): string => status.toLowerCase().replace(/_/
 
 const canEditMedicao = (medicao: MedicaoApi | null): boolean =>
   medicao?.status === 'RASCUNHO' || medicao?.status === 'DEVOLVIDA';
+type MedicaoView = 'consulta' | 'novo' | 'detalhe';
 
 export function MedicoesFaturamentoPage(): JSX.Element {
   const [empresas, setEmpresas] = React.useState<EmpresaApi[]>([]);
@@ -132,6 +133,7 @@ export function MedicoesFaturamentoPage(): JSX.Element {
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<MedicaoView>('consulta');
 
   const loadAll = React.useCallback(async (nextStatus = statusFilter): Promise<void> => {
     const [empresasResponse, clientesResponse, obrasResponse, centrosResponse, usuariosResponse, contratosResponse] = await Promise.all([
@@ -245,7 +247,10 @@ export function MedicoesFaturamentoPage(): JSX.Element {
     await runAction(
       () => erpApi.medicoes.create(payload),
       'Medição criada em rascunho.',
-      (created) => setSelectedMedicao(created as MedicaoApi)
+      (created) => {
+        setSelectedMedicao(created as MedicaoApi);
+        setActiveView('detalhe');
+      }
     );
     setForm((current) => ({ ...emptyMedicaoForm(), company_id: current.company_id, obra_id: current.obra_id, cliente_id: current.cliente_id, centro_custo_id: current.centro_custo_id }));
   };
@@ -282,6 +287,7 @@ export function MedicoesFaturamentoPage(): JSX.Element {
     try {
       const detail = await erpApi.medicoes.get(medicao.id);
       setSelectedMedicao(detail);
+      setActiveView('detalhe');
       const pedido = detail.pedido_faturamento?.id ? await erpApi.pedidosFaturamento.get(detail.pedido_faturamento.id) : null;
       setSelectedPedido(pedido);
       setItemForm((current) => ({ ...current, centro_custo_id: detail.centro_custo_id || '' }));
@@ -331,8 +337,23 @@ export function MedicoesFaturamentoPage(): JSX.Element {
       {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
 
       {!loading && (
-        <div className="enac-finance-layout enac-medicoes-layout">
-          <section className="enac-finance-main" aria-label="Lista e detalhe de medições">
+        <div className="enac-module-workspace enac-medicoes-layout">
+          <div className="enac-ui-tabs" role="tablist" aria-label="Medições e faturamento">
+            <button type="button" className={activeView === 'consulta' ? 'is-active' : ''} onClick={() => setActiveView('consulta')}>
+              Consulta
+            </button>
+            <button type="button" className={activeView === 'novo' ? 'is-active' : ''} onClick={() => setActiveView('novo')}>
+              Novo registro
+            </button>
+            <button type="button" className={activeView === 'detalhe' ? 'is-active' : ''} onClick={() => setActiveView('detalhe')}>
+              Detalhes
+            </button>
+          </div>
+
+          {activeView !== 'novo' && (
+          <section className="enac-finance-main enac-module-panel" aria-label="Lista e detalhe de medições">
+            {activeView === 'consulta' && (
+              <>
             <div className="enac-solicitacoes-filters enac-programacao-filters">
               <label>
                 <span>Status</span>
@@ -345,8 +366,10 @@ export function MedicoesFaturamentoPage(): JSX.Element {
             </div>
 
             <MedicoesTable medicoes={medicoes} selectedId={selectedMedicao?.id} saving={saving} onSelect={(medicao) => void selectMedicao(medicao)} />
+              </>
+            )}
 
-            {selectedMedicao && (
+            {activeView === 'detalhe' && selectedMedicao && (
               <section className="enac-finance-detail enac-medicao-detail">
                 <div className="enac-cadastro-toolbar">
                   <div>
@@ -476,9 +499,14 @@ export function MedicoesFaturamentoPage(): JSX.Element {
                 />
               </section>
             )}
+            {activeView === 'detalhe' && !selectedMedicao && (
+              <div className="enac-cadastro-empty">Selecione uma medição na aba Consulta para visualizar detalhes e faturamento.</div>
+            )}
           </section>
+          )}
 
-          <aside className="enac-finance-panel" aria-label="Criar medição">
+          {activeView === 'novo' && (
+          <section className="enac-finance-panel enac-module-panel" aria-label="Criar medição">
             <form className="enac-cadastro-form enac-finance-form" onSubmit={(event) => void createMedicao(event)}>
               <div className="enac-cadastro-form-head"><h3>Nova medição</h3></div>
               <div className="enac-cadastro-form-grid">
@@ -567,7 +595,8 @@ export function MedicoesFaturamentoPage(): JSX.Element {
               <span className="enac-web-card-label">Limite da V3.6</span>
               <p>Registro interno. Não emite NFS-e real, não integra prefeitura, não gera boleto e não baixa recebível automaticamente.</p>
             </div>
-          </aside>
+          </section>
+          )}
         </div>
       )}
     </section>

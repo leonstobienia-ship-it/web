@@ -131,6 +131,7 @@ const calculateTotal = (form: NotaForm): number =>
 
 const canEdit = (nota: NotaEntradaApi | null): boolean => nota?.status === 'RASCUNHO';
 const canCancel = (nota: NotaEntradaApi): boolean => ['RASCUNHO', 'CONFERIDA', 'DIVERGENTE'].includes(nota.status);
+type NotaView = 'consulta' | 'novo' | 'detalhe';
 
 export function NotasEntradaPage(): JSX.Element {
   const [empresas, setEmpresas] = React.useState<EmpresaApi[]>([]);
@@ -151,6 +152,7 @@ export function NotasEntradaPage(): JSX.Element {
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<NotaView>('consulta');
 
   const empresa = empresas[0];
 
@@ -265,6 +267,7 @@ export function NotasEntradaPage(): JSX.Element {
     setMessage('');
     try {
       setSelectedNota(await erpApi.notasEntrada.get(nota.id));
+      setActiveView('detalhe');
     } catch (detailError) {
       setError(getErrorMessage(detailError));
     } finally {
@@ -300,6 +303,7 @@ export function NotasEntradaPage(): JSX.Element {
         observacoes: form.observacoes || null
       });
       setSelectedNota(nota);
+      setActiveView('detalhe');
       setForm(emptyNotaForm());
       setMessage('Nota de entrada criada em rascunho.');
       await refresh(nota.id);
@@ -414,8 +418,23 @@ export function NotasEntradaPage(): JSX.Element {
       )}
 
       {!loading && (
-        <div className="enac-finance-layout">
-          <section className="enac-finance-main" aria-label="Lista e detalhe de notas de entrada">
+        <div className="enac-module-workspace">
+          <div className="enac-ui-tabs" role="tablist" aria-label="Notas fiscais de entrada">
+            <button type="button" className={activeView === 'consulta' ? 'is-active' : ''} onClick={() => setActiveView('consulta')}>
+              Consulta
+            </button>
+            <button type="button" className={activeView === 'novo' ? 'is-active' : ''} onClick={() => setActiveView('novo')}>
+              Novo registro
+            </button>
+            <button type="button" className={activeView === 'detalhe' ? 'is-active' : ''} onClick={() => setActiveView('detalhe')}>
+              Detalhes
+            </button>
+          </div>
+
+          {activeView !== 'novo' && (
+          <section className="enac-finance-main enac-module-panel" aria-label="Lista e detalhe de notas de entrada">
+            {activeView === 'consulta' && (
+              <>
             <NotaFiltersBar
               filters={filters}
               fornecedores={fornecedores}
@@ -437,8 +456,10 @@ export function NotasEntradaPage(): JSX.Element {
             </div>
 
             <NotasTable notas={notas} selectedId={selectedNota?.id} saving={saving} onSelect={(nota) => void selectNota(nota)} />
+              </>
+            )}
 
-            {selectedNota && (
+            {activeView === 'detalhe' && selectedNota && (
               <NotaDetail
                 nota={selectedNota}
                 editForm={editForm}
@@ -455,9 +476,14 @@ export function NotasEntradaPage(): JSX.Element {
                 onDismissCancel={() => setCancelTarget(null)}
               />
             )}
+            {activeView === 'detalhe' && !selectedNota && (
+              <div className="enac-cadastro-empty">Selecione uma nota na aba Consulta para visualizar detalhes e ações.</div>
+            )}
           </section>
+          )}
 
-          <aside className="enac-finance-panel" aria-label="Nova nota fiscal de entrada">
+          {activeView === 'novo' && (
+          <section className="enac-finance-panel enac-module-panel" aria-label="Nova nota fiscal de entrada">
             <form className="enac-cadastro-form enac-finance-form" onSubmit={(event) => void createNota(event)}>
               <div className="enac-cadastro-form-head">
                 <h3>Nova nota fiscal</h3>
@@ -533,7 +559,8 @@ export function NotasEntradaPage(): JSX.Element {
                 </button>
               </div>
             </form>
-          </aside>
+          </section>
+          )}
         </div>
       )}
     </section>

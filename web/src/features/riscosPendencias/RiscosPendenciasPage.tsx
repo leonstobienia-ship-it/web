@@ -75,6 +75,7 @@ const formatDate = (value: unknown): string => {
 };
 
 const statusLabel = (status: string): string => status.replace(/_/g, ' ');
+type RiscoView = 'lista' | 'manual' | 'alerta' | 'detalhes';
 
 export function RiscosPendenciasPage(): JSX.Element {
   const [usuarios, setUsuarios] = React.useState<UsuarioApi[]>([]);
@@ -94,6 +95,7 @@ export function RiscosPendenciasPage(): JSX.Element {
   const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<RiscoView>('lista');
 
   const loadCatalogs = React.useCallback(async (): Promise<void> => {
     const [usuariosData, clientesData, obrasData, contratosData] = await Promise.all([
@@ -161,6 +163,7 @@ export function RiscosPendenciasPage(): JSX.Element {
       setEditPrazo(formatDate(detail.prazo) === '-' ? '' : formatDate(detail.prazo));
       setComment('');
       setActionNote('');
+      setActiveView('detalhes');
     } catch (detailError) {
       setError(getErrorMessage(detailError));
     } finally {
@@ -185,6 +188,7 @@ export function RiscosPendenciasPage(): JSX.Element {
       setForm((current) => ({ ...emptyForm(), usuario_id: current.usuario_id, responsavel_id: current.responsavel_id }));
       await loadPendencias(filters);
       await selectPendencia(created.id);
+      setActiveView('detalhes');
     } catch (createError) {
       setError(getErrorMessage(createError));
     } finally {
@@ -278,6 +282,7 @@ export function RiscosPendenciasPage(): JSX.Element {
       setAlertForm((current) => ({ ...emptyAlertForm(), usuario_id: current.usuario_id, responsavel_id: current.responsavel_id }));
       await loadPendencias(filters);
       await selectPendencia(created.id);
+      setActiveView('detalhes');
     } catch (alertError) {
       setError(getErrorMessage(alertError));
     } finally {
@@ -372,7 +377,23 @@ export function RiscosPendenciasPage(): JSX.Element {
         <RiskCard label="Resolvidas" value={stats.resolvidas} />
       </div>
 
+      <div className="enac-ui-tabs" role="tablist" aria-label="Riscos e pendências">
+        <button type="button" className={activeView === 'lista' ? 'is-active' : ''} onClick={() => setActiveView('lista')}>
+          Consulta
+        </button>
+        <button type="button" className={activeView === 'manual' ? 'is-active' : ''} onClick={() => setActiveView('manual')}>
+          Nova pendência manual
+        </button>
+        <button type="button" className={activeView === 'alerta' ? 'is-active' : ''} onClick={() => setActiveView('alerta')}>
+          Converter alerta
+        </button>
+        <button type="button" className={activeView === 'detalhes' ? 'is-active' : ''} onClick={() => setActiveView('detalhes')}>
+          Detalhes
+        </button>
+      </div>
+
       <div className="enac-risk-layout">
+        {activeView === 'manual' && (
         <section className="enac-report-section enac-risk-form-panel">
           <div className="enac-cadastro-toolbar">
             <div>
@@ -449,7 +470,9 @@ export function RiscosPendenciasPage(): JSX.Element {
             Criar pendência
           </button>
         </section>
+        )}
 
+        {activeView === 'alerta' && (
         <section className="enac-report-section enac-risk-form-panel">
           <div className="enac-cadastro-toolbar">
             <div>
@@ -505,10 +528,17 @@ export function RiscosPendenciasPage(): JSX.Element {
             Gerar pendência
           </button>
         </section>
+        )}
       </div>
 
-      <div className="enac-risk-layout enac-risk-layout--wide">
+      {activeView === 'lista' && (
+      <div className="enac-risk-layout enac-risk-layout--single">
         <RiskTable pendencias={pendencias} loading={loading} selectedId={selected?.id} onSelect={(id) => void selectPendencia(id)} />
+      </div>
+      )}
+
+      {activeView === 'detalhes' && (
+      <div className="enac-risk-layout enac-risk-layout--single">
         <RiskDetail
           selected={selected}
           saving={saving}
@@ -528,6 +558,7 @@ export function RiscosPendenciasPage(): JSX.Element {
           onAddComment={() => void addComment()}
         />
       </div>
+      )}
     </section>
   );
 }

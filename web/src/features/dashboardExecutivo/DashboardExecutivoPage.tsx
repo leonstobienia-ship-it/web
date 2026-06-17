@@ -99,6 +99,7 @@ const numberColumns = new Set([
   'orcamentos_sem_cronograma',
   'quantidade'
 ]);
+type DashboardView = 'resumo' | 'tendencia' | 'ranking' | 'alertas' | 'obras' | 'financeiro' | 'faturamento' | 'operacional';
 
 const activeFilters = (filters: DashboardExecutivoFilters): DashboardExecutivoFilters =>
   Object.entries(filters).reduce<DashboardExecutivoFilters>((acc, [key, value]) => {
@@ -157,6 +158,7 @@ export function DashboardExecutivoPage(): JSX.Element {
   const [dashboard, setDashboard] = React.useState<DashboardState>(emptyDashboard());
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<DashboardView>('resumo');
 
   const loadCatalogs = React.useCallback(async (): Promise<void> => {
     const [clientesResponse, obrasResponse, centrosResponse, contratosResponse] = await Promise.all([
@@ -315,6 +317,19 @@ export function DashboardExecutivoPage(): JSX.Element {
         </div>
       </section>
 
+      <div className="enac-ui-tabs" role="tablist" aria-label="Dashboard executivo">
+        <button type="button" className={activeView === 'resumo' ? 'is-active' : ''} onClick={() => setActiveView('resumo')}>Resumo</button>
+        <button type="button" className={activeView === 'tendencia' ? 'is-active' : ''} onClick={() => setActiveView('tendencia')}>Tendência</button>
+        <button type="button" className={activeView === 'ranking' ? 'is-active' : ''} onClick={() => setActiveView('ranking')}>Ranking</button>
+        <button type="button" className={activeView === 'alertas' ? 'is-active' : ''} onClick={() => setActiveView('alertas')}>Alertas</button>
+        <button type="button" className={activeView === 'obras' ? 'is-active' : ''} onClick={() => setActiveView('obras')}>Obras</button>
+        <button type="button" className={activeView === 'financeiro' ? 'is-active' : ''} onClick={() => setActiveView('financeiro')}>Financeiro</button>
+        <button type="button" className={activeView === 'faturamento' ? 'is-active' : ''} onClick={() => setActiveView('faturamento')}>Faturamento</button>
+        <button type="button" className={activeView === 'operacional' ? 'is-active' : ''} onClick={() => setActiveView('operacional')}>Operacional</button>
+      </div>
+
+      {activeView === 'resumo' && (
+      <>
       <div className="enac-report-cards enac-dashboard-cards">
         {primaryCards.map(([label, value, type]) => (
           <article className="enac-report-card enac-dashboard-card" key={label}>
@@ -332,9 +347,12 @@ export function DashboardExecutivoPage(): JSX.Element {
           </article>
         ))}
       </section>
+      </>
+      )}
 
-      <DashboardTrend rows={dashboard.tendencia} />
+      {activeView === 'tendencia' && <DashboardTrend rows={dashboard.tendencia} />}
 
+      {activeView === 'ranking' && (
       <div className="enac-dashboard-two-columns">
         <ReportTable
           title="Ranking por faturamento"
@@ -359,9 +377,11 @@ export function DashboardExecutivoPage(): JSX.Element {
           ]}
         />
       </div>
+      )}
 
       <div className="enac-report-grid">
-        <AlertsPanel alertas={dashboard.alertas} />
+        {activeView === 'alertas' && <AlertsPanel alertas={dashboard.alertas} />}
+        {activeView === 'obras' && (
         <ReportTable
           title="Obras consolidadas"
           rows={dashboard.obras as Array<Record<string, unknown>>}
@@ -377,6 +397,8 @@ export function DashboardExecutivoPage(): JSX.Element {
             { key: 'contas_vencidas', label: 'Vencidas', type: 'number' }
           ]}
         />
+        )}
+        {activeView === 'financeiro' && (
         <div className="enac-dashboard-two-columns">
           <ReportTable
             title="Financeiro"
@@ -403,6 +425,8 @@ export function DashboardExecutivoPage(): JSX.Element {
             ]}
           />
         </div>
+        )}
+        {activeView === 'faturamento' && (
         <div className="enac-dashboard-two-columns">
           <ReportTable
             title="Faturamento"
@@ -427,6 +451,8 @@ export function DashboardExecutivoPage(): JSX.Element {
             ]}
           />
         </div>
+        )}
+        {activeView === 'operacional' && (
         <div className="enac-dashboard-two-columns">
           <SummaryTable
             title="Operacional"
@@ -450,6 +476,7 @@ export function DashboardExecutivoPage(): JSX.Element {
             ]}
           />
         </div>
+        )}
       </div>
     </section>
   );

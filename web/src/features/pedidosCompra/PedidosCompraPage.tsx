@@ -98,6 +98,7 @@ const statusClass = (status: string): string => status.toLowerCase().replace(/_/
 
 const canEdit = (pedido: PedidoCompraApi | null): boolean => pedido?.status === 'RASCUNHO';
 const canCancel = (pedido: PedidoCompraApi): boolean => ['RASCUNHO', 'EMITIDO', 'ENVIADO_FORNECEDOR'].includes(pedido.status);
+type PedidoView = 'consulta' | 'novo' | 'detalhe';
 
 export function PedidosCompraPage(): JSX.Element {
   const [empresas, setEmpresas] = React.useState<EmpresaApi[]>([]);
@@ -118,6 +119,7 @@ export function PedidosCompraPage(): JSX.Element {
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<PedidoView>('consulta');
 
   const empresa = empresas[0];
 
@@ -217,6 +219,7 @@ export function PedidosCompraPage(): JSX.Element {
     setMessage('');
     try {
       setSelectedPedido(await erpApi.pedidosCompra.get(pedido.id));
+      setActiveView('detalhe');
     } catch (detailError) {
       setError(getErrorMessage(detailError));
     } finally {
@@ -246,6 +249,7 @@ export function PedidosCompraPage(): JSX.Element {
         observacoes: generateForm.observacoes || null
       });
       setSelectedPedido(pedido);
+      setActiveView('detalhe');
       setGenerateForm(emptyGenerateForm());
       setMessage('Pedido de compra gerado em rascunho.');
       await refresh(pedido.id);
@@ -344,8 +348,23 @@ export function PedidosCompraPage(): JSX.Element {
       )}
 
       {!loading && (
-        <div className="enac-pedidos-layout">
-          <section className="enac-pedidos-main" aria-label="Lista e detalhe de pedidos de compra">
+        <div className="enac-module-workspace">
+          <div className="enac-ui-tabs" role="tablist" aria-label="Pedidos de compra">
+            <button type="button" className={activeView === 'consulta' ? 'is-active' : ''} onClick={() => setActiveView('consulta')}>
+              Consulta
+            </button>
+            <button type="button" className={activeView === 'novo' ? 'is-active' : ''} onClick={() => setActiveView('novo')}>
+              Novo registro
+            </button>
+            <button type="button" className={activeView === 'detalhe' ? 'is-active' : ''} onClick={() => setActiveView('detalhe')}>
+              Detalhes
+            </button>
+          </div>
+
+          {activeView !== 'novo' && (
+          <section className="enac-pedidos-main enac-module-panel" aria-label="Lista e detalhe de pedidos de compra">
+            {activeView === 'consulta' && (
+              <>
             <PedidoFiltersBar
               filters={filters}
               fornecedores={fornecedores}
@@ -366,8 +385,10 @@ export function PedidosCompraPage(): JSX.Element {
             </div>
 
             <PedidosTable pedidos={pedidos} selectedId={selectedPedido?.id} saving={saving} onSelect={(pedido) => void selectPedido(pedido)} />
+              </>
+            )}
 
-            {selectedPedido && (
+            {activeView === 'detalhe' && selectedPedido && (
               <PedidoDetail
                 pedido={selectedPedido}
                 editForm={editForm}
@@ -384,9 +405,14 @@ export function PedidosCompraPage(): JSX.Element {
                 onDismissCancel={() => setCancelTarget(null)}
               />
             )}
+            {activeView === 'detalhe' && !selectedPedido && (
+              <div className="enac-cadastro-empty">Selecione um pedido na aba Consulta para visualizar detalhes e ações.</div>
+            )}
           </section>
+          )}
 
-          <aside className="enac-pedidos-panel" aria-label="Gerar pedido de compra">
+          {activeView === 'novo' && (
+          <section className="enac-pedidos-panel enac-module-panel" aria-label="Gerar pedido de compra">
             <form className="enac-cadastro-form enac-pedido-form" onSubmit={(event) => void generatePedido(event)}>
               <div className="enac-cadastro-form-head">
                 <h3>Gerar pedido</h3>
@@ -462,7 +488,8 @@ export function PedidosCompraPage(): JSX.Element {
                 </button>
               </div>
             </form>
-          </aside>
+          </section>
+          )}
         </div>
       )}
     </section>

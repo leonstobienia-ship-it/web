@@ -79,11 +79,11 @@ A V3.18A-D aplica ajustes de usabilidade levantados na homologacao visual, sem c
 Principais ajustes:
 
 - topbar com usuario e perfil ativo visiveis;
-- seletor secundario `Navegar para tela`, sem `Modulo` como controle dominante;
+- controle auxiliar de modulo sem `Modulo` como controle dominante, posteriormente substituido pelo menu lateral na V3.18E;
 - menu lateral recolhivel por grupos, mantendo o grupo ativo aberto;
 - grupo `Administracao` com item `Administracao de Acessos`;
 - tela de acessos com resumo de Usuarios, Perfis, Escopos e Alcadas;
-- item antigo tratado como `Legado - consulta`.
+- referencia antiga isolada fora dos grupos operacionais.
 
 Documentos:
 
@@ -94,6 +94,39 @@ Documentos:
 Limites mantidos:
 
 - sem pagamento real;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo;
+- sem `DELETE` fisico.
+
+## V3.18E - Correcoes de Homologacao: Organizacao de Telas e Usabilidade
+
+A V3.18E reorganiza a navegacao e telas mais extensas para homologacao assistida, sem backend novo, migration, endpoint, regra financeira, alçada ou integracao externa.
+
+Principais ajustes:
+
+- menu lateral com logo ENAC, grupos por area, icones discretos e indicador visual de expansao;
+- remocao do acesso visual ao legado no menu e na tela inicial;
+- remocao do seletor redundante de troca de tela na topbar;
+- separacao de `Orcamentos` e `Planejamento Executivo` no menu de Obras;
+- abas de `Consulta`, `Novo registro` e `Detalhes` em Pedidos, Notas, Contas, Programacoes e Medicoes;
+- Riscos e Pendencias separado em consulta, cadastro manual, conversao de alerta e detalhe;
+- Relatorios Financeiros e Dashboard Executivo quebrados em abas por assunto.
+
+Documentos:
+
+- `docs/v3.18e-homologacao-organizacao-telas-usabilidade.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18e-homologacao-organizacao-telas-usabilidade.md`
+
+Limites mantidos:
+
+- sem pagamento funcional;
 - sem baixa nova;
 - sem CNAB;
 - sem banco real;

@@ -169,6 +169,7 @@ const getBaixaBloqueios = (conta: ContaPagarApi): string[] => {
   }
   return bloqueios;
 };
+type ContaView = 'consulta' | 'novo' | 'detalhe';
 
 export function ContasPagarPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
@@ -189,6 +190,7 @@ export function ContasPagarPage(): JSX.Element {
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<ContaView>('consulta');
 
   const loadContas = React.useCallback(async (nextFilters: ContaFilters): Promise<void> => {
     setContas(await erpApi.contasPagar.list(nextFilters));
@@ -304,6 +306,7 @@ export function ContasPagarPage(): JSX.Element {
       ]);
       setSelectedConta(detail);
       setBaixas(historico);
+      setActiveView('detalhe');
     } catch (detailError) {
       setError(getErrorMessage(detailError));
     } finally {
@@ -327,6 +330,7 @@ export function ContasPagarPage(): JSX.Element {
         observacoes: form.observacoes || null
       });
       setSelectedConta(conta);
+      setActiveView('detalhe');
       setForm(emptyContaForm());
       setMessage('Conta a pagar provisionada.');
       await refresh(conta.id);
@@ -466,8 +470,23 @@ export function ContasPagarPage(): JSX.Element {
       {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
 
       {!loading && (
-        <div className="enac-finance-layout">
-          <section className="enac-finance-main" aria-label="Lista e detalhe de contas a pagar">
+        <div className="enac-module-workspace">
+          <div className="enac-ui-tabs" role="tablist" aria-label="Contas a pagar">
+            <button type="button" className={activeView === 'consulta' ? 'is-active' : ''} onClick={() => setActiveView('consulta')}>
+              Consulta
+            </button>
+            <button type="button" className={activeView === 'novo' ? 'is-active' : ''} onClick={() => setActiveView('novo')}>
+              Novo registro
+            </button>
+            <button type="button" className={activeView === 'detalhe' ? 'is-active' : ''} onClick={() => setActiveView('detalhe')}>
+              Detalhes
+            </button>
+          </div>
+
+          {activeView !== 'novo' && (
+          <section className="enac-finance-main enac-module-panel" aria-label="Lista e detalhe de contas a pagar">
+            {activeView === 'consulta' && (
+              <>
             <ContaFiltersBar
               filters={filters}
               fornecedores={fornecedores}
@@ -487,8 +506,10 @@ export function ContasPagarPage(): JSX.Element {
             </div>
 
             <ContasTable contas={contas} selectedId={selectedConta?.id} saving={saving} onSelect={(conta) => void selectConta(conta)} />
+              </>
+            )}
 
-            {selectedConta && (
+            {activeView === 'detalhe' && selectedConta && (
               <ContaDetail
                 conta={selectedConta}
                 editForm={editForm}
@@ -510,9 +531,14 @@ export function ContasPagarPage(): JSX.Element {
                 onDismissCancel={() => setCancelTarget(null)}
               />
             )}
+            {activeView === 'detalhe' && !selectedConta && (
+              <div className="enac-cadastro-empty">Selecione uma conta na aba Consulta para visualizar detalhes e ações.</div>
+            )}
           </section>
+          )}
 
-          <aside className="enac-finance-panel" aria-label="Gerar conta a pagar">
+          {activeView === 'novo' && (
+          <section className="enac-finance-panel enac-module-panel" aria-label="Gerar conta a pagar">
             <form className="enac-cadastro-form enac-finance-form" onSubmit={(event) => void gerarConta(event)}>
               <div className="enac-cadastro-form-head"><h3>Gerar conta</h3></div>
               <div className="enac-cadastro-form-grid">
@@ -549,7 +575,8 @@ export function ContasPagarPage(): JSX.Element {
                 </button>
               </div>
             </form>
-          </aside>
+          </section>
+          )}
         </div>
       )}
     </section>

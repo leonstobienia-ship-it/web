@@ -64,6 +64,7 @@ const statusOptions = [
   'LIBERADA',
   'REPROVADA'
 ];
+type FinanceReportView = 'resumo' | 'status' | 'aging' | 'vencimentos' | 'programacoes' | 'agrupamentos' | 'fluxo' | 'baixas';
 
 const toNumber = (value: unknown): number => {
   const parsed = typeof value === 'number' ? value : Number(String(value || '0').replace(',', '.'));
@@ -111,6 +112,7 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
   const [reports, setReports] = React.useState<ReportState>(emptyReportState());
   const [loading, setLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<FinanceReportView>('resumo');
 
   const loadReports = React.useCallback(async (nextFilters: RelatorioFinanceiroFilters): Promise<void> => {
     const query = activeFilters(nextFilters);
@@ -255,6 +257,18 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
         </button>
       </section>
 
+      <div className="enac-ui-tabs" role="tablist" aria-label="Relatórios financeiros">
+        <button type="button" className={activeView === 'resumo' ? 'is-active' : ''} onClick={() => setActiveView('resumo')}>Resumo</button>
+        <button type="button" className={activeView === 'status' ? 'is-active' : ''} onClick={() => setActiveView('status')}>Status</button>
+        <button type="button" className={activeView === 'aging' ? 'is-active' : ''} onClick={() => setActiveView('aging')}>Aging</button>
+        <button type="button" className={activeView === 'vencimentos' ? 'is-active' : ''} onClick={() => setActiveView('vencimentos')}>Vencimentos</button>
+        <button type="button" className={activeView === 'programacoes' ? 'is-active' : ''} onClick={() => setActiveView('programacoes')}>Programações</button>
+        <button type="button" className={activeView === 'agrupamentos' ? 'is-active' : ''} onClick={() => setActiveView('agrupamentos')}>Agrupamentos</button>
+        <button type="button" className={activeView === 'fluxo' ? 'is-active' : ''} onClick={() => setActiveView('fluxo')}>Fluxo previsto</button>
+        <button type="button" className={activeView === 'baixas' ? 'is-active' : ''} onClick={() => setActiveView('baixas')}>Baixas manuais</button>
+      </div>
+
+      {activeView === 'resumo' && (
       <div className="enac-report-cards">
         {summaryCards.map(([label, value]) => (
           <article className="enac-report-card" key={label}>
@@ -263,9 +277,10 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
           </article>
         ))}
       </div>
+      )}
 
       <div className="enac-report-grid">
-        <ReportTable
+        {activeView === 'status' && <ReportTable
           title="Contas por status"
           rows={reports.contasResumo?.por_status || []}
           columns={[
@@ -275,8 +290,8 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
             { key: 'saldo_aberto', label: 'Saldo', type: 'money' },
             { key: 'total_baixado_manual', label: 'Baixado manual', type: 'money' }
           ]}
-        />
-        <ReportTable
+        />}
+        {activeView === 'aging' && <ReportTable
           title="Aging financeiro"
           rows={reports.aging}
           columns={[
@@ -284,8 +299,8 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
             { key: 'quantidade', label: 'Qtd.' },
             { key: 'saldo_aberto', label: 'Saldo', type: 'money' }
           ]}
-        />
-        <ReportTable
+        />}
+        {activeView === 'vencimentos' && <ReportTable
           title="Contas por vencimento"
           rows={reports.contasResumo?.por_vencimento || []}
           columns={[
@@ -296,8 +311,8 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
             { key: 'valor_aberto', label: 'Saldo', type: 'money' },
             { key: 'vencida', label: 'Vencida', type: 'boolean' }
           ]}
-        />
-        <ReportTable
+        />}
+        {activeView === 'programacoes' && <ReportTable
           title="Programações"
           rows={reports.programacoesResumo?.programacoes || []}
           columns={[
@@ -308,8 +323,8 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
             { key: 'conferencia_status', label: 'Conferência' },
             { key: 'valor_total', label: 'Total', type: 'money' }
           ]}
-        />
-        <ReportTable
+        />}
+        {activeView === 'fluxo' && <ReportTable
           title="Fluxo previsto de saída"
           rows={reports.fluxoPrevisto}
           columns={[
@@ -320,7 +335,9 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
             { key: 'valor_liberado', label: 'Liberado', type: 'money' },
             { key: 'valor_conferido', label: 'Conferido', type: 'money' }
           ]}
-        />
+        />}
+        {activeView === 'agrupamentos' && (
+        <>
         <ReportTable
           title="Por fornecedor"
           rows={reports.porFornecedor}
@@ -336,7 +353,9 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
           rows={reports.porCentroCusto}
           columns={groupColumns}
         />
-        <ReportTable
+        </>
+        )}
+        {activeView === 'baixas' && <ReportTable
           title="Baixas manuais por período"
           rows={reports.contasResumo?.baixas_manuais_por_periodo || []}
           columns={[
@@ -344,7 +363,7 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
             { key: 'quantidade', label: 'Qtd.' },
             { key: 'total_baixado', label: 'Total', type: 'money' }
           ]}
-        />
+        />}
       </div>
     </section>
   );

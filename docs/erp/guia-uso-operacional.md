@@ -9,11 +9,10 @@ A navegacao do ERP ENAC esta organizada por areas:
 | Operacao | Visao geral, Central de Tarefas, Riscos e Pendencias, Documentos e Anexos |
 | Compras | Cadastros, Solicitacoes de Compra, Cotacoes, Pedidos de Compra |
 | Financeiro | Notas Fiscais de Entrada, Contas a Pagar, Programacoes de Pagamento, Relatorios Financeiros |
-| Obras | Contratos de Obra, Orcamentos e Planejamento, Medicoes e Faturamento, Previsto x Realizado |
+| Obras | Contratos de Obra, Orcamentos, Planejamento Executivo, Medicoes e Faturamento, Previsto x Realizado |
 | Gestao | Dashboard Executivo, Homologacao, Auditoria e Logs |
 | Administracao | Administracao de Acessos |
 | Base ERP | Arquitetura, MVP ERP, Workflows, Modelo de dados, Seguranca, Roadmap |
-| Legado | Legado - consulta |
 
 ## Uso por perfil
 
@@ -33,7 +32,8 @@ Objetivo: acompanhar margem, exposicao, aprovacoes e alertas.
 Priorizar:
 
 - Contratos de Obra;
-- Orcamentos e Planejamento;
+- Orcamentos;
+- Planejamento Executivo;
 - Medicoes e Faturamento;
 - Previsto x Realizado.
 
@@ -87,10 +87,14 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 
 - Cabecalho da aplicacao mostra area e modulo ativo.
 - Cabecalho mostra usuario de homologacao e perfil ativo.
-- Menu lateral exibe grupos recolhiveis por area, mantendo o grupo ativo aberto.
-- O seletor secundario `Navegar para tela` facilita troca de contexto sem competir com usuario/perfil.
+- Menu lateral exibe logo ENAC, grupos por area e icones discretos para facilitar reconhecimento visual.
+- Grupos do menu usam indicador visual de expansao sem texto auxiliar de abrir/recolher.
+- A topbar nao possui seletor redundante de modulo; a navegacao principal fica concentrada no menu lateral.
 - `Administracao de Acessos` concentra usuarios, perfis, escopos e alcadas.
-- `Legado - consulta` identifica a tela antiga como apoio de consulta, nao como sistema atual.
+- A tela antiga nao aparece na navegacao principal nem na visao geral da homologacao.
+- Modulos operacionais usam abas para separar consulta, novo registro e detalhes quando aplicavel.
+- Relatorios Financeiros e Dashboard Executivo usam abas por assunto para reduzir rolagem longa.
+- Riscos e Pendencias separa lista, cadastro manual, conversao de alerta e detalhe/historico.
 - Cards resumem indicadores principais.
 - Tabelas mantem rolagem horizontal quando o conteudo e largo.
 - Botoes desabilitados indicam bloqueio visual sem remover o contexto da acao.
@@ -119,7 +123,7 @@ Mobile:
 
 ## Limites operacionais
 
-A V3.15 e uma revisao de UX. Ela nao cria operacao financeira, fiscal, bancaria ou documental real.
+A revisao UX vigente nao cria operacao financeira, fiscal, bancaria ou documental real.
 
 Permanece proibido nesta etapa:
 

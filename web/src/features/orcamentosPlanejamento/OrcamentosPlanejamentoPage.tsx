@@ -186,7 +186,9 @@ const formatDate = (value: string | null | undefined): string =>
 
 const statusClass = (status: string): string => status.toLowerCase().replace(/_/g, '-');
 
-export function OrcamentosPlanejamentoPage(): JSX.Element {
+type OrcamentosPlanejamentoView = 'orcamentos' | 'planejamento';
+
+export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { initialView?: OrcamentosPlanejamentoView }): JSX.Element {
   const [empresas, setEmpresas] = React.useState<EmpresaApi[]>([]);
   const [obras, setObras] = React.useState<ObraApi[]>([]);
   const [centrosCusto, setCentrosCusto] = React.useState<CentroCustoApi[]>([]);
@@ -209,6 +211,11 @@ export function OrcamentosPlanejamentoPage(): JSX.Element {
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
+  const [activeView, setActiveView] = React.useState<OrcamentosPlanejamentoView>(initialView);
+
+  React.useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
 
   const loadAll = React.useCallback(async (): Promise<void> => {
     const [empresasResponse, obrasResponse, centrosResponse, usuariosResponse, contratosResponse, orcamentosResponse, planejamentosResponse] = await Promise.all([
@@ -281,6 +288,7 @@ export function OrcamentosPlanejamentoPage(): JSX.Element {
   const selectOrcamento = async (id: string): Promise<void> => {
     const item = await erpApi.orcamentosObra.get(id);
     setSelectedOrcamento(item);
+    setActiveView('orcamentos');
     setResumo(await erpApi.orcamentosObra.resumo(id));
     const firstPacote = item.pacotes?.find((pacote) => pacote.status === 'ATIVO');
     setPacoteForm((current) => ({ ...current, centro_custo_id: item.centro_custo_id || current.centro_custo_id }));
@@ -456,7 +464,7 @@ export function OrcamentosPlanejamentoPage(): JSX.Element {
       <div className="enac-cadastros-header">
         <div>
           <p className="enac-web-eyebrow">V3.8 - Orçamento Base e Planejamento Executivo</p>
-          <h1>Orçamentos de Obra</h1>
+          <h1>{activeView === 'planejamento' ? 'Planejamento Executivo' : 'Orçamentos de Obra'}</h1>
           <p className="enac-web-lead">
             Base executiva local para pacotes, itens, cronograma físico-financeiro e planejamento. Não há ação fiscal, boleto, banco, pagamento ou CNAB.
           </p>
@@ -491,6 +499,17 @@ export function OrcamentosPlanejamentoPage(): JSX.Element {
       {error && <div className="enac-web-alert"><strong>Erro</strong><p>{error}</p></div>}
       {message && <div className="enac-web-alert enac-web-alert--success"><strong>{message}</strong></div>}
 
+      <div className="enac-ui-tabs" role="tablist" aria-label="Orçamento e planejamento executivo">
+        <button type="button" className={activeView === 'orcamentos' ? 'is-active' : ''} onClick={() => setActiveView('orcamentos')}>
+          Orçamentos
+        </button>
+        <button type="button" className={activeView === 'planejamento' ? 'is-active' : ''} onClick={() => setActiveView('planejamento')}>
+          Planejamento Executivo
+        </button>
+      </div>
+
+      {activeView === 'orcamentos' && (
+        <>
       <div className="enac-cadastros-grid">
         <form className="enac-cadastros-form" onSubmit={(event) => void createOrcamento(event)}>
           <h2>Novo orçamento</h2>
@@ -700,7 +719,10 @@ export function OrcamentosPlanejamentoPage(): JSX.Element {
           )}
         </div>
       )}
+        </>
+      )}
 
+      {activeView === 'planejamento' && (
       <div className="enac-cadastros-detail">
         <div className="enac-cadastros-detail-header">
           <div>
@@ -771,6 +793,7 @@ export function OrcamentosPlanejamentoPage(): JSX.Element {
           </div>
         </div>
       </div>
+      )}
     </section>
   );
 }
