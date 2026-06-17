@@ -55,6 +55,7 @@ Quando o payload possui `modulo`, esse valor e usado. Caso contrario, a entidade
 - `medicao_obra` e pedido de faturamento -> `medicoes-faturamento`;
 - `risco_pendencia` -> `riscos-pendencias`;
 - `central_tarefa_manual` -> `central-tarefas`;
+- `documento_anexo` -> `documentos`;
 - usuarios, perfis, escopos e alcadas -> `administracao`.
 
 ## Severidade
@@ -108,3 +109,7 @@ Regras:
 - Nao ha prefeitura.
 - Nao ha SharePoint, Entra ou Power Automate reais.
 - Nao ha `DELETE` fisico.
+
+## V3.14 - Documentos e anexos
+
+A V3.14 registra eventos de `documento_anexo` para criar, editar, substituir e inativar referencias documentais. Esses eventos mantem os marcadores `sharepoint_real = false` e `upload_real = false` no payload quando aplicavel.

@@ -12,6 +12,7 @@ import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { ContratosObraPage } from './features/contratosObra/ContratosObraPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
 import { DashboardExecutivoPage } from './features/dashboardExecutivo/DashboardExecutivoPage';
+import { DocumentosAnexosPage } from './features/documentos/DocumentosAnexosPage';
 import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/MedicoesFaturamentoPage';
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
 import { OrcamentosPlanejamentoPage } from './features/orcamentosPlanejamento/OrcamentosPlanejamentoPage';
@@ -72,6 +73,7 @@ type WebSection =
   | 'riscos-pendencias'
   | 'central-tarefas'
   | 'auditoria'
+  | 'documentos'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -139,6 +141,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'riscos-pendencias', label: 'Riscos e Pendências' },
   { key: 'central-tarefas', label: 'Central de Tarefas' },
   { key: 'auditoria', label: 'Auditoria e Logs' },
+  { key: 'documentos', label: 'Documentos e Anexos' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -462,6 +465,10 @@ function ContentSection({ section, onOpenSystem, onNavigate }: { section: WebSec
 
   if (section === 'auditoria') {
     return <AuditoriaLogsPage />;
+  }
+
+  if (section === 'documentos') {
+    return <DocumentosAnexosPage />;
   }
 
   if (section === 'administracao') {

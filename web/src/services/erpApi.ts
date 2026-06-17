@@ -1194,6 +1194,108 @@ export interface AuditoriaDetalheApi {
   timeline: AuditoriaEventoApi[];
 }
 
+export type DocumentoStatus = 'ATIVO' | 'INATIVO' | 'SUBSTITUIDO' | 'PENDENTE_ENVIO_FUTURO' | 'ERRO_REFERENCIA' | string;
+export type DocumentoTipo =
+  | 'CONTRATO'
+  | 'ADITIVO'
+  | 'NF'
+  | 'BOLETO_REFERENCIA'
+  | 'COMPROVANTE_REFERENCIA'
+  | 'MEDICAO'
+  | 'FATURAMENTO'
+  | 'ORCAMENTO'
+  | 'PROPOSTA'
+  | 'COTACAO'
+  | 'PEDIDO'
+  | 'FOTO_OBRA'
+  | 'RELATORIO'
+  | 'OUTROS'
+  | string;
+
+export interface DocumentoFilters {
+  [key: string]: string | undefined;
+  company_id?: string;
+  entidade_tipo?: string;
+  entidade_id?: string;
+  tipo_documento?: string;
+  status?: string;
+  obra_id?: string;
+  contrato_id?: string;
+  texto?: string;
+  limit?: string;
+}
+
+export interface DocumentoApi {
+  [key: string]: unknown;
+  id: string;
+  company_id: string;
+  empresa_nome?: string | null;
+  entidade_tipo: string;
+  entidade_id: string;
+  obra_id?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  contrato_id?: string | null;
+  contrato_numero?: string | null;
+  tipo_documento: DocumentoTipo;
+  nome_arquivo: string;
+  extensao: string;
+  mime_type?: string | null;
+  tamanho_bytes: string | number;
+  descricao?: string | null;
+  observacao?: string | null;
+  origem: string;
+  status: DocumentoStatus;
+  referencia_local_mock?: string | null;
+  sharepoint_site_id_mock?: string | null;
+  sharepoint_drive_id_mock?: string | null;
+  sharepoint_item_id_mock?: string | null;
+  url_mock?: string | null;
+  substitui_documento_id?: string | null;
+  substituido_por_documento_id?: string | null;
+  substituido_por_nome_arquivo?: string | null;
+  substitui_nome_arquivo?: string | null;
+  criado_por?: string | null;
+  criado_por_nome?: string | null;
+  criado_em: string;
+  atualizado_por?: string | null;
+  atualizado_por_nome?: string | null;
+  atualizado_em: string;
+  inativado_por?: string | null;
+  inativado_por_nome?: string | null;
+  inativado_em?: string | null;
+  motivo_inativacao?: string | null;
+}
+
+export interface DocumentoPayload {
+  company_id?: string;
+  entidade_tipo?: string;
+  entidade_id?: string;
+  obra_id?: string;
+  contrato_id?: string;
+  tipo_documento?: string;
+  nome_arquivo?: string;
+  extensao?: string;
+  mime_type?: string;
+  tamanho_bytes?: number;
+  descricao?: string;
+  observacao?: string;
+  origem?: string;
+  status?: string;
+  referencia_local_mock?: string;
+  sharepoint_site_id_mock?: string;
+  sharepoint_drive_id_mock?: string;
+  sharepoint_item_id_mock?: string;
+  url_mock?: string;
+  usuario_id?: string;
+  motivo?: string;
+}
+
+export interface DocumentoSubstituicaoApi {
+  substituido: DocumentoApi;
+  substituto: DocumentoApi;
+}
+
 export type CentralTarefaManualStatus = 'ABERTA' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA';
 export type CentralTarefaPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 export type CentralTarefaTipo = 'MANUAL' | 'APROVACAO' | 'PENDENCIA' | 'OPERACIONAL' | 'ALERTA' | string;
@@ -2967,6 +3069,40 @@ export const erpApi = {
       (await request<ApiListResponse<AuditoriaEventoApi>>(
         `/auditoria/eventos-criticos${buildQueryString(filters)}`
       )).data
+  },
+  documentos: {
+    list: async (filters: DocumentoFilters = {}): Promise<DocumentoApi[]> =>
+      (await request<ApiListResponse<DocumentoApi>>(
+        `/documentos${buildQueryString(filters)}`
+      )).data,
+    get: async (id: string): Promise<DocumentoApi> =>
+      (await request<ApiItemResponse<DocumentoApi>>(`/documentos/${id}`)).data,
+    entidade: async (entidadeTipo: string, entidadeId: string, filters: DocumentoFilters = {}): Promise<DocumentoApi[]> =>
+      (await request<ApiListResponse<DocumentoApi>>(
+        `/documentos/entidade/${encodeURIComponent(entidadeTipo)}/${encodeURIComponent(entidadeId)}${buildQueryString(filters)}`
+      )).data,
+    create: async (payload: DocumentoPayload): Promise<DocumentoApi> =>
+      (await request<ApiItemResponse<DocumentoApi>>('/documentos', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: DocumentoPayload): Promise<DocumentoApi> =>
+      (await request<ApiItemResponse<DocumentoApi>>(`/documentos/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    inativar: async (id: string, payload: { usuario_id?: string; motivo: string }): Promise<DocumentoApi> =>
+      (await request<ApiItemResponse<DocumentoApi>>(`/documentos/${id}/inativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    substituir: async (id: string, payload: DocumentoPayload): Promise<DocumentoSubstituicaoApi> =>
+      (await request<ApiItemResponse<DocumentoSubstituicaoApi>>(`/documentos/${id}/substituir`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    tipos: async (): Promise<string[]> => (await request<ApiListResponse<string>>('/documentos/tipos')).data,
+    status: async (): Promise<string[]> => (await request<ApiListResponse<string>>('/documentos/status')).data
   },
   centralTarefas: {
     resumo: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefasResumoApi> =>

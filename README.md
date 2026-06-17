@@ -1363,6 +1363,45 @@ npm.cmd run smoke:auditoria
 
 A V3.13 nao executa pagamento, nao cria baixa nova, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
 
+## V3.14 - Anexos e Documentos preparados para SharePoint
+
+A V3.14 cria a base documental local do ERP ENAC para registrar metadados e referencias mock de documentos vinculados aos modulos operacionais. A etapa prepara o contrato futuro de SharePoint, mas nao faz upload real, nao chama Microsoft Graph, nao grava binario pesado no banco e nao integra servico externo.
+
+Migration criada:
+
+```text
+database/migrations/024_anexos_documentos_sharepoint_ready_v314.sql
+```
+
+Endpoints criados:
+
+```http
+GET /documentos
+GET /documentos/:id
+GET /documentos/entidade/:entidadeTipo/:entidadeId
+POST /documentos
+PATCH /documentos/:id
+PATCH /documentos/:id/inativar
+PATCH /documentos/:id/substituir
+GET /documentos/tipos
+GET /documentos/status
+```
+
+Frontend:
+
+```text
+web/src/features/documentos/DocumentosAnexosPage.tsx
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:documentos
+```
+
+A V3.14 nao integra SharePoint real, nao faz upload externo, nao usa Graph real, nao usa Entra real, nao cria Power Automate, nao executa pagamento, nao cria baixa nova, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto e nao usa `DELETE` fisico.
+
 ## Protótipo
 
 Abra no navegador:
