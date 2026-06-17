@@ -17,6 +17,7 @@ import { PedidosCompraPage } from './features/pedidosCompra/PedidosCompraPage';
 import { PrevistoRealizadoPage } from './features/previstoRealizado/PrevistoRealizadoPage';
 import { ProgramacoesPagamentoPage } from './features/programacoesPagamento/ProgramacoesPagamentoPage';
 import { RelatoriosFinanceirosPage } from './features/relatoriosFinanceiros/RelatoriosFinanceirosPage';
+import { RiscosPendenciasPage } from './features/riscosPendencias/RiscosPendenciasPage';
 import { SolicitacoesCompraPage } from './features/solicitacoesCompra/SolicitacoesCompraPage';
 import './styles.css';
 
@@ -66,6 +67,7 @@ type WebSection =
   | 'medicoes-faturamento'
   | 'previsto-realizado'
   | 'dashboard-executivo'
+  | 'riscos-pendencias'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -130,6 +132,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'medicoes-faturamento', label: 'Medições e Faturamento' },
   { key: 'previsto-realizado', label: 'Previsto x Realizado' },
   { key: 'dashboard-executivo', label: 'Dashboard Executivo' },
+  { key: 'riscos-pendencias', label: 'Riscos e Pendências' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -441,6 +444,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'dashboard-executivo') {
     return <DashboardExecutivoPage />;
+  }
+
+  if (section === 'riscos-pendencias') {
+    return <RiscosPendenciasPage />;
   }
 
   if (section === 'administracao') {

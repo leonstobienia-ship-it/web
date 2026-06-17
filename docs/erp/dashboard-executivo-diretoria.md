@@ -76,6 +76,10 @@ Custo comprometido usa o maior valor entre pedidos confirmados e contas não can
 - Orçamento aprovado sem cronograma ativo.
 - Planejamento executivo atrasado.
 
+## Integração local com V3.11
+
+A partir da V3.11, alertas executivos podem ser convertidos em pendências operacionais por `POST /riscos-pendencias/gerar-de-alerta`. O dashboard permanece somente leitura; a pendência criada passa a concentrar responsável, prazo, prioridade, comentários, histórico e resolução.
+
 ## Segurança operacional
 
 - Não há operação transacional nova.

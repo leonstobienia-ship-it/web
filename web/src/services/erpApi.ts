@@ -1020,6 +1020,106 @@ export interface DashboardExecutivoDetalheApi {
   [key: string]: Record<string, string | number | null> | Array<Record<string, string | number | null>> | string | number | null;
 }
 
+export type RiscoPendenciaStatus = 'ABERTA' | 'EM_ANDAMENTO' | 'AGUARDANDO_TERCEIRO' | 'BLOQUEADA' | 'RESOLVIDA' | 'CANCELADA';
+export type RiscoPendenciaPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
+export type RiscoPendenciaTipo = 'FINANCEIRO' | 'COMPRA' | 'CONTRATO' | 'OBRA' | 'MEDICAO' | 'FATURAMENTO' | 'ORCAMENTO' | 'MARGEM' | 'DOCUMENTACAO' | 'OUTROS';
+
+export interface RiscosPendenciasFilters {
+  [key: string]: string | undefined;
+  status?: RiscoPendenciaStatus | '';
+  prioridade?: RiscoPendenciaPrioridade | '';
+  tipo?: RiscoPendenciaTipo | '';
+  responsavel_id?: string;
+  obra_id?: string;
+  cliente_id?: string;
+  vencida?: string;
+  texto?: string;
+}
+
+export interface RiscoPendenciaApi {
+  [key: string]: unknown;
+  id: string;
+  company_id: string;
+  codigo: string;
+  titulo: string;
+  descricao?: string | null;
+  tipo: RiscoPendenciaTipo;
+  prioridade: RiscoPendenciaPrioridade;
+  status: RiscoPendenciaStatus;
+  responsavel_id?: string | null;
+  responsavel_nome?: string | null;
+  prazo?: string | null;
+  obra_id?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  cliente_id?: string | null;
+  cliente_nome?: string | null;
+  contrato_obra_id?: string | null;
+  contrato_numero?: string | null;
+  dashboard_alerta_tipo?: string | null;
+  origem?: string | null;
+  vencida?: boolean;
+  a_vencer?: boolean;
+  resolucao?: string | null;
+  created_at: string;
+  updated_at: string;
+  comentarios?: Array<Record<string, unknown>>;
+  historico?: Array<Record<string, unknown>>;
+}
+
+export interface RiscoPendenciaPayload {
+  company_id?: string;
+  titulo: string;
+  descricao?: string;
+  tipo: RiscoPendenciaTipo;
+  prioridade: RiscoPendenciaPrioridade;
+  responsavel_id?: string;
+  prazo?: string;
+  obra_id?: string;
+  cliente_id?: string;
+  contrato_obra_id?: string;
+  usuario_id?: string;
+  comentario?: string;
+}
+
+export interface RiscoPendenciaUpdatePayload {
+  titulo?: string;
+  descricao?: string;
+  tipo?: RiscoPendenciaTipo;
+  prioridade?: RiscoPendenciaPrioridade;
+  status?: Exclude<RiscoPendenciaStatus, 'RESOLVIDA' | 'CANCELADA'>;
+  responsavel_id?: string;
+  prazo?: string;
+  obra_id?: string;
+  cliente_id?: string;
+  contrato_obra_id?: string;
+  usuario_id?: string;
+  comentario?: string;
+}
+
+export interface RiscoPendenciaActionPayload {
+  usuario_id?: string;
+  comentario?: string;
+  observacoes?: string;
+  justificativa?: string;
+  motivo?: string;
+  resolucao?: string;
+}
+
+export interface RiscoPendenciaAlertaPayload {
+  company_id?: string;
+  usuario_id?: string;
+  responsavel_id?: string;
+  prazo?: string;
+  alerta: {
+    tipo: string;
+    severidade: string;
+    mensagem: string;
+    obra_id?: string;
+    cliente_id?: string;
+  };
+}
+
 export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 export type ProgramacaoPagamentoConferenciaStatus = 'PENDENTE_CONFERENCIA' | 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA';
 
@@ -2619,5 +2719,55 @@ export const erpApi = {
       (await request<ApiItemResponse<DashboardExecutivoDetalheApi>>(
         `/dashboard-executivo/operacional${buildQueryString(filters)}`
       )).data
+  },
+  riscosPendencias: {
+    list: async (filters: RiscosPendenciasFilters = {}): Promise<RiscoPendenciaApi[]> =>
+      (await request<ApiListResponse<RiscoPendenciaApi>>(
+        `/riscos-pendencias${buildQueryString(filters)}`
+      )).data,
+    get: async (id: string): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>(`/riscos-pendencias/${id}`)).data,
+    create: async (payload: RiscoPendenciaPayload): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>('/riscos-pendencias', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: RiscoPendenciaUpdatePayload): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>(`/riscos-pendencias/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    iniciar: async (id: string, payload: RiscoPendenciaActionPayload): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>(`/riscos-pendencias/${id}/iniciar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    bloquear: async (id: string, payload: RiscoPendenciaActionPayload): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>(`/riscos-pendencias/${id}/bloquear`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    resolver: async (id: string, payload: RiscoPendenciaActionPayload): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>(`/riscos-pendencias/${id}/resolver`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelar: async (id: string, payload: RiscoPendenciaActionPayload): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>(`/riscos-pendencias/${id}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    comentar: async (id: string, payload: { usuario_id?: string; comentario: string }): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>(`/riscos-pendencias/${id}/comentarios`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    historico: async (id: string): Promise<Array<Record<string, unknown>>> =>
+      (await request<ApiListResponse<Record<string, unknown>>>(`/riscos-pendencias/${id}/historico`)).data,
+    gerarDeAlerta: async (payload: RiscoPendenciaAlertaPayload): Promise<RiscoPendenciaApi> =>
+      (await request<ApiItemResponse<RiscoPendenciaApi>>('/riscos-pendencias/gerar-de-alerta', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data
   }
 };

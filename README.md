@@ -1243,6 +1243,47 @@ npm.cmd run smoke:dashboard-executivo
 
 A V3.10 nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
 
+## V3.11 - Gestao de Riscos e Pendencias Operacionais
+
+A V3.11 transforma riscos, alertas executivos e eventos operacionais em pendencias acionaveis com responsavel, prazo, prioridade, status, vinculo de origem, comentarios, historico e resolucao auditada.
+
+Migration criada:
+
+```text
+database/migrations/021_riscos_pendencias_operacionais_v311.sql
+```
+
+Endpoints criados:
+
+```http
+GET /riscos-pendencias
+GET /riscos-pendencias/:id
+POST /riscos-pendencias
+PATCH /riscos-pendencias/:id
+PATCH /riscos-pendencias/:id/iniciar
+PATCH /riscos-pendencias/:id/bloquear
+PATCH /riscos-pendencias/:id/resolver
+PATCH /riscos-pendencias/:id/cancelar
+POST /riscos-pendencias/:id/comentarios
+GET /riscos-pendencias/:id/historico
+POST /riscos-pendencias/gerar-de-alerta
+```
+
+Frontend:
+
+```text
+web/src/features/riscosPendencias/RiscosPendenciasPage.tsx
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:riscos-pendencias
+```
+
+A V3.11 nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
+
 ## Protótipo
 
 Abra no navegador:

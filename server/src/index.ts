@@ -19,6 +19,7 @@ import { handlePlanejamentoExecutivo } from './modules/planejamentoExecutivo/pla
 import { handlePrevistoRealizado } from './modules/previstoRealizado/previstoRealizado.routes.js';
 import { handleProgramacoesPagamento } from './modules/programacoesPagamento/programacoesPagamento.routes.js';
 import { handleRelatoriosFinanceiros } from './modules/relatoriosFinanceiros/relatoriosFinanceiros.routes.js';
+import { handleRiscosPendencias } from './modules/riscosPendencias/riscosPendencias.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
 import { handleUsuarios } from './modules/usuarios/usuarios.routes.js';
 import { sendNoContent } from './http.js';
@@ -50,6 +51,7 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/planejamento-executivo', handler: handlePlanejamentoExecutivo },
   { basePath: '/previsto-realizado', handler: handlePrevistoRealizado },
   { basePath: '/dashboard-executivo', handler: handleDashboardExecutivo },
+  { basePath: '/riscos-pendencias', handler: handleRiscosPendencias },
   { basePath: '/medicoes', handler: handleMedicoes },
   { basePath: '/pedidos-faturamento', handler: handlePedidosFaturamento },
   { basePath: '/perfis', handler: handlePerfis },
