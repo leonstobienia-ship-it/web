@@ -50,6 +50,30 @@ Limites mantidos:
 - Sem upload externo.
 - Sem `DELETE` fisico.
 
+## V3.17.1 - Pacote de Homologacao Assistida
+
+A V3.17.1 organiza a conducao pratica da homologacao real com a equipe. A etapa nao cria backend, migration, endpoint, regra de negocio ou modulo operacional novo.
+
+Documentos principais:
+
+- `docs/v3.17.1-pacote-homologacao-assistida.md`
+- `docs/erp/pacote-homologacao-assistida.md`
+- `docs/erp/modelo-feedback-homologacao.md`
+- `docs/erp/roteiro-homologacao-equipe.md`
+- `tests/checklist-v3.17.1-pacote-homologacao-assistida.md`
+
+Validacao minima antes das sessoes:
+
+```powershell
+cd "C:\Users\leon\OneDrive - enac.com.br\Documentos\Sistema ENAC\server"
+npm.cmd run seed:homologacao
+npm.cmd run smoke:homologacao
+```
+
+A tela `Gestao > Homologacao` exibe o pacote assistido em modo somente leitura, com sequencia de sessoes, criterios, checklist resumido e atalhos para os modulos principais.
+
+V3.18 deve ser aberta somente depois da coleta real de feedback, triagem e priorizacao dos itens.
+
 ## Arquitetura prevista
 
 - SPFx com React.

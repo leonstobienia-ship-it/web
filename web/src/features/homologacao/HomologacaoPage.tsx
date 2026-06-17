@@ -26,6 +26,13 @@ interface PerfilRoteiro {
   passos: string[];
 }
 
+interface SessaoAssistida {
+  ordem: string;
+  titulo: string;
+  publico: string;
+  foco: string;
+}
+
 const marker = 'DEV_LOCAL_HOMOLOGACAO_ENAC_V316';
 
 const emptyStatus: HomologacaoStatus = {
@@ -120,6 +127,31 @@ const checklist = [
   'Nenhum fluxo executa pagamento, CNAB, NFS-e, banco ou upload externo'
 ];
 
+const sessoesAssistidas: SessaoAssistida[] = [
+  { ordem: '01', titulo: 'Abertura', publico: 'Todos', foco: 'escopo, limites e forma de registrar feedback' },
+  { ordem: '02', titulo: 'Diretoria', publico: 'Leon', foco: 'dashboard, margem, riscos e aprovações críticas' },
+  { ordem: '03', titulo: 'Planejamento', publico: 'Gustavo', foco: 'contratos, orçamento, planejamento e medições' },
+  { ordem: '04', titulo: 'Compras', publico: 'Matheus', foco: 'solicitação, cotação, mapa e pedido' },
+  { ordem: '05', titulo: 'Financeiro', publico: 'Matheus', foco: 'NF, contas, programação, conferência e relatórios' },
+  { ordem: '06', titulo: 'Campo', publico: 'Davison e Kemilly', foco: 'solicitações, status, pendências e documentos mockados' },
+  { ordem: '07', titulo: 'Admin', publico: 'Admin teste', foco: 'usuários, perfis, alçadas, auditoria e documentos' },
+  { ordem: '08', titulo: 'Encerramento', publico: 'Responsáveis', foco: 'aceite, ressalvas e backlog V3.18' }
+];
+
+const criteriosAceite = [
+  'Todos os perfis executaram o roteiro mínimo',
+  'Feedbacks foram registrados com evidência e severidade',
+  'Não houve bloqueio crítico sem contorno',
+  'Backlog V3.18 foi priorizado após feedback real'
+];
+
+const camposFeedback = [
+  'perfil, usuário avaliador, módulo e tela',
+  'tipo, severidade, prioridade e descrição',
+  'passo a passo, esperado, obtido e evidência',
+  'impacto, decisão, responsável, versão alvo e status'
+];
+
 const toNumber = (value: unknown): number => {
   const parsed = typeof value === 'number' ? value : Number(String(value || '0').replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : 0;
@@ -209,6 +241,47 @@ export function HomologacaoPage({ onNavigate }: HomologacaoPageProps): JSX.Eleme
         <button type="button" onClick={() => void loadStatus()} disabled={loading}>
           Atualizar status
         </button>
+      </section>
+
+      <section className="enac-report-section enac-homologacao-pacote" aria-label="Pacote de Homologação Assistida">
+        <div className="enac-cadastro-toolbar">
+          <div>
+            <h2>Pacote de Homologação Assistida</h2>
+            <p>Roteiro de sessões, critérios e coleta de feedback para V3.18</p>
+          </div>
+        </div>
+        <div className="enac-homologacao-package-grid">
+          <article>
+            <h3>Sequência das sessões</h3>
+            <ol className="enac-homologacao-session-list">
+              {sessoesAssistidas.map((sessao) => (
+                <li key={sessao.ordem}>
+                  <strong>{sessao.ordem} · {sessao.titulo}</strong>
+                  <span>{sessao.publico}</span>
+                  <small>{sessao.foco}</small>
+                </li>
+              ))}
+            </ol>
+          </article>
+          <article>
+            <h3>Critérios de aceite</h3>
+            <ul>
+              {criteriosAceite.map((criterio) => <li key={criterio}>{criterio}</li>)}
+            </ul>
+            <div className="enac-homologacao-notice">
+              Ambiente local de homologação. V3.18 somente após feedback real priorizado.
+            </div>
+          </article>
+          <article>
+            <h3>Registro de feedback</h3>
+            <ul>
+              {camposFeedback.map((campo) => <li key={campo}>{campo}</li>)}
+            </ul>
+            <div className="enac-homologacao-notice">
+              Usar o modelo em docs/erp/modelo-feedback-homologacao.md.
+            </div>
+          </article>
+        </div>
       </section>
 
       <div className="enac-report-cards enac-homologacao-cards">
