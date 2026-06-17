@@ -12,6 +12,44 @@ O MVP cobre o fluxo vertical de compras e pagamento:
 
 Os demais processos validados no Microsoft 365 permanecem documentados como contexto e backlog, sem implementação completa nesta fase.
 
+## V3.16/V3.17 - Homologacao local por perfil
+
+A V3.16/V3.17 prepara o ERP ENAC para homologacao assistida da equipe com uma seed realista e roteiros por perfil.
+
+Marcador da massa local:
+
+```text
+DEV_LOCAL_HOMOLOGACAO_ENAC_V316
+```
+
+Comandos:
+
+```powershell
+cd "C:\Users\leon\OneDrive - enac.com.br\Documentos\Sistema ENAC\server"
+npm.cmd run seed:homologacao
+npm.cmd run smoke:homologacao
+```
+
+Tela web:
+
+- Menu `Gestao > Homologacao`.
+- Status da seed.
+- Roteiros por perfil.
+- Checklist manual de homologacao.
+- Atalhos para Dashboard, Previsto x Realizado, Central de Tarefas, Documentos e modulos operacionais.
+
+Limites mantidos:
+
+- Sem pagamento real.
+- Sem CNAB.
+- Sem banco real.
+- Sem NFS-e real.
+- Sem prefeitura.
+- Sem boleto real.
+- Sem SharePoint/Graph/Entra/Power Automate reais.
+- Sem upload externo.
+- Sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

@@ -56,6 +56,8 @@ interface CurvaLinha {
 const apiBaseUrl = (process.env.ENAC_ERP_API_BASE_URL || 'http://127.0.0.1:3333').replace(/\/+$/, '');
 const marker = 'DEV_LOCAL_V3_9';
 
+const uniqueCpfCnpj = (prefix: string, stamp: number): string => `${prefix}${String(stamp).slice(-11).padStart(11, '0')}`;
+
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 const addDays = (days: number): string => {
@@ -136,7 +138,7 @@ const createSeed = async (): Promise<SeedContext> => {
     values ($1, $2, 'juridica', $3, 'ativo', $4)
     returning id
     `,
-    [empresa.id, `${marker} - Cliente ${stamp}`, `66.666.${String(stamp).slice(-3)}/0001-39`, `${marker} - cliente local`]
+    [empresa.id, `${marker} - Cliente ${stamp}`, uniqueCpfCnpj('390', stamp), `${marker} - cliente local`]
   );
   const fornecedor = await query<{ id: string }>(
     `
@@ -144,7 +146,7 @@ const createSeed = async (): Promise<SeedContext> => {
     values ($1, $2, 'juridica', $3, 'materiais', 'ativo', $4)
     returning id
     `,
-    [empresa.id, `${marker} - Fornecedor ${stamp}`, `55.555.${String(stamp).slice(-3)}/0001-39`, `${marker} - fornecedor local`]
+    [empresa.id, `${marker} - Fornecedor ${stamp}`, uniqueCpfCnpj('391', stamp), `${marker} - fornecedor local`]
   );
   const obra = await query<{ id: string }>(
     `

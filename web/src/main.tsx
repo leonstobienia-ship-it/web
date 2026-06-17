@@ -13,6 +13,7 @@ import { ContratosObraPage } from './features/contratosObra/ContratosObraPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
 import { DashboardExecutivoPage } from './features/dashboardExecutivo/DashboardExecutivoPage';
 import { DocumentosAnexosPage } from './features/documentos/DocumentosAnexosPage';
+import { HomologacaoPage } from './features/homologacao/HomologacaoPage';
 import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/MedicoesFaturamentoPage';
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
 import { OrcamentosPlanejamentoPage } from './features/orcamentosPlanejamento/OrcamentosPlanejamentoPage';
@@ -72,6 +73,7 @@ type WebSection =
   | 'dashboard-executivo'
   | 'riscos-pendencias'
   | 'central-tarefas'
+  | 'homologacao'
   | 'auditoria'
   | 'documentos'
   | 'administracao'
@@ -183,6 +185,7 @@ const sectionGroups: ISectionGroup[] = [
     tone: 'Indicadores e governança',
     items: [
       { key: 'dashboard-executivo', label: 'Dashboard Executivo', shortLabel: 'Dashboard', description: 'Visão de diretoria, margem e alertas críticos', profile: 'Diretoria' },
+      { key: 'homologacao', label: 'Homologação', description: 'Seed local e roteiros de validação por perfil', profile: 'Todos' },
       { key: 'auditoria', label: 'Auditoria e Logs', description: 'Consulta rastreável de eventos do ERP', profile: 'Admin' },
       { key: 'administracao', label: 'Administração', description: 'Usuários, perfis, escopos e alçadas locais', profile: 'Admin' }
     ]
@@ -206,12 +209,12 @@ const sections = sectionGroups.flatMap((group) => group.items);
 const sectionByKey = new Map<WebSection, ISectionItem>(sections.map((item) => [item.key, item]));
 
 const profileShortcuts: Array<{ profile: string; focus: string; sections: WebSection[] }> = [
-  { profile: 'Diretoria', focus: 'margem, alertas e decisões pendentes', sections: ['dashboard-executivo', 'previsto-realizado', 'central-tarefas'] },
+  { profile: 'Diretoria', focus: 'margem, alertas e decisões pendentes', sections: ['dashboard-executivo', 'previsto-realizado', 'homologacao'] },
   { profile: 'Planejamento', focus: 'contratos, orçamento, medições e desvios', sections: ['contratos-obra', 'orcamentos-planejamento', 'medicoes-faturamento'] },
   { profile: 'Compras', focus: 'demanda, cotação, pedido e fornecedor', sections: ['solicitacoes-compra', 'cotacoes', 'pedidos-compra'] },
   { profile: 'Financeiro', focus: 'NF, contas, programação, baixa manual e relatórios', sections: ['notas-entrada', 'contas-pagar', 'programacoes-pagamento'] },
   { profile: 'Campo', focus: 'solicitações, medições, riscos e evidências', sections: ['solicitacoes-compra', 'medicoes-faturamento', 'riscos-pendencias'] },
-  { profile: 'Admin', focus: 'perfis, alçadas, auditoria e documentação', sections: ['administracao', 'auditoria', 'documentos'] }
+  { profile: 'Admin', focus: 'perfis, alçadas, auditoria e documentação', sections: ['administracao', 'auditoria', 'homologacao'] }
 ];
 
 const architecturePillars = [
@@ -561,6 +564,10 @@ function ContentSection({ section, onOpenSystem, onNavigate }: { section: WebSec
 
   if (section === 'central-tarefas') {
     return <CentralTarefasPage onNavigate={(target) => onNavigate(target as WebSection)} />;
+  }
+
+  if (section === 'homologacao') {
+    return <HomologacaoPage onNavigate={(target) => onNavigate(target as WebSection)} />;
   }
 
   if (section === 'auditoria') {

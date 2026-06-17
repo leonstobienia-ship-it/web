@@ -72,6 +72,8 @@ interface SmokeResult {
 const apiBaseUrl = (process.env.ENAC_ERP_API_BASE_URL || 'http://127.0.0.1:3333').replace(/\/+$/, '');
 const marker = 'DEV_LOCAL_V3_7';
 
+const uniqueCpfCnpj = (prefix: string, stamp: number): string => `${prefix}${String(stamp).slice(-11).padStart(11, '0')}`;
+
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 const addDays = (days: number): string => {
@@ -157,7 +159,7 @@ const ensureSeedContext = async (): Promise<SeedContext> => {
     values ($1, $2, 'juridica', $3, 'ativo', $4)
     returning id
     `,
-    [empresa.id, `${marker} - Cliente ${stamp}`, `88.888.${String(stamp).slice(-3)}/0001-37`, `${marker} - cliente local`]
+    [empresa.id, `${marker} - Cliente ${stamp}`, uniqueCpfCnpj('370', stamp), `${marker} - cliente local`]
   );
   const obra = await query<{ id: string }>(
     `

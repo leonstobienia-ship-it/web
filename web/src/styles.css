@@ -3052,6 +3052,145 @@ button {
   overflow-wrap: anywhere;
 }
 
+.enac-homologacao-page {
+  display: grid;
+  gap: 18px;
+}
+
+.enac-homologacao-status {
+  align-items: center;
+  background: #f7fbf9;
+  border: 1px solid #cce4d8;
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 18px;
+}
+
+.enac-homologacao-status div {
+  display: grid;
+  gap: 5px;
+}
+
+.enac-homologacao-status span,
+.enac-homologacao-roteiro-head span {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.enac-homologacao-status strong {
+  color: #17202b;
+  font-size: 1.25rem;
+}
+
+.enac-homologacao-status small,
+.enac-homologacao-roteiro-head small {
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.enac-homologacao-status button,
+.enac-homologacao-links button {
+  background: #184f8a;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 40px;
+  padding: 10px 14px;
+}
+
+.enac-homologacao-status button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.enac-homologacao-cards {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.enac-homologacao-roteiros {
+  display: grid;
+  gap: 14px;
+}
+
+.enac-homologacao-roteiros article {
+  background: #fff;
+  border: 1px solid #d8e0e9;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.enac-homologacao-roteiro-head {
+  align-items: start;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
+}
+
+.enac-homologacao-roteiro-head div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.enac-homologacao-roteiro-head strong {
+  color: #17202b;
+  font-size: 1.1rem;
+}
+
+.enac-homologacao-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.enac-homologacao-links button {
+  background: #eef4ff;
+  color: #173b74;
+  min-height: 34px;
+  padding: 8px 10px;
+}
+
+.enac-homologacao-roteiros ol {
+  color: #17202b;
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.enac-homologacao-checklist {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.enac-homologacao-checklist label {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #d8e0e9;
+  border-radius: 8px;
+  color: #17202b;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  line-height: 1.4;
+  padding: 12px;
+}
+
+.enac-homologacao-checklist input {
+  height: 16px;
+  width: 16px;
+}
+
 .enac-doc-page {
   display: grid;
   gap: 18px;
@@ -3464,6 +3603,10 @@ code {
   .enac-doc-summary,
   .enac-doc-form,
   .enac-doc-actions,
+  .enac-homologacao-status,
+  .enac-homologacao-cards,
+  .enac-homologacao-roteiro-head,
+  .enac-homologacao-checklist,
   .enac-risk-filters,
   .enac-risk-cards,
   .enac-risk-layout,
@@ -3558,6 +3701,15 @@ code {
   .enac-central-actions button,
   .enac-central-table button,
   .enac-cotacoes-selector button {
+    width: 100%;
+  }
+
+  .enac-homologacao-links {
+    justify-content: stretch;
+  }
+
+  .enac-homologacao-links button,
+  .enac-homologacao-status button {
     width: 100%;
   }
 
