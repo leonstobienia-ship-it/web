@@ -6,6 +6,7 @@ import { handleClientes } from './modules/clientes/clientes.routes.js';
 import { handleContasPagar } from './modules/contasPagar/contasPagar.routes.js';
 import { handleContratosObra } from './modules/contratosObra/contratosObra.routes.js';
 import { handleCotacoes } from './modules/cotacoes/cotacoes.routes.js';
+import { handleDashboardExecutivo } from './modules/dashboardExecutivo/dashboardExecutivo.routes.js';
 import { handleEmpresas } from './modules/empresas/empresas.routes.js';
 import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.js';
 import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.routes.js';
@@ -48,6 +49,7 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/orcamentos-obra', handler: handleOrcamentosObra },
   { basePath: '/planejamento-executivo', handler: handlePlanejamentoExecutivo },
   { basePath: '/previsto-realizado', handler: handlePrevistoRealizado },
+  { basePath: '/dashboard-executivo', handler: handleDashboardExecutivo },
   { basePath: '/medicoes', handler: handleMedicoes },
   { basePath: '/pedidos-faturamento', handler: handlePedidosFaturamento },
   { basePath: '/perfis', handler: handlePerfis },

@@ -24,6 +24,7 @@
     "smoke:contratos-obra": "npm run build && node dist/scripts/smokeContratosObra.js",
     "smoke:orcamento-planejamento": "npm run build && node dist/scripts/smokeOrcamentoPlanejamento.js",
     "smoke:previsto-realizado": "npm run build && node dist/scripts/smokePrevistoRealizado.js",
+    "smoke:dashboard-executivo": "npm run build && node dist/scripts/smokeDashboardExecutivo.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

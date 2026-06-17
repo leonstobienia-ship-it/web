@@ -928,6 +928,98 @@ export interface PrevistoRealizadoPortfolioApi {
   obras: PrevistoRealizadoObraResumoApi[];
 }
 
+export interface DashboardExecutivoFilters {
+  [key: string]: string | undefined;
+  obra_id?: string;
+  cliente_id?: string;
+  centro_custo_id?: string;
+  contrato_id?: string;
+  status_obra?: string;
+  periodo_de?: string;
+  periodo_ate?: string;
+}
+
+export interface DashboardExecutivoResumoApi {
+  kpis: Record<string, string | number | null>;
+  alertas_resumo: Record<string, string | number | null>;
+  formulas: Record<string, string>;
+}
+
+export interface DashboardExecutivoObraApi {
+  [key: string]: string | number | boolean | null | undefined;
+  obra_id: string;
+  obra_codigo: string;
+  obra_nome: string;
+  obra_status: string;
+  cliente_id?: string | null;
+  cliente_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  valor_contratado: string | number;
+  valor_aditado: string | number;
+  valor_total_contratado: string | number;
+  orcamento_previsto: string | number;
+  custo_comprometido: string | number;
+  custo_realizado: string | number;
+  custo_baixado_manual: string | number;
+  receita_medida: string | number;
+  receita_faturada_manual: string | number;
+  margem_prevista: string | number;
+  margem_realizada: string | number;
+  desvio_orcamento: string | number;
+  desvio_percentual?: string | number | null;
+  saldo_a_faturar: string | number;
+  saldo_orcamentario: string | number;
+  saldo_contratual: string | number;
+  contas_abertas: string | number;
+  contas_vencidas: string | number;
+  contas_a_vencer: string | number;
+  programacoes_liberadas: string | number;
+  programacoes_conferidas: string | number;
+  baixas_manuais: string | number;
+  medicoes_pendentes: string | number;
+  pedidos_faturamento_pendentes: string | number;
+}
+
+export interface DashboardExecutivoAlertaApi {
+  tipo: string;
+  severidade: string;
+  obra_id: string;
+  obra_codigo: string;
+  obra_nome: string;
+  cliente_nome?: string | null;
+  valor?: string | number | null;
+  mensagem: string;
+}
+
+export interface DashboardExecutivoTendenciaApi {
+  [key: string]: string | number | null;
+  competencia: string;
+  faturamento_previsto: string | number;
+  receita_medida: string | number;
+  receita_faturada_manual: string | number;
+  custo_realizado: string | number;
+  margem_mensal: string | number;
+  acumulado_previsto: string | number;
+  acumulado_faturado: string | number;
+  acumulado_custo: string | number;
+}
+
+export interface DashboardExecutivoRankingApi {
+  maior_faturamento: DashboardExecutivoObraApi[];
+  maior_custo_realizado: DashboardExecutivoObraApi[];
+  maior_desvio_orcamento: DashboardExecutivoObraApi[];
+  menor_margem: DashboardExecutivoObraApi[];
+  maior_saldo_a_faturar: DashboardExecutivoObraApi[];
+  maiores_contas_em_aberto: DashboardExecutivoObraApi[];
+}
+
+export interface DashboardExecutivoDetalheApi {
+  totais: Record<string, string | number | null>;
+  [key: string]: Record<string, string | number | null> | Array<Record<string, string | number | null>> | string | number | null;
+}
+
 export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 export type ProgramacaoPagamentoConferenciaStatus = 'PENDENTE_CONFERENCIA' | 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA';
 
@@ -2492,6 +2584,40 @@ export const erpApi = {
     portfolioResumo: async (filters: PrevistoRealizadoFilters = {}): Promise<PrevistoRealizadoPortfolioApi> =>
       (await request<ApiItemResponse<PrevistoRealizadoPortfolioApi>>(
         `/previsto-realizado/portfolio/resumo${buildQueryString(filters)}`
+      )).data
+  },
+  dashboardExecutivo: {
+    resumo: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoResumoApi> =>
+      (await request<ApiItemResponse<DashboardExecutivoResumoApi>>(
+        `/dashboard-executivo/resumo${buildQueryString(filters)}`
+      )).data,
+    obras: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoObraApi[]> =>
+      (await request<ApiListResponse<DashboardExecutivoObraApi>>(
+        `/dashboard-executivo/obras${buildQueryString(filters)}`
+      )).data,
+    alertas: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoAlertaApi[]> =>
+      (await request<ApiListResponse<DashboardExecutivoAlertaApi>>(
+        `/dashboard-executivo/alertas${buildQueryString(filters)}`
+      )).data,
+    tendenciaMensal: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoTendenciaApi[]> =>
+      (await request<ApiListResponse<DashboardExecutivoTendenciaApi>>(
+        `/dashboard-executivo/tendencia-mensal${buildQueryString(filters)}`
+      )).data,
+    rankingObras: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoRankingApi> =>
+      (await request<ApiItemResponse<DashboardExecutivoRankingApi>>(
+        `/dashboard-executivo/ranking-obras${buildQueryString(filters)}`
+      )).data,
+    financeiro: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoDetalheApi> =>
+      (await request<ApiItemResponse<DashboardExecutivoDetalheApi>>(
+        `/dashboard-executivo/financeiro${buildQueryString(filters)}`
+      )).data,
+    faturamento: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoDetalheApi> =>
+      (await request<ApiItemResponse<DashboardExecutivoDetalheApi>>(
+        `/dashboard-executivo/faturamento${buildQueryString(filters)}`
+      )).data,
+    operacional: async (filters: DashboardExecutivoFilters = {}): Promise<DashboardExecutivoDetalheApi> =>
+      (await request<ApiItemResponse<DashboardExecutivoDetalheApi>>(
+        `/dashboard-executivo/operacional${buildQueryString(filters)}`
       )).data
   }
 };

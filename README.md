@@ -1211,6 +1211,38 @@ npm.cmd run smoke:previsto-realizado
 
 A V3.9 nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
 
+## V3.10 - Dashboard Executivo da Diretoria
+
+A V3.10 cria uma camada executiva local, somente leitura, para consolidar indicadores de obras, contratos, orcamento, margem, financeiro, faturamento e operacao. A etapa usa os dados ja existentes da V3.5 ate V3.9 e nao cria migration nova.
+
+Endpoints criados:
+
+```http
+GET /dashboard-executivo/resumo
+GET /dashboard-executivo/obras
+GET /dashboard-executivo/alertas
+GET /dashboard-executivo/tendencia-mensal
+GET /dashboard-executivo/ranking-obras
+GET /dashboard-executivo/financeiro
+GET /dashboard-executivo/faturamento
+GET /dashboard-executivo/operacional
+```
+
+Frontend:
+
+```text
+web/src/features/dashboardExecutivo/DashboardExecutivoPage.tsx
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:dashboard-executivo
+```
+
+A V3.10 nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
+
 ## Protótipo
 
 Abra no navegador:

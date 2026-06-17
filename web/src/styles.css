@@ -1676,6 +1676,172 @@ textarea {
   min-width: 940px;
 }
 
+.enac-dashboard-page {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.enac-dashboard-filters {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.enac-dashboard-filter-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.enac-dashboard-secondary {
+  border: 1px solid #cfd8e3 !important;
+  background: #ffffff !important;
+  color: #245a7f !important;
+}
+
+.enac-dashboard-cards {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.enac-dashboard-card strong {
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.enac-dashboard-risks {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.enac-dashboard-risks article {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #f0c978;
+  border-radius: 8px;
+  background: #fff8e8;
+}
+
+.enac-dashboard-risks span {
+  color: #5c4213;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.enac-dashboard-risks strong {
+  color: #17212f;
+  font-size: 22px;
+}
+
+.enac-dashboard-two-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.enac-dashboard-trend-row {
+  grid-template-rows: repeat(4, auto);
+}
+
+.enac-pr-bar-fill--margem {
+  background: #6b8f71;
+}
+
+.enac-dashboard-alert-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.enac-dashboard-alert {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #dce5ee;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-dashboard-alert span {
+  color: #607086;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.enac-dashboard-alert strong {
+  color: #17212f;
+  font-size: 14px;
+}
+
+.enac-dashboard-alert p {
+  margin: 0;
+  color: #465a70;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.enac-dashboard-alert small {
+  color: #7a4a00;
+  font-weight: 800;
+}
+
+.enac-dashboard-alert--critico {
+  border-left-color: #a33a3a;
+}
+
+.enac-dashboard-alert--alto {
+  border-left-color: #c06a24;
+}
+
+.enac-dashboard-alert--medio {
+  border-left-color: #d0a233;
+}
+
+.enac-dashboard-alert--baixo {
+  border-left-color: #6b8f71;
+}
+
+.enac-dashboard-table {
+  min-width: 960px;
+}
+
+.enac-dashboard-summary-list {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #dce5ee;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.enac-dashboard-summary-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e7edf3;
+}
+
+.enac-dashboard-summary-list div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.enac-dashboard-summary-list span {
+  color: #607086;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.enac-dashboard-summary-list strong {
+  color: #17212f;
+  font-size: 14px;
+  text-align: right;
+}
+
 .enac-finance-edit-form {
   border: 1px solid #d9e0e7;
   border-radius: 8px;
@@ -1987,6 +2153,14 @@ code {
 
   .enac-report-filters,
   .enac-report-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-dashboard-filters,
+  .enac-dashboard-cards,
+  .enac-dashboard-risks,
+  .enac-dashboard-two-columns,
+  .enac-dashboard-filter-actions {
     grid-template-columns: 1fr;
   }
 

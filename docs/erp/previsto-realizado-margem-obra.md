@@ -87,6 +87,10 @@ A API sinaliza:
 - receita faturada abaixo da receita medida;
 - margem realizada negativa.
 
+## Relação com Dashboard Executivo
+
+A V3.10 usa a V3.9 como base conceitual e expande a consolidação para diretoria com rankings, tendência mensal, alertas executivos e recortes financeiro, faturamento e operacional. A V3.10 continua somente leitura e não altera contratos, orçamento, medição, faturamento, contas a pagar, programação, conferência ou baixa manual.
+
 ## Seguranca operacional
 
 - Nao ha `DELETE` fisico.

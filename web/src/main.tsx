@@ -9,6 +9,7 @@ import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionai
 import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { ContratosObraPage } from './features/contratosObra/ContratosObraPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
+import { DashboardExecutivoPage } from './features/dashboardExecutivo/DashboardExecutivoPage';
 import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/MedicoesFaturamentoPage';
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
 import { OrcamentosPlanejamentoPage } from './features/orcamentosPlanejamento/OrcamentosPlanejamentoPage';
@@ -64,6 +65,7 @@ type WebSection =
   | 'orcamentos-planejamento'
   | 'medicoes-faturamento'
   | 'previsto-realizado'
+  | 'dashboard-executivo'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -127,6 +129,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'orcamentos-planejamento', label: 'Orçamentos e Planejamento' },
   { key: 'medicoes-faturamento', label: 'Medições e Faturamento' },
   { key: 'previsto-realizado', label: 'Previsto x Realizado' },
+  { key: 'dashboard-executivo', label: 'Dashboard Executivo' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -434,6 +437,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'previsto-realizado') {
     return <PrevistoRealizadoPage />;
+  }
+
+  if (section === 'dashboard-executivo') {
+    return <DashboardExecutivoPage />;
   }
 
   if (section === 'administracao') {
