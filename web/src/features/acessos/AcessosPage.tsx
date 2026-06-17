@@ -81,6 +81,7 @@ const modules = [
   'pedidos-compra',
   'notas-fiscais-entrada',
   'contas-pagar',
+  'programacoes-pagamento',
   'usuarios',
   'perfis',
   'alcadas',
@@ -97,7 +98,11 @@ const actions = [
   'aprovar_tecnico',
   'aprovar_diretoria',
   'conferir',
+  'adicionar_conta',
+  'remover_conta',
+  'submeter',
   'cancelar',
+  'reprovar',
   'administrar'
 ];
 
@@ -107,6 +112,7 @@ const documentTypes = [
   'PEDIDO_COMPRA',
   'NOTA_FISCAL_ENTRADA',
   'CONTA_PAGAR',
+  'PROGRAMACAO_PAGAMENTO',
   'AUDITORIA'
 ];
 

@@ -11,6 +11,7 @@ import { handleHealth, handleHealthDb, sendJson } from './modules/health/health.
 import { handleNotasFiscaisEntrada } from './modules/notasFiscaisEntrada/notasFiscaisEntrada.routes.js';
 import { handleObras } from './modules/obras/obras.routes.js';
 import { handlePedidosCompra } from './modules/pedidosCompra/pedidosCompra.routes.js';
+import { handleProgramacoesPagamento } from './modules/programacoesPagamento/programacoesPagamento.routes.js';
 import { handleSolicitacoesCompra } from './modules/solicitacoesCompra/solicitacoesCompra.routes.js';
 import { handleUsuarios } from './modules/usuarios/usuarios.routes.js';
 import { sendNoContent } from './http.js';
@@ -35,6 +36,7 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/pedidos-compra', handler: handlePedidosCompra },
   { basePath: '/notas-fiscais-entrada', handler: handleNotasFiscaisEntrada },
   { basePath: '/contas-pagar', handler: handleContasPagar },
+  { basePath: '/programacoes-pagamento', handler: handleProgramacoesPagamento },
   { basePath: '/perfis', handler: handlePerfis },
   { basePath: '/escopos', handler: handleEscopos },
   { basePath: '/perfis-escopos', handler: handlePerfisEscopos },

@@ -10,6 +10,7 @@ import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
 import { PedidosCompraPage } from './features/pedidosCompra/PedidosCompraPage';
+import { ProgramacoesPagamentoPage } from './features/programacoesPagamento/ProgramacoesPagamentoPage';
 import { SolicitacoesCompraPage } from './features/solicitacoesCompra/SolicitacoesCompraPage';
 import './styles.css';
 
@@ -52,6 +53,7 @@ type WebSection =
   | 'pedidos-compra'
   | 'notas-entrada'
   | 'contas-pagar'
+  | 'programacoes-pagamento'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -109,6 +111,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'pedidos-compra', label: 'Pedidos de Compra' },
   { key: 'notas-entrada', label: 'Notas Fiscais' },
   { key: 'contas-pagar', label: 'Contas a Pagar' },
+  { key: 'programacoes-pagamento', label: 'Programação de Pagamento' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -392,6 +395,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'contas-pagar') {
     return <ContasPagarPage />;
+  }
+
+  if (section === 'programacoes-pagamento') {
+    return <ProgramacoesPagamentoPage />;
   }
 
   if (section === 'administracao') {

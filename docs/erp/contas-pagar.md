@@ -2,7 +2,7 @@
 
 ## Papel no ERP
 
-Conta a Pagar representa a obrigacao financeira inicial gerada a partir de Nota Fiscal de Entrada aprovada. Na V3.5A, a conta e apenas provisionada; nao ha programacao bancaria, pagamento, baixa, conciliacao ou integracao bancaria.
+Conta a Pagar representa a obrigacao financeira inicial gerada a partir de Nota Fiscal de Entrada aprovada. Na V3.5A, a conta e provisionada. Na V3.5C, pode ser aprovada internamente por alçada. Na V3.5D, pode ser vinculada a uma Programacao de Pagamento local sem baixa. Nao ha programacao bancaria, pagamento, baixa, conciliacao ou integracao bancaria real.
 
 ## Entidade `contas_pagar`
 
@@ -24,6 +24,8 @@ Campos principais do fluxo V3.5A:
 - `valor_original`
 - `valor_aberto`
 - `status`
+- `ativo`
+- `divergencia_pendente`
 - `forma_pagamento_prevista`
 - `observacoes`
 
@@ -38,7 +40,7 @@ PAGA
 CANCELADA
 ```
 
-Na V3.5A, somente `PROVISIONADA` e cancelamento local controlado sao operacionalizados. `APROVADA`, `AGUARDANDO_PROGRAMACAO`, `PROGRAMADA` e `PAGA` ficam reservados para etapas futuras.
+Na V3.5C, `APROVADA` passa a representar aprovacao interna por alcada. Na V3.5D, a programacao ativa e controlada por `programacoes_pagamento_itens`, sem depender de alterar a conta para `PAGA`. `PAGA` continua fora do escopo operacional.
 
 ## Regras
 
@@ -48,9 +50,11 @@ Na V3.5A, somente `PROVISIONADA` e cancelamento local controlado sao operacional
 - V3.5A permite apenas parcela unica.
 - `valor_aberto` inicia igual a `valor_original`.
 - Duplicidade ativa por NF/parcela retorna `409`.
+- Conta so entra em Programacao de Pagamento quando esta ativa, aprovada, sem divergencia pendente e sem programacao ativa.
+- A aprovacao da Programacao de Pagamento nao altera `valor_aberto`.
 - Nao ha pagamento.
 - Nao ha baixa.
-- Nao ha programacao bancaria.
+- Nao ha programacao bancaria real.
 - Nao ha conciliacao.
 - Nao ha `DELETE` fisico.
 
@@ -60,6 +64,8 @@ Na V3.5A, somente `PROVISIONADA` e cancelamento local controlado sao operacional
 GET    /contas-pagar
 GET    /contas-pagar/:id
 POST   /contas-pagar/provisionar-da-nota
+PATCH  /contas-pagar/:id/aprovar-tecnico
+PATCH  /contas-pagar/:id/aprovar-diretoria
 ```
 
 Alias local preservado:
@@ -81,4 +87,4 @@ cd server
 npm.cmd run smoke:notas
 ```
 
-`smoke:notas` valida a conta provisionada. `smoke:contas-pagar` permanece como smoke auxiliar de leitura e duplicidade, sem programacao ou pagamento.
+`smoke:notas` valida a conta provisionada. `smoke:contas-pagar` permanece como smoke auxiliar de leitura e duplicidade. `smoke:programacoes-pagamento` valida a programacao local sem pagamento ou baixa.

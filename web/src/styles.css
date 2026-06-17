@@ -1282,6 +1282,16 @@ textarea {
   color: #563c8f;
 }
 
+.enac-finance-status--submetida {
+  background: #fff3d8;
+  color: #7a4a00;
+}
+
+.enac-finance-status--reprovada {
+  background: #fdece8;
+  color: #97432b;
+}
+
 .enac-finance-status--cancelada,
 .enac-finance-status--baixada,
 .enac-finance-status--paga {
@@ -1336,6 +1346,77 @@ textarea {
   gap: 12px;
   padding-top: 8px;
   border-top: 1px solid #e7edf3;
+}
+
+.enac-programacao-filters {
+  grid-template-columns: minmax(180px, 260px) auto;
+}
+
+.enac-programacao-filters button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: #245a7f;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.enac-programacao-table {
+  min-width: 980px;
+}
+
+.enac-programacao-table td span {
+  color: #607086;
+  font-size: 12px;
+}
+
+.enac-programacao-contas {
+  display: grid;
+  gap: 14px;
+}
+
+.enac-programacao-ok,
+.enac-programacao-block {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px !important;
+  font-weight: 800;
+}
+
+.enac-programacao-ok {
+  background: #e7f4ea;
+  color: #1f6b35 !important;
+}
+
+.enac-programacao-block {
+  background: #fff3d8;
+  color: #7a4a00 !important;
+}
+
+.enac-programacao-user {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-programacao-user span {
+  color: #34475d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.enac-programacao-user select,
+.enac-finance-actions select {
+  box-sizing: border-box;
+  min-height: 38px;
+  border: 1px solid #cfd8e3;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #17212f;
 }
 
 .enac-acessos-page {

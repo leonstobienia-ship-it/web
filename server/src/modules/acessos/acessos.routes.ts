@@ -31,6 +31,7 @@ const allowedModules = [
   'pedidos-compra',
   'notas-fiscais-entrada',
   'contas-pagar',
+  'programacoes-pagamento',
   'usuarios',
   'perfis',
   'alcadas',
@@ -46,7 +47,11 @@ const allowedActions = [
   'aprovar_tecnico',
   'aprovar_diretoria',
   'conferir',
+  'adicionar_conta',
+  'remover_conta',
+  'submeter',
   'cancelar',
+  'reprovar',
   'administrar'
 ];
 

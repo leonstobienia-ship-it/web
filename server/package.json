@@ -15,6 +15,7 @@
     "smoke:contas-pagar": "npm run build && node dist/scripts/smokeContasPagar.js",
     "smoke:acessos": "npm run build && node dist/scripts/smokeAcessos.js",
     "smoke:aprovacoes": "npm run build && node dist/scripts/smokeAprovacoes.js",
+    "smoke:programacoes-pagamento": "npm run build && node dist/scripts/smokeProgramacoesPagamento.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

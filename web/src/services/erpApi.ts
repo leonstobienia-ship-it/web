@@ -769,6 +769,109 @@ export interface ContaPagarUpdatePayload {
   observacoes?: string | null;
 }
 
+export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'REPROVADA' | 'CANCELADA';
+
+export interface ContaPagarElegibilidadeApi extends ContaPagarApi {
+  ativo: boolean;
+  divergencia_pendente: boolean;
+  nota_status?: string | null;
+  elegivel: boolean;
+  bloqueios: string[];
+  programacao_ativa_id?: string | null;
+  programacao_ativa_codigo?: string | null;
+  programacao_ativa_status?: ProgramacaoPagamentoStatus | null;
+}
+
+export interface ProgramacaoPagamentoContaApi {
+  id: string;
+  conta_pagar_id: string;
+  numero_documento: string;
+  status: ContaPagarStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  valor_programado: string | number;
+  valor_aberto: string | number;
+  data_vencimento: string;
+  fornecedor_id: string;
+  fornecedor_nome?: string | null;
+  obra_id?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  forma_pagamento_prevista?: string | null;
+  item_status: string;
+  observacoes?: string | null;
+}
+
+export interface ProgramacaoPagamentoApi {
+  id: string;
+  company_id: string;
+  codigo: string;
+  status: ProgramacaoPagamentoStatus;
+  data_prevista: string;
+  fornecedor_id?: string | null;
+  fornecedor_nome?: string | null;
+  obra_id?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  forma_pagamento_prevista?: string | null;
+  valor_total: string | number;
+  quantidade_contas: number;
+  observacoes?: string | null;
+  justificativa?: string | null;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  aprovacao_observacoes?: string | null;
+  bloqueio_alcada_motivo?: string | null;
+  submetido_por?: string | null;
+  submetido_por_nome?: string | null;
+  submetido_em?: string | null;
+  cancelado_por?: string | null;
+  cancelado_por_nome?: string | null;
+  cancelado_em?: string | null;
+  cancelamento_motivo?: string | null;
+  created_at: string;
+  updated_at: string;
+  contas?: ProgramacaoPagamentoContaApi[];
+}
+
+export interface ProgramacaoPagamentoFilters {
+  status?: ProgramacaoPagamentoStatus | '';
+  fornecedor_id?: string;
+  obra_id?: string;
+}
+
+export interface ProgramacaoPagamentoPayload {
+  company_id: string;
+  data_prevista: string;
+  fornecedor_id?: string | null;
+  obra_id?: string | null;
+  centro_custo_id?: string | null;
+  forma_pagamento_prevista?: string | null;
+  observacoes?: string | null;
+  justificativa?: string | null;
+  usuario_id?: string | null;
+  contas?: string[];
+}
+
+export interface ProgramacaoPagamentoContaPayload {
+  conta_pagar_id: string;
+  usuario_id?: string | null;
+  observacoes?: string | null;
+}
+
+export interface ProgramacaoPagamentoActionPayload {
+  usuario_id?: string | null;
+  observacoes?: string | null;
+  justificativa?: string | null;
+}
+
 export type CadastroPayload = Record<string, string | number | null | undefined>;
 
 const apiBaseUrl = (import.meta.env.VITE_ENAC_ERP_API_BASE_URL || 'http://127.0.0.1:3333').replace(/\/+$/, '');
@@ -1113,6 +1216,60 @@ export const erpApi = {
       })).data,
     aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<ContaPagarApi> =>
       (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/${action}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data
+  },
+  programacoesPagamento: {
+    list: async (filters: ProgramacaoPagamentoFilters = {}): Promise<ProgramacaoPagamentoApi[]> =>
+      (await request<ApiListResponse<ProgramacaoPagamentoApi>>(
+        `/programacoes-pagamento${buildQueryString({
+          status: filters.status || undefined,
+          fornecedor_id: filters.fornecedor_id,
+          obra_id: filters.obra_id
+        })}`
+      )).data,
+    get: async (id: string): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}`)).data,
+    contasElegiveis: async (filters: { company_id?: string; incluir_bloqueadas?: boolean } = {}): Promise<ContaPagarElegibilidadeApi[]> =>
+      (await request<ApiListResponse<ContaPagarElegibilidadeApi>>(
+        `/programacoes-pagamento/contas-elegiveis${buildQueryString({
+          company_id: filters.company_id,
+          incluir_bloqueadas: filters.incluir_bloqueadas ? 'true' : undefined
+        })}`
+      )).data,
+    create: async (payload: ProgramacaoPagamentoPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>('/programacoes-pagamento', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    adicionarConta: async (id: string, payload: ProgramacaoPagamentoContaPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/contas`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    removerConta: async (id: string, contaPagarId: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/contas/${contaPagarId}/remover`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    submeter: async (id: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/submeter`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/${action}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    reprovar: async (id: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/reprovar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelar: async (id: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/cancelar`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data

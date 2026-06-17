@@ -703,6 +703,43 @@ npm.cmd run smoke:aprovacoes
 
 O smoke usa marcador `DEV_LOCAL_V3_5C`, valida bloqueio por alçada, aprovação técnica/diretoria, cotação aprovada antes do pedido, bloqueio de emissão de pedido sem aprovação, aprovação de NF, aprovação interna de conta a pagar e ausência de rotas de programação, pagamento e baixa.
 
+## V3.5D - Programação de Pagamento sem Baixa
+
+A V3.5D cria o módulo local de Programação de Pagamento para agrupar Contas a Pagar aprovadas, submeter a programação para aprovação por alçada e registrar a programação aprovada sem executar pagamento, baixa, CNAB, integração bancária, SharePoint, Entra, Power Automate ou `DELETE` físico.
+
+Migration:
+
+```text
+database/migrations/011_programacoes_pagamento_sem_baixa_v35d.sql
+```
+
+Endpoints:
+
+```text
+GET   /programacoes-pagamento
+GET   /programacoes-pagamento/:id
+GET   /programacoes-pagamento/contas-elegiveis
+POST  /programacoes-pagamento
+POST  /programacoes-pagamento/:id/contas
+PATCH /programacoes-pagamento/:id/contas/:contaPagarId/remover
+PATCH /programacoes-pagamento/:id/submeter
+PATCH /programacoes-pagamento/:id/aprovar-tecnico
+PATCH /programacoes-pagamento/:id/aprovar-diretoria
+PATCH /programacoes-pagamento/:id/reprovar
+PATCH /programacoes-pagamento/:id/cancelar
+```
+
+Nao existem endpoints `/pagar`, `/baixar`, CNAB ou integracao bancaria. Aprovar programacao confirma o vinculo ativo em `programacoes_pagamento_itens`, mas nao altera `valor_aberto`, nao cria pagamento e nao baixa o titulo.
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:programacoes-pagamento
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_5D`, valida conta nao aprovada bloqueada, conta aprovada incluida, duplicidade ativa bloqueada, submissao, bloqueio por alçada insuficiente, aprovacao da diretoria acima de R$ 20.000, ausencia de pagamento/baixa, rotas `/pagar` e `/baixar` ausentes e `DELETE` fisico ausente.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
