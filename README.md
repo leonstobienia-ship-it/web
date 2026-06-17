@@ -903,6 +903,58 @@ npm.cmd run smoke:medicoes-faturamento
 
 O smoke usa marcador `DEV_LOCAL_V3_6`, valida bloqueio de envio sem item, cálculo por itens ativos, inativação lógica, aprovação por alçada, pedido somente de medição aprovada, registro manual de faturamento externo, ausência de criação automática de recebível, auditoria, rotas fiscais/bancárias proibidas ausentes e `DELETE` físico ausente.
 
+## V3.7 - Contratos de Obra, Escopo Comercial e Aditivos
+
+A V3.7 adiciona Contratos de Obra, Itens de Escopo Comercial e Aditivos Contratuais em PostgreSQL local. O fluxo registra contrato, escopo contratado, aditivos por alçada, vínculo com medições e pedidos internos de faturamento, e valida saldo contratual antes de liberar medição/faturamento local. A etapa não emite NFS-e real, não integra prefeitura, não gera boleto, não integra banco, não executa pagamento, não cria CNAB e não usa `DELETE` físico.
+
+Migration:
+
+```text
+database/migrations/017_contratos_obra_escopo_aditivos_v37.sql
+```
+
+Endpoints novos:
+
+```text
+GET    /contratos-obra
+GET    /contratos-obra/:id
+POST   /contratos-obra
+PATCH  /contratos-obra/:id
+PATCH  /contratos-obra/:id/ativar
+PATCH  /contratos-obra/:id/suspender
+PATCH  /contratos-obra/:id/encerrar
+PATCH  /contratos-obra/:id/cancelar
+POST   /contratos-obra/:id/itens
+PATCH  /contratos-obra/:id/itens/:itemId
+PATCH  /contratos-obra/:id/itens/:itemId/inativar
+GET    /contratos-obra/:id/aditivos
+POST   /contratos-obra/:id/aditivos
+PATCH  /contratos-obra/:id/aditivos/:aditivoId
+PATCH  /contratos-obra/:id/aditivos/:aditivoId/submeter
+PATCH  /contratos-obra/:id/aditivos/:aditivoId/aprovar
+PATCH  /contratos-obra/:id/aditivos/:aditivoId/reprovar
+PATCH  /contratos-obra/:id/aditivos/:aditivoId/cancelar
+```
+
+Endpoints existentes ajustados:
+
+```text
+POST   /medicoes
+PATCH  /medicoes/:id
+PATCH  /medicoes/:id/enviar
+PATCH  /medicoes/:id/aprovar
+POST   /pedidos-faturamento
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:contratos-obra
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_7`, valida contrato em rascunho, item de escopo, inativação lógica, ativação, criação/submissão/aprovação de aditivo, bloqueio de medição com aditivo não aprovado, vínculo com medição e pedido de faturamento, auditoria, rotas proibidas e ausência de `DELETE` físico.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

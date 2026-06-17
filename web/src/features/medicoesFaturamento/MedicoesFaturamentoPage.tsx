@@ -3,6 +3,7 @@ import {
   erpApi,
   type CentroCustoApi,
   type ClienteApi,
+  type ContratoObraApi,
   type EmpresaApi,
   type MedicaoApi,
   type MedicaoItemPayload,
@@ -22,6 +23,8 @@ interface MedicaoForm {
   competencia: string;
   periodo_inicio: string;
   periodo_fim: string;
+  contrato_obra_id: string;
+  contrato_obra_aditivo_id: string;
   contrato_escopo: string;
   observacoes: string;
 }
@@ -74,6 +77,8 @@ const emptyMedicaoForm = (): MedicaoForm => ({
   competencia: currentCompetencia(),
   periodo_inicio: today(),
   periodo_fim: addDays(15),
+  contrato_obra_id: '',
+  contrato_obra_aditivo_id: '',
   contrato_escopo: `${marker} - escopo local de medicao`,
   observacoes: `${marker} - medicao local sem emissao fiscal real`
 });
@@ -113,6 +118,7 @@ export function MedicoesFaturamentoPage(): JSX.Element {
   const [clientes, setClientes] = React.useState<ClienteApi[]>([]);
   const [obras, setObras] = React.useState<ObraApi[]>([]);
   const [centrosCusto, setCentrosCusto] = React.useState<CentroCustoApi[]>([]);
+  const [contratosObra, setContratosObra] = React.useState<ContratoObraApi[]>([]);
   const [usuarios, setUsuarios] = React.useState<UsuarioApi[]>([]);
   const [medicoes, setMedicoes] = React.useState<MedicaoApi[]>([]);
   const [pedidos, setPedidos] = React.useState<PedidoFaturamentoApi[]>([]);
@@ -128,12 +134,13 @@ export function MedicoesFaturamentoPage(): JSX.Element {
   const [message, setMessage] = React.useState<string>('');
 
   const loadAll = React.useCallback(async (nextStatus = statusFilter): Promise<void> => {
-    const [empresasResponse, clientesResponse, obrasResponse, centrosResponse, usuariosResponse] = await Promise.all([
+    const [empresasResponse, clientesResponse, obrasResponse, centrosResponse, usuariosResponse, contratosResponse] = await Promise.all([
       erpApi.empresas.list(),
       erpApi.clientes.list(),
       erpApi.obras.list(),
       erpApi.centrosCusto.list(),
-      erpApi.usuarios.list()
+      erpApi.usuarios.list(),
+      erpApi.contratosObra.list({ status: 'ATIVO' })
     ]);
     const companyId = empresasResponse.find((empresa) => empresa.cnpj === '00.000.000/0001-33')?.id || empresasResponse[0]?.id || '';
     const [medicoesResponse, pedidosResponse] = await Promise.all([
@@ -149,6 +156,7 @@ export function MedicoesFaturamentoPage(): JSX.Element {
     setClientes(activeClientes);
     setObras(activeObras);
     setCentrosCusto(activeCentros);
+    setContratosObra(contratosResponse);
     setUsuarios(usuariosResponse.filter((usuario) => usuario.status !== 'inativo' && usuario.ativo !== false));
     setMedicoes(medicoesResponse);
     setPedidos(pedidosResponse);
@@ -157,7 +165,9 @@ export function MedicoesFaturamentoPage(): JSX.Element {
       company_id: current.company_id || companyId,
       obra_id: current.obra_id || defaultObra?.id || '',
       cliente_id: current.cliente_id || defaultClienteId,
-      centro_custo_id: current.centro_custo_id || defaultObra?.centro_custo_id || ''
+      centro_custo_id: current.centro_custo_id || defaultObra?.centro_custo_id || '',
+      contrato_obra_id: current.contrato_obra_id,
+      contrato_obra_aditivo_id: current.contrato_obra_aditivo_id
     }));
     setItemForm((current) => ({ ...current, centro_custo_id: current.centro_custo_id || defaultObra?.centro_custo_id || '' }));
     setActionUserId((current) => current || usuariosResponse.find((usuario) => usuario.email === 'gustavo.dev.v35b@enac.local')?.id || usuariosResponse[0]?.id || '');
@@ -225,6 +235,8 @@ export function MedicoesFaturamentoPage(): JSX.Element {
       competencia: form.competencia,
       periodo_inicio: form.periodo_inicio,
       periodo_fim: form.periodo_fim,
+      contrato_obra_id: form.contrato_obra_id || null,
+      contrato_obra_aditivo_id: form.contrato_obra_aditivo_id || null,
       contrato_escopo: form.contrato_escopo || null,
       responsavel_id: actionUserId || null,
       usuario_id: actionUserId || null,
@@ -282,11 +294,15 @@ export function MedicoesFaturamentoPage(): JSX.Element {
 
   const selectObra = (obraId: string): void => {
     const obra = obras.find((item) => item.id === obraId);
+    const contrato = contratosObra.find((item) => item.obra_id === obraId && item.status === 'ATIVO');
+    const aditivo = contrato?.aditivos?.find((item) => item.status === 'APROVADO');
     setForm((current) => ({
       ...current,
       obra_id: obraId,
       cliente_id: obra?.cliente_id || current.cliente_id,
-      centro_custo_id: obra?.centro_custo_id || current.centro_custo_id
+      centro_custo_id: obra?.centro_custo_id || current.centro_custo_id,
+      contrato_obra_id: contrato?.id || '',
+      contrato_obra_aditivo_id: aditivo?.id || ''
     }));
   };
 
@@ -297,6 +313,10 @@ export function MedicoesFaturamentoPage(): JSX.Element {
 
   const activeItens = selectedMedicao?.itens?.filter((item) => item.status === 'ATIVO') || [];
   const selectedPedidoId = selectedPedido?.id || selectedMedicao?.pedido_faturamento?.id || '';
+  const contratosDaObra = contratosObra.filter((contrato) => !form.obra_id || contrato.obra_id === form.obra_id);
+  const aditivosDoContrato = contratosDaObra
+    .find((contrato) => contrato.id === form.contrato_obra_id)
+    ?.aditivos?.filter((aditivo) => aditivo.status === 'APROVADO') || [];
 
   return (
     <section className="enac-web-page enac-medicoes-page">
@@ -344,6 +364,8 @@ export function MedicoesFaturamentoPage(): JSX.Element {
                   <div><span>Retenções previstas</span><strong>{formatMoney(selectedMedicao.retencoes_previstas)}</strong></div>
                   <div><span>Impostos estimados</span><strong>{formatMoney(selectedMedicao.impostos_estimados)}</strong></div>
                   <div><span>Líquido previsto</span><strong>{formatMoney(selectedMedicao.valor_liquido_previsto)}</strong></div>
+                  <div><span>Contrato V3.7</span><strong>{selectedMedicao.contrato_obra_numero || '-'}</strong></div>
+                  <div><span>Aditivo V3.7</span><strong>{selectedMedicao.contrato_obra_aditivo_numero || '-'}</strong></div>
                   <div><span>Aprovação</span><strong>{selectedMedicao.aprovacao_status || '-'}</strong></div>
                   <div><span>Aprovado por</span><strong>{selectedMedicao.aprovado_por_nome || '-'}</strong></div>
                   <div><span>Faturamento solicitado</span><strong>{formatDateTime(selectedMedicao.faturamento_solicitado_em)}</strong></div>
@@ -372,7 +394,7 @@ export function MedicoesFaturamentoPage(): JSX.Element {
                   {selectedMedicao.status === 'SUBMETIDA' && <button type="button" onClick={() => void runAction(() => erpApi.medicoes.aprovar(selectedMedicao.id, { usuario_id: actionUserId, observacoes: `${marker} - aprovacao interna` }), 'Medição aprovada.', (updated) => setSelectedMedicao(updated as MedicaoApi))} disabled={saving || !actionUserId}>Aprovar</button>}
                   {selectedMedicao.status === 'SUBMETIDA' && <button type="button" className="enac-cadastro-secondary" onClick={() => void runAction(() => erpApi.medicoes.devolver(selectedMedicao.id, { usuario_id: actionUserId, observacoes: `${marker} - devolucao para ajuste` }), 'Medição devolvida.', (updated) => setSelectedMedicao(updated as MedicaoApi))} disabled={saving || !actionUserId}>Devolver</button>}
                   {selectedMedicao.status !== 'CANCELADA' && selectedMedicao.status !== 'FATURADO_MANUALMENTE' && <button type="button" className="enac-cadastro-secondary" onClick={() => void runAction(() => erpApi.medicoes.cancelar(selectedMedicao.id, { usuario_id: actionUserId, observacoes: `${marker} - cancelamento logico` }), 'Medição cancelada logicamente.', (updated) => setSelectedMedicao(updated as MedicaoApi))} disabled={saving || !actionUserId}>Cancelar</button>}
-                  {selectedMedicao.status === 'APROVADA' && <button type="button" onClick={() => void runAction(() => erpApi.pedidosFaturamento.create({ medicao_id: selectedMedicao.id, valor_solicitado: toNumber(selectedMedicao.valor_liquido_previsto), data_solicitacao: today(), usuario_id: actionUserId, responsavel_id: actionUserId, observacoes: `${marker} - pedido interno sem NFS-e real` }), 'Pedido de faturamento criado.', (created) => setSelectedPedido(created as PedidoFaturamentoApi))} disabled={saving || !actionUserId}>Criar pedido de faturamento</button>}
+                  {selectedMedicao.status === 'APROVADA' && <button type="button" onClick={() => void runAction(() => erpApi.pedidosFaturamento.create({ medicao_id: selectedMedicao.id, valor_solicitado: toNumber(selectedMedicao.valor_liquido_previsto), data_solicitacao: today(), usuario_id: actionUserId, responsavel_id: actionUserId, contrato_obra_id: selectedMedicao.contrato_obra_id || null, contrato_obra_aditivo_id: selectedMedicao.contrato_obra_aditivo_id || null, observacoes: `${marker} - pedido interno sem NFS-e real` }), 'Pedido de faturamento criado.', (created) => setSelectedPedido(created as PedidoFaturamentoApi))} disabled={saving || !actionUserId}>Criar pedido de faturamento</button>}
                 </div>
 
                 <section className="enac-programacao-contas">
@@ -503,6 +525,20 @@ export function MedicoesFaturamentoPage(): JSX.Element {
                 <label>
                   <span>Período final</span>
                   <input type="date" value={form.periodo_fim} onChange={(event) => setForm({ ...form, periodo_fim: event.target.value })} disabled={saving} required />
+                </label>
+                <label>
+                  <span>Contrato de obra</span>
+                  <select value={form.contrato_obra_id} onChange={(event) => setForm({ ...form, contrato_obra_id: event.target.value, contrato_obra_aditivo_id: '' })} disabled={saving}>
+                    <option value="">Sem contrato V3.7</option>
+                    {contratosDaObra.map((contrato) => <option key={contrato.id} value={contrato.id}>{contrato.numero} - {formatMoney(contrato.valor_total_contratado)}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>Aditivo aprovado</span>
+                  <select value={form.contrato_obra_aditivo_id} onChange={(event) => setForm({ ...form, contrato_obra_aditivo_id: event.target.value })} disabled={saving || !form.contrato_obra_id}>
+                    <option value="">Sem aditivo</option>
+                    {aditivosDoContrato.map((aditivo) => <option key={aditivo.id} value={aditivo.id}>{aditivo.numero} - {formatMoney(aditivo.valor_delta)}</option>)}
+                  </select>
                 </label>
                 <label className="enac-solicitacao-span-2">
                   <span>Contrato/escopo</span>

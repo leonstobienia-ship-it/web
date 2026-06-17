@@ -41,6 +41,8 @@ interface MedicaoForUpdate extends QueryResultRow {
   retencoes_previstas: string;
   impostos_estimados: string;
   valor_liquido_previsto: string;
+  contrato_obra_id: string | null;
+  contrato_obra_aditivo_id: string | null;
 }
 
 interface PedidoForUpdate extends QueryResultRow {
@@ -51,6 +53,8 @@ interface PedidoForUpdate extends QueryResultRow {
   obra_id: string;
   status: PedidoFaturamentoStatus;
   valor_solicitado: string;
+  contrato_obra_id: string | null;
+  contrato_obra_aditivo_id: string | null;
 }
 
 interface ObraClienteRow extends QueryResultRow {
@@ -229,7 +233,9 @@ const fetchMedicaoForUpdate = async (client: PoolClient, id: string): Promise<Me
       valor_bruto,
       retencoes_previstas,
       impostos_estimados,
-      valor_liquido_previsto
+      valor_liquido_previsto,
+      contrato_obra_id,
+      contrato_obra_aditivo_id
     from medicoes_obra
     where id = $1
     for update
@@ -249,7 +255,9 @@ const fetchPedidoForUpdate = async (client: PoolClient, id: string): Promise<Ped
       cliente_id,
       obra_id,
       status,
-      valor_solicitado
+      valor_solicitado,
+      contrato_obra_id,
+      contrato_obra_aditivo_id
     from pedidos_faturamento
     where id = $1
     for update
@@ -257,6 +265,121 @@ const fetchPedidoForUpdate = async (client: PoolClient, id: string): Promise<Ped
     [id]
   );
   return result.rows[0];
+};
+
+const validarContratoMedicao = async (client: PoolClient, medicaoId: string): Promise<void> => {
+  const result = await client.query<{
+    id: string;
+    company_id: string;
+    obra_id: string;
+    cliente_id: string;
+    centro_custo_id: string | null;
+    valor_bruto: string;
+    contrato_obra_id: string | null;
+    contrato_obra_aditivo_id: string | null;
+  }>(
+    `
+    select
+      id,
+      company_id,
+      obra_id,
+      cliente_id,
+      centro_custo_id,
+      valor_bruto,
+      contrato_obra_id,
+      contrato_obra_aditivo_id
+    from medicoes_obra
+    where id = $1
+    `,
+    [medicaoId]
+  );
+  const medicao = result.rows[0];
+  if (!medicao) {
+    throw new HttpError(404, 'not_found', 'Medicao nao encontrada para validacao contratual.');
+  }
+
+  const contratosAtivos = await client.query<{ total: number }>(
+    `
+    select count(*)::int as total
+    from contratos_obra
+    where company_id = $1 and obra_id = $2 and status = 'ATIVO'
+    `,
+    [medicao.company_id, medicao.obra_id]
+  );
+  if (!medicao.contrato_obra_id) {
+    if (Number(contratosAtivos.rows[0]?.total || 0) > 0) {
+      throw new HttpError(409, 'contrato_obrigatorio', 'Obra possui contrato ativo; medicao deve informar contrato_obra_id.');
+    }
+    return;
+  }
+
+  const contratoResult = await client.query<{
+    id: string;
+    company_id: string;
+    cliente_id: string;
+    obra_id: string;
+    centro_custo_id: string | null;
+    status: string;
+    valor_total_contratado: string;
+  }>(
+    `
+    select id, company_id, cliente_id, obra_id, centro_custo_id, status, valor_total_contratado
+    from contratos_obra
+    where id = $1
+    `,
+    [medicao.contrato_obra_id]
+  );
+  const contrato = contratoResult.rows[0];
+  if (!contrato) {
+    throw new HttpError(404, 'contrato_nao_encontrado', 'Contrato de obra vinculado a medicao nao foi encontrado.');
+  }
+  if (contrato.status !== 'ATIVO') {
+    throw new HttpError(409, 'contrato_inativo', `Contrato de obra em status ${contrato.status} nao permite medicao.`);
+  }
+  if (contrato.company_id !== medicao.company_id || contrato.obra_id !== medicao.obra_id || contrato.cliente_id !== medicao.cliente_id) {
+    throw new HttpError(409, 'contrato_divergente', 'Contrato de obra diverge da empresa, cliente ou obra da medicao.');
+  }
+  if (contrato.centro_custo_id && medicao.centro_custo_id && contrato.centro_custo_id !== medicao.centro_custo_id) {
+    throw new HttpError(409, 'contrato_centro_custo_divergente', 'Centro de custo da medicao diverge do contrato.');
+  }
+
+  if (medicao.contrato_obra_aditivo_id) {
+    const aditivo = await client.query<{ id: string; status: string }>(
+      `
+      select id, status
+      from contratos_obra_aditivos
+      where id = $1 and contrato_id = $2
+      `,
+      [medicao.contrato_obra_aditivo_id, contrato.id]
+    );
+    if (!aditivo.rows[0]) {
+      throw new HttpError(404, 'aditivo_nao_encontrado', 'Aditivo vinculado a medicao nao pertence ao contrato.');
+    }
+    if (aditivo.rows[0].status !== 'APROVADO') {
+      throw new HttpError(409, 'aditivo_nao_aprovado', 'Aditivo precisa estar APROVADO para liberar medicao/faturamento.');
+    }
+  }
+
+  const usado = await client.query<{ total: string }>(
+    `
+    select coalesce(sum(valor_bruto), 0)::numeric(14,2) as total
+    from medicoes_obra
+    where contrato_obra_id = $1
+      and id <> $2
+      and status <> 'CANCELADA'
+    `,
+    [contrato.id, medicao.id]
+  );
+  const valorUsado = Number(usado.rows[0]?.total || 0);
+  const valorMedicao = Number(medicao.valor_bruto || 0);
+  const valorTotalContrato = Number(contrato.valor_total_contratado || 0);
+  if (valorUsado + valorMedicao > valorTotalContrato) {
+    throw new HttpError(409, 'saldo_contratual_insuficiente', 'Valor medido excede saldo contratual aprovado. Aprove aditivo antes de medir/faturar fora do escopo.', {
+      valor_usado: valorUsado,
+      valor_medicao: valorMedicao,
+      valor_total_contratado: valorTotalContrato
+    });
+  }
 };
 
 const fetchMedicao = async (id: string): Promise<QueryResultRow | undefined> => {
@@ -273,6 +396,11 @@ const fetchMedicao = async (id: string): Promise<QueryResultRow | undefined> => 
       m.centro_custo_id,
       cc.codigo as centro_custo_codigo,
       cc.nome as centro_custo_nome,
+      m.contrato_obra_id,
+      co.numero as contrato_obra_numero,
+      co.valor_total_contratado as contrato_obra_valor_total,
+      m.contrato_obra_aditivo_id,
+      ca.numero as contrato_obra_aditivo_numero,
       m.contrato_cliente_id,
       m.contrato_escopo,
       m.numero,
@@ -341,6 +469,8 @@ const fetchMedicao = async (id: string): Promise<QueryResultRow | undefined> => 
     join obras o on o.id = m.obra_id
     join clientes c on c.id = m.cliente_id
     left join centros_custo cc on cc.id = m.centro_custo_id
+    left join contratos_obra co on co.id = m.contrato_obra_id
+    left join contratos_obra_aditivos ca on ca.id = m.contrato_obra_aditivo_id
     left join usuarios responsavel on responsavel.id = m.responsavel_id
     left join usuarios aprovador on aprovador.id = m.aprovado_por
     left join usuarios submetido on submetido.id = m.submetido_por
@@ -360,6 +490,8 @@ const fetchMedicao = async (id: string): Promise<QueryResultRow | undefined> => 
         'aprovacao_status', pf.aprovacao_status,
         'aprovado_por', pf.aprovado_por,
         'aprovado_em', pf.aprovado_em,
+        'contrato_obra_id', pf.contrato_obra_id,
+        'contrato_obra_aditivo_id', pf.contrato_obra_aditivo_id,
         'faturado_manual_por', pf.faturado_manual_por,
         'faturado_manual_em', pf.faturado_manual_em,
         'faturado_manual_data', pf.faturado_manual_data,
@@ -371,7 +503,7 @@ const fetchMedicao = async (id: string): Promise<QueryResultRow | undefined> => 
       limit 1
     ) pedido_ativo on true
     where m.id = $1
-    group by m.id, o.id, c.id, cc.id, responsavel.id, aprovador.id, submetido.id, devolvedor.id, cancelador.id, solicitante_faturamento.id, faturador.id, pedido_ativo.pedido
+    group by m.id, o.id, c.id, cc.id, co.id, ca.id, responsavel.id, aprovador.id, submetido.id, devolvedor.id, cancelador.id, solicitante_faturamento.id, faturador.id, pedido_ativo.pedido
     `,
     [id]
   );
@@ -426,6 +558,10 @@ const listMedicoes = async (url: URL): Promise<QueryResultRow[]> => {
       m.retencoes_previstas,
       m.impostos_estimados,
       m.valor_liquido_previsto,
+      m.contrato_obra_id,
+      co.numero as contrato_obra_numero,
+      m.contrato_obra_aditivo_id,
+      ca.numero as contrato_obra_aditivo_numero,
       m.aprovacao_status,
       m.aprovado_em,
       m.faturamento_solicitado_em,
@@ -439,9 +575,11 @@ const listMedicoes = async (url: URL): Promise<QueryResultRow[]> => {
     join obras o on o.id = m.obra_id
     join clientes c on c.id = m.cliente_id
     left join centros_custo cc on cc.id = m.centro_custo_id
+    left join contratos_obra co on co.id = m.contrato_obra_id
+    left join contratos_obra_aditivos ca on ca.id = m.contrato_obra_aditivo_id
     left join medicoes_obra_itens mi on mi.medicao_id = m.id
     where ${conditions.join(' and ')}
-    group by m.id, o.id, c.id, cc.id
+    group by m.id, o.id, c.id, cc.id, co.id, ca.id
     order by m.competencia desc, m.created_at desc
     `,
     params
@@ -485,6 +623,7 @@ const recalcularMedicaoTotais = async (client: PoolClient, medicaoId: string): P
     `,
     [bruto, liquido, medicaoId]
   );
+  await validarContratoMedicao(client, medicaoId);
 };
 
 const assertMedicaoEditable = (medicao: MedicaoForUpdate): void => {
@@ -515,6 +654,8 @@ const createMedicao = async (payload: Record<string, unknown>) => {
     'competencia',
     'periodo_inicio',
     'periodo_fim',
+    'contrato_obra_id',
+    'contrato_obra_aditivo_id',
     'contrato_escopo',
     'responsavel_id',
     'usuario_id',
@@ -532,6 +673,8 @@ const createMedicao = async (payload: Record<string, unknown>) => {
   const numero = optionalText(payload, 'numero') || gerarCodigo('MED');
   const usuarioId = optionalUsuarioId(payload);
   const responsavelId = optionalUuid(payload, 'responsavel_id') || usuarioId;
+  const contratoObraId = optionalUuid(payload, 'contrato_obra_id');
+  const contratoObraAditivoId = optionalUuid(payload, 'contrato_obra_aditivo_id');
   const retencoes = normalizeMoney(payload.retencoes_previstas ?? 0, 'retencoes_previstas');
   const impostos = normalizeMoney(payload.impostos_estimados ?? 0, 'impostos_estimados');
   if (retencoes + impostos > 0) {
@@ -554,6 +697,8 @@ const createMedicao = async (payload: Record<string, unknown>) => {
         competencia,
         periodo_inicio,
         periodo_fim,
+        contrato_obra_id,
+        contrato_obra_aditivo_id,
         contrato_escopo,
         responsavel_id,
         observacoes,
@@ -564,7 +709,7 @@ const createMedicao = async (payload: Record<string, unknown>) => {
         created_by,
         updated_by
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'RASCUNHO', $12, $13, 0, $14, $14)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'RASCUNHO', $14, $15, 0, $16, $16)
       returning id
       `,
       [
@@ -576,6 +721,8 @@ const createMedicao = async (payload: Record<string, unknown>) => {
         competencia,
         periodoInicio,
         periodoFim,
+        contratoObraId,
+        contratoObraAditivoId,
         optionalText(payload, 'contrato_escopo'),
         responsavelId,
         optionalText(payload, 'observacoes'),
@@ -584,6 +731,7 @@ const createMedicao = async (payload: Record<string, unknown>) => {
         usuarioId
       ]
     );
+    await validarContratoMedicao(client, created.rows[0].id);
     await registrarAuditoria(client, companyId, 'medicao_obra', created.rows[0].id, 'criar', {
       numero,
       competencia,
@@ -609,6 +757,8 @@ const updateMedicao = async (id: string, payload: Record<string, unknown>) => {
     'competencia',
     'periodo_inicio',
     'periodo_fim',
+    'contrato_obra_id',
+    'contrato_obra_aditivo_id',
     'contrato_escopo',
     'responsavel_id',
     'usuario_id',
@@ -648,6 +798,12 @@ const updateMedicao = async (id: string, payload: Record<string, unknown>) => {
     }
     if (hasOwn(payload, 'periodo_fim')) {
       updates.push({ column: 'periodo_fim', value: requiredDate(payload, 'periodo_fim') });
+    }
+    if (hasOwn(payload, 'contrato_obra_id')) {
+      updates.push({ column: 'contrato_obra_id', value: optionalUuid(payload, 'contrato_obra_id') });
+    }
+    if (hasOwn(payload, 'contrato_obra_aditivo_id')) {
+      updates.push({ column: 'contrato_obra_aditivo_id', value: optionalUuid(payload, 'contrato_obra_aditivo_id') });
     }
     if (hasOwn(payload, 'contrato_escopo')) {
       updates.push({ column: 'contrato_escopo', value: optionalText(payload, 'contrato_escopo') });
@@ -922,6 +1078,7 @@ const enviarMedicao = async (id: string, payload: Record<string, unknown>) => {
     if (activeItems < 1) {
       throw new HttpError(409, 'medicao_sem_itens', 'Medicao precisa ter ao menos um item ativo para envio.');
     }
+    await validarContratoMedicao(client, id);
     await client.query(
       `
       update medicoes_obra
@@ -966,6 +1123,7 @@ const aprovarMedicao = async (id: string, payload: Record<string, unknown>) => {
     if (!['SUBMETIDA', 'EM_ANALISE'].includes(medicao.status)) {
       throw new HttpError(409, 'status_conflict', `Medicao em status ${medicao.status} nao permite aprovacao.`);
     }
+    await validarContratoMedicao(client, id);
     const valor = Number(medicao.valor_bruto);
     const acao = normalizeAprovacaoAction(valor);
     const validacao = await validarAlcadaDocumento(client, {
@@ -1163,7 +1321,7 @@ const cancelarMedicao = async (id: string, payload: Record<string, unknown>) => 
 };
 
 const createPedidoFaturamento = async (payload: Record<string, unknown>) => {
-  assertAllowedFields(payload, ['medicao_id', 'valor_solicitado', 'data_solicitacao', 'responsavel_id', 'usuario_id', 'observacoes']);
+  assertAllowedFields(payload, ['medicao_id', 'valor_solicitado', 'data_solicitacao', 'responsavel_id', 'usuario_id', 'observacoes', 'contrato_obra_id', 'contrato_obra_aditivo_id']);
   const medicaoId = assertUuid(payload.medicao_id, 'medicao_id');
   const usuarioId = optionalUsuarioId(payload);
   const dataSolicitacao = optionalDate(payload, 'data_solicitacao') || new Date().toISOString().slice(0, 10);
@@ -1176,6 +1334,15 @@ const createPedidoFaturamento = async (payload: Record<string, unknown>) => {
     }
     if (medicao.status !== 'APROVADA') {
       throw new HttpError(409, 'status_conflict', `Pedido de faturamento exige medicao APROVADA. Status atual: ${medicao.status}.`);
+    }
+    await validarContratoMedicao(client, medicaoId);
+    const payloadContratoId = optionalUuid(payload, 'contrato_obra_id');
+    const payloadAditivoId = optionalUuid(payload, 'contrato_obra_aditivo_id');
+    if (payloadContratoId && medicao.contrato_obra_id && payloadContratoId !== medicao.contrato_obra_id) {
+      throw new HttpError(409, 'contrato_divergente', 'Contrato informado diverge do contrato vinculado a medicao.');
+    }
+    if (payloadAditivoId && medicao.contrato_obra_aditivo_id && payloadAditivoId !== medicao.contrato_obra_aditivo_id) {
+      throw new HttpError(409, 'aditivo_divergente', 'Aditivo informado diverge do aditivo vinculado a medicao.');
     }
     const existingPedido = await client.query(
       `
@@ -1207,6 +1374,8 @@ const createPedidoFaturamento = async (payload: Record<string, unknown>) => {
         company_id,
         cliente_id,
         obra_id,
+        contrato_obra_id,
+        contrato_obra_aditivo_id,
         codigo,
         valor_solicitado,
         data_solicitacao,
@@ -1217,7 +1386,7 @@ const createPedidoFaturamento = async (payload: Record<string, unknown>) => {
         created_by,
         updated_by
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, 'SOLICITADO', 'PENDENTE_APROVACAO', $9, $10, $10)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'SOLICITADO', 'PENDENTE_APROVACAO', $11, $12, $12)
       returning id
       `,
       [
@@ -1225,6 +1394,8 @@ const createPedidoFaturamento = async (payload: Record<string, unknown>) => {
         medicao.company_id,
         medicao.cliente_id,
         medicao.obra_id,
+        payloadContratoId || medicao.contrato_obra_id,
+        payloadAditivoId || medicao.contrato_obra_aditivo_id,
         codigo,
         valorSolicitado,
         dataSolicitacao,
@@ -1280,6 +1451,10 @@ const fetchPedidoFaturamento = async (id: string): Promise<QueryResultRow | unde
       pf.obra_id,
       o.codigo as obra_codigo,
       o.nome as obra_nome,
+      pf.contrato_obra_id,
+      co.numero as contrato_obra_numero,
+      pf.contrato_obra_aditivo_id,
+      ca.numero as contrato_obra_aditivo_numero,
       pf.codigo,
       pf.valor_solicitado,
       pf.data_solicitacao,
@@ -1304,6 +1479,8 @@ const fetchPedidoFaturamento = async (id: string): Promise<QueryResultRow | unde
     join medicoes_obra m on m.id = pf.medicao_id
     join clientes c on c.id = pf.cliente_id
     join obras o on o.id = pf.obra_id
+    left join contratos_obra co on co.id = pf.contrato_obra_id
+    left join contratos_obra_aditivos ca on ca.id = pf.contrato_obra_aditivo_id
     left join usuarios responsavel on responsavel.id = pf.responsavel_id
     left join usuarios aprovador on aprovador.id = pf.aprovado_por
     left join usuarios faturador on faturador.id = pf.faturado_manual_por
@@ -1352,6 +1529,10 @@ const listPedidosFaturamento = async (url: URL): Promise<QueryResultRow[]> => {
       pf.codigo,
       pf.valor_solicitado,
       pf.data_solicitacao,
+      pf.contrato_obra_id,
+      co.numero as contrato_obra_numero,
+      pf.contrato_obra_aditivo_id,
+      ca.numero as contrato_obra_aditivo_numero,
       pf.status,
       pf.aprovacao_status,
       pf.aprovado_em,
@@ -1363,6 +1544,8 @@ const listPedidosFaturamento = async (url: URL): Promise<QueryResultRow[]> => {
     join medicoes_obra m on m.id = pf.medicao_id
     join clientes c on c.id = pf.cliente_id
     join obras o on o.id = pf.obra_id
+    left join contratos_obra co on co.id = pf.contrato_obra_id
+    left join contratos_obra_aditivos ca on ca.id = pf.contrato_obra_aditivo_id
     where ${conditions.join(' and ')}
     order by pf.data_solicitacao desc, pf.created_at desc
     `,

@@ -7,6 +7,7 @@ import { SharePointFetchClient } from './sharePointFetchClient';
 import { AcessosPage } from './features/acessos/AcessosPage';
 import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
 import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
+import { ContratosObraPage } from './features/contratosObra/ContratosObraPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
 import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/MedicoesFaturamentoPage';
 import { NotasEntradaPage } from './features/notasEntrada/NotasEntradaPage';
@@ -57,6 +58,7 @@ type WebSection =
   | 'contas-pagar'
   | 'programacoes-pagamento'
   | 'relatorios-financeiros'
+  | 'contratos-obra'
   | 'medicoes-faturamento'
   | 'administracao'
   | 'estrutura'
@@ -117,6 +119,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'contas-pagar', label: 'Contas a Pagar' },
   { key: 'programacoes-pagamento', label: 'Programação de Pagamento' },
   { key: 'relatorios-financeiros', label: 'Relatórios Financeiros' },
+  { key: 'contratos-obra', label: 'Contratos de Obra' },
   { key: 'medicoes-faturamento', label: 'Medições e Faturamento' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
@@ -409,6 +412,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'relatorios-financeiros') {
     return <RelatoriosFinanceirosPage />;
+  }
+
+  if (section === 'contratos-obra') {
+    return <ContratosObraPage />;
   }
 
   if (section === 'medicoes-faturamento') {

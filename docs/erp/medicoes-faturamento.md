@@ -6,6 +6,8 @@ O modulo de Medicoes e Faturamento registra medicoes de obra, itens medidos, apr
 
 A V3.6 trabalha somente em PostgreSQL local. O registro `FATURADO_MANUALMENTE` nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao executa cobranca bancaria e nao baixa recebivel automaticamente.
 
+A partir da V3.7, medicoes e pedidos internos de faturamento podem ser vinculados a contrato de obra e aditivo aprovado. A validacao e local e nao executa emissao fiscal, boleto, cobranca bancaria ou baixa de recebivel.
+
 ## Entidades
 
 ### Medicao
@@ -22,6 +24,7 @@ Campos principais:
 - competencia;
 - periodo inicial e final;
 - contrato/escopo;
+- contrato de obra e aditivo aprovado, quando aplicavel;
 - valor bruto calculado;
 - retencoes previstas;
 - impostos estimados;
@@ -60,7 +63,8 @@ Campos principais:
 - responsavel;
 - status;
 - aprovacao;
-- faturamento manual informado.
+- faturamento manual informado;
+- contrato de obra e aditivo de origem, quando aplicavel.
 
 ## Status
 
@@ -101,6 +105,9 @@ A migration V3.6 cria escopos e regras locais para o modulo `medicoes-faturament
 - Inativacao de item preserva historico.
 - Cancelamento de medicao e logico.
 - Medicao faturada manualmente nao pode ser cancelada nesta etapa.
+- Se a obra possui contrato ativo, a medicao deve apontar para contrato ativo compativel.
+- Aditivo informado na medicao ou no pedido deve estar `APROVADO`.
+- O valor acumulado das medicoes ativas nao pode ultrapassar o total contratado.
 - Auditoria e gravada em `auditoria_eventos`.
 - Rotas fiscais e bancarias reais nao existem.
 

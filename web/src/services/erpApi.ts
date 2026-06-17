@@ -1031,6 +1031,138 @@ export interface ProgramacaoPagamentoConferenciaPayload extends ProgramacaoPagam
   checklist: ProgramacaoPagamentoConferenciaChecklist;
 }
 
+export type ContratoObraStatus = 'RASCUNHO' | 'ATIVO' | 'SUSPENSO' | 'ENCERRADO' | 'CANCELADO';
+export type ContratoObraAditivoStatus = 'RASCUNHO' | 'SUBMETIDO' | 'APROVADO' | 'REPROVADO' | 'CANCELADO';
+
+export interface ContratoObraItemApi {
+  id: string;
+  contrato_id: string;
+  codigo?: string | null;
+  descricao: string;
+  unidade: string;
+  quantidade: string | number;
+  valor_unitario: string | number;
+  valor_total: string | number;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  etapa_servico?: string | null;
+  status: 'ATIVO' | 'INATIVO' | string;
+  inativado_por?: string | null;
+  inativado_em?: string | null;
+  inativacao_motivo?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContratoObraAditivoApi {
+  id: string;
+  contrato_id: string;
+  numero: string;
+  tipo: string;
+  descricao: string;
+  escopo_descricao?: string | null;
+  valor_delta: string | number;
+  prazo_delta_dias?: number | null;
+  nova_data_fim?: string | null;
+  justificativa?: string | null;
+  status: ContratoObraAditivoStatus;
+  aprovacao_status?: AprovacaoStatus | null;
+  aprovado_por?: string | null;
+  aprovado_por_nome?: string | null;
+  aprovado_em?: string | null;
+  bloqueio_alcada_motivo?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContratoObraApi {
+  id: string;
+  company_id: string;
+  cliente_id: string;
+  cliente_nome?: string | null;
+  obra_id: string;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  centro_custo_id?: string | null;
+  centro_custo_codigo?: string | null;
+  centro_custo_nome?: string | null;
+  numero: string;
+  objeto: string;
+  escopo_resumo?: string | null;
+  valor_original: string | number;
+  valor_aditivos: string | number;
+  valor_total_contratado: string | number;
+  valor_medido?: string | number;
+  valor_faturado?: string | number;
+  saldo_contratual?: string | number;
+  data_inicio?: string | null;
+  data_fim?: string | null;
+  percentual_retencao_previsto?: string | number | null;
+  impostos_previstos?: string | null;
+  observacoes?: string | null;
+  status: ContratoObraStatus;
+  created_at: string;
+  updated_at: string;
+  itens?: ContratoObraItemApi[];
+  aditivos?: ContratoObraAditivoApi[];
+}
+
+export interface ContratoObraFilters {
+  status?: ContratoObraStatus | '';
+  cliente_id?: string;
+  obra_id?: string;
+}
+
+export interface ContratoObraPayload {
+  company_id: string;
+  cliente_id: string;
+  obra_id: string;
+  centro_custo_id?: string | null;
+  numero: string;
+  objeto: string;
+  escopo_resumo?: string | null;
+  valor_original: number;
+  data_inicio?: string | null;
+  data_fim?: string | null;
+  percentual_retencao_previsto?: number | null;
+  impostos_previstos?: string | null;
+  observacoes?: string | null;
+  usuario_id?: string | null;
+}
+
+export type ContratoObraUpdatePayload = Partial<Omit<ContratoObraPayload, 'company_id'>>;
+
+export interface ContratoObraItemPayload {
+  codigo?: string | null;
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  valor_unitario: number;
+  centro_custo_id?: string | null;
+  etapa_servico?: string | null;
+  usuario_id?: string | null;
+}
+
+export interface ContratoObraAditivoPayload {
+  numero: string;
+  tipo?: string | null;
+  descricao: string;
+  escopo_descricao?: string | null;
+  valor_delta: number;
+  prazo_delta_dias?: number | null;
+  nova_data_fim?: string | null;
+  justificativa?: string | null;
+  usuario_id?: string | null;
+}
+
+export interface ContratoObraActionPayload {
+  usuario_id: string;
+  observacoes?: string | null;
+  justificativa?: string | null;
+  motivo?: string | null;
+}
+
 export type MedicaoStatus =
   | 'RASCUNHO'
   | 'SUBMETIDA'
@@ -1089,6 +1221,11 @@ export interface MedicaoApi {
   centro_custo_id?: string | null;
   centro_custo_codigo?: string | null;
   centro_custo_nome?: string | null;
+  contrato_obra_id?: string | null;
+  contrato_obra_numero?: string | null;
+  contrato_obra_valor_total?: string | number | null;
+  contrato_obra_aditivo_id?: string | null;
+  contrato_obra_aditivo_numero?: string | null;
   contrato_cliente_id?: string | null;
   contrato_escopo?: string | null;
   numero: string;
@@ -1148,6 +1285,10 @@ export interface PedidoFaturamentoApi {
   obra_id: string;
   obra_codigo?: string | null;
   obra_nome?: string | null;
+  contrato_obra_id?: string | null;
+  contrato_obra_numero?: string | null;
+  contrato_obra_aditivo_id?: string | null;
+  contrato_obra_aditivo_numero?: string | null;
   codigo: string;
   valor_solicitado: string | number;
   data_solicitacao: string;
@@ -1187,6 +1328,8 @@ export interface MedicaoPayload {
   competencia: string;
   periodo_inicio: string;
   periodo_fim: string;
+  contrato_obra_id?: string | null;
+  contrato_obra_aditivo_id?: string | null;
   contrato_escopo?: string | null;
   responsavel_id?: string | null;
   usuario_id?: string | null;
@@ -1218,6 +1361,8 @@ export interface PedidoFaturamentoPayload {
   medicao_id: string;
   valor_solicitado?: number;
   data_solicitacao?: string;
+  contrato_obra_id?: string | null;
+  contrato_obra_aditivo_id?: string | null;
   responsavel_id?: string | null;
   usuario_id?: string | null;
   observacoes?: string | null;
@@ -1665,6 +1810,95 @@ export const erpApi = {
       })).data,
     cancelar: async (id: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
       (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data
+  },
+  contratosObra: {
+    list: async (filters: ContratoObraFilters = {}): Promise<ContratoObraApi[]> =>
+      (await request<ApiListResponse<ContratoObraApi>>(
+        `/contratos-obra${buildQueryString({
+          status: filters.status || undefined,
+          cliente_id: filters.cliente_id,
+          obra_id: filters.obra_id
+        })}`
+      )).data,
+    get: async (id: string): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}`)).data,
+    create: async (payload: ContratoObraPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>('/contratos-obra', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    update: async (id: string, payload: ContratoObraUpdatePayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    ativar: async (id: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/ativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    suspender: async (id: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/suspender`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    encerrar: async (id: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/encerrar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelar: async (id: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/cancelar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    addItem: async (id: string, payload: ContratoObraItemPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/itens`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    updateItem: async (id: string, itemId: string, payload: Partial<ContratoObraItemPayload>): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/itens/${itemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    inativarItem: async (id: string, itemId: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/itens/${itemId}/inativar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    aditivos: async (id: string): Promise<ContratoObraAditivoApi[]> =>
+      (await request<ApiListResponse<ContratoObraAditivoApi>>(`/contratos-obra/${id}/aditivos`)).data,
+    createAditivo: async (id: string, payload: ContratoObraAditivoPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/aditivos`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    updateAditivo: async (id: string, aditivoId: string, payload: Partial<ContratoObraAditivoPayload>): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/aditivos/${aditivoId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    submeterAditivo: async (id: string, aditivoId: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/aditivos/${aditivoId}/submeter`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    aprovarAditivo: async (id: string, aditivoId: string, payload: AprovacaoPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/aditivos/${aditivoId}/aprovar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    reprovarAditivo: async (id: string, aditivoId: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/aditivos/${aditivoId}/reprovar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelarAditivo: async (id: string, aditivoId: string, payload: ContratoObraActionPayload): Promise<ContratoObraApi> =>
+      (await request<ApiItemResponse<ContratoObraApi>>(`/contratos-obra/${id}/aditivos/${aditivoId}/cancelar`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data

@@ -4,6 +4,7 @@ import { handleAlcadas, handleEscopos, handlePerfis, handlePerfisEscopos, handle
 import { handleCentrosCusto } from './modules/centrosCusto/centrosCusto.routes.js';
 import { handleClientes } from './modules/clientes/clientes.routes.js';
 import { handleContasPagar } from './modules/contasPagar/contasPagar.routes.js';
+import { handleContratosObra } from './modules/contratosObra/contratosObra.routes.js';
 import { handleCotacoes } from './modules/cotacoes/cotacoes.routes.js';
 import { handleEmpresas } from './modules/empresas/empresas.routes.js';
 import { handleFornecedores } from './modules/fornecedores/fornecedores.routes.js';
@@ -40,6 +41,7 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/contas-pagar', handler: handleContasPagar },
   { basePath: '/programacoes-pagamento', handler: handleProgramacoesPagamento },
   { basePath: '/relatorios-financeiros', handler: handleRelatoriosFinanceiros },
+  { basePath: '/contratos-obra', handler: handleContratosObra },
   { basePath: '/medicoes', handler: handleMedicoes },
   { basePath: '/pedidos-faturamento', handler: handlePedidosFaturamento },
   { basePath: '/perfis', handler: handlePerfis },
