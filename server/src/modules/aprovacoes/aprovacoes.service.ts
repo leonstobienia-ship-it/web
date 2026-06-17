@@ -2,7 +2,7 @@ import type { PoolClient, QueryResultRow } from 'pg';
 import { HttpError } from '../../http.js';
 
 export type AcaoAprovacao = 'aprovar_tecnico' | 'aprovar_diretoria';
-export type AcaoAlcada = AcaoAprovacao | 'liberar';
+export type AcaoAlcada = AcaoAprovacao | 'liberar' | 'baixar_manual' | 'estornar_baixa';
 export type StatusAprovacao =
   | 'PENDENTE_APROVACAO'
   | 'APROVADO_TECNICO'

@@ -1278,7 +1278,8 @@ textarea {
 }
 
 .enac-finance-status--programada,
-.enac-finance-status--liberada {
+.enac-finance-status--liberada,
+.enac-finance-status--baixada-manual {
   background: #eeeafd;
   color: #563c8f;
 }
@@ -1289,6 +1290,7 @@ textarea {
 }
 
 .enac-finance-status--bloqueada-conferencia,
+.enac-finance-status--bloqueada-baixa,
 .enac-finance-status--reprovada {
   background: #fdece8;
   color: #97432b;
@@ -1297,9 +1299,15 @@ textarea {
 .enac-finance-status--devolvida,
 .enac-finance-status--cancelada,
 .enac-finance-status--baixada,
+.enac-finance-status--baixa-estornada,
 .enac-finance-status--paga {
   background: #eceff3;
   color: #68717d;
+}
+
+.enac-finance-status--baixa-pendente {
+  background: #fff3d8;
+  color: #7a4a00;
 }
 
 .enac-finance-meta {
@@ -1328,6 +1336,20 @@ textarea {
 
 .enac-finance-actions {
   justify-content: flex-start;
+}
+
+.enac-finance-baixa-panel {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #d7e1ec;
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.enac-finance-baixa-history {
+  max-height: 260px;
+  overflow: auto;
 }
 
 .enac-finance-edit-form {

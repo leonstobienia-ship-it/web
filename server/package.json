@@ -18,6 +18,7 @@
     "smoke:programacoes-pagamento": "npm run build && node dist/scripts/smokeProgramacoesPagamento.js",
     "smoke:liberacoes-programacao": "npm run build && node dist/scripts/smokeLiberacoesProgramacao.js",
     "smoke:conferencia-financeira": "npm run build && node dist/scripts/smokeConferenciaFinanceira.js",
+    "smoke:baixa-manual": "npm run build && node dist/scripts/smokeBaixaManual.js",
     "start": "node dist/index.js"
   },
   "dependencies": {

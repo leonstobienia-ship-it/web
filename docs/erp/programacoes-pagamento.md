@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para uma data prevista de pagamento, aprova a programacao por alcada, registra a liberacao final para execucao futura e realiza a conferencia financeira final pre-baixa, sem executar pagamento, baixa, liberacao bancaria real, CNAB ou integracao com banco.
+O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para uma data prevista, aprova a programacao por alcada, registra a liberacao final para execucao futura e realiza a conferencia financeira final pre-baixa. A baixa manual da V3.5G acontece somente no modulo Contas a Pagar, depois da programacao `LIBERADA` e `CONFERIDA`, sem executar pagamento bancario, liberacao bancaria real, CNAB ou integracao com banco.
 
 ## Regras funcionais
 
@@ -20,7 +20,8 @@ O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para um
 - A V3.5F permite conferir financeiramente somente programacao `LIBERADA`.
 - A conferencia pode ficar `PENDENTE_CONFERENCIA`, `CONFERIDA`, `BLOQUEADA_CONFERENCIA` ou `DEVOLVIDA`.
 - Conferencia financeira bloqueia programacao nao liberada, cancelada, reprovada, sem itens, com conta inativa/cancelada, divergencia pendente, sem aprovacao interna ou usuario sem permissao.
-- `CONFERIDA` registra prontidao para futura baixa manual, mas nao altera Conta a Pagar, nao baixa, nao paga e nao marca `PAGA`.
+- `CONFERIDA` registra prontidao para baixa manual controlada pela Conta a Pagar, mas a propria Programacao nao baixa, nao paga e nao marca `PAGA`.
+- A V3.5G usa a programacao `LIBERADA` e `CONFERIDA` como pre-condicao da baixa manual da Conta a Pagar.
 - `REPROVADA` e `CANCELADA` liberam logicamente as contas para nova programacao futura.
 
 ## Modelo
@@ -183,6 +184,14 @@ PATCH /programacoes-pagamento/:id/executar-pagamento
 PATCH /programacoes-pagamento/:id/integracao-bancaria
 ```
 
+Rotas da baixa manual V3.5G ficam em Contas a Pagar:
+
+```text
+PATCH /contas-pagar/:id/baixar-manual
+PATCH /contas-pagar/:id/estornar-baixa
+GET   /contas-pagar/:id/baixas
+```
+
 ## Auditoria
 
 Toda mutacao funcional registra `auditoria_eventos` com entidade `programacao_pagamento`.
@@ -192,7 +201,7 @@ Toda mutacao funcional registra `auditoria_eventos` com entidade `programacao_pa
 - Sem banco real.
 - Sem arquivo CNAB.
 - Sem API bancaria.
-- Sem baixa financeira.
+- Sem baixa na rota da programacao.
 - Sem conciliacao.
 - Sem comprovante.
 - Sem SharePoint real.

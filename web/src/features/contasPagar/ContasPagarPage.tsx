@@ -2,6 +2,8 @@ import * as React from 'react';
 import {
   erpApi,
   type ContaPagarApi,
+  type ContaPagarBaixaApi,
+  type ContaPagarBaixaStatus,
   type ContaPagarStatus,
   type FornecedorApi,
   type NotaEntradaApi,
@@ -25,15 +27,32 @@ interface ContaForm {
   observacoes: string;
 }
 
-const marker = 'DEV_LOCAL_V3_5A';
+interface BaixaManualForm {
+  data_baixa: string;
+  valor_baixado: string;
+  forma_pagamento_manual: string;
+  observacoes: string;
+  referencia_anexo: string;
+  motivo_estorno: string;
+}
+
+const marker = 'DEV_LOCAL_V3_5G';
 
 const statusLabels: Record<ContaPagarStatus, string> = {
   PROVISIONADA: 'Provisionada',
   APROVADA: 'Aprovada',
   AGUARDANDO_PROGRAMACAO: 'Aguardando programação',
   PROGRAMADA: 'Programada',
+  BAIXADA_MANUAL: 'Baixada manual',
   PAGA: 'Paga',
   CANCELADA: 'Cancelada'
+};
+
+const baixaStatusLabels: Record<ContaPagarBaixaStatus, string> = {
+  BAIXA_PENDENTE: 'Pendente de baixa',
+  BAIXADA_MANUAL: 'Baixada manual',
+  BAIXA_ESTORNADA: 'Baixa estornada',
+  BLOQUEADA_BAIXA: 'Bloqueada para baixa'
 };
 
 const aprovacaoLabels: Record<string, string> = {
@@ -72,7 +91,7 @@ const emptyContaForm = (): ContaForm => ({
   nota_entrada_id: '',
   data_vencimento: addDays(7),
   forma_pagamento_prevista: `${marker} - forma local`,
-  observacoes: `${marker} - conta local sem programacao bancaria, pagamento ou baixa`
+  observacoes: `${marker} - conta local sem integracao bancaria`
 });
 
 const buildEditForm = (conta: ContaPagarApi | null): ContaForm => ({
@@ -80,6 +99,15 @@ const buildEditForm = (conta: ContaPagarApi | null): ContaForm => ({
   data_vencimento: conta?.data_vencimento ? conta.data_vencimento.slice(0, 10) : '',
   forma_pagamento_prevista: conta?.forma_pagamento_prevista || '',
   observacoes: conta?.observacoes || ''
+});
+
+const buildBaixaManualForm = (conta: ContaPagarApi | null): BaixaManualForm => ({
+  data_baixa: addDays(0),
+  valor_baixado: conta ? String(toNumber(conta.valor_aberto).toFixed(2)) : '',
+  forma_pagamento_manual: `${marker} - registro manual`,
+  observacoes: `${marker} - baixa manual administrativa sem banco real`,
+  referencia_anexo: '',
+  motivo_estorno: `${marker} - estorno administrativo controlado`
 });
 
 const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
@@ -99,6 +127,48 @@ const statusClass = (status: string): string => status.toLowerCase().replace(/_/
 
 const canEdit = (conta: ContaPagarApi | null): boolean => conta?.status === 'PROVISIONADA';
 const canCancel = (conta: ContaPagarApi): boolean => conta.status === 'PROVISIONADA';
+const canBaixarManual = (conta: ContaPagarApi): boolean =>
+  conta.status === 'APROVADA'
+  && conta.baixa_status !== 'BAIXADA_MANUAL'
+  && conta.programacao_baixa_status === 'LIBERADA'
+  && conta.programacao_baixa_liberacao_status === 'LIBERADA'
+  && conta.programacao_baixa_conferencia_status === 'CONFERIDA'
+  && toNumber(conta.valor_aberto) > 0
+  && conta.divergencia_pendente !== true
+  && conta.ativo !== false;
+
+const getBaixaBloqueios = (conta: ContaPagarApi): string[] => {
+  const bloqueios: string[] = [];
+  if (conta.ativo === false) {
+    bloqueios.push('Conta inativa.');
+  }
+  if (conta.status === 'CANCELADA') {
+    bloqueios.push('Conta cancelada.');
+  } else if (conta.status === 'BAIXADA_MANUAL') {
+    bloqueios.push('Conta já baixada manualmente.');
+  } else if (conta.status !== 'APROVADA') {
+    bloqueios.push('Conta precisa estar aprovada.');
+  }
+  if (conta.divergencia_pendente) {
+    bloqueios.push('Conta com divergência pendente.');
+  }
+  if (!conta.programacao_baixa_id) {
+    bloqueios.push('Sem programação ativa vinculada.');
+  }
+  if (conta.programacao_baixa_status && conta.programacao_baixa_status !== 'LIBERADA') {
+    bloqueios.push('Programação ainda não liberada.');
+  }
+  if (conta.programacao_baixa_liberacao_status && conta.programacao_baixa_liberacao_status !== 'LIBERADA') {
+    bloqueios.push('Liberação final pendente.');
+  }
+  if (conta.programacao_baixa_conferencia_status !== 'CONFERIDA') {
+    bloqueios.push('Conferência financeira final pendente.');
+  }
+  if (toNumber(conta.valor_aberto) <= 0 && conta.status !== 'BAIXADA_MANUAL') {
+    bloqueios.push('Sem saldo aberto.');
+  }
+  return bloqueios;
+};
 
 export function ContasPagarPage(): JSX.Element {
   const [fornecedores, setFornecedores] = React.useState<FornecedorApi[]>([]);
@@ -108,9 +178,11 @@ export function ContasPagarPage(): JSX.Element {
   const [selectedNota, setSelectedNota] = React.useState<NotaEntradaApi | null>(null);
   const [contas, setContas] = React.useState<ContaPagarApi[]>([]);
   const [selectedConta, setSelectedConta] = React.useState<ContaPagarApi | null>(null);
+  const [baixas, setBaixas] = React.useState<ContaPagarBaixaApi[]>([]);
   const [filters, setFilters] = React.useState<ContaFilters>(emptyFilters());
   const [form, setForm] = React.useState<ContaForm>(emptyContaForm());
   const [editForm, setEditForm] = React.useState<ContaForm>(buildEditForm(null));
+  const [baixaForm, setBaixaForm] = React.useState<BaixaManualForm>(buildBaixaManualForm(null));
   const [approvalUserId, setApprovalUserId] = React.useState<string>('');
   const [cancelTarget, setCancelTarget] = React.useState<ContaPagarApi | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
@@ -161,6 +233,7 @@ export function ContasPagarPage(): JSX.Element {
 
   React.useEffect(() => {
     setEditForm(buildEditForm(selectedConta));
+    setBaixaForm(buildBaixaManualForm(selectedConta));
   }, [selectedConta]);
 
   React.useEffect(() => {
@@ -190,7 +263,12 @@ export function ContasPagarPage(): JSX.Element {
     setError('');
     await Promise.all([loadReferences(), loadContas(filters)]);
     if (contaId) {
-      setSelectedConta(await erpApi.contasPagar.get(contaId));
+      const [conta, historico] = await Promise.all([
+        erpApi.contasPagar.get(contaId),
+        erpApi.contasPagar.baixas(contaId)
+      ]);
+      setSelectedConta(conta);
+      setBaixas(historico);
     }
   };
 
@@ -208,6 +286,10 @@ export function ContasPagarPage(): JSX.Element {
     setEditForm((current) => ({ ...current, [field]: value }));
   };
 
+  const updateBaixaForm = (field: keyof BaixaManualForm, value: string): void => {
+    setBaixaForm((current) => ({ ...current, [field]: value }));
+  };
+
   const selectConta = async (conta: ContaPagarApi): Promise<void> => {
     if (saving) {
       return;
@@ -216,7 +298,12 @@ export function ContasPagarPage(): JSX.Element {
     setError('');
     setMessage('');
     try {
-      setSelectedConta(await erpApi.contasPagar.get(conta.id));
+      const [detail, historico] = await Promise.all([
+        erpApi.contasPagar.get(conta.id),
+        erpApi.contasPagar.baixas(conta.id)
+      ]);
+      setSelectedConta(detail);
+      setBaixas(historico);
     } catch (detailError) {
       setError(getErrorMessage(detailError));
     } finally {
@@ -316,12 +403,62 @@ export function ContasPagarPage(): JSX.Element {
     }
   };
 
+  const registrarBaixaManual = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
+    if (saving || !selectedConta || !approvalUserId) {
+      return;
+    }
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const updated = await erpApi.contasPagar.baixarManual(selectedConta.id, {
+        usuario_id: approvalUserId,
+        data_baixa: baixaForm.data_baixa,
+        valor_baixado: toNumber(baixaForm.valor_baixado),
+        forma_pagamento_manual: baixaForm.forma_pagamento_manual,
+        observacoes: baixaForm.observacoes,
+        referencia_anexo: baixaForm.referencia_anexo || null
+      });
+      setSelectedConta(updated);
+      setMessage('Baixa manual registrada.');
+      await refresh(updated.id);
+    } catch (baixaError) {
+      setError(getErrorMessage(baixaError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const estornarBaixaManual = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
+    if (saving || !selectedConta || !approvalUserId) {
+      return;
+    }
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const updated = await erpApi.contasPagar.estornarBaixa(selectedConta.id, {
+        usuario_id: approvalUserId,
+        observacoes: baixaForm.motivo_estorno
+      });
+      setSelectedConta(updated);
+      setMessage('Estorno da baixa manual registrado.');
+      await refresh(updated.id);
+    } catch (estornoError) {
+      setError(getErrorMessage(estornoError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="enac-web-page enac-finance-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Contas a Pagar</h1>
       <p className="enac-web-lead">
-        Conta a pagar inicial provisionada a partir de nota fiscal de entrada aprovada, sem programação bancária, pagamento ou baixa.
+        Conta a pagar provisionada a partir de nota fiscal de entrada aprovada, com baixa manual administrativa controlada e sem integração bancária.
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando contas locais.</div>}
@@ -355,12 +492,17 @@ export function ContasPagarPage(): JSX.Element {
               <ContaDetail
                 conta={selectedConta}
                 editForm={editForm}
+                baixaForm={baixaForm}
+                baixas={baixas}
                 saving={saving}
                 cancelTarget={cancelTarget}
                 usuarios={usuarios}
                 approvalUserId={approvalUserId}
                 onEditChange={updateEditForm}
+                onBaixaChange={updateBaixaForm}
                 onSave={(event) => void saveConta(event)}
+                onBaixarManual={(event) => void registrarBaixaManual(event)}
+                onEstornarBaixa={(event) => void estornarBaixaManual(event)}
                 onApprovalUserChange={setApprovalUserId}
                 onApprove={(conta, action) => void approveConta(conta, action)}
                 onTransition={(conta, action) => action === 'cancelar' ? setCancelTarget(conta) : void transition(conta, action)}
@@ -512,12 +654,17 @@ function ContasTable({
 function ContaDetail({
   conta,
   editForm,
+  baixaForm,
+  baixas,
   saving,
   cancelTarget,
   usuarios,
   approvalUserId,
   onEditChange,
+  onBaixaChange,
   onSave,
+  onBaixarManual,
+  onEstornarBaixa,
   onApprovalUserChange,
   onApprove,
   onTransition,
@@ -526,18 +673,27 @@ function ContaDetail({
 }: {
   conta: ContaPagarApi;
   editForm: ContaForm;
+  baixaForm: BaixaManualForm;
+  baixas: ContaPagarBaixaApi[];
   saving: boolean;
   cancelTarget: ContaPagarApi | null;
   usuarios: UsuarioApi[];
   approvalUserId: string;
   onEditChange: (field: keyof ContaForm, value: string) => void;
+  onBaixaChange: (field: keyof BaixaManualForm, value: string) => void;
   onSave: (event: React.FormEvent) => void;
+  onBaixarManual: (event: React.FormEvent) => void;
+  onEstornarBaixa: (event: React.FormEvent) => void;
   onApprovalUserChange: (value: string) => void;
   onApprove: (conta: ContaPagarApi, action: 'aprovar-tecnico' | 'aprovar-diretoria') => void;
   onTransition: (conta: ContaPagarApi, action: 'cancelar') => void;
   onConfirmCancel: (conta: ContaPagarApi) => void;
   onDismissCancel: () => void;
 }): JSX.Element {
+  const baixaStatus = conta.baixa_status || 'BAIXA_PENDENTE';
+  const bloqueiosBaixa = getBaixaBloqueios(conta);
+  const baixaElegivel = canBaixarManual(conta);
+
   return (
     <section className="enac-finance-detail">
       <div className="enac-cadastro-toolbar">
@@ -558,7 +714,19 @@ function ContaDetail({
         <div><span>Valor aberto</span><strong>{formatMoney(conta.valor_aberto)}</strong></div>
         <div><span>Aprovação</span><strong>{conta.aprovacao_status ? aprovacaoLabels[conta.aprovacao_status] || conta.aprovacao_status : '-'}</strong></div>
         <div><span>Aprovador</span><strong>{conta.aprovado_por_nome || '-'}</strong></div>
+        <div><span>Baixa</span><strong>{baixaStatusLabels[baixaStatus]}</strong></div>
+        <div><span>Programação</span><strong>{conta.programacao_baixa_codigo || '-'}</strong></div>
+        <div><span>Liberação</span><strong>{conta.programacao_baixa_liberacao_status || '-'}</strong></div>
+        <div><span>Conferência</span><strong>{conta.programacao_baixa_conferencia_status || '-'}</strong></div>
+        <div><span>Responsável baixa</span><strong>{conta.baixado_manual_por_nome || '-'}</strong></div>
+        <div><span>Valor baixado</span><strong>{conta.baixa_manual_valor ? formatMoney(conta.baixa_manual_valor) : '-'}</strong></div>
       </div>
+
+      {conta.bloqueio_baixa_motivo && (
+        <div className="enac-web-alert enac-web-alert--compact">
+          {conta.bloqueio_baixa_motivo}
+        </div>
+      )}
 
       {conta.status === 'PROVISIONADA' && (
         <div className="enac-cadastro-row-actions enac-finance-actions">
@@ -583,13 +751,83 @@ function ContaDetail({
       {cancelTarget?.id === conta.id && (
         <div className="enac-web-alert enac-web-alert--compact">
           <strong>Confirmar cancelamento da conta?</strong>
-          <p>A conta ficará `CANCELADA`. Esta etapa não executa pagamento, baixa ou conciliação.</p>
+          <p>A conta ficará CANCELADA por controle lógico, sem remoção física.</p>
           <div className="enac-cadastro-row-actions">
             <button type="button" onClick={() => onConfirmCancel(conta)} disabled={saving}>Confirmar cancelamento</button>
             <button type="button" className="enac-cadastro-secondary" onClick={onDismissCancel} disabled={saving}>Manter conta</button>
           </div>
         </div>
       )}
+
+      <section className="enac-finance-baixa-panel" aria-label="Baixa manual controlada">
+        <div className="enac-cadastro-toolbar">
+          <div>
+            <span className="enac-web-card-label">V3.5G</span>
+            <h3>Baixa manual</h3>
+            <p>Registro administrativo local, condicionado a programação liberada e conferida.</p>
+          </div>
+          <span className={`enac-finance-status enac-finance-status--${statusClass(baixaStatus)}`}>{baixaStatusLabels[baixaStatus]}</span>
+        </div>
+
+        {!baixaElegivel && conta.status !== 'BAIXADA_MANUAL' && (
+          <div className="enac-web-alert enac-web-alert--compact">
+            <strong>Baixa manual bloqueada</strong>
+            <ul>
+              {bloqueiosBaixa.map((bloqueio) => <li key={bloqueio}>{bloqueio}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {baixaElegivel && (
+          <form className="enac-cadastro-form enac-finance-edit-form" onSubmit={onBaixarManual}>
+            <div className="enac-cadastro-form-grid">
+              <label>
+                <span>Data da baixa<strong className="enac-cadastro-required">Obrigatório</strong></span>
+                <input type="date" value={baixaForm.data_baixa} onChange={(event) => onBaixaChange('data_baixa', event.target.value)} disabled={saving} required />
+              </label>
+              <label>
+                <span>Valor<strong className="enac-cadastro-required">Obrigatório</strong></span>
+                <input type="number" min="0.01" step="0.01" value={baixaForm.valor_baixado} onChange={(event) => onBaixaChange('valor_baixado', event.target.value)} disabled={saving} required />
+              </label>
+              <label>
+                <span>Forma manual<strong className="enac-cadastro-required">Obrigatório</strong></span>
+                <input value={baixaForm.forma_pagamento_manual} onChange={(event) => onBaixaChange('forma_pagamento_manual', event.target.value)} disabled={saving} required />
+              </label>
+              <label>
+                <span>Referência de anexo</span>
+                <input value={baixaForm.referencia_anexo} onChange={(event) => onBaixaChange('referencia_anexo', event.target.value)} disabled={saving} />
+              </label>
+              <label className="enac-solicitacao-span-2">
+                <span>Observação<strong className="enac-cadastro-required">Obrigatório</strong></span>
+                <textarea value={baixaForm.observacoes} onChange={(event) => onBaixaChange('observacoes', event.target.value)} disabled={saving} required />
+              </label>
+            </div>
+            <div className="enac-cadastro-actions">
+              <button type="submit" disabled={saving || !approvalUserId || !baixaForm.data_baixa || !baixaForm.valor_baixado || !baixaForm.forma_pagamento_manual || !baixaForm.observacoes}>
+                {saving ? 'Registrando...' : 'Registrar baixa manual'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {conta.status === 'BAIXADA_MANUAL' && (
+          <form className="enac-cadastro-form enac-finance-edit-form" onSubmit={onEstornarBaixa}>
+            <div className="enac-cadastro-form-grid">
+              <label className="enac-solicitacao-span-2">
+                <span>Motivo do estorno<strong className="enac-cadastro-required">Obrigatório</strong></span>
+                <textarea value={baixaForm.motivo_estorno} onChange={(event) => onBaixaChange('motivo_estorno', event.target.value)} disabled={saving} required />
+              </label>
+            </div>
+            <div className="enac-cadastro-actions">
+              <button type="submit" className="enac-cadastro-secondary" disabled={saving || !approvalUserId || !baixaForm.motivo_estorno}>
+                {saving ? 'Estornando...' : 'Estornar baixa'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        <BaixasHistory baixas={baixas} />
+      </section>
 
       {canEdit(conta) && (
         <form className="enac-cadastro-form enac-finance-edit-form" onSubmit={onSave}>
@@ -614,6 +852,43 @@ function ContaDetail({
         </form>
       )}
     </section>
+  );
+}
+
+function BaixasHistory({ baixas }: { baixas: ContaPagarBaixaApi[] }): JSX.Element {
+  if (baixas.length === 0) {
+    return <div className="enac-cadastro-empty">Nenhum histórico de baixa manual registrado.</div>;
+  }
+
+  return (
+    <div className="enac-cadastro-table-wrap enac-finance-baixa-history">
+      <table className="enac-web-table enac-finance-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Ação</th>
+            <th>Status</th>
+            <th>Responsável</th>
+            <th>Valor</th>
+            <th>Resultado</th>
+            <th>Observação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {baixas.map((baixa) => (
+            <tr key={baixa.id}>
+              <td>{formatDate(baixa.created_at)}</td>
+              <td>{baixa.acao}</td>
+              <td>{baixa.baixa_status}</td>
+              <td>{baixa.usuario_nome || baixa.usuario_id || '-'}</td>
+              <td>{formatMoney(baixa.valor_baixado)}</td>
+              <td>{baixa.resultado}</td>
+              <td>{baixa.observacoes || baixa.motivo || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

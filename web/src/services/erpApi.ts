@@ -697,7 +697,8 @@ export interface NotaEntradaPayload {
 
 export type NotaEntradaUpdatePayload = Partial<Omit<NotaEntradaPayload, 'company_id' | 'pedido_id'>>;
 
-export type ContaPagarStatus = 'PROVISIONADA' | 'APROVADA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'PAGA' | 'CANCELADA';
+export type ContaPagarStatus = 'PROVISIONADA' | 'APROVADA' | 'AGUARDANDO_PROGRAMACAO' | 'PROGRAMADA' | 'BAIXADA_MANUAL' | 'PAGA' | 'CANCELADA';
+export type ContaPagarBaixaStatus = 'BAIXA_PENDENTE' | 'BAIXADA_MANUAL' | 'BAIXA_ESTORNADA' | 'BLOQUEADA_BAIXA';
 
 export interface ContaPagarApi {
   id: string;
@@ -715,12 +716,31 @@ export interface ContaPagarApi {
   valor_original: string | number;
   valor_aberto: string | number;
   status: ContaPagarStatus;
+  ativo?: boolean;
+  divergencia_pendente?: boolean;
   aprovacao_status?: AprovacaoStatus | null;
   aprovado_por?: string | null;
   aprovado_por_nome?: string | null;
   aprovado_em?: string | null;
   aprovacao_observacoes?: string | null;
   bloqueio_alcada_motivo?: string | null;
+  baixa_status?: ContaPagarBaixaStatus | null;
+  baixado_manual_por?: string | null;
+  baixado_manual_por_nome?: string | null;
+  baixado_manual_em?: string | null;
+  baixa_manual_data?: string | null;
+  baixa_manual_valor?: string | number | null;
+  baixa_manual_forma_pagamento?: string | null;
+  baixa_manual_observacoes?: string | null;
+  baixa_manual_referencia_anexo?: string | null;
+  baixa_status_anterior?: string | null;
+  baixa_status_novo?: string | null;
+  bloqueio_baixa_motivo?: string | null;
+  programacao_baixa_id?: string | null;
+  programacao_baixa_codigo?: string | null;
+  programacao_baixa_status?: string | null;
+  programacao_baixa_liberacao_status?: string | null;
+  programacao_baixa_conferencia_status?: string | null;
   forma_pagamento_prevista?: string | null;
   observacoes?: string | null;
   created_at: string;
@@ -767,6 +787,41 @@ export interface ContaPagarUpdatePayload {
   data_vencimento?: string;
   forma_pagamento_prevista?: string | null;
   observacoes?: string | null;
+}
+
+export interface ContaPagarBaixaPayload {
+  usuario_id: string;
+  data_baixa: string;
+  valor_baixado: number;
+  forma_pagamento_manual: string;
+  observacoes: string;
+  referencia_anexo?: string | null;
+}
+
+export interface ContaPagarEstornoPayload {
+  usuario_id: string;
+  observacoes: string;
+}
+
+export interface ContaPagarBaixaApi {
+  id: string;
+  conta_pagar_id: string;
+  programacao_id?: string | null;
+  programacao_codigo?: string | null;
+  acao: 'BAIXAR_MANUAL' | 'ESTORNAR_BAIXA' | string;
+  status_anterior: string;
+  status_novo: string;
+  baixa_status: ContaPagarBaixaStatus | string;
+  usuario_id?: string | null;
+  usuario_nome?: string | null;
+  valor_baixado: string | number;
+  data_baixa?: string | null;
+  forma_pagamento_manual?: string | null;
+  observacoes?: string | null;
+  referencia_anexo?: string | null;
+  resultado: 'PERMITIDO' | 'NEGADO' | string;
+  motivo?: string | null;
+  created_at: string;
 }
 
 export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
@@ -1291,7 +1346,19 @@ export const erpApi = {
       (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/${action}`, {
         method: 'PATCH',
         body: JSON.stringify(payload)
-      })).data
+      })).data,
+    baixarManual: async (id: string, payload: ContaPagarBaixaPayload): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/baixar-manual`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    estornarBaixa: async (id: string, payload: ContaPagarEstornoPayload): Promise<ContaPagarApi> =>
+      (await request<ApiItemResponse<ContaPagarApi>>(`/contas-pagar/${id}/estornar-baixa`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    baixas: async (id: string): Promise<ContaPagarBaixaApi[]> =>
+      (await request<ApiListResponse<ContaPagarBaixaApi>>(`/contas-pagar/${id}/baixas`)).data
   },
   programacoesPagamento: {
     list: async (filters: ProgramacaoPagamentoFilters = {}): Promise<ProgramacaoPagamentoApi[]> =>

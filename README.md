@@ -797,6 +797,35 @@ npm.cmd run smoke:conferencia-financeira
 
 O smoke usa marcador `DEV_LOCAL_V3_5F`, valida bloqueio de programacao nao liberada/cancelada, conferencia de programacao liberada, bloqueio de usuario sem permissao, historico, auditoria, ausencia de pagamento/baixa, rotas proibidas ausentes e `DELETE` fisico ausente.
 
+## V3.5G - Baixa Manual Controlada sem Banco
+
+A V3.5G adiciona baixa manual administrativa para Contas a Pagar aprovadas, vinculadas a Programacao de Pagamento `LIBERADA` e com conferencia financeira `CONFERIDA`. A baixa registra usuario, data/hora, data efetiva, valor, forma manual, observacao obrigatoria, referencia futura de anexo, status anterior/novo, historico e auditoria. Nao executa pagamento bancario, nao gera CNAB, nao integra banco e nao usa SharePoint real.
+
+Migration:
+
+```text
+database/migrations/014_baixa_manual_controlada_v35g.sql
+```
+
+Endpoints novos:
+
+```text
+PATCH /contas-pagar/:id/baixar-manual
+PATCH /contas-pagar/:id/estornar-baixa
+GET   /contas-pagar/:id/baixas
+```
+
+A V3.5G nao cria endpoints `/pagar`, `/baixar`, `/executar-pagamento`, `/gerar-cnab` ou integracao bancaria. A baixa manual altera a Conta a Pagar para `BAIXADA_MANUAL`, zera `valor_aberto` e `saldo`, mas nao marca como `PAGA` e nao representa liquidacao bancaria real. O estorno retorna a conta para `APROVADA`, registra `BAIXA_ESTORNADA` e preserva todo o historico.
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:baixa-manual
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_5G`, valida bloqueio de conta sem conferencia, baixa de conta aprovada/liberada/conferida, duplicidade bloqueada, valor divergente bloqueado, usuario sem permissao, aprovacao da Diretoria acima de R$ 20.000, estorno com historico, auditoria, rotas proibidas ausentes e `DELETE` fisico ausente.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.
