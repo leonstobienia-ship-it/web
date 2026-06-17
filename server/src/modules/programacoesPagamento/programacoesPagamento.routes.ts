@@ -13,8 +13,9 @@ import {
   type AcaoAprovacao
 } from '../aprovacoes/aprovacoes.service.js';
 
-type ProgramacaoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'REPROVADA' | 'CANCELADA';
+type ProgramacaoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 type ItemStatus = 'ATIVA' | 'REMOVIDA' | 'CANCELADA';
+type LiberacaoStatus = 'PENDENTE_LIBERACAO' | 'LIBERADA' | 'BLOQUEADA_LIBERACAO' | 'CANCELADA';
 
 interface PgErrorLike {
   code?: string;
@@ -25,6 +26,7 @@ interface ProgramacaoForUpdate extends QueryResultRow {
   id: string;
   company_id: string;
   status: ProgramacaoStatus;
+  liberacao_status: LiberacaoStatus;
   data_prevista: string;
   fornecedor_id: string | null;
   obra_id: string | null;
@@ -32,6 +34,9 @@ interface ProgramacaoForUpdate extends QueryResultRow {
   forma_pagamento_prevista: string | null;
   valor_total: string;
   quantidade_contas: number;
+  liberado_por: string | null;
+  liberado_em: string | null;
+  bloqueio_liberacao_motivo: string | null;
 }
 
 interface ContaProgramacaoRow extends QueryResultRow {
@@ -62,8 +67,39 @@ interface ActiveItemRow extends QueryResultRow {
   status: ItemStatus;
 }
 
+interface LiberacaoContaRow extends QueryResultRow {
+  item_id: string;
+  item_status: ItemStatus;
+  conta_pagar_id: string;
+  conta_status: string;
+  aprovacao_status: string | null;
+  valor_programado: string;
+  valor_aberto: string;
+  ativo: boolean;
+  divergencia_pendente: boolean;
+  nota_status: string | null;
+  numero_documento: string;
+}
+
+interface LiberacaoHistoricoRow extends QueryResultRow {
+  id: string;
+  programacao_id: string;
+  status_anterior: string;
+  status_novo: string;
+  liberacao_status: string;
+  usuario_id: string | null;
+  usuario_nome: string | null;
+  valor_total_liberado: string;
+  quantidade_contas: number;
+  origem_alcada: string | null;
+  justificativa: string | null;
+  resultado: string;
+  motivo: string | null;
+  created_at: string;
+}
+
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-const activeProgramacaoStatuses: ProgramacaoStatus[] = ['RASCUNHO', 'SUBMETIDA', 'APROVADA'];
+const activeProgramacaoStatuses: ProgramacaoStatus[] = ['RASCUNHO', 'SUBMETIDA', 'APROVADA', 'LIBERADA'];
 const approvedStatuses = new Set(['APROVADO_TECNICO', 'APROVADO_DIRETORIA']);
 
 const hasOwn = (payload: Record<string, unknown>, key: string): boolean => Object.prototype.hasOwnProperty.call(payload, key);
@@ -147,13 +183,17 @@ const fetchProgramacaoForUpdate = async (client: PoolClient, id: string): Promis
       id,
       company_id,
       status,
+      liberacao_status,
       data_prevista,
       fornecedor_id,
       obra_id,
       centro_custo_id,
       forma_pagamento_prevista,
       valor_total,
-      quantidade_contas
+      quantidade_contas,
+      liberado_por,
+      liberado_em,
+      bloqueio_liberacao_motivo
     from programacoes_pagamento
     where id = $1
     for update
@@ -171,6 +211,7 @@ const fetchProgramacao = async (id: string) => {
       pp.company_id,
       pp.codigo,
       pp.status,
+      pp.liberacao_status,
       pp.data_prevista,
       pp.fornecedor_id,
       f.nome as fornecedor_nome,
@@ -191,6 +232,15 @@ const fetchProgramacao = async (id: string) => {
       pp.aprovado_em,
       pp.aprovacao_observacoes,
       pp.bloqueio_alcada_motivo,
+      pp.liberado_por,
+      liberador.nome as liberado_por_nome,
+      pp.liberado_em,
+      pp.liberacao_justificativa,
+      pp.liberacao_valor_total,
+      pp.liberacao_quantidade_contas,
+      pp.liberacao_alcada_origem,
+      pp.liberacao_status_anterior,
+      pp.bloqueio_liberacao_motivo,
       pp.submetido_por,
       submetido.nome as submetido_por_nome,
       pp.submetido_em,
@@ -226,6 +276,7 @@ const fetchProgramacao = async (id: string) => {
     left join obras o on o.id = pp.obra_id
     left join centros_custo cc on cc.id = pp.centro_custo_id
     left join usuarios aprovador on aprovador.id = pp.aprovado_por
+    left join usuarios liberador on liberador.id = pp.liberado_por
     left join usuarios submetido on submetido.id = pp.submetido_por
     left join usuarios cancelador on cancelador.id = pp.cancelado_por
     left join programacoes_pagamento_itens ppi on ppi.programacao_id = pp.id and ppi.status = 'ATIVA'
@@ -234,7 +285,7 @@ const fetchProgramacao = async (id: string) => {
     left join obras co on co.id = cp.obra_id
     left join centros_custo ccc on ccc.id = cp.centro_custo_id
     where pp.id = $1
-    group by pp.id, f.id, o.id, cc.id, aprovador.id, submetido.id, cancelador.id
+    group by pp.id, f.id, o.id, cc.id, aprovador.id, liberador.id, submetido.id, cancelador.id
     `,
     [id]
   );
@@ -271,6 +322,7 @@ const listProgramacoes = async (url: URL) => {
       pp.company_id,
       pp.codigo,
       pp.status,
+      pp.liberacao_status,
       pp.data_prevista,
       pp.fornecedor_id,
       f.nome as fornecedor_nome,
@@ -285,12 +337,19 @@ const listProgramacoes = async (url: URL) => {
       pp.quantidade_contas,
       pp.aprovacao_status,
       pp.aprovado_em,
+      pp.liberado_por,
+      liberador.nome as liberado_por_nome,
+      pp.liberado_em,
+      pp.liberacao_valor_total,
+      pp.liberacao_quantidade_contas,
+      pp.bloqueio_liberacao_motivo,
       pp.created_at,
       pp.updated_at
     from programacoes_pagamento pp
     left join fornecedores f on f.id = pp.fornecedor_id
     left join obras o on o.id = pp.obra_id
     left join centros_custo cc on cc.id = pp.centro_custo_id
+    left join usuarios liberador on liberador.id = pp.liberado_por
     ${where}
     order by pp.data_prevista asc, pp.created_at desc
     `,
@@ -484,6 +543,163 @@ const recalcularProgramacao = async (client: PoolClient, id: string): Promise<vo
     `,
     [id]
   );
+};
+
+const fetchLiberacoes = async (programacaoId: string): Promise<LiberacaoHistoricoRow[]> => {
+  assertUuid(programacaoId, 'id');
+  const result = await getPool().query<LiberacaoHistoricoRow>(
+    `
+    select
+      ppl.id,
+      ppl.programacao_id,
+      ppl.status_anterior,
+      ppl.status_novo,
+      ppl.liberacao_status,
+      ppl.usuario_id,
+      u.nome as usuario_nome,
+      ppl.valor_total_liberado,
+      ppl.quantidade_contas,
+      ppl.origem_alcada,
+      ppl.justificativa,
+      ppl.resultado,
+      ppl.motivo,
+      ppl.created_at
+    from programacoes_pagamento_liberacoes ppl
+    left join usuarios u on u.id = ppl.usuario_id
+    where ppl.programacao_id = $1
+    order by ppl.created_at desc
+    `,
+    [programacaoId]
+  );
+  return result.rows;
+};
+
+const insertLiberacaoHistorico = async (
+  client: PoolClient,
+  programacao: ProgramacaoForUpdate,
+  statusNovo: ProgramacaoStatus,
+  liberacaoStatus: Extract<LiberacaoStatus, 'LIBERADA' | 'BLOQUEADA_LIBERACAO'>,
+  usuarioId: string,
+  justificativa: string | null,
+  resultado: 'PERMITIDO' | 'NEGADO',
+  motivo: string | null,
+  origemAlcada: string | null
+): Promise<void> => {
+  await client.query(
+    `
+    insert into programacoes_pagamento_liberacoes (
+      programacao_id,
+      company_id,
+      status_anterior,
+      status_novo,
+      liberacao_status,
+      usuario_id,
+      valor_total_liberado,
+      quantidade_contas,
+      origem_alcada,
+      justificativa,
+      resultado,
+      motivo
+    )
+    values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `,
+    [
+      programacao.id,
+      programacao.company_id,
+      programacao.status,
+      statusNovo,
+      liberacaoStatus,
+      usuarioId,
+      Number(programacao.valor_total),
+      Number(programacao.quantidade_contas),
+      origemAlcada,
+      justificativa,
+      resultado,
+      motivo
+    ]
+  );
+};
+
+const getBloqueiosLiberacao = async (client: PoolClient, programacao: ProgramacaoForUpdate): Promise<string[]> => {
+  const bloqueios: string[] = [];
+  const itens = await client.query<LiberacaoContaRow>(
+    `
+    select
+      ppi.id as item_id,
+      ppi.status as item_status,
+      cp.id as conta_pagar_id,
+      cp.numero_documento,
+      cp.status as conta_status,
+      cp.aprovacao_status,
+      ppi.valor_programado,
+      cp.valor_aberto,
+      cp.ativo,
+      cp.divergencia_pendente,
+      n.status as nota_status
+    from programacoes_pagamento_itens ppi
+    join contas_pagar cp on cp.id = ppi.conta_pagar_id
+    left join notas_fiscais_entrada n on n.id = cp.nota_entrada_id
+    where ppi.programacao_id = $1
+    order by ppi.created_at
+    `,
+    [programacao.id]
+  );
+
+  if (itens.rows.length === 0) {
+    bloqueios.push('Programacao sem contas vinculadas.');
+  }
+
+  const itensRemovidos = itens.rows.filter((item) => item.item_status !== 'ATIVA');
+  if (itensRemovidos.length > 0) {
+    bloqueios.push('Programacao possui conta removida ou cancelada; crie nova programacao para liberar.');
+  }
+
+  const itensAtivos = itens.rows.filter((item) => item.item_status === 'ATIVA');
+  if (itensAtivos.length !== Number(programacao.quantidade_contas)) {
+    bloqueios.push('Quantidade de contas ativas diverge do total recalculado da programacao.');
+  }
+
+  for (const item of itensAtivos) {
+    if (!item.ativo) {
+      bloqueios.push(`Conta ${item.numero_documento} esta inativa.`);
+    }
+    if (item.conta_status === 'CANCELADA') {
+      bloqueios.push(`Conta ${item.numero_documento} esta cancelada.`);
+    } else if (item.conta_status !== 'APROVADA') {
+      bloqueios.push(`Conta ${item.numero_documento} esta em status ${item.conta_status}; exige APROVADA.`);
+    }
+    if (!item.aprovacao_status || !approvedStatuses.has(item.aprovacao_status)) {
+      bloqueios.push(`Conta ${item.numero_documento} nao possui aprovacao interna concluida.`);
+    }
+    if (item.divergencia_pendente || item.nota_status === 'DIVERGENTE') {
+      bloqueios.push(`Conta ${item.numero_documento} possui divergencia pendente.`);
+    }
+    if (Number(item.valor_aberto) <= 0) {
+      bloqueios.push(`Conta ${item.numero_documento} nao possui valor aberto para liberar.`);
+    }
+  }
+
+  if (itensAtivos.length > 0) {
+    const contaIds = itensAtivos.map((item) => item.conta_pagar_id);
+    const duplicidades = await client.query<{ conta_pagar_id: string; total: number }>(
+      `
+      select ppi.conta_pagar_id, count(*)::int as total
+      from programacoes_pagamento_itens ppi
+      join programacoes_pagamento pp on pp.id = ppi.programacao_id
+      where ppi.status = 'ATIVA'
+        and pp.status = any($1::text[])
+        and ppi.conta_pagar_id = any($2::uuid[])
+      group by ppi.conta_pagar_id
+      having count(*) > 1
+      `,
+      [activeProgramacaoStatuses, contaIds]
+    );
+    if (duplicidades.rows.length > 0) {
+      bloqueios.push('Conta vinculada a mais de uma programacao ativa.');
+    }
+  }
+
+  return bloqueios;
 };
 
 const adicionarContaTx = async (
@@ -823,6 +1039,125 @@ const aprovarProgramacao = async (id: string, action: string, payload: Record<st
   }
 };
 
+const liberarProgramacao = async (id: string, payload: Record<string, unknown>) => {
+  assertUuid(id, 'id');
+  assertAllowedFields(payload, ['usuario_id', 'usuarioId', 'observacoes', 'justificativa']);
+  const decisao = getPayloadDecisaoAprovacao({
+    ...payload,
+    observacoes: optionalText(payload, 'justificativa') || optionalText(payload, 'observacoes')
+  });
+  const justificativa = decisao.observacoes;
+  const client = await getPool().connect();
+  let committed = false;
+
+  try {
+    await client.query('begin');
+    const programacao = await fetchProgramacaoForUpdate(client, id);
+    if (!programacao) {
+      throw new HttpError(404, 'not_found', 'Programacao de pagamento nao encontrada.');
+    }
+    if (programacao.status !== 'APROVADA') {
+      throw new HttpError(409, 'status_conflict', `Programacao em status ${programacao.status} nao permite liberacao final.`);
+    }
+    if (programacao.liberacao_status === 'LIBERADA' || programacao.liberado_em) {
+      throw new HttpError(409, 'status_conflict', 'Programacao ja esta liberada para execucao futura.');
+    }
+
+    const bloqueios = await getBloqueiosLiberacao(client, programacao);
+    if (bloqueios.length > 0) {
+      throw new HttpError(409, 'liberacao_bloqueada', 'Programacao nao atende aos criterios de liberacao final.', bloqueios);
+    }
+
+    const validacao = await validarAlcadaDocumento(client, {
+      companyId: programacao.company_id,
+      usuarioId: decisao.usuarioId,
+      modulo: 'programacoes-pagamento',
+      tipoDocumento: 'PROGRAMACAO_PAGAMENTO',
+      acao: 'liberar',
+      valor: Number(programacao.valor_total),
+      obraId: programacao.obra_id,
+      centroCustoId: programacao.centro_custo_id
+    });
+    const origemAlcada = validacao.regra?.id || null;
+    const auditPayload = {
+      usuario_id: decisao.usuarioId,
+      modulo: 'programacoes-pagamento',
+      tipo_documento: 'PROGRAMACAO_PAGAMENTO',
+      acao: 'liberar',
+      valor: Number(programacao.valor_total),
+      quantidade_contas: Number(programacao.quantidade_contas),
+      resultado: validacao.decisao,
+      motivo: validacao.motivo,
+      origem_alcada: origemAlcada,
+      observacoes: justificativa,
+      status_anterior: programacao.status,
+      status_novo: validacao.aprovado ? 'LIBERADA' : programacao.status
+    };
+
+    if (!validacao.aprovado) {
+      await client.query(
+        `
+        update programacoes_pagamento
+        set liberacao_status = 'BLOQUEADA_LIBERACAO',
+            bloqueio_liberacao_motivo = $1,
+            liberacao_justificativa = $2,
+            updated_by = $3,
+            updated_at = now()
+        where id = $4
+        `,
+        [validacao.motivo, justificativa, decisao.usuarioId, id]
+      );
+      await insertLiberacaoHistorico(
+        client,
+        programacao,
+        programacao.status,
+        'BLOQUEADA_LIBERACAO',
+        decisao.usuarioId,
+        justificativa,
+        'NEGADO',
+        validacao.motivo,
+        origemAlcada
+      );
+      await registrarAuditoria(client, programacao.company_id, 'programacao_pagamento', id, 'bloquear_liberacao', auditPayload, decisao.usuarioId);
+      await client.query('commit');
+      committed = true;
+      throw new HttpError(403, 'alcada_liberacao_bloqueada', validacao.motivo, auditPayload);
+    }
+
+    await client.query(
+      `
+      update programacoes_pagamento
+      set status = 'LIBERADA',
+          liberacao_status = 'LIBERADA',
+          liberado_por = $1,
+          liberado_em = now(),
+          liberacao_justificativa = $2,
+          liberacao_valor_total = valor_total,
+          liberacao_quantidade_contas = quantidade_contas,
+          liberacao_alcada_origem = $3,
+          liberacao_status_anterior = $4,
+          bloqueio_liberacao_motivo = null,
+          updated_by = $1,
+          updated_at = now()
+      where id = $5
+      `,
+      [decisao.usuarioId, justificativa, origemAlcada, programacao.status, id]
+    );
+    await insertLiberacaoHistorico(client, programacao, 'LIBERADA', 'LIBERADA', decisao.usuarioId, justificativa, 'PERMITIDO', validacao.motivo, origemAlcada);
+    await registrarAuditoria(client, programacao.company_id, 'programacao_pagamento', id, 'liberar', auditPayload, decisao.usuarioId);
+    await client.query('commit');
+    committed = true;
+    return fetchProgramacao(id);
+  } catch (error) {
+    if (!committed) {
+      await client.query('rollback');
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const reprovarProgramacao = async (id: string, payload: Record<string, unknown>) => {
   assertUuid(id, 'id');
   assertAllowedFields(payload, ['usuario_id', 'usuarioId', 'observacoes', 'justificativa']);
@@ -903,6 +1238,7 @@ const cancelarProgramacao = async (id: string, payload: Record<string, unknown>)
       `
       update programacoes_pagamento
       set status = 'CANCELADA',
+          liberacao_status = 'CANCELADA',
           cancelado_por = $1,
           cancelado_em = now(),
           cancelamento_motivo = $2,
@@ -972,10 +1308,24 @@ export const handleProgramacoesPagamento = async (req: IncomingMessage, res: Ser
       return;
     }
 
+    if (parts.length === 2 && parts[1] === 'liberacoes') {
+      const [id] = parts;
+      if (method !== 'GET') {
+        methodNotAllowed(res, ['GET']);
+        return;
+      }
+      sendJson(res, 200, { data: await fetchLiberacoes(id) });
+      return;
+    }
+
     if (parts.length === 2 && method === 'PATCH') {
       const [id, action] = parts;
       if (action === 'submeter') {
         sendJson(res, 200, { data: await submeterProgramacao(id, await readJsonBody(req)) });
+        return;
+      }
+      if (action === 'liberar') {
+        sendJson(res, 200, { data: await liberarProgramacao(id, await readJsonBody(req)) });
         return;
       }
       if (['aprovar-tecnico', 'aprovar-diretoria'].includes(action)) {

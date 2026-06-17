@@ -769,7 +769,7 @@ export interface ContaPagarUpdatePayload {
   observacoes?: string | null;
 }
 
-export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'REPROVADA' | 'CANCELADA';
+export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 
 export interface ContaPagarElegibilidadeApi extends ContaPagarApi {
   ativo: boolean;
@@ -809,6 +809,7 @@ export interface ProgramacaoPagamentoApi {
   company_id: string;
   codigo: string;
   status: ProgramacaoPagamentoStatus;
+  liberacao_status?: 'PENDENTE_LIBERACAO' | 'LIBERADA' | 'BLOQUEADA_LIBERACAO' | 'CANCELADA' | null;
   data_prevista: string;
   fornecedor_id?: string | null;
   fornecedor_nome?: string | null;
@@ -829,6 +830,15 @@ export interface ProgramacaoPagamentoApi {
   aprovado_em?: string | null;
   aprovacao_observacoes?: string | null;
   bloqueio_alcada_motivo?: string | null;
+  liberado_por?: string | null;
+  liberado_por_nome?: string | null;
+  liberado_em?: string | null;
+  liberacao_justificativa?: string | null;
+  liberacao_valor_total?: string | number | null;
+  liberacao_quantidade_contas?: number | null;
+  liberacao_alcada_origem?: string | null;
+  liberacao_status_anterior?: string | null;
+  bloqueio_liberacao_motivo?: string | null;
   submetido_por?: string | null;
   submetido_por_nome?: string | null;
   submetido_em?: string | null;
@@ -839,6 +849,23 @@ export interface ProgramacaoPagamentoApi {
   created_at: string;
   updated_at: string;
   contas?: ProgramacaoPagamentoContaApi[];
+}
+
+export interface ProgramacaoPagamentoLiberacaoApi {
+  id: string;
+  programacao_id: string;
+  status_anterior: string;
+  status_novo: string;
+  liberacao_status: string;
+  usuario_id?: string | null;
+  usuario_nome?: string | null;
+  valor_total_liberado: string | number;
+  quantidade_contas: number;
+  origem_alcada?: string | null;
+  justificativa?: string | null;
+  resultado: string;
+  motivo?: string | null;
+  created_at: string;
 }
 
 export interface ProgramacaoPagamentoFilters {
@@ -1258,6 +1285,13 @@ export const erpApi = {
         method: 'PATCH',
         body: JSON.stringify(payload)
       })).data,
+    liberar: async (id: string, payload: ProgramacaoPagamentoActionPayload): Promise<ProgramacaoPagamentoApi> =>
+      (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/liberar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    liberacoes: async (id: string): Promise<ProgramacaoPagamentoLiberacaoApi[]> =>
+      (await request<ApiListResponse<ProgramacaoPagamentoLiberacaoApi>>(`/programacoes-pagamento/${id}/liberacoes`)).data,
     aprovar: async (id: string, action: AprovacaoAction, payload: AprovacaoPayload): Promise<ProgramacaoPagamentoApi> =>
       (await request<ApiItemResponse<ProgramacaoPagamentoApi>>(`/programacoes-pagamento/${id}/${action}`, {
         method: 'PATCH',

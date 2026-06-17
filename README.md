@@ -740,6 +740,34 @@ npm.cmd run smoke:programacoes-pagamento
 
 O smoke usa marcador `DEV_LOCAL_V3_5D`, valida conta nao aprovada bloqueada, conta aprovada incluida, duplicidade ativa bloqueada, submissao, bloqueio por alçada insuficiente, aprovacao da diretoria acima de R$ 20.000, ausencia de pagamento/baixa, rotas `/pagar` e `/baixar` ausentes e `DELETE` fisico ausente.
 
+## V3.5E - Liberacao da Programacao de Pagamento
+
+A V3.5E adiciona a liberacao final da Programacao de Pagamento aprovada. A etapa marca a programacao como `LIBERADA` para execucao futura, registra usuario, data/hora, justificativa, valor, quantidade de contas, origem da alcada, historico e auditoria. A Conta a Pagar permanece sem baixa e sem status `PAGA`.
+
+Migration:
+
+```text
+database/migrations/012_liberacao_programacao_pagamento_v35e.sql
+```
+
+Endpoints novos:
+
+```text
+PATCH /programacoes-pagamento/:id/liberar
+GET   /programacoes-pagamento/:id/liberacoes
+```
+
+A V3.5E nao cria endpoints `/pagar`, `/baixar`, `/gerar-cnab`, `/executar-pagamento` ou integracao bancaria. Tambem nao executa baixa, nao altera `valor_aberto` e nao usa `DELETE` fisico.
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:liberacoes-programacao
+```
+
+O smoke usa marcador `DEV_LOCAL_V3_5E`, valida bloqueio de rascunho/submetida/cancelada, liberacao de programacao aprovada, bloqueio por alcada insuficiente, liberacao da diretoria acima de R$ 20.000, ausencia de pagamento/baixa, rotas proibidas ausentes, historico e auditoria.
+
 ## V2.3 - Integração SharePoint
 
 A V2.3 deve preservar a interface V2.2 homologada. A integração real fica concentrada na webpart SPFx, nos modelos e no repositório SharePoint.

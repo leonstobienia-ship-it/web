@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para uma data prevista de pagamento, sem executar pagamento, baixa, liberacao bancaria, CNAB ou integracao com banco.
+O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para uma data prevista de pagamento, aprova a programacao por alcada e registra a liberacao final para execucao futura, sem executar pagamento, baixa, liberacao bancaria real, CNAB ou integracao com banco.
 
 ## Regras funcionais
 
@@ -14,6 +14,9 @@ O dominio de Programacoes de Pagamento organiza Contas a Pagar aprovadas para um
 - Somente `RASCUNHO` recebe/remover contas.
 - `SUBMETIDA` depende de aprovacao por alcada.
 - `APROVADA` confirma o vinculo ativo da programacao, mas nao altera `valor_aberto`, nao cria pagamento e nao baixa.
+- A V3.5E permite liberar somente programacao `APROVADA`.
+- `LIBERADA` indica liberacao final gerencial/financeira para execucao futura, ainda sem pagamento real.
+- Bloqueio por alcada insuficiente na liberacao fica registrado como `BLOQUEADA_LIBERACAO`.
 - `REPROVADA` e `CANCELADA` liberam logicamente as contas para nova programacao futura.
 
 ## Modelo
@@ -35,7 +38,37 @@ Cabeçalho da programação:
 - observacoes;
 - justificativa;
 - campos de aprovacao por alcada;
+- campos de liberacao final;
 - campos de submissao e cancelamento lógico.
+
+Campos de liberacao final da V3.5E:
+
+- `liberacao_status`;
+- `liberado_por`;
+- `liberado_em`;
+- `liberacao_justificativa`;
+- `liberacao_valor_total`;
+- `liberacao_quantidade_contas`;
+- `liberacao_alcada_origem`;
+- `liberacao_status_anterior`;
+- `bloqueio_liberacao_motivo`.
+
+### `programacoes_pagamento_liberacoes`
+
+Historico de tentativas de liberacao:
+
+- programacao;
+- empresa;
+- status anterior e novo;
+- status da liberacao;
+- usuario;
+- valor total liberado;
+- quantidade de contas;
+- origem da alcada;
+- justificativa;
+- resultado;
+- motivo;
+- data/hora.
 
 ### `programacoes_pagamento_itens`
 
@@ -70,12 +103,15 @@ Acoes:
 ```text
 aprovar_tecnico
 aprovar_diretoria
+liberar
 ```
 
 Seeds locais:
 
 - `FINANCEIRO`: `aprovar_tecnico` de R$ 0,00 ate R$ 20.000,00;
 - `DIRETORIA`: `aprovar_diretoria` acima de R$ 20.000,00.
+- `FINANCEIRO`: `liberar` de R$ 0,00 ate R$ 20.000,00;
+- `DIRETORIA`: `liberar` acima de R$ 20.000,00.
 
 ## Contrato REST
 
@@ -89,6 +125,8 @@ PATCH /programacoes-pagamento/:id/contas/:contaPagarId/remover
 PATCH /programacoes-pagamento/:id/submeter
 PATCH /programacoes-pagamento/:id/aprovar-tecnico
 PATCH /programacoes-pagamento/:id/aprovar-diretoria
+PATCH /programacoes-pagamento/:id/liberar
+GET   /programacoes-pagamento/:id/liberacoes
 PATCH /programacoes-pagamento/:id/reprovar
 PATCH /programacoes-pagamento/:id/cancelar
 ```
@@ -98,6 +136,8 @@ Rotas inexistentes por desenho:
 ```text
 PATCH /programacoes-pagamento/:id/pagar
 PATCH /programacoes-pagamento/:id/baixar
+PATCH /programacoes-pagamento/:id/gerar-cnab
+PATCH /programacoes-pagamento/:id/executar-pagamento
 ```
 
 ## Auditoria

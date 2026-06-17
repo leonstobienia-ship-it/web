@@ -50,6 +50,7 @@ const allowedActions = [
   'adicionar_conta',
   'remover_conta',
   'submeter',
+  'liberar',
   'cancelar',
   'reprovar',
   'administrar'

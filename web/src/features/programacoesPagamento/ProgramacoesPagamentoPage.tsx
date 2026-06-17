@@ -16,12 +16,13 @@ interface ProgramacaoForm {
   justificativa: string;
 }
 
-const marker = 'DEV_LOCAL_V3_5D';
+const marker = 'DEV_LOCAL_V3_5E';
 
 const statusLabels: Record<ProgramacaoPagamentoStatus, string> = {
   RASCUNHO: 'Rascunho',
   SUBMETIDA: 'Submetida',
   APROVADA: 'Aprovada',
+  LIBERADA: 'Liberada',
   REPROVADA: 'Reprovada',
   CANCELADA: 'Cancelada'
 };
@@ -44,8 +45,8 @@ const addDays = (days: number): string => {
 const emptyForm = (): ProgramacaoForm => ({
   data_prevista: addDays(5),
   forma_pagamento_prevista: `${marker} - forma prevista local`,
-  observacoes: `${marker} - rascunho local sem pagamento ou baixa`,
-  justificativa: `${marker} - programacao local sem integracao bancaria`
+  observacoes: `${marker} - rascunho local sem execucao financeira`,
+  justificativa: `${marker} - programacao local para liberacao futura`
 });
 
 const getErrorMessage = (error: unknown): string => error instanceof Error ? error.message : String(error);
@@ -60,6 +61,9 @@ const formatMoney = (value: string | number | null | undefined): string =>
 
 const formatDate = (value: string | null | undefined): string =>
   value ? value.slice(0, 10).split('-').reverse().join('/') : '-';
+
+const formatDateTime = (value: string | null | undefined): string =>
+  value ? new Date(value).toLocaleString('pt-BR') : '-';
 
 const statusClass = (status: string): string => status.toLowerCase().replace(/_/g, '-');
 
@@ -211,7 +215,7 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Programação de Pagamento</h1>
       <p className="enac-web-lead">
-        Programação local de contas aprovadas com aprovação por alçada, sem baixa, pagamento, CNAB ou integração bancária.
+        Programação local de contas aprovadas com aprovação por alçada e liberação final para execução futura.
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando programações locais.</div>}
@@ -251,6 +255,10 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
                   usuario_id: actionUserId || null,
                   justificativa: `${marker} - reprovacao local`
                 }), 'Programação reprovada.')}
+                onLiberar={() => void runAction(() => erpApi.programacoesPagamento.liberar(selectedProgramacao.id, {
+                  usuario_id: actionUserId,
+                  justificativa: `${marker} - liberacao final local sem execucao financeira`
+                }), 'Programação liberada para execução futura.')}
                 onCancelar={() => void runAction(() => erpApi.programacoesPagamento.cancelar(selectedProgramacao.id, {
                   usuario_id: actionUserId || null,
                   justificativa: `${marker} - cancelamento logico`
@@ -383,6 +391,7 @@ function ProgramacaoDetail({
   onApproveTecnico,
   onApproveDiretoria,
   onReprovar,
+  onLiberar,
   onCancelar,
   onRemoveConta
 }: {
@@ -395,6 +404,7 @@ function ProgramacaoDetail({
   onApproveTecnico: () => void;
   onApproveDiretoria: () => void;
   onReprovar: () => void;
+  onLiberar: () => void;
   onCancelar: () => void;
   onRemoveConta: (contaPagarId: string) => void;
 }): JSX.Element {
@@ -417,10 +427,23 @@ function ProgramacaoDetail({
         <div><span>Aprovação</span><strong>{programacao.aprovacao_status ? aprovacaoLabels[programacao.aprovacao_status] || programacao.aprovacao_status : '-'}</strong></div>
         <div><span>Aprovador</span><strong>{programacao.aprovado_por_nome || '-'}</strong></div>
         <div><span>Submetido em</span><strong>{programacao.submetido_em ? formatDate(programacao.submetido_em) : '-'}</strong></div>
+        <div><span>Liberação</span><strong>{programacao.liberacao_status || '-'}</strong></div>
+        <div><span>Liberado por</span><strong>{programacao.liberado_por_nome || '-'}</strong></div>
+        <div><span>Liberado em</span><strong>{formatDateTime(programacao.liberado_em)}</strong></div>
+        <div><span>Valor liberado</span><strong>{programacao.liberacao_valor_total ? formatMoney(programacao.liberacao_valor_total) : '-'}</strong></div>
       </div>
 
       {programacao.bloqueio_alcada_motivo && (
         <div className="enac-web-alert enac-web-alert--compact">{programacao.bloqueio_alcada_motivo}</div>
+      )}
+      {programacao.bloqueio_liberacao_motivo && (
+        <div className="enac-web-alert enac-web-alert--compact">{programacao.bloqueio_liberacao_motivo}</div>
+      )}
+      {programacao.liberacao_justificativa && (
+        <div className="enac-finance-preview">
+          <span className="enac-web-card-label">Justificativa da liberação</span>
+          <p>{programacao.liberacao_justificativa}</p>
+        </div>
       )}
 
       <div className="enac-cadastro-row-actions enac-finance-actions">
@@ -435,6 +458,7 @@ function ProgramacaoDetail({
         {programacao.status === 'SUBMETIDA' && <button type="button" onClick={onApproveTecnico} disabled={saving || !actionUserId}>Aprovar técnico</button>}
         {programacao.status === 'SUBMETIDA' && <button type="button" onClick={onApproveDiretoria} disabled={saving || !actionUserId}>Aprovar diretoria</button>}
         {programacao.status === 'SUBMETIDA' && <button type="button" onClick={onReprovar} disabled={saving}>Reprovar</button>}
+        {programacao.status === 'APROVADA' && <button type="button" onClick={onLiberar} disabled={saving || !actionUserId}>Liberar programação</button>}
         {programacao.status !== 'CANCELADA' && <button type="button" className="enac-cadastro-secondary" onClick={onCancelar} disabled={saving}>Cancelar</button>}
       </div>
 

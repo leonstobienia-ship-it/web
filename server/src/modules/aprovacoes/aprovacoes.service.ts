@@ -2,6 +2,7 @@ import type { PoolClient, QueryResultRow } from 'pg';
 import { HttpError } from '../../http.js';
 
 export type AcaoAprovacao = 'aprovar_tecnico' | 'aprovar_diretoria';
+export type AcaoAlcada = AcaoAprovacao | 'liberar';
 export type StatusAprovacao =
   | 'PENDENTE_APROVACAO'
   | 'APROVADO_TECNICO'
@@ -20,6 +21,9 @@ interface UsuarioRow extends QueryResultRow {
 interface RegraAlcadaRow extends QueryResultRow {
   id: string;
   efeito: string;
+  usuario_nome?: string | null;
+  perfil_nome?: string | null;
+  observacoes?: string | null;
 }
 
 export interface PayloadDecisaoAprovacao {
@@ -32,7 +36,7 @@ export interface ValidarAlcadaDocumentoInput {
   usuarioId: string;
   modulo: string;
   tipoDocumento: string;
-  acao: AcaoAprovacao;
+  acao: AcaoAlcada;
   valor: number;
   obraId: string | null;
   centroCustoId: string | null;

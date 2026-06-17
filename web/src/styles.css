@@ -1277,7 +1277,8 @@ textarea {
   color: #1f6b35;
 }
 
-.enac-finance-status--programada {
+.enac-finance-status--programada,
+.enac-finance-status--liberada {
   background: #eeeafd;
   color: #563c8f;
 }
