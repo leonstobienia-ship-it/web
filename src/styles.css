@@ -2,12 +2,13 @@
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #171817;
-  background: #e4e4df;
+  background: #f4f3ef;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --ink: #171817;
   --muted: #5b625f;
-  --paper: #e4e4df;
+  --paper: rgba(255, 255, 255, 0.86);
+  --section-glass: rgba(247, 248, 246, 0.72);
   --white: #ffffff;
   --line: rgba(23, 24, 23, 0.14);
   --red: #c83224;
@@ -28,12 +29,40 @@ html {
 }
 
 body {
+  position: relative;
   margin: 0;
   min-width: 320px;
+  background: #f4f3ef;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  z-index: 0;
+  background-image: url("/images/site/background/background-enac-metal-claro.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 0.9;
+}
+
+body::after {
+  z-index: 0;
   background:
-    linear-gradient(rgba(228, 228, 223, 0.96), rgba(228, 228, 223, 0.96)),
-    repeating-linear-gradient(90deg, rgba(23, 24, 23, 0.07) 0 1px, transparent 1px 64px),
-    repeating-linear-gradient(0deg, rgba(23, 24, 23, 0.05) 0 1px, transparent 1px 64px);
+    linear-gradient(180deg, rgba(232, 231, 226, 0.34), rgba(232, 231, 226, 0.58)),
+    linear-gradient(0deg, rgba(23, 24, 23, 0.08), rgba(23, 24, 23, 0.08)),
+    radial-gradient(circle at 74% 34%, rgba(200, 50, 36, 0.08), transparent 34%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 body,
@@ -52,6 +81,15 @@ a {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(200, 50, 36, 0.35);
+  outline-offset: 3px;
 }
 
 img {
@@ -94,6 +132,9 @@ img {
   display: inline-flex;
   align-items: center;
   border-bottom: 2px solid transparent;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease;
 }
 
 .desktop-nav a:hover,
@@ -118,6 +159,17 @@ img {
   padding: 0 18px;
   color: var(--white);
   background: var(--red);
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.header-call:hover,
+.header-call:focus-visible {
+  background: #a9291f;
+  box-shadow: 0 12px 26px rgba(200, 50, 36, 0.24);
+  transform: translateY(-1px);
 }
 
 .menu-button {
@@ -176,10 +228,22 @@ img {
     linear-gradient(0deg, rgba(13, 16, 15, 0.46), rgba(13, 16, 15, 0.12));
 }
 
-.hero-media img {
+.hero-slide {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transform: scale(1);
+  transition:
+    opacity 900ms ease,
+    transform 5600ms ease;
+}
+
+.hero-slide.is-active {
+  opacity: 1;
+  transform: scale(1.045);
 }
 
 .hero-content {
@@ -243,6 +307,12 @@ p {
   border: 1px solid transparent;
   padding: 0 22px;
   cursor: pointer;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 .button.primary {
@@ -254,6 +324,8 @@ p {
 .button.primary:hover,
 .button.primary:focus-visible {
   background: #9f251a;
+  box-shadow: 0 18px 34px rgba(200, 50, 36, 0.32);
+  transform: translateY(-1px);
 }
 
 .button.secondary {
@@ -262,10 +334,71 @@ p {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.button.secondary:hover,
+.button.secondary:focus-visible {
+  border-color: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.hero-dots {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 28px;
+}
+
+.hero-dots button {
+  width: 34px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.hero-dots span {
+  width: 22px;
+  height: 3px;
+  display: block;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  transition:
+    background 180ms ease,
+    transform 180ms ease,
+    width 180ms ease;
+}
+
+.hero-dots button:hover span,
+.hero-dots button:focus-visible span,
+.hero-dots button.is-active span {
+  width: 30px;
+  background: var(--red);
+  transform: translateY(-1px);
+}
+
 .section {
+  scroll-margin-top: 92px;
   padding: 88px 5vw;
-  background: var(--paper);
+  color: var(--ink);
+  background: var(--section-glass);
   border-top: 1px solid rgba(23, 24, 23, 0.08);
+  backdrop-filter: blur(1.5px);
+}
+
+.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 620ms ease,
+    transform 620ms ease;
+}
+
+.reveal-ready [data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .section-heading {
@@ -293,12 +426,12 @@ p {
 }
 
 .method {
-  background: var(--paper);
+  background: var(--section-glass);
 }
 
 .about {
   display: block;
-  background: var(--paper);
+  background: var(--section-glass);
 }
 
 .about-copy {
@@ -320,7 +453,7 @@ p {
 }
 
 .differentiators {
-  background: var(--paper);
+  background: var(--section-glass);
 }
 
 .differentiator-grid {
@@ -335,9 +468,15 @@ p {
   align-content: start;
   gap: 14px;
   padding: 28px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(23, 24, 23, 0.18);
   border-radius: var(--radius);
-  background: var(--white);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 38px rgba(23, 24, 23, 0.1);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .differentiator-grid svg {
@@ -358,8 +497,10 @@ p {
 .method-rail {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
+  border-top: 1px solid rgba(23, 24, 23, 0.2);
+  border-left: 1px solid rgba(23, 24, 23, 0.2);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 42px rgba(23, 24, 23, 0.1);
 }
 
 .method-step {
@@ -368,9 +509,14 @@ p {
   align-content: start;
   gap: 15px;
   padding: 28px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.48);
+  border-right: 1px solid rgba(23, 24, 23, 0.2);
+  border-bottom: 1px solid rgba(23, 24, 23, 0.2);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.94);
+  transition:
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .method-step > span {
@@ -394,7 +540,7 @@ p {
 }
 
 .sectors {
-  background: var(--paper);
+  background: var(--section-glass);
 }
 
 .sector-layout {
@@ -423,6 +569,12 @@ p {
   cursor: pointer;
   font-weight: 850;
   text-align: left;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 .sector-tabs button.is-active,
@@ -432,6 +584,15 @@ p {
   background: var(--red);
 }
 
+.sector-tabs button:hover,
+.sector-tabs button:focus-visible,
+.form-modes button:hover,
+.form-modes button:focus-visible {
+  border-color: rgba(200, 50, 36, 0.44);
+  box-shadow: 0 12px 24px rgba(23, 24, 23, 0.1);
+  transform: translateY(-1px);
+}
+
 .sector-detail {
   display: grid;
   grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1fr);
@@ -439,8 +600,12 @@ p {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
+  color: var(--ink);
   background: var(--paper);
   box-shadow: var(--shadow);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .sector-detail img {
@@ -448,6 +613,7 @@ p {
   height: 100%;
   min-height: 540px;
   object-fit: cover;
+  animation: mediaFade 420ms ease both;
 }
 
 .sector-copy {
@@ -496,7 +662,7 @@ p {
 }
 
 .projects {
-  background: var(--paper);
+  background: var(--section-glass);
 }
 
 .project-table {
@@ -512,8 +678,13 @@ p {
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  color: var(--ink);
   background: var(--white);
   box-shadow: 0 16px 34px rgba(23, 24, 23, 0.08);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .project-table figure {
@@ -535,6 +706,7 @@ p {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 420ms ease;
 }
 
 .project-body {
@@ -569,8 +741,12 @@ p {
   align-items: center;
   color: var(--white);
   background:
-    linear-gradient(90deg, rgba(28, 51, 38, 0.96), rgba(35, 37, 34, 0.92)),
+    linear-gradient(90deg, rgba(27, 55, 43, 0.97), rgba(35, 37, 34, 0.94)),
     url("/assets/hero-hoteis.webp") center / cover;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .esg .kicker {
@@ -592,6 +768,10 @@ p {
   padding: 16px 18px;
   background: rgba(255, 255, 255, 0.08);
   font-weight: 800;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
 }
 
 .esg-list svg {
@@ -600,7 +780,7 @@ p {
 }
 
 .clients {
-  background: var(--paper);
+  background: var(--section-glass);
 }
 
 .client-logo-grid {
@@ -618,6 +798,11 @@ p {
   border-radius: var(--radius);
   padding: 18px;
   background: #fff;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .client-logo-grid img {
@@ -626,13 +811,16 @@ p {
   width: auto;
   height: auto;
   object-fit: contain;
+  transition:
+    filter 180ms ease,
+    transform 180ms ease;
 }
 
 .contact {
   display: grid;
   grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
   gap: 40px;
-  background: var(--paper);
+  background: var(--section-glass);
 }
 
 .contact-panel {
@@ -647,6 +835,9 @@ p {
     linear-gradient(115deg, transparent 0 58%, rgba(200, 50, 36, 0.28) 58% 61%, transparent 61%),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 42px);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .contact-panel .kicker {
@@ -678,7 +869,11 @@ p {
   padding: 34px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  color: var(--ink);
   background: var(--white);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .form-modes {
@@ -876,6 +1071,98 @@ textarea {
   color: var(--white);
   background: #18aa48;
   box-shadow: 0 16px 28px rgba(0, 0, 0, 0.28);
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+@keyframes mediaFade {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (hover: hover) {
+  .differentiator-grid article:hover,
+  .method-step:hover,
+  .project-table article:hover,
+  .client-logo-grid figure:hover {
+    border-color: rgba(200, 50, 36, 0.32);
+    box-shadow: 0 22px 42px rgba(23, 24, 23, 0.12);
+    transform: translateY(-4px);
+  }
+
+  .method-step:hover {
+    background: rgba(255, 255, 255, 1);
+  }
+
+  .project-table article:hover img {
+    transform: scale(1.04);
+  }
+
+  .sector-detail:hover {
+    border-color: rgba(200, 50, 36, 0.28);
+    box-shadow: 0 24px 50px rgba(23, 24, 23, 0.18);
+  }
+
+  .client-logo-grid figure:hover {
+    opacity: 0.96;
+  }
+
+  .client-logo-grid figure:hover img {
+    filter: saturate(1.06);
+    transform: scale(1.02);
+  }
+
+  .esg-list div:hover {
+    border-color: rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .contact-panel:hover {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 20px 42px rgba(23, 24, 23, 0.14);
+    transform: translateY(-2px);
+  }
+
+  .briefing-form:hover {
+    border-color: rgba(23, 24, 23, 0.2);
+    box-shadow: 0 18px 38px rgba(23, 24, 23, 0.08);
+  }
+
+  .whatsapp:hover,
+  .whatsapp:focus-visible {
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.32);
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .hero-slide {
+    transform: none;
+  }
+
+  .reveal-ready [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (max-width: 1120px) {
@@ -1004,6 +1291,15 @@ textarea {
 }
 
 @media (max-width: 560px) {
+  body::before {
+    background-position: 64% center;
+    opacity: 0.84;
+  }
+
+  body::after {
+    background: rgba(232, 231, 226, 0.66);
+  }
+
   .hero {
     min-height: 620px;
     grid-template-columns: 8vw minmax(0, 1fr) 8vw;

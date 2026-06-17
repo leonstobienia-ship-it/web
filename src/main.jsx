@@ -50,6 +50,39 @@ const navItems = [
   { label: "Contato", href: "#contato" },
 ];
 
+const heroSlides = [
+  {
+    name: "Fulwood Bandeirantes Business Park",
+    image: `${SITE_IMAGE}hero/hero-fulwood-bandeirantes-business-park.webp`,
+    alt: "Vista aérea de condomínio de galpões logísticos, com implantação de grande escala e áreas operacionais.",
+    position: "center center",
+  },
+  {
+    name: "Empreendimento logístico próximo a Viracopos",
+    image: `${SITE_IMAGE}obras/bresco-viracopos/bresco-viracopos-capa-aerea.webp`,
+    alt: "Vista aérea de empreendimento logístico próximo ao Aeroporto de Viracopos, com galpões, áreas administrativas e acesso rodoviário.",
+    position: "center center",
+  },
+  {
+    name: "Unidade industrial em Sorocaba",
+    image: `${SITE_IMAGE}obras/cnh-sorocaba/cnh-sorocaba-fachada-corporativa.webp`,
+    alt: "Fachada corporativa envidraçada de unidade industrial com áreas de operação.",
+    position: "center center",
+  },
+  {
+    name: "Varejo alimentar e atacarejo",
+    image: `${SITE_IMAGE}obras/varejo-alimentar/varejo-makro-capa-aerea.webp`,
+    alt: "Vista aérea de unidade de atacarejo com estacionamento, acessos e implantação operacional.",
+    position: "center center",
+  },
+  {
+    name: "Empreendimento hoteleiro em Campinas",
+    image: `${SITE_IMAGE}obras/royal-palm-plaza/royal-palm-plaza-capa-fachada.webp`,
+    alt: "Fachada principal de empreendimento hoteleiro em Campinas, com arquitetura de alto padrão, acesso e paisagismo.",
+    position: "center center",
+  },
+];
+
 const method = [
   {
     icon: ClipboardList,
@@ -96,8 +129,8 @@ const sectors = [
     key: "logistica",
     name: "Logística e distribuição",
     icon: Warehouse,
-    image: `${SITE_IMAGE}obras/fulwood-bandeirantes/fulwood-bandeirantes-capa-aerea.webp`,
-    alt: "Vista aérea de galpões logísticos com pátio operacional e infraestrutura de acesso.",
+    image: `${SITE_IMAGE}obras/bresco-viracopos/bresco-viracopos-capa-aerea.webp`,
+    alt: "Vista aérea de empreendimento logístico próximo ao Aeroporto de Viracopos, com galpões, áreas administrativas e acesso rodoviário.",
     lead: "Galpões, centros de distribuição, parques logísticos e estruturas frigorificadas com operação planejada desde o início.",
     evidence: ["Galpões logísticos", "Centros de distribuição", "Pátios operacionais", "Acesso rodoviário"],
     needs: ["Fluxo de docas", "Pé-direito e piso industrial", "Expansão futura"],
@@ -123,16 +156,6 @@ const sectors = [
     needs: ["Abertura rápida", "Adequação de loja", "Obra em área urbana"],
   },
   {
-    key: "hospitalidade",
-    name: "Hotelaria",
-    icon: Hotel,
-    image: `${SITE_IMAGE}obras/royal-palm-plaza/royal-palm-plaza-hotelaria-card.webp`,
-    alt: "Fachada lateral de empreendimento hoteleiro com acesso coberto, paisagismo e arquitetura de alto padrão.",
-    lead: "Hotéis, resorts e torres corporativas com exigência de acabamento, conforto e experiência de uso.",
-    evidence: ["Resorts", "Hotéis urbanos", "Áreas de lazer", "Ambientes de alto padrão"],
-    needs: ["Acabamento técnico", "Conforto do usuário", "Entrega por etapas"],
-  },
-  {
     key: "concessionarias",
     name: "Concessionárias",
     icon: Car,
@@ -141,6 +164,26 @@ const sectors = [
     lead: "Showrooms e oficinas com padrão de marca, exposição, circulação e operação de pós-venda.",
     evidence: ["Showrooms", "Oficinas", "Padrão de montadora", "Fluxo de atendimento"],
     needs: ["Padrão de montadora", "Oficina e showroom", "Fluxo de atendimento"],
+  },
+  {
+    key: "hospitalidade",
+    name: "Hotelaria",
+    icon: Hotel,
+    image: `${SITE_IMAGE}obras/royal-palm-plaza/royal-palm-plaza-capa-fachada.webp`,
+    alt: "Fachada principal de empreendimento hoteleiro em Campinas, com arquitetura de alto padrão, acesso e paisagismo.",
+    lead: "Hotéis, resorts e torres corporativas com exigência de acabamento, conforto e experiência de uso.",
+    evidence: ["Resorts", "Hotéis urbanos", "Áreas de lazer", "Ambientes de alto padrão"],
+    needs: ["Acabamento técnico", "Conforto do usuário", "Entrega por etapas"],
+  },
+  {
+    key: "saude",
+    name: "Saúde e corporativo",
+    icon: Building2,
+    image: `${SITE_IMAGE}obras/centro-medico-campinas/centro-medico-campinas-capa-fachada.webp`,
+    alt: "Fachada do Centro Médico Campinas com acesso de recepção e comunicação visual.",
+    lead: "Ambientes de atendimento, áreas corporativas e interiores técnicos com organização de fluxo, acabamento e entrega pronta para uso.",
+    evidence: ["Centros médicos", "Interiores corporativos", "Recepção e atendimento", "Controle de acesso"],
+    needs: ["Fluxo de usuários", "Acabamento interno", "Operação pronta para uso"],
   },
 ];
 
@@ -397,6 +440,9 @@ function PrivacyPage() {
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSector, setActiveSector] = useState(sectors[0].key);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [heroPaused, setHeroPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const [formMode, setFormMode] = useState(formModes[0].id);
   const [submitState, setSubmitState] = useState("idle");
   const isPrivacyPage = window.location.pathname.replace(/\/+$/, "") === "/politica-de-privacidade";
@@ -418,6 +464,56 @@ function App() {
 
     return () => window.removeEventListener("hashchange", redirectLegacyHash);
   }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => setReducedMotion(mediaQuery.matches);
+
+    updateMotionPreference();
+    mediaQuery.addEventListener?.("change", updateMotionPreference);
+
+    return () => mediaQuery.removeEventListener?.("change", updateMotionPreference);
+  }, []);
+
+  useEffect(() => {
+    if (isPrivacyPage || heroPaused || reducedMotion) {
+      return undefined;
+    }
+
+    const interval = window.setInterval(() => {
+      setHeroIndex((index) => (index + 1) % heroSlides.length);
+    }, 5500);
+
+    return () => window.clearInterval(interval);
+  }, [heroPaused, isPrivacyPage, reducedMotion]);
+
+  useEffect(() => {
+    if (isPrivacyPage || reducedMotion || !("IntersectionObserver" in window)) {
+      return undefined;
+    }
+
+    const revealItems = document.querySelectorAll("[data-reveal]");
+    document.body.classList.add("reveal-ready");
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.14 },
+    );
+
+    revealItems.forEach((item) => observer.observe(item));
+
+    return () => {
+      observer.disconnect();
+      document.body.classList.remove("reveal-ready");
+    };
+  }, [isPrivacyPage, reducedMotion]);
 
   useEffect(() => {
     if (!isPrivacyPage) {
@@ -503,12 +599,31 @@ function App() {
       )}
 
       <main id="inicio">
-        <section className="hero">
+        <section
+          className="hero"
+          aria-label="Destaque institucional da ENAC"
+          onMouseEnter={() => setHeroPaused(true)}
+          onMouseLeave={() => setHeroPaused(false)}
+          onFocus={() => setHeroPaused(true)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) {
+              setHeroPaused(false);
+            }
+          }}
+        >
           <div className="hero-media">
-            <img
-              src={`${SITE_IMAGE}hero/hero-fulwood-bandeirantes-business-park.webp`}
-              alt="Vista aérea de condomínio de galpões logísticos, com implantação de grande escala e áreas operacionais."
-            />
+            {heroSlides.map((slide, index) => (
+              <img
+                key={slide.image}
+                className={`hero-slide${heroIndex === index ? " is-active" : ""}`}
+                src={slide.image}
+                alt={heroIndex === index ? slide.alt : ""}
+                aria-hidden={heroIndex !== index}
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : "auto"}
+                style={{ objectPosition: slide.position }}
+              />
+            ))}
           </div>
           <div className="hero-content">
             <span className="kicker">
@@ -529,10 +644,24 @@ function App() {
                 Ver método
               </a>
             </div>
+            <div className="hero-dots" aria-label="Imagens em destaque no início">
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.name}
+                  className={heroIndex === index ? "is-active" : ""}
+                  type="button"
+                  aria-label={`Mostrar imagem: ${slide.name}`}
+                  aria-pressed={heroIndex === index}
+                  onClick={() => setHeroIndex(index)}
+                >
+                  <span />
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
-        <section className="section about" id="quem-somos">
+        <section className="section about" id="quem-somos" data-reveal>
           <div className="about-copy">
             <span className="kicker">Quem somos</span>
             <h2>Uma construtora para empreendimentos que precisam sair do projeto e entrar em operação.</h2>
@@ -546,7 +675,7 @@ function App() {
           </div>
         </section>
 
-        <section className="section differentiators" id="diferenciais">
+        <section className="section differentiators" id="diferenciais" data-reveal>
           <div className="section-heading narrow">
             <span className="kicker">Diferenciais</span>
             <h2>O resultado da obra começa antes do canteiro.</h2>
@@ -555,7 +684,7 @@ function App() {
             {differentiators.map((item) => {
               const Icon = item.icon;
               return (
-                <article key={item.title}>
+                <article key={item.title} data-reveal>
                   <Icon size={30} aria-hidden="true" />
                   <h3>{item.title}</h3>
                   <p>{item.text}</p>
@@ -565,7 +694,7 @@ function App() {
           </div>
         </section>
 
-        <section className="section method" id="metodo">
+        <section className="section method" id="metodo" data-reveal>
           <div className="section-heading">
             <span className="kicker">Método</span>
             <h2>Um processo claro para reduzir risco, retrabalho e urgência.</h2>
@@ -579,7 +708,7 @@ function App() {
             {method.map((step, index) => {
               const Icon = step.icon;
               return (
-                <article className="method-step" key={step.title}>
+                <article className="method-step" key={step.title} data-reveal>
                   <span>{String(index + 1).padStart(2, "0")}</span>
                   <Icon size={28} aria-hidden="true" />
                   <h3>{step.title}</h3>
@@ -590,7 +719,7 @@ function App() {
           </div>
         </section>
 
-        <section className="section sectors" id="atuacao">
+        <section className="section sectors" id="atuacao" data-reveal>
           <div className="section-heading narrow">
             <span className="kicker">Atuação</span>
             <h2>Cada segmento exige uma resposta técnica diferente.</h2>
@@ -606,6 +735,9 @@ function App() {
                     type="button"
                     role="tab"
                     aria-selected={activeSector === sector.key}
+                    aria-controls="sector-panel"
+                    onMouseEnter={() => setActiveSector(sector.key)}
+                    onFocus={() => setActiveSector(sector.key)}
                     onClick={() => setActiveSector(sector.key)}
                   >
                     <Icon size={20} aria-hidden="true" />
@@ -615,8 +747,9 @@ function App() {
               })}
             </div>
 
-            <article className="sector-detail">
+            <article className="sector-detail" id="sector-panel">
               <img
+                key={selectedSector.key}
                 src={selectedSector.image}
                 alt={selectedSector.alt}
                 loading="lazy"
@@ -639,7 +772,7 @@ function App() {
           </div>
         </section>
 
-        <section className="section projects" id="obras">
+        <section className="section projects" id="obras" data-reveal>
           <div className="section-heading">
             <span className="kicker">Obras</span>
             <h2>Obras que demonstram escala, prazo e capacidade de execução.</h2>
@@ -651,7 +784,7 @@ function App() {
           </div>
           <div className="project-table" aria-label="Obras em destaque">
             {projects.map((project) => (
-              <article key={project.name}>
+              <article key={project.name} data-reveal>
                 <figure>
                   <img src={project.image} alt={project.alt} loading="lazy" />
                 </figure>
@@ -665,7 +798,7 @@ function App() {
           </div>
         </section>
 
-        <section className="section esg" id="esg">
+        <section className="section esg" id="esg" data-reveal>
           <div className="esg-copy">
             <span className="kicker">ESG em obra</span>
             <h2>Responsabilidade aplicada ao canteiro, à equipe e ao resultado.</h2>
@@ -681,20 +814,20 @@ function App() {
         </section>
 
         <section className="section clients" id="clientes">
-          <div className="section-heading narrow">
+          <div className="section-heading narrow" data-reveal>
             <span className="kicker">Clientes</span>
             <h2>Empresas que precisam de obra com padrão, prazo e controle.</h2>
           </div>
           <div className="client-logo-grid" aria-label="Clientes atendidos">
             {clients.map((client) => (
-              <figure key={client.name}>
+              <figure key={client.name} data-reveal>
                 <img src={client.logo} alt={client.alt ?? client.name} loading="lazy" />
               </figure>
             ))}
           </div>
         </section>
 
-        <section className="section contact" id="contato">
+        <section className="section contact" id="contato" data-reveal>
           <div className="contact-panel">
             <span className="kicker">Campinas, SP</span>
             <h2>Vamos transformar sua demanda em um briefing técnico?</h2>
