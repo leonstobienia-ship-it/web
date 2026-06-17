@@ -5,10 +5,32 @@ body,
   margin: 0;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --enac-bg: #f3f5f7;
+  --enac-surface: #ffffff;
+  --enac-surface-soft: #f8fafc;
+  --enac-text: #17212f;
+  --enac-muted: #607086;
+  --enac-border: #d9e0e7;
+  --enac-border-strong: #c8d2dc;
+  --enac-primary: #245a7f;
+  --enac-primary-strong: #194763;
+  --enac-success: #1f6b35;
+  --enac-warning: #865200;
+  --enac-danger: #97432b;
+  --enac-focus: #0f6cbd;
+  --enac-shadow: 0 10px 30px rgba(22, 34, 48, 0.08);
+}
+
 body {
-  background: #f3f5f7;
-  color: #17212f;
+  background: var(--enac-bg);
+  color: var(--enac-text);
   font-family: "Segoe UI", Arial, sans-serif;
+  line-height: 1.45;
 }
 
 button,
@@ -18,9 +40,28 @@ textarea {
   font: inherit;
 }
 
+button,
+select,
+input,
+textarea {
+  max-width: 100%;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(15, 108, 189, 0.28);
+  outline-offset: 2px;
+}
+
+button {
+  min-width: 0;
+}
+
 .enac-web-shell {
   display: grid;
-  grid-template-columns: 252px minmax(0, 1fr);
+  grid-template-columns: 286px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -29,16 +70,18 @@ textarea {
   top: 0;
   align-self: start;
   box-sizing: border-box;
+  overflow-y: auto;
   min-height: 100vh;
-  padding: 24px 18px;
-  background: #ffffff;
-  border-right: 1px solid #d9e0e7;
+  max-height: 100vh;
+  padding: 20px 16px;
+  background: var(--enac-surface);
+  border-right: 1px solid var(--enac-border);
 }
 
 .enac-web-brand {
   display: grid;
   gap: 4px;
-  padding: 0 6px 24px;
+  padding: 0 6px 18px;
 }
 
 .enac-web-brand strong {
@@ -46,25 +89,53 @@ textarea {
 }
 
 .enac-web-brand span {
-  color: #607086;
+  color: var(--enac-muted);
   font-size: 13px;
 }
 
-.enac-web-nav nav {
+.enac-web-nav-groups {
   display: grid;
-  gap: 6px;
+  gap: 14px;
+}
+
+.enac-web-nav-group {
+  display: grid;
+  gap: 5px;
+}
+
+.enac-web-nav-group-head {
+  display: grid;
+  gap: 2px;
+  padding: 0 6px 4px;
+}
+
+.enac-web-nav-group-head strong {
+  color: #31465b;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.enac-web-nav-group-head span {
+  color: #7a8796;
+  font-size: 11px;
 }
 
 .enac-web-nav button,
 .enac-web-hero button,
-.enac-web-alert button {
+.enac-web-alert button,
+.enac-web-profile-actions button {
   border: 0;
   cursor: pointer;
 }
 
 .enac-web-nav button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
   width: 100%;
-  min-height: 40px;
+  min-height: 42px;
   padding: 8px 10px;
   border-radius: 6px;
   background: transparent;
@@ -72,20 +143,99 @@ textarea {
   text-align: left;
 }
 
+.enac-web-nav button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.enac-web-nav button small {
+  color: #6f7d8d;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .enac-web-nav button:hover,
 .enac-web-nav button.is-active {
   background: #e8edf3;
 }
 
+.enac-web-nav button.is-active {
+  box-shadow: inset 3px 0 0 var(--enac-primary);
+  color: #102a43;
+  font-weight: 800;
+}
+
+.enac-web-nav button.is-active small {
+  color: var(--enac-primary);
+}
+
 .enac-web-main {
+  display: grid;
+  align-content: start;
   min-width: 0;
+}
+
+.enac-web-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  gap: 16px;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px 32px;
+  border-bottom: 1px solid var(--enac-border);
+  background: rgba(248, 250, 252, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+.enac-web-topbar > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.enac-web-topbar span,
+.enac-web-mobile-jump span {
+  color: var(--enac-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.enac-web-topbar strong {
+  color: var(--enac-text);
+  font-size: 18px;
+}
+
+.enac-web-topbar small {
+  color: #53657a;
+  overflow-wrap: anywhere;
+}
+
+.enac-web-mobile-jump {
+  display: grid;
+  gap: 6px;
+}
+
+.enac-web-mobile-jump select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--enac-border-strong);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--enac-text);
+  padding: 7px 10px;
 }
 
 .enac-web-page {
   box-sizing: border-box;
-  width: min(1180px, 100%);
+  width: min(1240px, 100%);
   margin: 0 auto;
-  padding: 48px 32px;
+  padding: 34px 32px 48px;
 }
 
 .enac-web-eyebrow {
@@ -132,13 +282,20 @@ textarea {
 }
 
 .enac-web-hero button,
-.enac-web-alert button {
+.enac-web-alert button,
+.enac-web-profile-actions button {
   min-height: 42px;
   padding: 0 18px;
   border-radius: 6px;
-  background: #245a7f;
+  background: var(--enac-primary);
   color: #ffffff;
   font-weight: 700;
+}
+
+.enac-web-hero button:hover,
+.enac-web-alert button:hover,
+.enac-web-profile-actions button:hover {
+  background: var(--enac-primary-strong);
 }
 
 .enac-web-hero dl {
@@ -151,9 +308,9 @@ textarea {
 .enac-web-card,
 .enac-web-alert,
 .enac-web-steps {
-  border: 1px solid #d9e0e7;
+  border: 1px solid var(--enac-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--enac-surface);
 }
 
 .enac-web-alert--compact {
@@ -260,25 +417,72 @@ textarea {
 .enac-web-table {
   width: 100%;
   border-collapse: collapse;
-  background: #ffffff;
+  background: var(--enac-surface);
 }
 
 .enac-web-table th,
 .enac-web-table td {
   padding: 13px 14px;
-  border-bottom: 1px solid #d9e0e7;
+  border-bottom: 1px solid var(--enac-border);
   text-align: left;
   vertical-align: top;
 }
 
 .enac-web-table th {
+  background: #f8fafc;
   color: #34475d;
   font-size: 13px;
   text-transform: uppercase;
 }
 
+.enac-web-table tbody tr:hover {
+  background: #f8fbfe;
+}
+
 .enac-web-table strong {
-  color: #17212f;
+  color: var(--enac-text);
+}
+
+.enac-web-profile-map {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.enac-web-profile-map article {
+  display: grid;
+  gap: 14px;
+  align-content: space-between;
+  min-width: 0;
+  border: 1px solid var(--enac-border);
+  border-radius: 8px;
+  background: var(--enac-surface);
+  padding: 16px;
+}
+
+.enac-web-profile-map article span {
+  color: var(--enac-primary);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.enac-web-profile-map article p {
+  margin: 6px 0 0;
+  color: #465a70;
+  line-height: 1.45;
+}
+
+.enac-web-profile-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.enac-web-profile-actions button {
+  min-height: 36px;
+  padding: 6px 9px;
+  white-space: normal;
 }
 
 .enac-web-steps,
@@ -584,6 +788,8 @@ textarea {
 .enac-cadastro-form {
   display: grid;
   gap: 14px;
+  width: 100%;
+  min-width: 0;
   padding: 18px;
   border: 1px solid #d9e0e7;
   border-radius: 8px;
@@ -600,8 +806,13 @@ textarea {
 
 .enac-cadastro-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 12px;
+}
+
+.enac-cadastro-form-grid .enac-solicitacao-span-2,
+.enac-cadastro-form-grid .enac-form-full {
+  grid-column: 1 / -1;
 }
 
 .enac-cadastro-form-grid label {
@@ -1374,6 +1585,11 @@ textarea {
   min-width: 0;
 }
 
+.enac-finance-preview {
+  width: 100%;
+  min-width: 0;
+}
+
 .enac-finance-form {
   position: sticky;
   top: 18px;
@@ -1915,6 +2131,7 @@ textarea {
 .enac-programacao-user {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .enac-programacao-user span {
@@ -1926,6 +2143,8 @@ textarea {
 .enac-programacao-user select,
 .enac-finance-actions select {
   box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   min-height: 38px;
   border: 1px solid #cfd8e3;
   border-radius: 6px;
@@ -3018,10 +3237,95 @@ textarea {
   min-height: 38px;
 }
 
+.enac-cadastro-table-wrap,
+.enac-report-table-wrap,
+.enac-audit-table-section,
+.enac-doc-table-section,
+.enac-risk-table-section,
+.enac-central-table-section {
+  min-width: 0;
+}
+
+.enac-cadastro-table-wrap {
+  box-shadow: inset 0 0 0 1px rgba(217, 224, 231, 0.15);
+}
+
+.enac-cadastro-row-actions button,
+.enac-cadastro-actions button,
+.enac-actions button,
+.enac-inline-actions button,
+.enac-solicitacao-detail-actions button,
+.enac-finance-actions button,
+.enac-pedido-actions button,
+.enac-central-actions button,
+.enac-risk-actions button,
+.enac-doc-actions button,
+.enac-audit-tabs button,
+.enac-central-tabs button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.enac-web-page > h1,
+.enac-cadastros-header h1,
+.enac-report-page h1,
+.enac-finance-page h1,
+.enac-pedidos-page h1,
+.enac-solicitacoes-page h1,
+.enac-central-page h1,
+.enac-risk-page h1,
+.enac-audit-page h1,
+.enac-doc-page h1 {
+  overflow-wrap: anywhere;
+}
+
+.enac-web-page p,
+.enac-web-page td,
+.enac-web-page dd,
+.enac-web-page li,
+.enac-web-page small {
+  overflow-wrap: anywhere;
+}
+
 code {
   padding: 2px 5px;
   border-radius: 4px;
   background: #e8edf3;
+}
+
+@media (max-width: 1180px) {
+  .enac-web-shell {
+    grid-template-columns: 236px minmax(0, 1fr);
+  }
+
+  .enac-web-nav {
+    padding: 16px 12px;
+  }
+
+  .enac-web-nav button {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .enac-web-nav button small {
+    white-space: normal;
+  }
+
+  .enac-web-topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+    padding-inline: 24px;
+  }
+
+  .enac-web-page {
+    padding-inline: 24px;
+  }
+
+  .enac-web-profile-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 840px) {
@@ -3032,12 +3336,34 @@ code {
   .enac-web-nav {
     position: static;
     min-height: auto;
+    max-height: none;
     border-right: 0;
     border-bottom: 1px solid #d9e0e7;
   }
 
-  .enac-web-nav nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .enac-web-nav-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-web-nav-group {
+    border-top: 1px solid #edf1f5;
+    padding-top: 10px;
+  }
+
+  .enac-web-nav-group:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .enac-web-nav-group button {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .enac-web-topbar {
+    position: static;
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 14px 18px;
   }
 
   .enac-web-page {
@@ -3049,6 +3375,11 @@ code {
   }
 
   .enac-web-roadmap {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-web-profile-map,
+  .enac-web-profile-actions {
     grid-template-columns: 1fr;
   }
 
@@ -3121,20 +3452,20 @@ code {
   .enac-dashboard-two-columns,
   .enac-dashboard-filter-actions,
   .enac-audit-filters,
-    .enac-audit-filter-actions,
-    .enac-audit-cards,
-    .enac-audit-highlight-grid,
-    .enac-audit-layout,
-    .enac-audit-detail-grid,
-    .enac-doc-filters,
-    .enac-doc-filter-actions,
-    .enac-doc-cards,
-    .enac-doc-layout,
-    .enac-doc-summary,
-    .enac-doc-form,
-    .enac-doc-actions,
-    .enac-risk-filters,
-    .enac-risk-cards,
+  .enac-audit-filter-actions,
+  .enac-audit-cards,
+  .enac-audit-highlight-grid,
+  .enac-audit-layout,
+  .enac-audit-detail-grid,
+  .enac-doc-filters,
+  .enac-doc-filter-actions,
+  .enac-doc-cards,
+  .enac-doc-layout,
+  .enac-doc-summary,
+  .enac-doc-form,
+  .enac-doc-actions,
+  .enac-risk-filters,
+  .enac-risk-cards,
   .enac-risk-layout,
   .enac-risk-layout--wide,
   .enac-risk-form-grid,
@@ -3241,5 +3572,57 @@ code {
   .enac-cotacao-response-grid,
   .enac-cotacao-winner {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .enac-web-nav {
+    padding: 14px 12px;
+  }
+
+  .enac-web-brand {
+    padding-bottom: 12px;
+  }
+
+  .enac-web-nav button {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-web-page {
+    padding: 22px 12px 34px;
+  }
+
+  .enac-web-page h1 {
+    font-size: 27px;
+    line-height: 1.16;
+  }
+
+  .enac-web-topbar strong {
+    font-size: 16px;
+  }
+
+  .enac-web-table th,
+  .enac-web-table td {
+    padding: 11px 10px;
+  }
+
+  .enac-cadastro-row-actions,
+  .enac-finance-actions,
+  .enac-pedido-actions,
+  .enac-solicitacao-detail-actions,
+  .enac-actions,
+  .enac-inline-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .enac-cadastro-row-actions button,
+  .enac-finance-actions button,
+  .enac-pedido-actions button,
+  .enac-solicitacao-detail-actions button,
+  .enac-actions button,
+  .enac-inline-actions button {
+    width: 100%;
   }
 }

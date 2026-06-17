@@ -1,0 +1,149 @@
+# ERP - Guia de Uso Operacional
+
+## Estrutura do menu
+
+A navegacao do ERP ENAC esta organizada por areas:
+
+| Area | Modulos |
+| --- | --- |
+| Operacao | Visao geral, Central de Tarefas, Riscos e Pendencias, Documentos e Anexos |
+| Compras | Cadastros, Solicitacoes de Compra, Cotacoes, Pedidos de Compra |
+| Financeiro | Notas Fiscais de Entrada, Contas a Pagar, Programacoes de Pagamento, Relatorios Financeiros |
+| Obras | Contratos de Obra, Orcamentos e Planejamento, Medicoes e Faturamento, Previsto x Realizado |
+| Gestao | Dashboard Executivo, Auditoria e Logs, Administracao |
+| Base ERP | Arquitetura, MVP ERP, Workflows, Modelo de dados, Seguranca, Roadmap, Sistema atual |
+
+## Uso por perfil
+
+### Diretoria
+
+Priorizar:
+
+- Dashboard Executivo;
+- Previsto x Realizado;
+- Central de Tarefas;
+- Riscos e Pendencias criticas.
+
+Objetivo: acompanhar margem, exposicao, aprovacoes e alertas.
+
+### Planejamento
+
+Priorizar:
+
+- Contratos de Obra;
+- Orcamentos e Planejamento;
+- Medicoes e Faturamento;
+- Previsto x Realizado.
+
+Objetivo: comparar contrato, escopo, orcamento, medicao e desvio.
+
+### Compras
+
+Priorizar:
+
+- Cadastros;
+- Solicitacoes de Compra;
+- Cotacoes;
+- Pedidos de Compra.
+
+Objetivo: conduzir a demanda ate o pedido formalizado.
+
+### Financeiro
+
+Priorizar:
+
+- Notas Fiscais de Entrada;
+- Contas a Pagar;
+- Programacoes de Pagamento;
+- Relatorios Financeiros.
+
+Objetivo: controlar provisionamento, aprovacao, programacao, conferencia e baixa manual controlada.
+
+### Campo
+
+Priorizar:
+
+- Solicitacoes de Compra;
+- Medicoes e Faturamento;
+- Riscos e Pendencias;
+- Documentos e Anexos.
+
+Objetivo: registrar demandas, evidencias, medicoes e bloqueios operacionais.
+
+### Admin
+
+Priorizar:
+
+- Administracao;
+- Auditoria e Logs;
+- Documentos e Anexos;
+- Seguranca.
+
+Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
+
+## Padroes de tela
+
+- Cabecalho da aplicacao mostra area e modulo ativo.
+- Menu lateral exibe agrupamento por area e perfil predominante.
+- Em telas menores, o seletor de modulo no topo facilita a troca de contexto.
+- Cards resumem indicadores principais.
+- Tabelas mantem rolagem horizontal quando o conteudo e largo.
+- Botoes desabilitados indicam bloqueio visual sem remover o contexto da acao.
+- Chips e status usam cores consistentes por situacao.
+
+## Responsividade
+
+Desktop:
+
+- menu lateral fixo com rolagem propria;
+- conteudo em largura util expandida;
+- detalhes podem permanecer em painel lateral.
+
+Notebook/tablet:
+
+- menu lateral reduzido;
+- cards e paineis quebram em menos colunas;
+- filtros e acoes preservam leitura.
+
+Mobile:
+
+- menu e conteudo empilhados;
+- topbar deixa de ser fixa;
+- botoes de acao ocupam largura total quando necessario;
+- tabelas continuam em rolagem horizontal, sem reduzir textos criticos a ponto de ficarem ilegiveis.
+
+## Limites operacionais
+
+A V3.15 e uma revisao de UX. Ela nao cria operacao financeira, fiscal, bancaria ou documental real.
+
+Permanece proibido nesta etapa:
+
+- pagamento funcional;
+- baixa nova alem da baixa manual controlada ja existente;
+- CNAB;
+- integracao bancaria;
+- boleto real;
+- NFS-e real;
+- integracao com prefeitura;
+- SharePoint real;
+- Microsoft Graph real;
+- Entra real;
+- Power Automate real;
+- upload real externo;
+- `DELETE` fisico.
+
+Documentos e Anexos continuam apenas com metadados locais e campos mock preparados para integracao futura.
+
+## Validacao UX
+
+A validacao visual da V3.15 deve passar por:
+
+- Browser interno desktop;
+- Browser interno mobile;
+- ausencia de erro de console;
+- ausencia de overlay de framework;
+- navegacao por areas principais;
+- build frontend;
+- TypeScript.
+
+Smokes backend seguem obrigatorios para garantir que a revisao visual nao quebrou contratos existentes.

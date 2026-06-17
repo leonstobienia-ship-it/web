@@ -1402,6 +1402,45 @@ npm.cmd run smoke:documentos
 
 A V3.14 nao integra SharePoint real, nao faz upload externo, nao usa Graph real, nao usa Entra real, nao cria Power Automate, nao executa pagamento, nao cria baixa nova, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto e nao usa `DELETE` fisico.
 
+## V3.15 - Revisao UX, Responsividade e Polimento Operacional
+
+A V3.15 revisa a experiencia do ERP ENAC para uso operacional diario. A etapa reorganiza a navegacao por areas, adiciona contexto de modulo ativo, cria atalhos por perfil operacional e ajusta CSS global para legibilidade, foco acessivel, tabelas, botoes, cards e responsividade.
+
+Arquivos principais:
+
+```text
+web/src/main.tsx
+web/src/styles.css
+docs/v3.15-revisao-ux-responsividade-polimento-operacional.md
+docs/erp/guia-uso-operacional.md
+tests/checklist-v3.15-revisao-ux-responsividade-polimento-operacional.md
+```
+
+Areas do menu:
+
+```text
+Operacao
+Compras
+Financeiro
+Obras
+Gestao
+Base ERP
+```
+
+Perfis operacionais mapeados:
+
+```text
+Diretoria
+Planejamento
+Compras
+Financeiro
+Campo
+Admin
+Documentos
+```
+
+A V3.15 nao altera backend, nao cria migration, nao muda regra de negocio critica, nao executa pagamento, nao cria baixa nova, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao usa SharePoint real, nao usa Microsoft Graph real, nao usa Entra real, nao cria Power Automate, nao faz upload real externo e nao usa `DELETE` fisico.
+
 ## Protótipo
 
 Abra no navegador:

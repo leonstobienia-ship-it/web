@@ -123,33 +123,95 @@ class WebErrorBoundary extends React.Component<{ children: React.ReactNode }, IW
   }
 }
 
-const sections: Array<{ key: WebSection; label: string }> = [
-  { key: 'visao', label: 'Visão geral' },
-  { key: 'cadastros', label: 'Cadastros' },
-  { key: 'solicitacoes-compra', label: 'Solicitações de Compra' },
-  { key: 'cotacoes', label: 'Cotações' },
-  { key: 'pedidos-compra', label: 'Pedidos de Compra' },
-  { key: 'notas-entrada', label: 'Notas Fiscais' },
-  { key: 'contas-pagar', label: 'Contas a Pagar' },
-  { key: 'programacoes-pagamento', label: 'Programação de Pagamento' },
-  { key: 'relatorios-financeiros', label: 'Relatórios Financeiros' },
-  { key: 'contratos-obra', label: 'Contratos de Obra' },
-  { key: 'orcamentos-planejamento', label: 'Orçamentos e Planejamento' },
-  { key: 'medicoes-faturamento', label: 'Medições e Faturamento' },
-  { key: 'previsto-realizado', label: 'Previsto x Realizado' },
-  { key: 'dashboard-executivo', label: 'Dashboard Executivo' },
-  { key: 'riscos-pendencias', label: 'Riscos e Pendências' },
-  { key: 'central-tarefas', label: 'Central de Tarefas' },
-  { key: 'auditoria', label: 'Auditoria e Logs' },
-  { key: 'documentos', label: 'Documentos e Anexos' },
-  { key: 'administracao', label: 'Administração' },
-  { key: 'estrutura', label: 'Arquitetura' },
-  { key: 'mvp', label: 'MVP ERP' },
-  { key: 'fluxos', label: 'Workflows' },
-  { key: 'dados', label: 'Modelo de dados' },
-  { key: 'seguranca', label: 'Segurança' },
-  { key: 'implantacao', label: 'Roadmap' },
-  { key: 'sistema', label: 'Sistema atual' }
+interface ISectionItem {
+  key: WebSection;
+  label: string;
+  shortLabel?: string;
+  description: string;
+  profile: string;
+}
+
+interface ISectionGroup {
+  title: string;
+  tone: string;
+  items: ISectionItem[];
+}
+
+const sectionGroups: ISectionGroup[] = [
+  {
+    title: 'Operação',
+    tone: 'Rotina e fila de trabalho',
+    items: [
+      { key: 'visao', label: 'Visão geral', description: 'Mapa executivo e entrada por perfil', profile: 'Todos' },
+      { key: 'central-tarefas', label: 'Central de Tarefas', description: 'Fila de aprovações, pendências e ações manuais', profile: 'Todos' },
+      { key: 'riscos-pendencias', label: 'Riscos e Pendências', description: 'Bloqueios operacionais e histórico de tratativas', profile: 'Campo' },
+      { key: 'documentos', label: 'Documentos e Anexos', description: 'Referências documentais locais e vínculos por entidade', profile: 'Documentos' }
+    ]
+  },
+  {
+    title: 'Compras',
+    tone: 'Solicitação até pedido',
+    items: [
+      { key: 'cadastros', label: 'Cadastros', description: 'Empresas, obras, fornecedores e centros de custo', profile: 'Compras' },
+      { key: 'solicitacoes-compra', label: 'Solicitações de Compra', shortLabel: 'Solicitações', description: 'Demandas de obra e compras internas', profile: 'Campo' },
+      { key: 'cotacoes', label: 'Cotações', description: 'Mapa comparativo e escolha de fornecedor', profile: 'Compras' },
+      { key: 'pedidos-compra', label: 'Pedidos de Compra', shortLabel: 'Pedidos', description: 'Formalização de compra aprovada', profile: 'Compras' }
+    ]
+  },
+  {
+    title: 'Financeiro',
+    tone: 'Contas, programação e relatório',
+    items: [
+      { key: 'notas-entrada', label: 'Notas Fiscais de Entrada', shortLabel: 'Notas Fiscais', description: 'Registro de documentos fiscais recebidos', profile: 'Financeiro' },
+      { key: 'contas-pagar', label: 'Contas a Pagar', description: 'Provisionamento, aprovação e baixa manual controlada', profile: 'Financeiro' },
+      { key: 'programacoes-pagamento', label: 'Programações de Pagamento', shortLabel: 'Programações', description: 'Programação interna sem execução bancária', profile: 'Financeiro' },
+      { key: 'relatorios-financeiros', label: 'Relatórios Financeiros', shortLabel: 'Relatórios', description: 'Leitura gerencial de contas e baixas manuais', profile: 'Financeiro' }
+    ]
+  },
+  {
+    title: 'Obras',
+    tone: 'Contrato, orçamento e medição',
+    items: [
+      { key: 'contratos-obra', label: 'Contratos de Obra', shortLabel: 'Contratos', description: 'Contrato vendido, escopo e aditivos', profile: 'Planejamento' },
+      { key: 'orcamentos-planejamento', label: 'Orçamentos e Planejamento', shortLabel: 'Orçamentos', description: 'Orçamento base, pacotes e cronograma', profile: 'Planejamento' },
+      { key: 'medicoes-faturamento', label: 'Medições e Faturamento', shortLabel: 'Medições', description: 'Medições, pedidos e faturamento manual', profile: 'Planejamento' },
+      { key: 'previsto-realizado', label: 'Previsto x Realizado', description: 'Margem, curva mensal e desvios por obra', profile: 'Diretoria' }
+    ]
+  },
+  {
+    title: 'Gestão',
+    tone: 'Indicadores e governança',
+    items: [
+      { key: 'dashboard-executivo', label: 'Dashboard Executivo', shortLabel: 'Dashboard', description: 'Visão de diretoria, margem e alertas críticos', profile: 'Diretoria' },
+      { key: 'auditoria', label: 'Auditoria e Logs', description: 'Consulta rastreável de eventos do ERP', profile: 'Admin' },
+      { key: 'administracao', label: 'Administração', description: 'Usuários, perfis, escopos e alçadas locais', profile: 'Admin' }
+    ]
+  },
+  {
+    title: 'Base ERP',
+    tone: 'Arquitetura e implantação',
+    items: [
+      { key: 'estrutura', label: 'Arquitetura', description: 'PostgreSQL, API, documentos e identidade', profile: 'Admin' },
+      { key: 'mvp', label: 'MVP ERP', description: 'Escopo verticalizado do ERP ENAC', profile: 'Diretoria' },
+      { key: 'fluxos', label: 'Workflows', description: 'Fluxos-mãe e regras de operação', profile: 'Admin' },
+      { key: 'dados', label: 'Modelo de dados', description: 'Entidades e fronteiras transacionais', profile: 'Admin' },
+      { key: 'seguranca', label: 'Segurança', description: 'Papéis, RLS, auditoria e menor privilégio', profile: 'Admin' },
+      { key: 'implantacao', label: 'Roadmap', description: 'Fases, integrações futuras e relatórios', profile: 'Diretoria' },
+      { key: 'sistema', label: 'Sistema atual', description: 'Webpart operacional legada controlada', profile: 'Admin' }
+    ]
+  }
+];
+
+const sections = sectionGroups.flatMap((group) => group.items);
+const sectionByKey = new Map<WebSection, ISectionItem>(sections.map((item) => [item.key, item]));
+
+const profileShortcuts: Array<{ profile: string; focus: string; sections: WebSection[] }> = [
+  { profile: 'Diretoria', focus: 'margem, alertas e decisões pendentes', sections: ['dashboard-executivo', 'previsto-realizado', 'central-tarefas'] },
+  { profile: 'Planejamento', focus: 'contratos, orçamento, medições e desvios', sections: ['contratos-obra', 'orcamentos-planejamento', 'medicoes-faturamento'] },
+  { profile: 'Compras', focus: 'demanda, cotação, pedido e fornecedor', sections: ['solicitacoes-compra', 'cotacoes', 'pedidos-compra'] },
+  { profile: 'Financeiro', focus: 'NF, contas, programação, baixa manual e relatórios', sections: ['notas-entrada', 'contas-pagar', 'programacoes-pagamento'] },
+  { profile: 'Campo', focus: 'solicitações, medições, riscos e evidências', sections: ['solicitacoes-compra', 'medicoes-faturamento', 'riscos-pendencias'] },
+  { profile: 'Admin', focus: 'perfis, alçadas, auditoria e documentação', sections: ['administracao', 'auditoria', 'documentos'] }
 ];
 
 const architecturePillars = [
@@ -330,6 +392,8 @@ async function createOperationalState(): Promise<IOperationalState> {
 function WebPortal(): JSX.Element {
   const [section, setSection] = React.useState<WebSection>('visao');
   const [operationalState, setOperationalState] = React.useState<IOperationalState>({ loading: false });
+  const currentSection = sectionByKey.get(section) || sections[0];
+  const currentGroup = sectionGroups.find((group) => group.items.some((item) => item.key === section));
 
   React.useEffect(() => {
     const authResponse = window.location.hash.indexOf('code=') >= 0 ||
@@ -375,22 +439,58 @@ function WebPortal(): JSX.Element {
       <aside className="enac-web-nav" aria-label="Navegação do Sistema ENAC">
         <div className="enac-web-brand">
           <strong>Sistema ENAC</strong>
-          <span>Portal operacional web</span>
+          <span>ERP operacional local</span>
         </div>
-        <nav>
-          {sections.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={section === item.key ? 'is-active' : ''}
-              onClick={() => item.key === 'sistema' ? abrirSistema() : setSection(item.key)}
-            >
-              {item.label}
-            </button>
+        <nav className="enac-web-nav-groups">
+          {sectionGroups.map((group) => (
+            <section className="enac-web-nav-group" key={group.title} aria-label={group.title}>
+              <div className="enac-web-nav-group-head">
+                <strong>{group.title}</strong>
+                <span>{group.tone}</span>
+              </div>
+              {group.items.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  data-section={item.key}
+                  className={section === item.key ? 'is-active' : ''}
+                  aria-current={section === item.key ? 'page' : undefined}
+                  onClick={() => item.key === 'sistema' ? abrirSistema() : setSection(item.key)}
+                >
+                  <span>{item.shortLabel || item.label}</span>
+                  <small>{item.profile}</small>
+                </button>
+              ))}
+            </section>
           ))}
         </nav>
       </aside>
       <main className="enac-web-main">
+        <header className="enac-web-topbar">
+          <div>
+            <span>{currentGroup?.title || 'ERP ENAC'}</span>
+            <strong>{currentSection.label}</strong>
+            <small>{currentSection.description}</small>
+          </div>
+          <label className="enac-web-mobile-jump">
+            <span>Módulo</span>
+            <select
+              value={section}
+              onChange={(event) => {
+                const next = event.target.value as WebSection;
+                next === 'sistema' ? void abrirSistema() : setSection(next);
+              }}
+            >
+              {sectionGroups.map((group) => (
+                <optgroup key={group.title} label={group.title}>
+                  {group.items.map((item) => (
+                    <option key={item.key} value={item.key}>{item.label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+        </header>
         {section !== 'sistema' && <ContentSection section={section} onOpenSystem={abrirSistema} onNavigate={setSection} />}
         {section === 'sistema' && (
           <WebErrorBoundary>
@@ -617,22 +717,45 @@ function ContentSection({ section, onOpenSystem, onNavigate }: { section: WebSec
 
   return (
     <Page title="ERP próprio para a ENAC" eyebrow="Blueprint executivo convertido em portal">
-      <section className="enac-web-hero">
-        <div>
-          <p>
-            A recomendação consolidada é evoluir o Sistema ENAC para um ERP verticalizado de
-            engenharia/obras, gestão patrimonial/locação e financeiro operacional. O sistema atual
-            de compras e pagamentos permanece como base de aprendizado e operação controlada.
-          </p>
-          <button type="button" onClick={onOpenSystem}>Abrir sistema atual</button>
-        </div>
-        <dl>
-          <div><dt>MVP</dt><dd>7 frentes</dd></div>
-          <div><dt>Fonte de verdade alvo</dt><dd>PostgreSQL</dd></div>
-          <div><dt>Documentos</dt><dd>SharePoint</dd></div>
-          <div><dt>Prazo estimado</dt><dd>4 a 6 meses</dd></div>
-        </dl>
-      </section>
+      <div className="enac-web-stack">
+        <section className="enac-web-hero">
+          <div>
+            <p>
+              A recomendação consolidada é evoluir o Sistema ENAC para um ERP verticalizado de
+              engenharia/obras, gestão patrimonial/locação e financeiro operacional. O sistema atual
+              de compras e pagamentos permanece como base de aprendizado e operação controlada.
+            </p>
+            <button type="button" onClick={onOpenSystem}>Abrir sistema atual</button>
+          </div>
+          <dl>
+            <div><dt>MVP</dt><dd>7 frentes</dd></div>
+            <div><dt>Fonte de verdade alvo</dt><dd>PostgreSQL</dd></div>
+            <div><dt>Documentos</dt><dd>SharePoint-ready local</dd></div>
+            <div><dt>UX V3.15</dt><dd>Menu por perfil</dd></div>
+          </dl>
+        </section>
+
+        <section className="enac-web-profile-map" aria-label="Fluxo por perfil operacional">
+          {profileShortcuts.map((profile) => (
+            <article key={profile.profile}>
+              <div>
+                <span>{profile.profile}</span>
+                <p>{profile.focus}</p>
+              </div>
+              <div className="enac-web-profile-actions">
+                {profile.sections.map((target) => {
+                  const item = sectionByKey.get(target);
+                  return item ? (
+                    <button key={target} type="button" data-section={target} onClick={() => onNavigate(target)}>
+                      {item.shortLabel || item.label}
+                    </button>
+                  ) : null;
+                })}
+              </div>
+            </article>
+          ))}
+        </section>
+      </div>
     </Page>
   );
 }
