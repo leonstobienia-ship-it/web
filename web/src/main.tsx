@@ -6,6 +6,7 @@ import { SharePointEnacRepository } from '@enacSistema/services/SharePointEnacRe
 import { SharePointFetchClient } from './sharePointFetchClient';
 import { AcessosPage } from './features/acessos/AcessosPage';
 import { CadastrosOperacionais } from './features/cadastros/CadastrosOperacionais';
+import { CentralTarefasPage } from './features/centralTarefas/CentralTarefasPage';
 import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { ContratosObraPage } from './features/contratosObra/ContratosObraPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
@@ -68,6 +69,7 @@ type WebSection =
   | 'previsto-realizado'
   | 'dashboard-executivo'
   | 'riscos-pendencias'
+  | 'central-tarefas'
   | 'administracao'
   | 'estrutura'
   | 'mvp'
@@ -133,6 +135,7 @@ const sections: Array<{ key: WebSection; label: string }> = [
   { key: 'previsto-realizado', label: 'Previsto x Realizado' },
   { key: 'dashboard-executivo', label: 'Dashboard Executivo' },
   { key: 'riscos-pendencias', label: 'Riscos e Pendências' },
+  { key: 'central-tarefas', label: 'Central de Tarefas' },
   { key: 'administracao', label: 'Administração' },
   { key: 'estrutura', label: 'Arquitetura' },
   { key: 'mvp', label: 'MVP ERP' },
@@ -382,7 +385,7 @@ function WebPortal(): JSX.Element {
         </nav>
       </aside>
       <main className="enac-web-main">
-        {section !== 'sistema' && <ContentSection section={section} onOpenSystem={abrirSistema} />}
+        {section !== 'sistema' && <ContentSection section={section} onOpenSystem={abrirSistema} onNavigate={setSection} />}
         {section === 'sistema' && (
           <WebErrorBoundary>
             <OperationalSection state={operationalState} onOpenSystem={abrirSistema} />
@@ -393,7 +396,7 @@ function WebPortal(): JSX.Element {
   );
 }
 
-function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpenSystem: () => void }): JSX.Element {
+function ContentSection({ section, onOpenSystem, onNavigate }: { section: WebSection; onOpenSystem: () => void; onNavigate: (section: WebSection) => void }): JSX.Element {
   if (section === 'cadastros') {
     return <CadastrosOperacionais />;
   }
@@ -448,6 +451,10 @@ function ContentSection({ section, onOpenSystem }: { section: WebSection; onOpen
 
   if (section === 'riscos-pendencias') {
     return <RiscosPendenciasPage />;
+  }
+
+  if (section === 'central-tarefas') {
+    return <CentralTarefasPage onNavigate={(target) => onNavigate(target as WebSection)} />;
   }
 
   if (section === 'administracao') {

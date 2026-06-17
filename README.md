@@ -1284,6 +1284,48 @@ npm.cmd run smoke:riscos-pendencias
 
 A V3.11 nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
 
+## V3.12 - Central de Tarefas e Aprovações
+
+A V3.12 cria uma central agregadora local para reunir tarefas por usuário/perfil, aprovações pendentes, riscos, documentos aguardando decisão, itens atrasados, itens críticos e atalhos para módulos de origem. A central apenas lista e organiza ações; aprovações continuam nos módulos originais.
+
+Migration criada:
+
+```text
+database/migrations/022_central_tarefas_aprovacoes_v312.sql
+```
+
+Endpoints criados:
+
+```http
+GET /central-tarefas/resumo
+GET /central-tarefas/minhas
+GET /central-tarefas/aprovacoes
+GET /central-tarefas/por-modulo
+GET /central-tarefas/atrasadas
+GET /central-tarefas/criticas
+GET /central-tarefas/:id
+POST /central-tarefas/manuais
+PATCH /central-tarefas/:id/marcar-vista
+PATCH /central-tarefas/:id/iniciar
+PATCH /central-tarefas/:id/concluir
+PATCH /central-tarefas/:id/cancelar
+```
+
+Frontend:
+
+```text
+web/src/features/centralTarefas/CentralTarefasPage.tsx
+```
+
+Smoke:
+
+```powershell
+cd server
+npm.cmd run smoke:central-tarefas
+```
+
+A V3.12 nao aprova documentos automaticamente, nao executa pagamento, nao cria baixa, nao integra banco, nao gera CNAB, nao emite NFS-e real, nao integra prefeitura, nao gera boleto, nao cria cobranca real, nao usa SharePoint/Entra/Power Automate reais e nao usa `DELETE` fisico.
+
 ## Protótipo
 
 Abra no navegador:

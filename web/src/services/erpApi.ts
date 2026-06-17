@@ -1120,6 +1120,102 @@ export interface RiscoPendenciaAlertaPayload {
   };
 }
 
+export type CentralTarefaManualStatus = 'ABERTA' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA';
+export type CentralTarefaPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'CRITICA';
+export type CentralTarefaTipo = 'MANUAL' | 'APROVACAO' | 'PENDENCIA' | 'OPERACIONAL' | 'ALERTA' | string;
+
+export interface CentralTarefasFilters {
+  [key: string]: string | undefined;
+  modulo?: string;
+  prioridade?: CentralTarefaPrioridade | '';
+  status?: string;
+  obra_id?: string;
+  responsavel_id?: string;
+  perfil_id?: string;
+  usuario_id?: string;
+  prazo_de?: string;
+  prazo_ate?: string;
+  texto?: string;
+}
+
+export interface CentralTarefaApi {
+  [key: string]: unknown;
+  id: string;
+  manual_id?: string | null;
+  tipo: CentralTarefaTipo;
+  titulo: string;
+  descricao?: string | null;
+  modulo: string;
+  origem: string;
+  origem_id?: string | null;
+  status: string;
+  prioridade: CentralTarefaPrioridade | string;
+  responsavel_id?: string | null;
+  responsavel_nome?: string | null;
+  perfil_id?: string | null;
+  perfil_nome?: string | null;
+  prazo?: string | null;
+  obra_id?: string | null;
+  obra_codigo?: string | null;
+  obra_nome?: string | null;
+  cliente_id?: string | null;
+  cliente_nome?: string | null;
+  created_at: string;
+  idade_dias?: number;
+  atrasada?: boolean;
+  critica?: boolean;
+  navigation_section?: string | null;
+  navigation_label?: string | null;
+  historico?: Array<Record<string, unknown>>;
+}
+
+export interface CentralTarefasResumoApi {
+  total: number;
+  abertas: number;
+  aprovacoes_pendentes: number;
+  atrasadas: number;
+  criticas: number;
+  modulos_com_tarefas: number;
+  proximo_prazo?: string | null;
+}
+
+export interface CentralTarefasModuloApi {
+  modulo: string;
+  total: number;
+  abertas: number;
+  aprovacoes: number;
+  atrasadas: number;
+  criticas: number;
+  proximo_prazo?: string | null;
+  ultimo_evento?: string | null;
+}
+
+export interface CentralTarefaManualPayload {
+  company_id?: string;
+  titulo: string;
+  descricao?: string;
+  modulo?: string;
+  origem?: string;
+  origem_id?: string;
+  prioridade?: CentralTarefaPrioridade;
+  responsavel_id?: string;
+  perfil_id?: string;
+  prazo?: string;
+  obra_id?: string;
+  cliente_id?: string;
+  usuario_id?: string;
+  comentario?: string;
+}
+
+export interface CentralTarefaActionPayload {
+  usuario_id?: string;
+  comentario?: string;
+  observacoes?: string;
+  justificativa?: string;
+  motivo?: string;
+  resolucao?: string;
+}
+
 export type ProgramacaoPagamentoStatus = 'RASCUNHO' | 'SUBMETIDA' | 'APROVADA' | 'LIBERADA' | 'REPROVADA' | 'CANCELADA';
 export type ProgramacaoPagamentoConferenciaStatus = 'PENDENTE_CONFERENCIA' | 'CONFERIDA' | 'BLOQUEADA_CONFERENCIA' | 'DEVOLVIDA';
 
@@ -2767,6 +2863,59 @@ export const erpApi = {
     gerarDeAlerta: async (payload: RiscoPendenciaAlertaPayload): Promise<RiscoPendenciaApi> =>
       (await request<ApiItemResponse<RiscoPendenciaApi>>('/riscos-pendencias/gerar-de-alerta', {
         method: 'POST',
+        body: JSON.stringify(payload)
+      })).data
+  },
+  centralTarefas: {
+    resumo: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefasResumoApi> =>
+      (await request<ApiItemResponse<CentralTarefasResumoApi>>(
+        `/central-tarefas/resumo${buildQueryString(filters)}`
+      )).data,
+    minhas: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefaApi[]> =>
+      (await request<ApiListResponse<CentralTarefaApi>>(
+        `/central-tarefas/minhas${buildQueryString(filters)}`
+      )).data,
+    aprovacoes: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefaApi[]> =>
+      (await request<ApiListResponse<CentralTarefaApi>>(
+        `/central-tarefas/aprovacoes${buildQueryString(filters)}`
+      )).data,
+    porModulo: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefasModuloApi[]> =>
+      (await request<ApiListResponse<CentralTarefasModuloApi>>(
+        `/central-tarefas/por-modulo${buildQueryString(filters)}`
+      )).data,
+    atrasadas: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefaApi[]> =>
+      (await request<ApiListResponse<CentralTarefaApi>>(
+        `/central-tarefas/atrasadas${buildQueryString(filters)}`
+      )).data,
+    criticas: async (filters: CentralTarefasFilters = {}): Promise<CentralTarefaApi[]> =>
+      (await request<ApiListResponse<CentralTarefaApi>>(
+        `/central-tarefas/criticas${buildQueryString(filters)}`
+      )).data,
+    get: async (id: string): Promise<CentralTarefaApi> =>
+      (await request<ApiItemResponse<CentralTarefaApi>>(`/central-tarefas/${id}`)).data,
+    criarManual: async (payload: CentralTarefaManualPayload): Promise<CentralTarefaApi> =>
+      (await request<ApiItemResponse<CentralTarefaApi>>('/central-tarefas/manuais', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })).data,
+    marcarVista: async (id: string, payload: CentralTarefaActionPayload): Promise<CentralTarefaApi> =>
+      (await request<ApiItemResponse<CentralTarefaApi>>(`/central-tarefas/${id}/marcar-vista`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    iniciar: async (id: string, payload: CentralTarefaActionPayload): Promise<CentralTarefaApi> =>
+      (await request<ApiItemResponse<CentralTarefaApi>>(`/central-tarefas/${id}/iniciar`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    concluir: async (id: string, payload: CentralTarefaActionPayload): Promise<CentralTarefaApi> =>
+      (await request<ApiItemResponse<CentralTarefaApi>>(`/central-tarefas/${id}/concluir`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload)
+      })).data,
+    cancelar: async (id: string, payload: CentralTarefaActionPayload): Promise<CentralTarefaApi> =>
+      (await request<ApiItemResponse<CentralTarefaApi>>(`/central-tarefas/${id}/cancelar`, {
+        method: 'PATCH',
         body: JSON.stringify(payload)
       })).data
   }

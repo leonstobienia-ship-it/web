@@ -80,6 +80,10 @@ Custo comprometido usa o maior valor entre pedidos confirmados e contas não can
 
 A partir da V3.11, alertas executivos podem ser convertidos em pendências operacionais por `POST /riscos-pendencias/gerar-de-alerta`. O dashboard permanece somente leitura; a pendência criada passa a concentrar responsável, prazo, prioridade, comentários, histórico e resolução.
 
+## Integração local com V3.12
+
+A partir da V3.12, alertas ja convertidos em pendencias e desvios de margem podem aparecer na Central de Tarefas e Aprovacoes como itens acionaveis. O dashboard continua somente leitura e a central nao executa aprovacao, pagamento, baixa ou qualquer acao financeira/fiscal.
+
 ## Segurança operacional
 
 - Não há operação transacional nova.

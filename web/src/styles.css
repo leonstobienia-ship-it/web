@@ -2306,6 +2306,287 @@ textarea {
   line-height: 1.4;
 }
 
+.enac-central-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.enac-central-filters {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.enac-central-filter-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-self: end;
+}
+
+.enac-central-cards {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.enac-central-card {
+  min-height: 98px;
+}
+
+.enac-central-manual {
+  min-width: 0;
+}
+
+.enac-central-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.enac-central-form-grid label,
+.enac-central-action-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: #5a6878;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.enac-central-form-grid input,
+.enac-central-form-grid select,
+.enac-central-form-grid textarea,
+.enac-central-action-note textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  color: #17202b;
+  font: inherit;
+  text-transform: none;
+}
+
+.enac-central-form-grid textarea,
+.enac-central-action-note textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.enac-central-span-2 {
+  grid-column: span 2;
+}
+
+.enac-central-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.enac-central-tabs button {
+  min-height: 36px;
+  border: 1px solid #d7dde5;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #fff;
+  color: #334155;
+  font-weight: 800;
+}
+
+.enac-central-tabs button.is-active {
+  border-color: #194f90;
+  color: #fff;
+  background: #194f90;
+}
+
+.enac-central-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(380px, 0.65fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.enac-central-table-section {
+  min-width: 0;
+}
+
+.enac-central-table {
+  min-width: 1120px;
+}
+
+.enac-central-table tbody tr {
+  cursor: pointer;
+}
+
+.enac-central-table tbody tr.is-selected {
+  background: #eef6ff;
+}
+
+.enac-central-table td strong,
+.enac-central-table td small {
+  display: block;
+}
+
+.enac-central-table td small {
+  margin-top: 4px;
+  color: #6a7480;
+  font-size: 0.75rem;
+}
+
+.enac-central-chip,
+.enac-central-priority {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.enac-central-chip {
+  color: #1f3b57;
+  background: #e7eef7;
+}
+
+.enac-central-chip--em_andamento,
+.enac-central-chip--aprovado_tecnico,
+.enac-central-chip--aprovado_diretoria {
+  color: #0f5132;
+  background: #dff5ea;
+}
+
+.enac-central-chip--pendente_aprovacao,
+.enac-central-chip--pendente_liberacao,
+.enac-central-chip--pendente_conferencia {
+  color: #6b4a00;
+  background: #fff1c7;
+}
+
+.enac-central-chip--bloqueado_alcada,
+.enac-central-chip--bloqueada_baixa,
+.enac-central-chip--bloqueada_liberacao,
+.enac-central-chip--bloqueada_conferencia {
+  color: #8a1222;
+  background: #ffe1e8;
+}
+
+.enac-central-chip--concluida {
+  color: #165b31;
+  background: #daf7e4;
+}
+
+.enac-central-chip--cancelada {
+  color: #6a7480;
+  background: #edf0f3;
+}
+
+.enac-central-priority {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.enac-central-priority--alta {
+  color: #8f3000;
+  background: #ffe7d6;
+}
+
+.enac-central-priority--critica {
+  color: #8a1222;
+  background: #ffe1e8;
+}
+
+.enac-central-priority--baixa {
+  color: #24604a;
+  background: #dff5ea;
+}
+
+.enac-central-detail {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.enac-central-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.enac-central-detail-grid div,
+.enac-central-history article {
+  border: 1px solid #e3e8ef;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fff;
+}
+
+.enac-central-detail-grid span,
+.enac-central-history small {
+  display: block;
+  color: #6a7480;
+  font-size: 0.76rem;
+}
+
+.enac-central-detail-grid strong {
+  display: block;
+  margin-top: 3px;
+  color: #17202b;
+}
+
+.enac-central-description {
+  margin: 0 0 12px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.enac-central-action-note {
+  margin-bottom: 12px;
+}
+
+.enac-central-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.enac-central-actions button,
+.enac-central-filter-actions button,
+.enac-central-table button {
+  min-width: 0;
+  white-space: normal;
+}
+
+.enac-central-history {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.enac-central-history h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #17202b;
+}
+
+.enac-central-history article {
+  display: grid;
+  gap: 4px;
+}
+
+.enac-central-history article p {
+  margin: 0;
+  color: #334155;
+  line-height: 1.4;
+}
+
 code {
   padding: 2px 5px;
   border-radius: 4px;
@@ -2416,16 +2697,25 @@ code {
   .enac-risk-edit,
   .enac-risk-filter-actions,
   .enac-risk-actions,
-  .enac-risk-detail-grid {
+  .enac-risk-detail-grid,
+  .enac-central-filters,
+  .enac-central-cards,
+  .enac-central-filter-actions,
+  .enac-central-form-grid,
+  .enac-central-layout,
+  .enac-central-detail-grid,
+  .enac-central-actions {
     grid-template-columns: 1fr;
   }
 
-  .enac-risk-detail {
+  .enac-risk-detail,
+  .enac-central-detail {
     position: static;
     max-height: none;
   }
 
-  .enac-risk-span-2 {
+  .enac-risk-span-2,
+  .enac-central-span-2 {
     grid-column: auto;
   }
 
@@ -2487,6 +2777,8 @@ code {
   .enac-solicitacao-detail-actions button,
   .enac-solicitacoes-filters button,
   .enac-report-filters button,
+  .enac-central-actions button,
+  .enac-central-table button,
   .enac-cotacoes-selector button {
     width: 100%;
   }

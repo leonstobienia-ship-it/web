@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readEnv } from './config/env.js';
 import { handleAlcadas, handleEscopos, handlePerfis, handlePerfisEscopos, handleUsuariosPerfis } from './modules/acessos/acessos.routes.js';
 import { handleCentrosCusto } from './modules/centrosCusto/centrosCusto.routes.js';
+import { handleCentralTarefas } from './modules/centralTarefas/centralTarefas.routes.js';
 import { handleClientes } from './modules/clientes/clientes.routes.js';
 import { handleContasPagar } from './modules/contasPagar/contasPagar.routes.js';
 import { handleContratosObra } from './modules/contratosObra/contratosObra.routes.js';
@@ -52,6 +53,7 @@ const prefixedRoutes: Array<{ basePath: string; handler: RouteHandler }> = [
   { basePath: '/previsto-realizado', handler: handlePrevistoRealizado },
   { basePath: '/dashboard-executivo', handler: handleDashboardExecutivo },
   { basePath: '/riscos-pendencias', handler: handleRiscosPendencias },
+  { basePath: '/central-tarefas', handler: handleCentralTarefas },
   { basePath: '/medicoes', handler: handleMedicoes },
   { basePath: '/pedidos-faturamento', handler: handlePedidosFaturamento },
   { basePath: '/perfis', handler: handlePerfis },

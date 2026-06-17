@@ -79,6 +79,10 @@ Mapeamento inicial:
 
 Severidade `CRITICO` vira prioridade `CRITICA`; `ALTO` vira `ALTA`; `BAIXO` vira `BAIXA`; demais severidades viram `MEDIA`.
 
+## Integracao com a Central de Tarefas
+
+A partir da V3.12, pendencias em status ativo alimentam a Central de Tarefas e Aprovacoes. Pendencias com `dashboard_alerta_tipo` tambem podem aparecer como alerta executivo centralizado. A central nao resolve, cancela ou edita a pendencia de origem automaticamente; qualquer mudanca operacional continua ocorrendo neste modulo.
+
 ## Segurança operacional
 
 - Nao existe `DELETE` fisico.

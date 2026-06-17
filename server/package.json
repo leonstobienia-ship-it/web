@@ -26,6 +26,7 @@
     "smoke:previsto-realizado": "npm run build && node dist/scripts/smokePrevistoRealizado.js",
     "smoke:dashboard-executivo": "npm run build && node dist/scripts/smokeDashboardExecutivo.js",
     "smoke:riscos-pendencias": "npm run build && node dist/scripts/smokeRiscosPendencias.js",
+    "smoke:central-tarefas": "npm run build && node dist/scripts/smokeCentralTarefas.js",
     "start": "node dist/index.js"
   },
   "dependencies": {
