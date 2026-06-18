@@ -278,6 +278,44 @@ Limites mantidos:
 - sem SharePoint/Graph/Entra/Power Automate reais;
 - sem `DELETE` fisico.
 
+## V3.18J - Modelo Visual e Arquitetura de Scroll
+
+A V3.18J corrige a arquitetura de scroll do shell web e aproxima as telas operacionais do modelo visual de referencia indicado na homologacao, sem alterar backend, migrations, endpoints ou regras de negocio.
+
+Principais ajustes:
+
+- busca local do modelo de referencia nao encontrou codigo-fonte ou imagem reutilizavel com os textos do print;
+- o print informado pelo usuario foi usado como especificacao visual interna;
+- `html`, `body`, `#root`, shell, sidebar e area principal passaram a ter altura/scroll controlados;
+- a sidebar tem rolagem propria e a area principal concentra o scroll do conteudo;
+- topbar usa fundo solido e z-index controlado para nao competir visualmente com tabelas;
+- tabelas usam containers com scroll interno em desktop e cabecalho solido/sticky dentro do proprio container;
+- paineis laterais e detalhes usam fundo solido, z-index e isolamento para impedir lista passando por tras;
+- `Programacao de Pagamento` recebeu layout list/detail no modo de detalhe, com contas elegiveis no painel esquerdo e acoes/dados da programacao no painel lateral direito;
+- Documentos, Central de Tarefas e Riscos/Pendencias receberam scroll controlado em seus containers de lista.
+
+Documentos:
+
+- `docs/v3.18j-modelo-visual-scroll-layout.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18j-modelo-visual-scroll-layout.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem upload externo real;
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

@@ -273,7 +273,15 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
               </>
             )}
             {activeView === 'detalhe' && selectedProgramacao && (
-              <>
+              <section className="enac-page-workarea enac-programacao-workarea" aria-label="Detalhe e contas da programação">
+                <div className="enac-list-pane">
+                  <ContasElegiveisTable
+                    contas={contas}
+                    selectedProgramacao={selectedProgramacao}
+                    saving={saving}
+                    onAdd={(conta) => void addConta(conta)}
+                  />
+                </div>
               <ProgramacaoDetail
                 programacao={selectedProgramacao}
                 usuarios={usuarios}
@@ -315,13 +323,7 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
                 }), 'Programação cancelada logicamente.')}
                 onRemoveConta={(contaPagarId) => void removeConta(contaPagarId)}
               />
-              <ContasElegiveisTable
-                contas={contas}
-                selectedProgramacao={selectedProgramacao}
-                saving={saving}
-                onAdd={(conta) => void addConta(conta)}
-              />
-              </>
+              </section>
             )}
             {activeView === 'detalhe' && !selectedProgramacao && (
               <div className="enac-cadastro-empty">Selecione uma programação na aba Consulta para visualizar detalhes e contas elegíveis.</div>

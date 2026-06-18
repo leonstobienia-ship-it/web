@@ -490,11 +490,11 @@ function WebPortal(): JSX.Element {
 
   const navigateToSection = (target: WebSection): void => {
     setSection(target);
+    window.requestAnimationFrame(() => {
+      document.querySelector('.enac-web-main')?.scrollTo({ top: 0, behavior: 'smooth' });
+    });
     if (window.innerWidth <= 840) {
       setNavCollapsed(true);
-      window.requestAnimationFrame(() => {
-        document.querySelector('.enac-web-main')?.scrollIntoView({ block: 'start' });
-      });
     }
   };
 

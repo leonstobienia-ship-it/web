@@ -111,6 +111,10 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - `Notas Fiscais de Entrada` exibe `Anexar PDF/XML da NF` no novo registro e nos detalhes.
 - O anexo de NF usa apenas preview local e referencia documental mock/local; nao ha upload externo real nem SharePoint real.
 - O painel de documento da NF mostra metadados, preview PDF local quando suportado, trecho XML e referencias cadastradas no modulo `Documentos e Anexos`.
+- A V3.18J define a arquitetura de scroll atual: sidebar com rolagem propria, conteudo principal com scroll controlado no desktop e fluxo natural no mobile.
+- A V3.18J consolida o padrao list/detail: lista principal em painel proprio, detalhe/acoes em painel lateral no desktop e empilhamento no mobile.
+- Tabelas longas usam container de rolagem proprio e cabecalho solido/sticky para evitar que linhas passem por tras de filtros, cards ou paineis.
+- `Programacoes de Pagamento` usa contas elegiveis no painel esquerdo e detalhe/acoes da programacao no painel lateral direito.
 - Cards resumem indicadores principais com densidade de ERP, sem ocupar a tela como material promocional.
 - Tabelas usam fonte compacta, bordas leves, rolagem horizontal quando o conteudo e largo e quebra de texto controlada.
 - Paineis laterais de detalhe usam destaque vermelho e ficam sticky em desktop quando a largura permite.
