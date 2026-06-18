@@ -106,15 +106,15 @@ button {
 
 .enac-web-brand img {
   grid-column: 1;
-  width: min(184px, 100%);
+  width: min(214px, 100%);
   height: auto;
-  max-height: 66px;
+  max-height: 74px;
   object-fit: contain;
   object-position: left center;
-  border-radius: 6px;
-  background: #ffffff;
-  padding: 8px 9px;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
 }
 
 .enac-web-brand strong {
@@ -314,11 +314,11 @@ button {
 
 .enac-web-shell.is-nav-collapsed .enac-web-brand img {
   grid-row: auto;
-  width: 56px;
+  width: 58px;
   height: auto;
-  max-height: 34px;
+  max-height: 38px;
   object-position: center;
-  padding: 5px;
+  padding: 0;
 }
 
 .enac-web-shell.is-nav-collapsed .enac-web-brand strong,
@@ -487,9 +487,9 @@ button {
 
 .enac-web-page {
   box-sizing: border-box;
-  width: min(1680px, 100%);
+  width: min(1760px, 100%);
   margin: 0 auto;
-  padding: 22px 26px 40px;
+  padding: 20px 22px 40px;
 }
 
 .enac-web-eyebrow {
@@ -1015,9 +1015,9 @@ button {
 
 .enac-work-module {
   box-sizing: border-box;
-  width: min(1680px, 100%);
+  width: min(1760px, 100%);
   margin: 0 auto;
-  padding: 22px 26px 40px;
+  padding: 20px 22px 40px;
   min-width: 0;
   overflow: hidden;
 }
@@ -1067,14 +1067,14 @@ button {
   background: #ffffff;
 }
 
-.enac-module-workspace {
+.enac-work-module .enac-module-workspace {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
   gap: 16px;
   align-items: start;
 }
 
-.enac-module-workspace > .enac-cadastros-list {
+.enac-work-module .enac-module-workspace > .enac-cadastros-list {
   min-width: 0;
 }
 
@@ -1983,6 +1983,134 @@ button {
 .enac-finance-preview {
   width: 100%;
   min-width: 0;
+}
+
+.enac-nf-new-grid {
+  grid-template-columns: minmax(0, 1.18fr) minmax(340px, 0.82fr);
+  align-items: start;
+}
+
+.enac-nf-upload-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  margin-top: 2px;
+  padding: 12px;
+  border: 1px dashed #b9c7d6;
+  border-radius: var(--enac-radius);
+  background: #f8fafc;
+  color: #536173;
+  font-size: 12.5px;
+}
+
+.enac-nf-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 13px;
+  background: var(--enac-primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(19, 48, 83, 0.12);
+}
+
+.enac-nf-upload-button:hover {
+  background: #173f6d;
+}
+
+.enac-nf-upload-button input {
+  display: none;
+}
+
+.enac-nf-document-panel {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--enac-border);
+  border-top: 3px solid var(--enac-red);
+  border-radius: var(--enac-radius);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.04);
+}
+
+.enac-nf-document-panel .enac-cadastro-toolbar {
+  align-items: center;
+}
+
+.enac-nf-document-preview,
+.enac-nf-document-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.enac-nf-document-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 8px;
+}
+
+.enac-nf-document-meta div,
+.enac-nf-document-card {
+  min-width: 0;
+  border: 1px solid #dce5ee;
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 10px;
+}
+
+.enac-nf-document-meta span,
+.enac-nf-document-card span,
+.enac-nf-document-card small {
+  display: block;
+  color: #637083;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.enac-nf-document-meta strong,
+.enac-nf-document-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #17212f;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.enac-nf-pdf-preview {
+  width: 100%;
+  min-height: 360px;
+  border: 1px solid #d5dee9;
+  border-radius: 8px;
+  background: #f5f7fa;
+}
+
+.enac-nf-xml-preview {
+  max-height: 320px;
+  overflow: auto;
+  margin: 0;
+  border: 1px solid #d5dee9;
+  border-radius: 8px;
+  background: #17212f;
+  color: #eff6ff;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.enac-nf-clear-document {
+  justify-self: start;
 }
 
 .enac-finance-form {
@@ -4085,9 +4213,9 @@ code {
 
   .enac-web-shell.is-nav-collapsed .enac-web-brand img {
     grid-row: auto;
-    width: min(150px, 100%);
+    width: min(172px, 100%);
     height: auto;
-    max-height: 56px;
+    max-height: 60px;
     object-position: left center;
   }
 
@@ -4234,8 +4362,26 @@ code {
 
   .enac-module-workspace,
   .enac-module-form,
+  .enac-nf-new-grid,
   .enac-module-detail .enac-kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .enac-nf-upload-strip {
+    align-items: stretch;
+  }
+
+  .enac-nf-upload-button {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .enac-nf-document-panel {
+    padding: 12px;
+  }
+
+  .enac-nf-pdf-preview {
+    min-height: 280px;
   }
 
   .enac-module-detail {

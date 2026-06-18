@@ -2,6 +2,8 @@ import * as React from 'react';
 import {
   erpApi,
   type CentroCustoApi,
+  type DocumentoApi,
+  type DocumentoPayload,
   type EmpresaApi,
   type FornecedorApi,
   type NotaEntradaApi,
@@ -33,6 +35,16 @@ interface NotaForm {
   valor_desconto: string;
   valor_impostos: string;
   observacoes: string;
+}
+
+interface NotaDocumentoDraft {
+  nome_arquivo: string;
+  extensao: string;
+  mime_type: string;
+  tamanho_bytes: number;
+  selecionado_em: string;
+  preview_url?: string;
+  xml_preview?: string;
 }
 
 const marker = 'DEV_LOCAL_V3_5A';
@@ -118,7 +130,32 @@ const formatMoney = (value: string | number | null | undefined): string =>
 const formatDate = (value: string | null | undefined): string =>
   value ? value.slice(0, 10).split('-').reverse().join('/') : '-';
 
+const formatBytes = (value: string | number | null | undefined): string => {
+  const bytes = Number(value || 0);
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 B';
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
 const statusClass = (status: string): string => status.toLowerCase().replace(/_/g, '-');
+
+const fileExtension = (fileName: string): string => {
+  const extension = fileName.split('.').pop()?.trim().toLowerCase();
+  return extension || 'bin';
+};
+
+const isPdfDraft = (draft: NotaDocumentoDraft | null): boolean =>
+  Boolean(draft && (draft.extensao === 'pdf' || draft.mime_type.includes('pdf')));
+
+const isXmlDraft = (draft: NotaDocumentoDraft | null): boolean =>
+  Boolean(draft && (draft.extensao === 'xml' || draft.mime_type.includes('xml')));
 
 const calculateTotal = (form: NotaForm): number =>
   Number((
@@ -146,6 +183,9 @@ export function NotasEntradaPage(): JSX.Element {
   const [filters, setFilters] = React.useState<NotaFilters>(emptyFilters());
   const [form, setForm] = React.useState<NotaForm>(emptyNotaForm());
   const [editForm, setEditForm] = React.useState<NotaForm>(buildEditForm(null));
+  const [documentosNota, setDocumentosNota] = React.useState<DocumentoApi[]>([]);
+  const [documentoDraft, setDocumentoDraft] = React.useState<NotaDocumentoDraft | null>(null);
+  const [loadingDocumentos, setLoadingDocumentos] = React.useState<boolean>(false);
   const [approvalUserId, setApprovalUserId] = React.useState<string>('');
   const [cancelTarget, setCancelTarget] = React.useState<NotaEntradaApi | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
@@ -158,6 +198,23 @@ export function NotasEntradaPage(): JSX.Element {
 
   const loadNotas = React.useCallback(async (nextFilters: NotaFilters): Promise<void> => {
     setNotas(await erpApi.notasEntrada.list(nextFilters));
+  }, []);
+
+  const loadDocumentosNota = React.useCallback(async (notaId?: string): Promise<void> => {
+    if (!notaId) {
+      setDocumentosNota([]);
+      return;
+    }
+
+    setLoadingDocumentos(true);
+    try {
+      setDocumentosNota(await erpApi.documentos.entidade('nota_fiscal_entrada', notaId, {
+        tipo_documento: 'NF',
+        limit: '30'
+      }));
+    } finally {
+      setLoadingDocumentos(false);
+    }
   }, []);
 
   const loadReferences = React.useCallback(async (): Promise<void> => {
@@ -209,6 +266,16 @@ export function NotasEntradaPage(): JSX.Element {
   }, [selectedNota]);
 
   React.useEffect(() => {
+    void loadDocumentosNota(selectedNota?.id).catch((documentosError) => setError(getErrorMessage(documentosError)));
+  }, [loadDocumentosNota, selectedNota?.id]);
+
+  React.useEffect(() => () => {
+    if (documentoDraft?.preview_url) {
+      URL.revokeObjectURL(documentoDraft.preview_url);
+    }
+  }, [documentoDraft?.preview_url]);
+
+  React.useEffect(() => {
     if (!form.pedido_id) {
       setSelectedPedido(null);
       return;
@@ -258,6 +325,77 @@ export function NotasEntradaPage(): JSX.Element {
     setEditForm((current) => ({ ...current, [field]: value }));
   };
 
+  const clearDocumentoDraft = (): void => {
+    setDocumentoDraft(null);
+  };
+
+  const buildDocumentoPayload = (nota: NotaEntradaApi, draft: NotaDocumentoDraft): DocumentoPayload => ({
+    company_id: nota.company_id,
+    entidade_tipo: 'nota_fiscal_entrada',
+    entidade_id: nota.id,
+    tipo_documento: 'NF',
+    nome_arquivo: draft.nome_arquivo,
+    extensao: draft.extensao,
+    mime_type: draft.mime_type,
+    tamanho_bytes: draft.tamanho_bytes,
+    descricao: `Documento fiscal vinculado à NF ${nota.numero}${nota.serie ? `/${nota.serie}` : ''}.`,
+    observacao: `${marker} - referência documental local; sem upload externo real ou SharePoint real.`,
+    origem: 'ERP_LOCAL',
+    status: 'ATIVO',
+    referencia_local_mock: `mock://notas-fiscais-entrada/${nota.id}/${draft.nome_arquivo}`,
+    usuario_id: approvalUserId || undefined
+  });
+
+  const createDocumentoReferencia = async (nota: NotaEntradaApi, draft: NotaDocumentoDraft): Promise<DocumentoApi> => {
+    const created = await erpApi.documentos.create(buildDocumentoPayload(nota, draft));
+    setDocumentosNota((current) => [created, ...current.filter((documento) => documento.id !== created.id)]);
+    return created;
+  };
+
+  const buildDocumentoDraft = async (file: File): Promise<NotaDocumentoDraft> => {
+    const extensao = fileExtension(file.name);
+    const mimeType = file.type || (extensao === 'xml' ? 'application/xml' : 'application/octet-stream');
+    const isPdf = extensao === 'pdf' || mimeType.includes('pdf');
+    const isXml = extensao === 'xml' || mimeType.includes('xml');
+    const xmlPreview = isXml ? (await file.text()).slice(0, 1800) : undefined;
+    return {
+      nome_arquivo: file.name,
+      extensao,
+      mime_type: mimeType,
+      tamanho_bytes: file.size,
+      selecionado_em: new Date().toISOString(),
+      preview_url: isPdf ? URL.createObjectURL(file) : undefined,
+      xml_preview: xmlPreview
+    };
+  };
+
+  const handleDocumentoFile = async (event: React.ChangeEvent<HTMLInputElement>, nota?: NotaEntradaApi | null): Promise<void> => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) {
+      return;
+    }
+
+    setError('');
+    setMessage('');
+    try {
+      const draft = await buildDocumentoDraft(file);
+      setDocumentoDraft(draft);
+      if (!nota) {
+        setMessage('Documento selecionado para prévia local. A referência será registrada após criar a nota.');
+        return;
+      }
+
+      setSaving(true);
+      await createDocumentoReferencia(nota, draft);
+      setMessage('Referência documental da NF registrada localmente.');
+    } catch (documentoError) {
+      setError(getErrorMessage(documentoError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const selectNota = async (nota: NotaEntradaApi): Promise<void> => {
     if (saving) {
       return;
@@ -302,10 +440,14 @@ export function NotasEntradaPage(): JSX.Element {
         valor_total: total,
         observacoes: form.observacoes || null
       });
+      const documentoSelecionado = documentoDraft;
+      if (documentoSelecionado) {
+        await createDocumentoReferencia(nota, documentoSelecionado);
+      }
       setSelectedNota(nota);
       setActiveView('detalhe');
       setForm(emptyNotaForm());
-      setMessage('Nota de entrada criada em rascunho.');
+      setMessage(documentoSelecionado ? 'Nota criada em rascunho e referência documental da NF registrada.' : 'Nota de entrada criada em rascunho.');
       await refresh(nota.id);
     } catch (createError) {
       setError(getErrorMessage(createError));
@@ -463,6 +605,9 @@ export function NotasEntradaPage(): JSX.Element {
               <NotaDetail
                 nota={selectedNota}
                 editForm={editForm}
+                documentos={documentosNota}
+                documentoDraft={documentoDraft}
+                loadingDocumentos={loadingDocumentos}
                 saving={saving}
                 cancelTarget={cancelTarget}
                 usuarios={usuarios}
@@ -474,6 +619,8 @@ export function NotasEntradaPage(): JSX.Element {
                 onTransition={(nota, action) => action === 'cancelar' ? setCancelTarget(nota) : void transition(nota, action)}
                 onConfirmCancel={(nota) => void transition(nota, 'cancelar')}
                 onDismissCancel={() => setCancelTarget(null)}
+                onDocumentoFile={(event, nota) => void handleDocumentoFile(event, nota)}
+                onClearDocumentoDraft={clearDocumentoDraft}
               />
             )}
             {activeView === 'detalhe' && !selectedNota && (
@@ -483,7 +630,7 @@ export function NotasEntradaPage(): JSX.Element {
           )}
 
           {activeView === 'novo' && (
-          <section className="enac-finance-panel enac-module-panel" aria-label="Nova nota fiscal de entrada">
+          <section className="enac-finance-panel enac-module-panel enac-nf-new-grid" aria-label="Nova nota fiscal de entrada">
             <form className="enac-cadastro-form enac-finance-form" onSubmit={(event) => void createNota(event)}>
               <div className="enac-cadastro-form-head">
                 <h3>Nova nota fiscal</h3>
@@ -553,12 +700,28 @@ export function NotasEntradaPage(): JSX.Element {
 
               {selectedPedido && <PedidoPreview pedido={selectedPedido} />}
 
+              <div className="enac-nf-upload-strip">
+                <label className="enac-nf-upload-button">
+                  Anexar PDF/XML da NF
+                  <input type="file" accept=".pdf,.xml,application/pdf,application/xml,text/xml" onChange={(event) => void handleDocumentoFile(event)} disabled={saving} />
+                </label>
+                <span>Prévia local e metadados. O vínculo documental é gravado somente após criar a NF.</span>
+              </div>
+
               <div className="enac-cadastro-actions">
                 <button type="submit" disabled={saving || !form.pedido_id || !form.numero.trim() || calculateTotal(form) <= 0}>
                   {saving ? 'Salvando...' : 'Criar nota'}
                 </button>
               </div>
             </form>
+            <NotaDocumentoPanel
+              title="Prévia do documento"
+              documentos={[]}
+              draft={documentoDraft}
+              loading={false}
+              emptyText="Nenhum documento selecionado. Use Anexar PDF/XML da NF para pré-visualizar e registrar a referência após criar a nota."
+              onClearDraft={clearDocumentoDraft}
+            />
           </section>
           )}
         </div>
@@ -677,6 +840,9 @@ function NotasTable({
 function NotaDetail({
   nota,
   editForm,
+  documentos,
+  documentoDraft,
+  loadingDocumentos,
   saving,
   cancelTarget,
   usuarios,
@@ -687,10 +853,15 @@ function NotaDetail({
   onApprove,
   onTransition,
   onConfirmCancel,
-  onDismissCancel
+  onDismissCancel,
+  onDocumentoFile,
+  onClearDocumentoDraft
 }: {
   nota: NotaEntradaApi;
   editForm: NotaForm;
+  documentos: DocumentoApi[];
+  documentoDraft: NotaDocumentoDraft | null;
+  loadingDocumentos: boolean;
   saving: boolean;
   cancelTarget: NotaEntradaApi | null;
   usuarios: UsuarioApi[];
@@ -705,6 +876,8 @@ function NotaDetail({
   ) => void;
   onConfirmCancel: (nota: NotaEntradaApi) => void;
   onDismissCancel: () => void;
+  onDocumentoFile: (event: React.ChangeEvent<HTMLInputElement>, nota: NotaEntradaApi) => void;
+  onClearDocumentoDraft: () => void;
 }): JSX.Element {
   return (
     <section className="enac-finance-detail">
@@ -781,8 +954,102 @@ function NotaDetail({
         </form>
       )}
 
+      <NotaDocumentoPanel
+        title="Documentos da NF"
+        documentos={documentos}
+        draft={documentoDraft}
+        loading={loadingDocumentos}
+        emptyText="Nenhum documento anexado. Use Anexar PDF/XML da NF para registrar metadados locais do arquivo fiscal."
+        onClearDraft={onClearDocumentoDraft}
+      >
+        <label className="enac-nf-upload-button">
+          Anexar PDF/XML da NF
+          <input type="file" accept=".pdf,.xml,application/pdf,application/xml,text/xml" onChange={(event) => onDocumentoFile(event, nota)} disabled={saving} />
+        </label>
+      </NotaDocumentoPanel>
+
       <NotaItemsTable nota={nota} />
     </section>
+  );
+}
+
+function NotaDocumentoPanel({
+  title,
+  documentos,
+  draft,
+  loading,
+  emptyText,
+  onClearDraft,
+  children
+}: {
+  title: string;
+  documentos: DocumentoApi[];
+  draft: NotaDocumentoDraft | null;
+  loading: boolean;
+  emptyText: string;
+  onClearDraft: () => void;
+  children?: React.ReactNode;
+}): JSX.Element {
+  return (
+    <aside className="enac-nf-document-panel">
+      <div className="enac-cadastro-toolbar">
+        <div>
+          <span className="enac-web-card-label">PDF/XML local</span>
+          <h3>{title}</h3>
+          <p>Metadados locais, sem upload externo e sem SharePoint real.</p>
+        </div>
+        {children}
+      </div>
+
+      {draft ? (
+        <div className="enac-nf-document-preview">
+          <div className="enac-nf-document-meta">
+            <div><span>Arquivo selecionado</span><strong>{draft.nome_arquivo}</strong></div>
+            <div><span>Tipo</span><strong>{draft.mime_type}</strong></div>
+            <div><span>Tamanho</span><strong>{formatBytes(draft.tamanho_bytes)}</strong></div>
+            <div><span>Selecionado em</span><strong>{formatDate(draft.selecionado_em)}</strong></div>
+          </div>
+
+          {isPdfDraft(draft) && draft.preview_url && (
+            <iframe className="enac-nf-pdf-preview" title="Prévia local da nota fiscal em PDF" src={draft.preview_url} />
+          )}
+
+          {isXmlDraft(draft) && (
+            <pre className="enac-nf-xml-preview">{draft.xml_preview || 'XML selecionado. Prévia textual indisponível.'}</pre>
+          )}
+
+          {!isPdfDraft(draft) && !isXmlDraft(draft) && (
+            <div className="enac-cadastro-empty">Prévia visual indisponível para esta extensão. Os metadados serão preservados localmente.</div>
+          )}
+
+          <button type="button" className="enac-cadastro-secondary enac-nf-clear-document" onClick={onClearDraft}>
+            Limpar prévia local
+          </button>
+        </div>
+      ) : (
+        <div className="enac-cadastro-empty">{emptyText}</div>
+      )}
+
+      <div className="enac-nf-document-list">
+        <div className="enac-cadastro-toolbar">
+          <div>
+            <h4>Referências registradas</h4>
+            <p>{loading ? 'Atualizando documentos...' : `${documentos.length} referência(s) local(is)`}</p>
+          </div>
+        </div>
+        {documentos.length > 0 ? (
+          documentos.map((documento) => (
+            <article key={documento.id} className="enac-nf-document-card">
+              <strong>{documento.nome_arquivo}</strong>
+              <span>{String(documento.tipo_documento)} · {documento.extensao.toUpperCase()} · {formatBytes(documento.tamanho_bytes)}</span>
+              <small>{documento.referencia_local_mock || documento.url_mock || 'Referência local registrada no ERP.'}</small>
+            </article>
+          ))
+        ) : (
+          <div className="enac-cadastro-empty">Nenhuma referência documental cadastrada para esta nota.</div>
+        )}
+      </div>
+    </aside>
   );
 }
 

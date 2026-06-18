@@ -242,6 +242,42 @@ Limites mantidos:
 - sem upload externo;
 - sem `DELETE` fisico.
 
+## V3.18I - Ajustes Visuais: Logo, Anexos NF e Layout
+
+A V3.18I corrige pontos de homologacao visual sem alterar backend, migrations, endpoints ou regras de negocio. A etapa ajusta o logo oficial ENAC no menu, cria uma acao clara para anexar PDF/XML na tela de Notas Fiscais de Entrada e remove vazios criados por grids globais abaixo das abas operacionais.
+
+Principais ajustes:
+
+- logo oficial renderizado diretamente sobre o fundo do menu, sem card branco, sem sombra e sem distorcao;
+- tela `Notas Fiscais de Entrada` exibe botao `Anexar PDF/XML da NF` no novo registro e nos detalhes;
+- preview local de PDF via navegador e trecho textual de XML quando o arquivo e selecionado;
+- metadados do arquivo fiscal vinculados ao modulo `Documentos e Anexos` como referencia local/mock depois que a NF existe;
+- area antes vazia abaixo das abas passa a ter conteudo util ou estado vazio claro;
+- regra global de duas colunas de `enac-module-workspace` ficou restrita aos cadastros que dependem dela;
+- largura util do conteudo foi ampliada para reduzir margens laterais em telas largas.
+
+Documentos:
+
+- `docs/v3.18i-ajustes-visuais-logo-nf-layout.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18i-ajustes-visuais-logo-nf-layout.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem upload externo real;
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

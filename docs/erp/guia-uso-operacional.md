@@ -106,6 +106,11 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - `Orcamentos` trata somente orcamento base, pacotes, itens, cronograma fisico-financeiro, resumo e status orcamentario.
 - `Planejamento Executivo` trata somente etapas, responsaveis, datas, status, revisoes e encerramento/cancelamento operacional ja existente.
 - Nao ha aba `Planejamento Executivo` dentro de Orcamentos nem aba `Orcamentos` dentro de Planejamento Executivo.
+- A V3.18I ajusta o logo oficial no menu para usar transparencia real, sem card branco e sem distorcer a imagem.
+- A V3.18I restringe grids de duas colunas aos cadastros que precisam deles, reduzindo espacos vazios abaixo das abas operacionais.
+- `Notas Fiscais de Entrada` exibe `Anexar PDF/XML da NF` no novo registro e nos detalhes.
+- O anexo de NF usa apenas preview local e referencia documental mock/local; nao ha upload externo real nem SharePoint real.
+- O painel de documento da NF mostra metadados, preview PDF local quando suportado, trecho XML e referencias cadastradas no modulo `Documentos e Anexos`.
 - Cards resumem indicadores principais com densidade de ERP, sem ocupar a tela como material promocional.
 - Tabelas usam fonte compacta, bordas leves, rolagem horizontal quando o conteudo e largo e quebra de texto controlada.
 - Paineis laterais de detalhe usam destaque vermelho e ficam sticky em desktop quando a largura permite.
