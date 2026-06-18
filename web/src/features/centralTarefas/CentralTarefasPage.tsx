@@ -12,7 +12,7 @@ import {
   type UsuarioApi
 } from '../../services/erpApi';
 
-type CentralTab = 'minhas' | 'aprovacoes' | 'atrasadas' | 'criticas' | 'modulos';
+type CentralTab = 'minhas' | 'nova' | 'aprovacoes' | 'atrasadas' | 'criticas' | 'modulos';
 
 interface CentralState {
   resumo: CentralTarefasResumoApi | null;
@@ -29,7 +29,8 @@ interface CentralTarefasPageProps {
 
 const marker = 'DEV_LOCAL_V3_12';
 const tabLabels: Record<CentralTab, string> = {
-  minhas: 'Minhas Tarefas',
+  minhas: 'Consulta',
+  nova: 'Nova tarefa',
   aprovacoes: 'Aprovações',
   atrasadas: 'Atrasadas',
   criticas: 'Críticas',
@@ -354,7 +355,7 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
           <input value={filters.texto || ''} onChange={(event) => setFilters((current) => ({ ...current, texto: event.target.value }))} disabled={loading} />
         </label>
         <div className="enac-central-filter-actions">
-          <button type="button" onClick={() => void refresh()} disabled={loading}>Atualizar</button>
+          <button type="button" onClick={() => void refresh()} disabled={loading}>Pesquisar</button>
           <button type="button" className="enac-dashboard-secondary" onClick={() => void clearFilters()} disabled={loading}>Limpar filtros</button>
         </div>
       </section>
@@ -367,6 +368,15 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
         <CentralCard label="Por módulo" value={state.resumo?.modulos_com_tarefas || 0} />
       </div>
 
+      <div className="enac-central-tabs" role="tablist" aria-label="Visões da central">
+        {(Object.keys(tabLabels) as CentralTab[]).map((tab) => (
+          <button key={tab} type="button" className={activeTab === tab ? 'is-active' : ''} onClick={() => setActiveTab(tab)}>
+            {tabLabels[tab]}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'nova' && (
       <section className="enac-report-section enac-central-manual">
         <div className="enac-cadastro-toolbar">
           <div>
@@ -430,15 +440,9 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
           Criar tarefa
         </button>
       </section>
+      )}
 
-      <div className="enac-central-tabs" role="tablist" aria-label="Visões da central">
-        {(Object.keys(tabLabels) as CentralTab[]).map((tab) => (
-          <button key={tab} type="button" className={activeTab === tab ? 'is-active' : ''} onClick={() => setActiveTab(tab)}>
-            {tabLabels[tab]}
-          </button>
-        ))}
-      </div>
-
+      {activeTab !== 'nova' && (
       <div className="enac-central-layout">
         {activeTab === 'modulos' ? (
           <ModuleTable modulos={state.modulos} loading={loading} />
@@ -467,6 +471,7 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
           onCancelar={() => void runManualAction('cancelar')}
         />
       </div>
+      )}
     </section>
   );
 }

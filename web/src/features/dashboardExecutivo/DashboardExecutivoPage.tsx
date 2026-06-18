@@ -309,7 +309,7 @@ export function DashboardExecutivoPage(): JSX.Element {
         </label>
         <div className="enac-dashboard-filter-actions">
           <button type="button" onClick={() => void refresh()} disabled={loading}>
-            {loading ? 'Atualizando...' : 'Atualizar'}
+            {loading ? 'Pesquisando...' : 'Pesquisar'}
           </button>
           <button type="button" className="enac-dashboard-secondary" onClick={() => void clearFilters()} disabled={loading}>
             Limpar filtros

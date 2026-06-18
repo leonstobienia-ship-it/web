@@ -85,20 +85,26 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 
 ## Padroes de tela
 
+- A V3.18G define o padrao visual executivo atual do ERP ENAC.
+- A identidade visual usa sidebar grafite, vermelho ENAC para destaque institucional, cinza tecnico para metadados e superficies branco/gelo para conteudo.
+- O logo oficial fica em `web/src/assets/enac-logo-oficial.png` e deve ser usado sem alterar cores, transparencia ou proporcao.
 - Cabecalho da aplicacao mostra area e modulo ativo.
 - Cabecalho mostra usuario de homologacao e perfil ativo.
 - Cabecalho mostra o ambiente local de homologacao quando aplicavel.
 - Menu lateral exibe logo ENAC, grupos por area e icones SVG internos para facilitar reconhecimento visual.
 - Em desktop, o menu lateral pode ser alternado para modo compacto sem remover a navegacao por grupos.
+- Em mobile, o menu inicia recolhido e abre como painel de navegacao compacto.
 - Grupos do menu usam indicador visual de expansao sem texto auxiliar de abrir/recolher.
 - A topbar nao possui seletor redundante de modulo; a navegacao principal fica concentrada no menu lateral.
 - `Administracao de Acessos` concentra usuarios, perfis, escopos e alcadas.
 - A tela antiga nao aparece na navegacao principal nem na visao geral da homologacao.
 - Modulos operacionais usam abas para separar consulta, novo registro e detalhes quando aplicavel.
+- Central de Tarefas usa Consulta como aba inicial e deixa Nova tarefa manual em aba propria.
 - Relatorios Financeiros e Dashboard Executivo usam abas por assunto para reduzir rolagem longa.
 - Riscos e Pendencias separa lista, cadastro manual, conversao de alerta e detalhe/historico.
 - Cards resumem indicadores principais com densidade de ERP, sem ocupar a tela como material promocional.
 - Tabelas usam fonte compacta, bordas leves, rolagem horizontal quando o conteudo e largo e quebra de texto controlada.
+- Paineis laterais de detalhe usam destaque vermelho e ficam sticky em desktop quando a largura permite.
 - Botoes desabilitados indicam bloqueio visual sem remover o contexto da acao.
 - Chips e status usam cores consistentes por situacao.
 

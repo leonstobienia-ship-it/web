@@ -363,7 +363,7 @@ export function RiscosPendenciasPage(): JSX.Element {
           <input value={filters.texto || ''} onChange={(event) => setFilters((current) => ({ ...current, texto: event.target.value }))} disabled={loading} />
         </label>
         <div className="enac-risk-filter-actions">
-          <button type="button" onClick={() => void refresh()} disabled={loading}>Atualizar</button>
+          <button type="button" onClick={() => void refresh()} disabled={loading}>Pesquisar</button>
           <button type="button" className="enac-dashboard-secondary" onClick={() => void clearFilters()} disabled={loading}>Limpar filtros</button>
         </div>
       </section>

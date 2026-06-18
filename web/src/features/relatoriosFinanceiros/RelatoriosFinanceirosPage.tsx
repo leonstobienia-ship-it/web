@@ -184,6 +184,20 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
     }
   };
 
+  const clearFilters = async (): Promise<void> => {
+    const nextFilters = emptyFilters();
+    setFilters(nextFilters);
+    setLoading(true);
+    setError('');
+    try {
+      await loadReports(nextFilters);
+    } catch (clearError) {
+      setError(getErrorMessage(clearError));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const totais = reports.contasResumo?.totais || {};
   const totaisProgramacoes = reports.programacoesResumo?.totais || {};
   const summaryCards: Array<[string, unknown]> = [
@@ -253,7 +267,10 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
           <input type="number" min="0" step="0.01" value={filters.valor_max || ''} onChange={(event) => updateFilter('valor_max', event.target.value)} disabled={loading} />
         </label>
         <button type="button" onClick={() => void refresh()} disabled={loading}>
-          {loading ? 'Atualizando...' : 'Atualizar'}
+          {loading ? 'Pesquisando...' : 'Pesquisar'}
+        </button>
+        <button type="button" className="enac-dashboard-secondary" onClick={() => void clearFilters()} disabled={loading}>
+          Limpar filtros
         </button>
       </section>
 

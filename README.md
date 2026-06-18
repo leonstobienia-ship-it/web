@@ -170,6 +170,42 @@ Limites mantidos:
 - sem upload externo;
 - sem `DELETE` fisico.
 
+## V3.18G - Redesign Visual Executivo
+
+A V3.18G eleva o padrao visual executivo do ERP ENAC sem alterar backend, migrations, endpoints ou regras de negocio. A etapa consolida a identidade ENAC com sidebar grafite, acentos vermelho ENAC, area principal em gelo/branco, filtros compactos, tabelas densas, cards KPI uniformes, abas limpas e paineis laterais de detalhe.
+
+Principais ajustes:
+
+- sidebar institucional grafite com logo oficial `web/src/assets/enac-logo-oficial.png` preservado em proporcao, transparencia e cores;
+- menu agrupado por Operacao, Compras, Financeiro, Obras, Gestao, Administracao e Base ERP, sem item legado ou seletor redundante;
+- topbar compacta com modulo ativo, usuario, perfil e badge discreta de homologacao local;
+- Central de Tarefas com Consulta como aba inicial e Nova tarefa manual em aba separada;
+- Documentos e Anexos, Riscos, Dashboard, Relatorios Financeiros e telas operacionais com filtros/cards/tabelas mais densos;
+- paineis laterais de detalhe com destaque vermelho e comportamento responsivo;
+- menu mobile recolhivel por icone, mantendo o logo compacto e sem overflow.
+
+Documentos:
+
+- `docs/v3.18g-redesign-visual-executivo.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18g-redesign-visual-executivo.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo;
+- sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

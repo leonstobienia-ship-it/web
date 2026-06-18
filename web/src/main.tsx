@@ -432,7 +432,7 @@ function WebPortal(): JSX.Element {
   const [section, setSection] = React.useState<WebSection>('visao');
   const [operationalState, setOperationalState] = React.useState<IOperationalState>({ loading: false });
   const [activeProfileKey, setActiveProfileKey] = React.useState<UserProfileKey>('Campo');
-  const [navCollapsed, setNavCollapsed] = React.useState<boolean>(false);
+  const [navCollapsed, setNavCollapsed] = React.useState<boolean>(() => window.innerWidth <= 840);
   const currentSection = sectionByKey.get(section) || sections[0];
   const currentGroup = sectionGroups.find((group) => group.items.some((item) => item.key === section));
   const [openGroupTitles, setOpenGroupTitles] = React.useState<Set<string>>(() => new Set([currentGroup?.title || 'Operação']));
@@ -892,9 +892,9 @@ function Page({ eyebrow, title, children }: { eyebrow: string; title: string; ch
 function OperationalSection({ state, onOpenSystem }: { state: IOperationalState; onOpenSystem: () => void }): JSX.Element {
   if (state.loading) {
     return (
-      <Page title="Legado — consulta" eyebrow="Carregando">
+      <Page title="Consulta histórica" eyebrow="Carregando">
         <div className="enac-web-alert">
-          <strong>Tela legada mantida apenas para consulta.</strong>
+          <strong>Consulta histórica mantida fora da navegação operacional.</strong>
           <p>O ERP operacional atual está nos módulos da navegação principal.</p>
         </div>
         <p>Preparando autenticação Microsoft Entra.</p>
@@ -904,9 +904,9 @@ function OperationalSection({ state, onOpenSystem }: { state: IOperationalState;
 
   if (state.error || !state.account || !state.repository) {
     return (
-      <Page title="Legado — consulta" eyebrow="Configuração necessária">
+      <Page title="Consulta histórica" eyebrow="Configuração necessária">
         <div className="enac-web-alert">
-          <strong>Tela legada mantida apenas para consulta.</strong>
+          <strong>Consulta histórica mantida fora da navegação operacional.</strong>
           <p>O ERP operacional atual está nos módulos da navegação principal.</p>
         </div>
         <div className="enac-web-alert">

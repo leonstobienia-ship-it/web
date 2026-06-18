@@ -10,21 +10,26 @@ body,
 }
 
 :root {
-  --enac-bg: #eef2f5;
+  --enac-red: #b21f2d;
+  --enac-red-dark: #8f1722;
+  --enac-graphite: #16191d;
+  --enac-graphite-soft: #20252b;
+  --enac-gray: #637083;
+  --enac-bg: #f3f5f7;
   --enac-surface: #ffffff;
-  --enac-surface-soft: #f8fafc;
-  --enac-text: #17212f;
-  --enac-muted: #607086;
-  --enac-border: #d9e0e7;
-  --enac-border-strong: #c8d2dc;
-  --enac-primary: #0f5f5b;
-  --enac-primary-strong: #0a4743;
-  --enac-accent: #b7791f;
-  --enac-success: #1f6b35;
-  --enac-warning: #865200;
-  --enac-danger: #97432b;
-  --enac-focus: #0f6cbd;
-  --enac-shadow: 0 10px 30px rgba(22, 34, 48, 0.08);
+  --enac-surface-soft: #f7f8fa;
+  --enac-text: #191d23;
+  --enac-muted: #637083;
+  --enac-border: #dde2e8;
+  --enac-border-strong: #c7ced7;
+  --enac-primary: var(--enac-red);
+  --enac-primary-strong: var(--enac-red-dark);
+  --enac-accent: #9b2430;
+  --enac-success: #217a4a;
+  --enac-warning: #a66400;
+  --enac-danger: var(--enac-red);
+  --enac-focus: var(--enac-red);
+  --enac-shadow: 0 12px 28px rgba(25, 29, 35, 0.08);
   --enac-radius: 8px;
 }
 
@@ -32,8 +37,8 @@ body {
   background: var(--enac-bg);
   color: var(--enac-text);
   font-family: "Segoe UI", Arial, sans-serif;
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.42;
 }
 
 button,
@@ -54,7 +59,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(15, 108, 189, 0.28);
+  outline: 3px solid rgba(178, 31, 45, 0.24);
   outline-offset: 2px;
 }
 
@@ -64,13 +69,13 @@ button {
 
 .enac-web-shell {
   display: grid;
-  grid-template-columns: 272px minmax(0, 1fr);
+  grid-template-columns: 286px minmax(0, 1fr);
   min-height: 100vh;
   transition: grid-template-columns 0.18s ease;
 }
 
 .enac-web-shell.is-nav-collapsed {
-  grid-template-columns: 84px minmax(0, 1fr);
+  grid-template-columns: 86px minmax(0, 1fr);
 }
 
 .enac-web-nav {
@@ -82,37 +87,45 @@ button {
   overflow-y: auto;
   min-height: 100vh;
   max-height: 100vh;
-  padding: 20px 16px;
-  background: #fbfcfd;
-  border-right: 1px solid var(--enac-border);
+  padding: 18px 14px;
+  background: linear-gradient(180deg, #15181d 0%, #1b2026 54%, #13161a 100%);
+  border-right: 1px solid #0d1014;
+  box-shadow: 10px 0 28px rgba(15, 18, 22, 0.14);
 }
 
 .enac-web-brand {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 34px;
-  gap: 6px 10px;
+  gap: 7px 10px;
   align-items: center;
-  padding: 0 6px 18px;
+  margin-bottom: 10px;
+  padding: 12px 8px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .enac-web-brand img {
   grid-column: 1;
-  width: min(172px, 100%);
+  width: min(184px, 100%);
   height: auto;
-  max-height: 62px;
+  max-height: 66px;
   object-fit: contain;
   object-position: left center;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 8px 9px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
 }
 
 .enac-web-brand strong {
   grid-column: 1;
+  color: #ffffff;
   font-size: 18px;
 }
 
 .enac-web-brand span {
   grid-column: 1;
-  color: var(--enac-muted);
+  color: #aab2bd;
   font-size: 13px;
 }
 
@@ -124,16 +137,16 @@ button {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--enac-border);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 6px;
-  background: #ffffff;
-  color: var(--enac-primary);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f2f4f7;
   cursor: pointer;
 }
 
 .enac-web-nav-collapse:hover {
-  border-color: #9eb4c8;
-  background: #f2f7f6;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .enac-web-nav-collapse svg {
@@ -143,7 +156,7 @@ button {
 
 .enac-web-nav-groups {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .enac-web-nav-group {
@@ -165,11 +178,11 @@ button {
   gap: 8px;
   align-items: center;
   width: 100%;
-  min-height: 42px;
+  min-height: 40px;
   padding: 8px 10px;
   border-radius: 6px;
   background: transparent;
-  color: #243244;
+  color: #e9edf2;
   text-align: left;
 }
 
@@ -186,15 +199,15 @@ button {
   width: 24px;
   min-width: 24px;
   height: 24px;
-  border: 1px solid #d6dfe8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
-  background: #ffffff;
-  color: var(--enac-primary);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f3f5f7;
   padding: 4px;
 }
 
 .enac-web-nav button small {
-  color: #6f7d8d;
+  color: #aab2bd;
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -202,23 +215,23 @@ button {
 
 .enac-web-nav button:hover,
 .enac-web-nav button.is-active {
-  background: #e8edf3;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .enac-web-nav button.is-active {
-  box-shadow: inset 3px 0 0 var(--enac-primary);
-  color: #102a43;
+  box-shadow: inset 4px 0 0 var(--enac-red);
+  color: #ffffff;
   font-weight: 800;
 }
 
 .enac-web-nav button.is-active > svg {
-  border-color: rgba(15, 95, 91, 0.28);
-  background: #e6f2f1;
-  color: var(--enac-primary-strong);
+  border-color: rgba(178, 31, 45, 0.7);
+  background: var(--enac-red);
+  color: #ffffff;
 }
 
 .enac-web-nav button.is-active small {
-  color: var(--enac-primary);
+  color: #f3c6cb;
 }
 
 .enac-web-nav-group-toggle {
@@ -228,14 +241,14 @@ button {
   border: 1px solid transparent !important;
   border-radius: 6px !important;
   padding: 7px 8px !important;
-  background: #f8fafc !important;
-  color: #31465b !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: #f3f5f7 !important;
 }
 
 .enac-web-nav-group-toggle:hover,
 .enac-web-nav-group.is-active-group .enac-web-nav-group-toggle {
-  border-color: var(--enac-border);
-  background: #eef3f7 !important;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.09) !important;
 }
 
 .enac-web-nav-group-toggle > span {
@@ -246,7 +259,7 @@ button {
 }
 
 .enac-web-nav-group-toggle strong {
-  color: #31465b;
+  color: #f3f5f7;
   font-size: 12px;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -254,7 +267,7 @@ button {
 
 .enac-web-nav-group-toggle small {
   grid-column: 2;
-  color: #7a8796 !important;
+  color: #9da7b4 !important;
   font-size: 11px;
   font-weight: 700;
   white-space: normal !important;
@@ -267,7 +280,7 @@ button {
   align-self: center;
   width: 18px;
   height: 18px;
-  color: #6b7a8a;
+  color: #b5bdc8;
 }
 
 .enac-web-nav-items {
@@ -301,10 +314,11 @@ button {
 
 .enac-web-shell.is-nav-collapsed .enac-web-brand img {
   grid-row: auto;
-  width: 52px;
+  width: 56px;
   height: auto;
-  max-height: 22px;
+  max-height: 34px;
   object-position: center;
+  padding: 5px;
 }
 
 .enac-web-shell.is-nav-collapsed .enac-web-brand strong,
@@ -358,14 +372,14 @@ button {
   top: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
   align-items: center;
-  min-height: 72px;
-  padding: 12px 32px;
+  min-height: 64px;
+  padding: 10px 26px;
   border-bottom: 1px solid var(--enac-border);
-  background: rgba(251, 252, 253, 0.96);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(8px);
 }
 
 .enac-web-topbar > div {
@@ -378,7 +392,7 @@ button {
 .enac-web-profile-select span,
 .enac-web-user-summary span {
   color: var(--enac-muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -386,7 +400,7 @@ button {
 
 .enac-web-topbar strong {
   color: var(--enac-text);
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .enac-web-topbar small {
@@ -409,10 +423,10 @@ button {
   display: inline-flex;
   align-items: center;
   min-height: 22px;
-  border: 1px solid #c9dfd8;
+  border: 1px solid #f0ccd1;
   border-radius: 999px;
-  background: #eef8f4;
-  color: #17614d !important;
+  background: #fff1f3;
+  color: var(--enac-red-dark) !important;
   padding: 2px 8px;
   font-size: 11px !important;
   font-weight: 800;
@@ -420,10 +434,12 @@ button {
 }
 
 .enac-web-user-panel {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(210px, 1fr);
+  display: flex !important;
+  flex-wrap: nowrap;
   gap: 10px;
-  align-items: start;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: min(520px, 100%);
 }
 
 .enac-web-user-summary,
@@ -434,8 +450,8 @@ button {
 }
 
 .enac-web-user-summary {
-  min-height: 58px;
-  padding: 8px 10px;
+  min-height: 48px;
+  padding: 7px 10px;
   border: 1px solid var(--enac-border);
   border-radius: 6px;
   background: #ffffff;
@@ -443,7 +459,7 @@ button {
 
 .enac-web-user-summary strong {
   min-width: 0;
-  font-size: 14px;
+  font-size: 13px;
   overflow-wrap: anywhere;
 }
 
@@ -454,71 +470,76 @@ button {
   line-height: 1.25;
 }
 
+.enac-web-topbar .enac-web-user-summary small,
+.enac-web-topbar .enac-web-profile-select small {
+  display: none;
+}
+
 .enac-web-profile-select select {
   width: 100%;
-  min-height: 38px;
+  min-height: 34px;
   border: 1px solid var(--enac-border-strong);
   border-radius: 6px;
   background: #fff;
   color: var(--enac-text);
-  padding: 7px 10px;
+  padding: 6px 10px;
 }
 
 .enac-web-page {
   box-sizing: border-box;
-  width: min(1500px, 100%);
+  width: min(1680px, 100%);
   margin: 0 auto;
-  padding: 28px 28px 44px;
+  padding: 22px 26px 40px;
 }
 
 .enac-web-eyebrow {
-  margin: 0 0 8px;
-  color: #476177;
-  font-size: 13px;
+  margin: 0 0 6px;
+  color: var(--enac-red-dark);
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
 }
 
 .enac-web-page h1 {
-  margin: 0 0 24px;
-  font-size: 31px;
+  margin: 0 0 18px;
+  font-size: 28px;
   line-height: 1.12;
 }
 
 .enac-web-stack {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .enac-web-lead {
   max-width: 860px;
   margin: 0;
-  color: #33465c;
-  font-size: 18px;
-  line-height: 1.55;
+  color: #3f4d5f;
+  font-size: 15px;
+  line-height: 1.48;
 }
 
 .enac-web-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
-  gap: 36px;
+  gap: 28px;
   align-items: start;
 }
 
 .enac-web-hero p {
   max-width: 680px;
   margin: 0 0 22px;
-  color: #33465c;
-  font-size: 18px;
-  line-height: 1.55;
+  color: #3f4d5f;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 .enac-web-hero button,
 .enac-web-alert button,
 .enac-web-profile-actions button {
-  min-height: 42px;
-  padding: 0 18px;
+  min-height: 38px;
+  padding: 0 16px;
   border-radius: 6px;
   background: var(--enac-primary);
   color: #ffffff;
@@ -544,6 +565,7 @@ button {
   border: 1px solid var(--enac-border);
   border-radius: var(--enac-radius);
   background: var(--enac-surface);
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.04);
 }
 
 .enac-web-alert--compact {
@@ -559,8 +581,8 @@ button {
 }
 
 .enac-web-alert--success {
-  border-color: #7aa67d;
-  background: #f3fbf4;
+  border-color: rgba(33, 122, 74, 0.28);
+  background: #f2fbf6;
 }
 
 .enac-web-hero dl div {
@@ -583,7 +605,7 @@ button {
 .enac-web-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .enac-web-grid--two {
@@ -591,18 +613,18 @@ button {
 }
 
 .enac-web-card {
-  padding: 18px;
+  padding: 16px;
 }
 
 .enac-web-card h3 {
   margin: 0 0 8px;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .enac-web-card-label {
   display: block;
-  margin-bottom: 8px;
-  color: #476177;
+  margin-bottom: 7px;
+  color: var(--enac-red-dark);
   font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
@@ -616,7 +638,7 @@ button {
 
 .enac-web-flow-line {
   margin-bottom: 10px !important;
-  color: var(--enac-primary) !important;
+  color: var(--enac-red-dark) !important;
   font-weight: 800;
 }
 
@@ -631,9 +653,9 @@ button {
 }
 
 .enac-web-flow li {
-  min-height: 88px;
-  padding: 16px;
-  border-left: 4px solid #6b8f71;
+  min-height: 76px;
+  padding: 14px;
+  border-left: 4px solid var(--enac-red);
   background: #ffffff;
   counter-increment: flow;
   font-weight: 700;
@@ -642,7 +664,7 @@ button {
 .enac-web-flow li::before {
   display: block;
   margin-bottom: 8px;
-  color: #6b8f71;
+  color: var(--enac-red);
   content: counter(flow, decimal-leading-zero);
   font-size: 13px;
 }
@@ -651,26 +673,28 @@ button {
   width: 100%;
   border-collapse: collapse;
   background: var(--enac-surface);
+  table-layout: auto;
 }
 
 .enac-web-table th,
 .enac-web-table td {
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-bottom: 1px solid var(--enac-border);
-  font-size: 13px;
+  font-size: 12.5px;
   text-align: left;
   vertical-align: top;
 }
 
 .enac-web-table th {
-  background: #f8fafc;
-  color: #34475d;
-  font-size: 12px;
+  background: #f1f3f6;
+  color: #3c4654;
+  font-size: 11px;
+  font-weight: 900;
   text-transform: uppercase;
 }
 
 .enac-web-table tbody tr:hover {
-  background: #f8fbfe;
+  background: #faf1f2;
 }
 
 .enac-web-table strong {
@@ -680,31 +704,32 @@ button {
 .enac-ui-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
   align-items: center;
   min-width: 0;
-  padding: 6px;
+  padding: 4px;
   border: 1px solid var(--enac-border);
   border-radius: var(--enac-radius);
-  background: #f8fafc;
+  background: #ffffff;
 }
 
 .enac-ui-tabs button {
-  min-height: 34px;
+  min-height: 32px;
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 0 11px;
+  padding: 0 10px;
   background: transparent;
-  color: #34475d;
+  color: #465263;
   cursor: pointer;
   font-weight: 800;
+  font-size: 12.5px;
 }
 
 .enac-ui-tabs button:hover,
 .enac-ui-tabs button.is-active {
-  border-color: rgba(15, 95, 91, 0.22);
-  background: #e6f2f1;
-  color: #102a43;
+  border-color: rgba(178, 31, 45, 0.25);
+  background: #fff1f3;
+  color: var(--enac-red-dark);
 }
 
 .enac-module-workspace,
@@ -771,7 +796,7 @@ button {
 }
 
 .enac-web-note {
-  border-left: 4px solid #6b8f71;
+  border-left: 4px solid var(--enac-red);
   background: #ffffff;
   color: #33465c;
   padding: 14px 16px;
@@ -1995,52 +2020,56 @@ button {
 
 .enac-report-page {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .enac-report-filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 9px;
   align-items: end;
-  padding: 14px;
+  padding: 11px;
   border: 1px solid var(--enac-border);
   border-radius: var(--enac-radius);
   background: #ffffff;
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.04);
 }
 
 .enac-report-filters label {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .enac-report-filters span {
-  color: #34475d;
-  font-size: 12px;
+  color: #536173;
+  font-size: 11px;
   font-weight: 800;
+  text-transform: uppercase;
 }
 
 .enac-report-filters input,
 .enac-report-filters select {
   box-sizing: border-box;
   width: 100%;
-  min-height: 36px;
+  min-height: 33px;
   border: 1px solid #cfd8e3;
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 6px 9px;
   background: #ffffff;
   color: #17212f;
+  font-size: 13px;
 }
 
 .enac-report-filters button {
-  min-height: 36px;
+  min-height: 33px;
   border: 0;
   border-radius: 6px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   background: var(--enac-primary);
   color: #ffffff;
   cursor: pointer;
   font-weight: 800;
+  font-size: 12.5px;
 }
 
 .enac-report-filters button:disabled {
@@ -2050,45 +2079,51 @@ button {
 
 .enac-report-cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 10px;
 }
 
 .enac-report-card {
+  position: relative;
   display: grid;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
-  padding: 12px;
+  min-height: 82px;
+  padding: 12px 13px 11px;
   border: 1px solid #dce5ee;
-  border-left: 3px solid var(--enac-primary);
+  border-left: 3px solid var(--enac-red);
   border-radius: var(--enac-radius);
   background: #ffffff;
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.04);
 }
 
 .enac-report-card span {
-  color: #607086;
-  font-size: 12px;
+  color: #667386;
+  font-size: 11px;
   font-weight: 800;
+  text-transform: uppercase;
 }
 
 .enac-report-card strong {
   color: #17212f;
   font-size: 18px;
+  line-height: 1.15;
 }
 
 .enac-report-grid {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .enac-report-section {
   display: grid;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--enac-border);
   border-radius: var(--enac-radius);
   background: #ffffff;
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.04);
 }
 
 .enac-report-table th,
@@ -2114,15 +2149,15 @@ button {
 
 .enac-pr-chart-body {
   display: grid;
-  gap: 12px;
+  gap: 9px;
 }
 
 .enac-pr-chart-row {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
-  gap: 8px 14px;
+  gap: 7px 12px;
   align-items: center;
-  padding: 14px;
+  padding: 11px;
   border: 1px solid #dce5ee;
   border-radius: 8px;
   background: #ffffff;
@@ -2167,15 +2202,15 @@ button {
 }
 
 .enac-pr-bar-fill--previsto {
-  background: var(--enac-primary);
+  background: var(--enac-red);
 }
 
 .enac-pr-bar-fill--realizado {
-  background: #8a5a28;
+  background: #7d4249;
 }
 
 .enac-pr-bar-fill--faturado {
-  background: #4f7d55;
+  background: #217a4a;
 }
 
 .enac-pr-table {
@@ -2188,41 +2223,42 @@ button {
 }
 
 .enac-dashboard-filters {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .enac-dashboard-filter-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
 }
 
 .enac-dashboard-secondary {
   border: 1px solid #cfd8e3 !important;
   background: #ffffff !important;
-  color: var(--enac-primary) !important;
+  color: var(--enac-red-dark) !important;
 }
 
 .enac-dashboard-cards {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
 }
 
 .enac-dashboard-card strong {
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.2;
 }
 
 .enac-dashboard-risks {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 9px;
 }
 
 .enac-dashboard-risks article {
   display: grid;
   gap: 4px;
-  padding: 12px;
-  border: 1px solid #f0c978;
+  padding: 11px;
+  border: 1px solid #e9d4a4;
+  border-left: 3px solid var(--enac-warning);
   border-radius: 8px;
   background: #fff8e8;
 }
@@ -2241,7 +2277,7 @@ button {
 .enac-dashboard-two-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
   align-items: start;
 }
 
@@ -2250,19 +2286,19 @@ button {
 }
 
 .enac-pr-bar-fill--margem {
-  background: #6b8f71;
+  background: var(--enac-red-dark);
 }
 
 .enac-dashboard-alert-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 10px;
 }
 
 .enac-dashboard-alert {
   display: grid;
-  gap: 6px;
-  padding: 12px;
+  gap: 5px;
+  padding: 11px;
   border: 1px solid #dce5ee;
   border-left-width: 4px;
   border-radius: 8px;
@@ -2294,7 +2330,7 @@ button {
 }
 
 .enac-dashboard-alert--critico {
-  border-left-color: #a33a3a;
+  border-left-color: var(--enac-red);
 }
 
 .enac-dashboard-alert--alto {
@@ -2306,7 +2342,7 @@ button {
 }
 
 .enac-dashboard-alert--baixo {
-  border-left-color: #6b8f71;
+  border-left-color: var(--enac-success);
 }
 
 .enac-dashboard-table {
@@ -2315,8 +2351,8 @@ button {
 
 .enac-dashboard-summary-list {
   display: grid;
-  gap: 8px;
-  padding: 14px;
+  gap: 7px;
+  padding: 12px;
   border: 1px solid #dce5ee;
   border-radius: 8px;
   background: #ffffff;
@@ -2603,33 +2639,33 @@ button {
 .enac-risk-page {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
 .enac-risk-filters {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .enac-risk-filter-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
   align-self: end;
 }
 
 .enac-risk-cards {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
 }
 
 .enac-risk-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
+  gap: 14px;
   align-items: start;
 }
 
 .enac-risk-layout--wide {
-  grid-template-columns: minmax(0, 1.35fr) minmax(380px, 0.65fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.65fr);
 }
 
 .enac-risk-layout--single {
@@ -2644,8 +2680,8 @@ button {
 .enac-risk-edit {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .enac-risk-form-grid label,
@@ -2669,10 +2705,10 @@ button {
 .enac-risk-comment textarea {
   box-sizing: border-box;
   width: 100%;
-  min-height: 38px;
+  min-height: 34px;
   border: 1px solid #d7dde5;
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   background: #fff;
   color: #17202b;
   font: inherit;
@@ -2681,7 +2717,7 @@ button {
 
 .enac-risk-form-grid textarea,
 .enac-risk-comment textarea {
-  min-height: 84px;
+  min-height: 76px;
   resize: vertical;
 }
 
@@ -2698,7 +2734,8 @@ button {
 }
 
 .enac-risk-table tbody tr.is-selected {
-  background: #eef6ff;
+  background: #fff1f3;
+  box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
 .enac-risk-table td strong,
@@ -2716,10 +2753,10 @@ button {
 .enac-risk-priority {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
+  min-height: 22px;
   border-radius: 999px;
-  padding: 3px 9px;
-  font-size: 0.74rem;
+  padding: 2px 8px;
+  font-size: 0.72rem;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -2776,9 +2813,10 @@ button {
 
 .enac-risk-detail {
   position: sticky;
-  top: 16px;
-  max-height: calc(100vh - 32px);
+  top: 78px;
+  max-height: calc(100vh - 96px);
   overflow: auto;
+  border-top: 3px solid var(--enac-red);
 }
 
 .enac-risk-detail-grid {
@@ -2818,8 +2856,8 @@ button {
 .enac-risk-actions {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 7px;
+  margin-bottom: 12px;
 }
 
 .enac-risk-comment {
@@ -2854,26 +2892,26 @@ button {
 .enac-central-page {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
 .enac-central-filters {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
 }
 
 .enac-central-filter-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 7px;
   align-self: end;
 }
 
 .enac-central-cards {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
 }
 
 .enac-central-card {
-  min-height: 98px;
+  min-height: 82px;
 }
 
 .enac-central-manual {
@@ -2883,8 +2921,8 @@ button {
 .enac-central-form-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .enac-central-form-grid label,
@@ -2905,10 +2943,10 @@ button {
 .enac-central-action-note textarea {
   box-sizing: border-box;
   width: 100%;
-  min-height: 38px;
+  min-height: 34px;
   border: 1px solid #d7dde5;
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   background: #fff;
   color: #17202b;
   font: inherit;
@@ -2928,29 +2966,34 @@ button {
 .enac-central-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--enac-border);
+  border-radius: var(--enac-radius);
+  background: #ffffff;
 }
 
 .enac-central-tabs button {
-  min-height: 36px;
-  border: 1px solid #d7dde5;
+  min-height: 32px;
+  border: 1px solid transparent;
   border-radius: 6px;
-  padding: 8px 12px;
-  background: #fff;
-  color: #334155;
+  padding: 6px 10px;
+  background: transparent;
+  color: #465263;
   font-weight: 800;
+  font-size: 12.5px;
 }
 
 .enac-central-tabs button.is-active {
-  border-color: #194f90;
-  color: #fff;
-  background: #194f90;
+  border-color: rgba(178, 31, 45, 0.25);
+  color: var(--enac-red-dark);
+  background: #fff1f3;
 }
 
 .enac-central-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(380px, 0.65fr);
-  gap: 16px;
+  gap: 14px;
   align-items: start;
 }
 
@@ -2967,7 +3010,8 @@ button {
 }
 
 .enac-central-table tbody tr.is-selected {
-  background: #eef6ff;
+  background: #fff1f3;
+  box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
 .enac-central-table td strong,
@@ -2985,10 +3029,10 @@ button {
 .enac-central-priority {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
+  min-height: 22px;
   border-radius: 999px;
-  padding: 3px 9px;
-  font-size: 0.74rem;
+  padding: 2px 8px;
+  font-size: 0.72rem;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -3052,9 +3096,10 @@ button {
 
 .enac-central-detail {
   position: sticky;
-  top: 16px;
-  max-height: calc(100vh - 32px);
+  top: 78px;
+  max-height: calc(100vh - 96px);
   overflow: auto;
+  border-top: 3px solid var(--enac-red);
 }
 
 .enac-central-detail-grid {
@@ -3098,8 +3143,8 @@ button {
 .enac-central-actions {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 7px;
+  margin-bottom: 12px;
 }
 
 .enac-central-actions button,
@@ -3201,17 +3246,18 @@ button {
 
 .enac-audit-tabs button {
   border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  background: #f8fafc;
-  color: #334155;
-  padding: 8px 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #465263;
+  padding: 7px 10px;
   cursor: pointer;
+  font-weight: 800;
 }
 
 .enac-audit-tabs button.is-active {
-  border-color: #17202b;
-  background: #17202b;
-  color: #fff;
+  border-color: rgba(178, 31, 45, 0.25);
+  background: #fff1f3;
+  color: var(--enac-red-dark);
 }
 
 .enac-audit-layout {
@@ -3232,7 +3278,8 @@ button {
 }
 
 .enac-audit-table tr.is-selected {
-  background: #eef5fb;
+  background: #fff1f3;
+  box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
 .enac-audit-table td strong,
@@ -3278,8 +3325,8 @@ button {
 }
 
 .enac-audit-chip--media {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #f5e8ea;
+  color: var(--enac-red-dark);
 }
 
 .enac-audit-chip--info {
@@ -3306,8 +3353,8 @@ button {
 }
 
 .enac-audit-timeline button.is-selected {
-  border-color: #17202b;
-  background: #eef5fb;
+  border-color: rgba(178, 31, 45, 0.28);
+  background: #fff1f3;
 }
 
 .enac-audit-timeline span,
@@ -3318,9 +3365,10 @@ button {
 
 .enac-audit-detail {
   position: sticky;
-  top: 18px;
-  max-height: calc(100vh - 36px);
+  top: 78px;
+  max-height: calc(100vh - 96px);
   overflow: auto;
+  border-top: 3px solid var(--enac-red);
 }
 
 .enac-audit-detail-grid {
@@ -3357,9 +3405,9 @@ button {
 }
 
 .enac-audit-immutability {
-  border: 1px solid #dbeafe;
+  border: 1px solid #f0ccd1;
   border-radius: 8px;
-  background: #eff6ff;
+  background: #fff8f9;
   padding: 10px;
 }
 
@@ -3385,13 +3433,13 @@ button {
 
 .enac-homologacao-status {
   align-items: center;
-  background: #f7fbf9;
-  border: 1px solid #cce4d8;
+  background: #fff8f9;
+  border: 1px solid #f0ccd1;
   border-radius: 8px;
   display: grid;
-  gap: 16px;
+  gap: 12px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 18px;
+  padding: 14px;
 }
 
 .enac-homologacao-status div {
@@ -3421,7 +3469,7 @@ button {
 
 .enac-homologacao-status button,
 .enac-homologacao-links button {
-  background: #184f8a;
+  background: var(--enac-red);
   border: 0;
   border-radius: 8px;
   color: #fff;
@@ -3451,8 +3499,8 @@ button {
   border: 1px solid #d8e0e9;
   border-radius: 8px;
   display: grid;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px;
 }
 
 .enac-homologacao-package-grid h3 {
@@ -3487,10 +3535,10 @@ button {
 }
 
 .enac-homologacao-notice {
-  background: #f7fbf9;
-  border: 1px solid #cce4d8;
+  background: #f2fbf6;
+  border: 1px solid rgba(33, 122, 74, 0.24);
   border-radius: 8px;
-  color: #2f5b45;
+  color: #1c5f3b;
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.4;
@@ -3507,8 +3555,8 @@ button {
   border: 1px solid #d8e0e9;
   border-radius: 8px;
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
 }
 
 .enac-homologacao-roteiro-head {
@@ -3536,8 +3584,8 @@ button {
 }
 
 .enac-homologacao-links button {
-  background: #eef4ff;
-  color: #173b74;
+  background: #fff1f3;
+  color: var(--enac-red-dark);
   min-height: 34px;
   padding: 8px 10px;
 }
@@ -3576,38 +3624,40 @@ button {
 
 .enac-doc-page {
   display: grid;
-  gap: 18px;
+  gap: 14px;
 }
 
 .enac-doc-warning {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1e3a8a;
+  border-color: #f0ccd1;
+  background: #fff8f9;
+  color: var(--enac-red-dark);
+  font-size: 13px;
+  padding: 10px 12px;
 }
 
 .enac-doc-filters {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .enac-doc-filter-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 7px;
   align-self: end;
 }
 
 .enac-doc-cards {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
 }
 
 .enac-doc-card strong {
-  font-size: clamp(1.35rem, 1.8vw, 1.85rem);
+  font-size: 18px;
 }
 
 .enac-doc-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(340px, 0.9fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.5fr) minmax(330px, 0.78fr);
+  gap: 14px;
   align-items: start;
 }
 
@@ -3621,7 +3671,8 @@ button {
 }
 
 .enac-doc-table tr.is-selected {
-  background: #eef5fb;
+  background: #fff1f3;
+  box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
 .enac-doc-table td strong,
@@ -3641,10 +3692,10 @@ button {
 .enac-doc-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
+  min-height: 22px;
   border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 0.75rem;
+  padding: 2px 8px;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   white-space: normal;
@@ -3679,16 +3730,17 @@ button {
 
 .enac-doc-detail {
   position: sticky;
-  top: 18px;
-  max-height: calc(100vh - 36px);
+  top: 78px;
+  max-height: calc(100vh - 96px);
   overflow: auto;
+  border-top: 3px solid var(--enac-red);
 }
 
 .enac-doc-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .enac-doc-summary div {
@@ -3696,9 +3748,9 @@ button {
   gap: 4px;
   min-width: 0;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #f8fafc;
-  padding: 10px;
+  padding: 8px;
 }
 
 .enac-doc-summary span {
@@ -3714,7 +3766,7 @@ button {
 .enac-doc-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 9px;
 }
 
 .enac-doc-form label {
@@ -3722,8 +3774,9 @@ button {
   gap: 6px;
   min-width: 0;
   color: #334155;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   font-weight: 700;
+  text-transform: uppercase;
 }
 
 .enac-doc-form input,
@@ -3731,16 +3784,18 @@ button {
 .enac-doc-form textarea {
   width: 100%;
   min-width: 0;
+  min-height: 34px;
   border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #fff;
   color: #17202b;
-  padding: 9px 10px;
+  padding: 7px 9px;
   font: inherit;
+  text-transform: none;
 }
 
 .enac-doc-form textarea {
-  min-height: 72px;
+  min-height: 64px;
   resize: vertical;
 }
 
@@ -3752,11 +3807,11 @@ button {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 7px;
 }
 
 .enac-doc-actions button {
-  min-height: 38px;
+  min-height: 34px;
 }
 
 .enac-cadastro-table-wrap,
@@ -3789,6 +3844,60 @@ button {
 
 button:disabled {
   cursor: not-allowed;
+}
+
+.enac-solicitacao-detail,
+.enac-cotacao-detail,
+.enac-pedido-detail,
+.enac-finance-detail,
+.enac-medicao-detail,
+.enac-cadastros-detail {
+  border-top: 3px solid var(--enac-red);
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.04);
+}
+
+.enac-pedido-detail,
+.enac-finance-detail,
+.enac-medicao-detail,
+.enac-cotacao-detail,
+.enac-solicitacao-detail {
+  position: sticky;
+  top: 78px;
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+}
+
+.enac-cadastro-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(221, 226, 232, 0.85);
+  border-radius: var(--enac-radius);
+  background: #ffffff;
+}
+
+.enac-cadastro-table-wrap > table {
+  border-radius: inherit;
+}
+
+.enac-cadastro-table tr.is-selected,
+.enac-web-table tr.is-selected {
+  background: #fff1f3;
+  box-shadow: inset 3px 0 0 var(--enac-red);
+}
+
+.enac-cadastro-toolbar {
+  gap: 10px;
+}
+
+.enac-cadastro-toolbar h2,
+.enac-report-section h2 {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.enac-cadastro-toolbar p,
+.enac-report-section p {
+  color: #687586;
+  font-size: 12.5px;
 }
 
 .enac-web-page > h1,
@@ -3865,11 +3974,14 @@ code {
   }
 
   .enac-web-nav {
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 30;
     min-height: auto;
-    max-height: none;
+    max-height: 82vh;
     border-right: 0;
-    border-bottom: 1px solid #d9e0e7;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    overflow-y: auto;
   }
 
   .enac-web-shell.is-nav-collapsed .enac-web-nav {
@@ -3877,20 +3989,20 @@ code {
   }
 
   .enac-web-shell.is-nav-collapsed .enac-web-brand {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 34px;
     justify-items: start;
   }
 
   .enac-web-shell.is-nav-collapsed .enac-web-brand img {
     grid-row: auto;
-    width: min(172px, 100%);
+    width: min(150px, 100%);
     height: auto;
-    max-height: 62px;
+    max-height: 56px;
     object-position: left center;
   }
 
   .enac-web-nav .enac-web-nav-collapse {
-    display: none;
+    display: inline-flex;
   }
 
   .enac-web-shell.is-nav-collapsed .enac-web-brand strong,
@@ -3900,6 +4012,10 @@ code {
   .enac-web-shell.is-nav-collapsed .enac-web-nav-items button span,
   .enac-web-shell.is-nav-collapsed .enac-web-nav-items button small {
     display: initial;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-groups {
+    display: none;
   }
 
   .enac-web-shell.is-nav-collapsed .enac-web-nav-chevron {
@@ -3922,7 +4038,7 @@ code {
   }
 
   .enac-web-nav-group {
-    border-top: 1px solid #edf1f5;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding-top: 10px;
   }
 
@@ -3944,6 +4060,17 @@ code {
     grid-template-columns: 1fr;
     min-height: auto;
     padding: 14px 18px;
+  }
+
+  .enac-web-user-panel {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .enac-web-user-summary,
+  .enac-web-profile-select {
+    flex: 1 1 220px;
   }
 
   .enac-web-page {
@@ -4181,7 +4308,7 @@ code {
   }
 
   .enac-web-nav button {
-    grid-template-columns: 1fr;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
   }
 
   .enac-web-page {
