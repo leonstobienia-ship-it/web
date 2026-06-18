@@ -1,0 +1,247 @@
+{
+  "generatedAt": "2026-06-18T16:31:09.286Z",
+  "environment": "development/local",
+  "commit": "b93ec5a",
+  "marker": "DEV_LOCAL_E2E_V3_20",
+  "baseSeedMarker": "DEV_LOCAL_HOMOLOGACAO_ENAC_V316",
+  "apiBaseUrl": "http://127.0.0.1:3333",
+  "context": {
+    "companyId": "f1de45c0-5803-4f5e-ae41-87bbc63eedc6",
+    "clienteId": "dc0cb605-2180-44d2-979f-ed5baac64b0c",
+    "fornecedorId": "23e048f1-ce9f-493f-a65d-19f0a66bc3f2",
+    "obraId": "04936d32-df4f-4f94-a47c-be1f23aba794",
+    "centroCustoId": "fbe71141-99d3-4792-89d4-88a9a2648e3b",
+    "contratoId": "15283786-ff54-4cc2-b57e-1236bf4a286e",
+    "aditivoId": "753aa513-a053-4b3f-90aa-c042701066c0",
+    "orcamentoId": "dafa3a77-2dca-41e1-bc84-da3468744fe2",
+    "planejamentoId": "bc353b19-03a6-4460-a327-a4cf11c54842",
+    "solicitacaoId": "afc1c9a9-0efe-488d-a93c-50009838d8b7",
+    "cotacaoId": "64046542-ecc6-4214-9baf-7bc21dc55e86",
+    "pedidoId": "6cac777a-3464-431b-9b87-525463752a0b",
+    "notaId": "8f81eb45-d141-4a6c-a9d1-81a62c981c0e",
+    "contaId": "ed450410-2512-49b1-9876-de06a11e3caf",
+    "programacaoId": "e541d53c-fa92-4785-97ed-9462072c8d51",
+    "medicaoId": "10c9158b-5a42-4c34-a34e-04381be75efd",
+    "pedidoFaturamentoId": "f3289260-042d-4c4b-a0dd-70eed314f5cb",
+    "riscoId": "24b1b6fb-ff09-4a1b-be68-d2e13c3f13de",
+    "usuarioId": "9ac11ef0-0c4d-4942-aab2-29a96c6e81b6",
+    "perfilId": "cf53f61f-80a4-4456-8eae-31af3b931490"
+  },
+  "evidenceIds": {
+    "tarefaId": "3e29c806-ed97-4939-9156-39e1936de434",
+    "riscoId": "a2c428c8-2bf9-4be3-94ba-27b301e5faa4",
+    "documentoId": "156cd313-9a85-4029-9375-4b20ef8a7012"
+  },
+  "results": [
+    {
+      "etapa": "Health",
+      "ok": true,
+      "detalhe": "API e PostgreSQL local OK",
+      "evidencia": {
+        "database": "enac_erp_dev"
+      }
+    },
+    {
+      "etapa": "Seed base",
+      "ok": true,
+      "detalhe": "seed de homologacao consolidada executada de forma idempotente",
+      "evidencia": {
+        "marker": "DEV_LOCAL_HOMOLOGACAO_ENAC_V316",
+        "saida": "Seed de homologacao aplicado com sucesso. Marcador: DEV_LOCAL_HOMOLOGACAO_ENAC_V316 | Empresa: f1de45c0-5803-4f5e-ae41-87bbc63eedc6 | Obra principal: 04936d32-df4f-4f94-a47c-be1f23aba794"
+      }
+    },
+    {
+      "etapa": "Base Cliente/Fornecedor/Obra",
+      "ok": true,
+      "detalhe": "cadastros locais de homologacao encontrados",
+      "evidencia": {
+        "clientes": 5,
+        "fornecedores": 8,
+        "obras": 5,
+        "centros": 9,
+        "usuarios": 6
+      }
+    },
+    {
+      "etapa": "Contrato e aditivo",
+      "ok": true,
+      "detalhe": "contrato ativo e aditivo aprovado",
+      "evidencia": {
+        "contrato_id": "15283786-ff54-4cc2-b57e-1236bf4a286e",
+        "aditivo_id": "753aa513-a053-4b3f-90aa-c042701066c0"
+      }
+    },
+    {
+      "etapa": "Orcamento base",
+      "ok": true,
+      "detalhe": "orcamento aprovado com resumo gerencial",
+      "evidencia": {
+        "orcamento_id": "dafa3a77-2dca-41e1-bc84-da3468744fe2",
+        "total_previsto": "300000.00"
+      }
+    },
+    {
+      "etapa": "Planejamento executivo",
+      "ok": true,
+      "detalhe": "etapa ativa vinculada a obra",
+      "evidencia": {
+        "planejamento_id": "bc353b19-03a6-4460-a327-a4cf11c54842"
+      }
+    },
+    {
+      "etapa": "Compras ponta a ponta",
+      "ok": true,
+      "detalhe": "solicitacao, cotacao, mapa e pedido confirmados",
+      "evidencia": {
+        "solicitacao_id": "afc1c9a9-0efe-488d-a93c-50009838d8b7",
+        "cotacao_id": "64046542-ecc6-4214-9baf-7bc21dc55e86",
+        "pedido_id": "6cac777a-3464-431b-9b87-525463752a0b"
+      }
+    },
+    {
+      "etapa": "NF e Conta a Pagar",
+      "ok": true,
+      "detalhe": "NF aprovada e conta vinculada, sem pagamento real",
+      "evidencia": {
+        "nota_id": "8f81eb45-d141-4a6c-a9d1-81a62c981c0e",
+        "conta_id": "ed450410-2512-49b1-9876-de06a11e3caf",
+        "conta_status": "BAIXADA_MANUAL"
+      }
+    },
+    {
+      "etapa": "Programacao, liberacao e conferencia",
+      "ok": true,
+      "detalhe": "fluxo financeiro interno validado sem execucao bancaria",
+      "evidencia": {
+        "programacao_id": "e541d53c-fa92-4785-97ed-9462072c8d51",
+        "liberacoes": 1,
+        "conferencias": 1
+      }
+    },
+    {
+      "etapa": "Baixa manual controlada",
+      "ok": true,
+      "detalhe": "baixa manual local existente validada; nenhuma baixa nova executada pela V3.20",
+      "evidencia": {
+        "conta_id": "ed450410-2512-49b1-9876-de06a11e3caf",
+        "baixas": 1
+      }
+    },
+    {
+      "etapa": "Medicao e faturamento manual",
+      "ok": true,
+      "detalhe": "medicao e pedido interno faturados manualmente, sem NFS-e real",
+      "evidencia": {
+        "medicao_id": "10c9158b-5a42-4c34-a34e-04381be75efd",
+        "pedido_faturamento_id": "f3289260-042d-4c4b-a0dd-70eed314f5cb"
+      }
+    },
+    {
+      "etapa": "Previsto x Realizado",
+      "ok": true,
+      "detalhe": "resumo e curva consultados",
+      "evidencia": {
+        "obra_id": "04936d32-df4f-4f94-a47c-be1f23aba794",
+        "valor_total_contratado": "405000.00",
+        "competencias": 3
+      }
+    },
+    {
+      "etapa": "Dashboard executivo",
+      "ok": true,
+      "detalhe": "KPIs financeiro e operacional consultados",
+      "evidencia": {
+        "valor_total_contratado": 405000
+      }
+    },
+    {
+      "etapa": "Central de Tarefas",
+      "ok": true,
+      "detalhe": "tarefa manual E2E criada/consultada de forma idempotente",
+      "evidencia": {
+        "tarefa_id": "3e29c806-ed97-4939-9156-39e1936de434"
+      }
+    },
+    {
+      "etapa": "Riscos e Pendencias",
+      "ok": true,
+      "detalhe": "pendencia E2E criada, iniciada e resolvida sem operacao financeira",
+      "evidencia": {
+        "risco_id": "a2c428c8-2bf9-4be3-94ba-27b301e5faa4",
+        "status": "RESOLVIDA"
+      }
+    },
+    {
+      "etapa": "Documentos mock",
+      "ok": true,
+      "detalhe": "documento local mock vinculado a NF, sem upload externo",
+      "evidencia": {
+        "documento_id": "156cd313-9a85-4029-9375-4b20ef8a7012"
+      }
+    },
+    {
+      "etapa": "Snapshot financeiro preservado",
+      "ok": true,
+      "detalhe": "nenhuma conta, programacao ou baixa nova foi criada pelas evidencias E2E",
+      "evidencia": {
+        "antes": {
+          "contas": 597,
+          "programacoes": 478,
+          "baixas": 111
+        },
+        "depois": {
+          "contas": 597,
+          "programacoes": 478,
+          "baixas": 111
+        }
+      }
+    },
+    {
+      "etapa": "Auditoria",
+      "ok": true,
+      "detalhe": "eventos E2E consultados por API",
+      "evidencia": {
+        "resumo": {
+          "total": 5,
+          "criticos": 0,
+          "bloqueios_alcada": 0,
+          "aprovacoes": 0,
+          "reprovacoes": 0,
+          "cancelamentos": 0,
+          "baixas_manuais": 0,
+          "usuarios_distintos": 1,
+          "modulos_distintos": 3,
+          "primeiro_evento": "2026-06-18T16:31:09.980Z",
+          "ultimo_evento": "2026-06-18T16:31:10.069Z"
+        },
+        "eventos": 5
+      }
+    },
+    {
+      "etapa": "Travas proibidas",
+      "ok": true,
+      "detalhe": "rotas reais proibidas ausentes ou bloqueadas por HTTP 400/404/405",
+      "evidencia": {
+        "rotas_testadas": 18
+      }
+    }
+  ],
+  "expectedBlocks": [
+    "Pagamento real nao existe nesta homologacao.",
+    "CNAB e integracao bancaria retornam 400/404/405.",
+    "NFS-e real, prefeitura, boleto real e cobranca real nao existem.",
+    "SharePoint/Graph/Entra/Power Automate reais nao sao usados.",
+    "DELETE fisico permanece bloqueado.",
+    "A baixa manual validada e apenas a baixa controlada local ja existente na massa de homologacao."
+  ],
+  "restrictions": {
+    "pagamentoReal": true,
+    "bancoReal": true,
+    "cnab": true,
+    "nfseReal": true,
+    "prefeitura": true,
+    "boletoReal": true,
+    "sharePointReal": true,
+    "deleteFisico": true
+  }
+}

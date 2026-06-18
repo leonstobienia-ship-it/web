@@ -388,6 +388,47 @@ Limites mantidos:
 - sem upload externo real;
 - sem `DELETE` fisico.
 
+## V3.20 - Homologacao Automatizada Assistida Ponta a Ponta
+
+A V3.20 cria um roteiro automatizado de homologacao E2E para validar o ciclo operacional completo do ERP ENAC usando API local, PostgreSQL local, seed consolidada, Browser interno e relatorios de evidencia. A etapa nao altera regra de negocio, nao cria migration e nao cria endpoint.
+
+Script principal:
+
+```powershell
+cd "C:\Users\leon\OneDrive - enac.com.br\Documentos\Sistema ENAC\server"
+npm.cmd run homologacao:e2e
+```
+
+O script usa o marcador:
+
+```text
+DEV_LOCAL_E2E_V3_20
+```
+
+Ele executa a seed `DEV_LOCAL_HOMOLOGACAO_ENAC_V316`, valida contrato, orcamento, planejamento, compras, NF, conta a pagar, programacao, liberacao, conferencia, baixa manual controlada local, medicao, faturamento manual, previsto x realizado, dashboard, central, riscos, documentos e auditoria. Tambem gera relatorios em:
+
+```text
+reports/homologacao/v3.20/
+```
+
+Documentos:
+
+- `docs/v3.20-homologacao-automatizada-assistida.md`
+- `docs/erp/homologacao-automatizada-assistida.md`
+- `tests/checklist-v3.20-homologacao-automatizada-assistida.md`
+
+Limites mantidos:
+
+- sem pagamento real;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo real;
+- sem `DELETE` fisico.
+
 ## V3.18J - Modelo Visual e Arquitetura de Scroll
 
 A V3.18J corrige a arquitetura de scroll do shell web e aproxima as telas operacionais do modelo visual de referencia indicado na homologacao, sem alterar backend, migrations, endpoints ou regras de negocio.
