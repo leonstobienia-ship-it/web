@@ -23,6 +23,7 @@ import { ProgramacoesPagamentoPage } from './features/programacoesPagamento/Prog
 import { RelatoriosFinanceirosPage } from './features/relatoriosFinanceiros/RelatoriosFinanceirosPage';
 import { RiscosPendenciasPage } from './features/riscosPendencias/RiscosPendenciasPage';
 import { SolicitacoesCompraPage } from './features/solicitacoesCompra/SolicitacoesCompraPage';
+import { EnacIcon, type EnacIconName } from './components/EnacIcon';
 import enacLogoUrl from '../../src/webparts/enacSistema/assets/enac-logo.png';
 import './styles.css';
 
@@ -129,7 +130,7 @@ class WebErrorBoundary extends React.Component<{ children: React.ReactNode }, IW
 
 interface ISectionItem {
   key: WebSection;
-  icon: string;
+  icon: EnacIconName;
   label: string;
   shortLabel?: string;
   description: string;
@@ -138,7 +139,7 @@ interface ISectionItem {
 
 interface ISectionGroup {
   title: string;
-  icon: string;
+  icon: EnacIconName;
   tone: string;
   items: ISectionItem[];
 }
@@ -164,78 +165,78 @@ const userProfileOptions: IUserProfileOption[] = [
 const sectionGroups: ISectionGroup[] = [
   {
     title: 'Operação',
-    icon: '▦',
+    icon: 'operations',
     tone: 'Rotina e fila de trabalho',
     items: [
-      { key: 'visao', icon: '⌂', label: 'Visão geral', description: 'Mapa executivo e entrada por perfil', profile: 'Todos' },
-      { key: 'central-tarefas', icon: '☑', label: 'Central de Tarefas', description: 'Fila de aprovações, pendências e ações manuais', profile: 'Todos' },
-      { key: 'riscos-pendencias', icon: '⚠', label: 'Riscos e Pendências', description: 'Bloqueios operacionais e histórico de tratativas', profile: 'Campo' },
-      { key: 'documentos', icon: '▤', label: 'Documentos e Anexos', description: 'Referências documentais locais e vínculos por entidade', profile: 'Documentos' }
+      { key: 'visao', icon: 'home', label: 'Visão geral', description: 'Mapa executivo e entrada por perfil', profile: 'Todos' },
+      { key: 'central-tarefas', icon: 'tasks', label: 'Central de Tarefas', description: 'Fila de aprovações, pendências e ações manuais', profile: 'Todos' },
+      { key: 'riscos-pendencias', icon: 'warning', label: 'Riscos e Pendências', description: 'Bloqueios operacionais e histórico de tratativas', profile: 'Campo' },
+      { key: 'documentos', icon: 'documents', label: 'Documentos e Anexos', description: 'Referências documentais locais e vínculos por entidade', profile: 'Documentos' }
     ]
   },
   {
     title: 'Compras',
-    icon: '▣',
+    icon: 'shopping',
     tone: 'Solicitação até pedido',
     items: [
-      { key: 'cadastros', icon: '◎', label: 'Cadastros', description: 'Empresas, obras, fornecedores e centros de custo', profile: 'Compras' },
-      { key: 'solicitacoes-compra', icon: '+', label: 'Solicitações de Compra', shortLabel: 'Solicitações', description: 'Demandas de obra e compras internas', profile: 'Campo' },
-      { key: 'cotacoes', icon: '≋', label: 'Cotações', description: 'Mapa comparativo e escolha de fornecedor', profile: 'Compras' },
-      { key: 'pedidos-compra', icon: '▥', label: 'Pedidos de Compra', shortLabel: 'Pedidos', description: 'Formalização de compra aprovada', profile: 'Compras' }
+      { key: 'cadastros', icon: 'registry', label: 'Cadastros', description: 'Empresas, obras, fornecedores e centros de custo', profile: 'Compras' },
+      { key: 'solicitacoes-compra', icon: 'clipboard', label: 'Solicitações de Compra', shortLabel: 'Solicitações', description: 'Demandas de obra e compras internas', profile: 'Campo' },
+      { key: 'cotacoes', icon: 'compare', label: 'Cotações', description: 'Mapa comparativo e escolha de fornecedor', profile: 'Compras' },
+      { key: 'pedidos-compra', icon: 'cart', label: 'Pedidos de Compra', shortLabel: 'Pedidos', description: 'Formalização de compra aprovada', profile: 'Compras' }
     ]
   },
   {
     title: 'Financeiro',
-    icon: '$',
+    icon: 'finance',
     tone: 'Contas, programação e relatório',
     items: [
-      { key: 'notas-entrada', icon: 'NF', label: 'Notas Fiscais de Entrada', shortLabel: 'Notas Fiscais', description: 'Registro de documentos fiscais recebidos', profile: 'Financeiro' },
-      { key: 'contas-pagar', icon: 'AP', label: 'Contas a Pagar', description: 'Provisionamento, aprovação e baixa manual controlada', profile: 'Financeiro' },
-      { key: 'programacoes-pagamento', icon: '◇', label: 'Programações de Pagamento', shortLabel: 'Programações', description: 'Programação interna sem execução bancária', profile: 'Financeiro' },
-      { key: 'relatorios-financeiros', icon: '▧', label: 'Relatórios Financeiros', shortLabel: 'Relatórios', description: 'Leitura gerencial de contas e baixas manuais', profile: 'Financeiro' }
+      { key: 'notas-entrada', icon: 'invoice', label: 'Notas Fiscais de Entrada', shortLabel: 'Notas Fiscais', description: 'Registro de documentos fiscais recebidos', profile: 'Financeiro' },
+      { key: 'contas-pagar', icon: 'payable', label: 'Contas a Pagar', description: 'Provisionamento, aprovação e baixa manual controlada', profile: 'Financeiro' },
+      { key: 'programacoes-pagamento', icon: 'calendar', label: 'Programações de Pagamento', shortLabel: 'Programações', description: 'Programação interna sem execução bancária', profile: 'Financeiro' },
+      { key: 'relatorios-financeiros', icon: 'report', label: 'Relatórios Financeiros', shortLabel: 'Relatórios', description: 'Leitura gerencial de contas e baixas manuais', profile: 'Financeiro' }
     ]
   },
   {
     title: 'Obras',
-    icon: '▰',
+    icon: 'projects',
     tone: 'Contrato, orçamento e medição',
     items: [
-      { key: 'contratos-obra', icon: '§', label: 'Contratos de Obra', shortLabel: 'Contratos', description: 'Contrato vendido, escopo e aditivos', profile: 'Planejamento' },
-      { key: 'orcamentos-planejamento', icon: 'Σ', label: 'Orçamentos', description: 'Orçamento base, pacotes e cronograma', profile: 'Planejamento' },
-      { key: 'planejamento-executivo', icon: '↦', label: 'Planejamento Executivo', shortLabel: 'Planejamento', description: 'Etapas, datas e responsáveis da execução', profile: 'Planejamento' },
-      { key: 'medicoes-faturamento', icon: '▨', label: 'Medições e Faturamento', shortLabel: 'Medições', description: 'Medições, pedidos e faturamento manual', profile: 'Planejamento' },
-      { key: 'previsto-realizado', icon: '≈', label: 'Previsto x Realizado', description: 'Margem, curva mensal e desvios por obra', profile: 'Diretoria' }
+      { key: 'contratos-obra', icon: 'contract', label: 'Contratos de Obra', shortLabel: 'Contratos', description: 'Contrato vendido, escopo e aditivos', profile: 'Planejamento' },
+      { key: 'orcamentos-planejamento', icon: 'budget', label: 'Orçamentos', description: 'Orçamento base, pacotes e cronograma', profile: 'Planejamento' },
+      { key: 'planejamento-executivo', icon: 'timeline', label: 'Planejamento Executivo', shortLabel: 'Planejamento', description: 'Etapas, datas e responsáveis da execução', profile: 'Planejamento' },
+      { key: 'medicoes-faturamento', icon: 'ruler', label: 'Medições e Faturamento', shortLabel: 'Medições', description: 'Medições, pedidos e faturamento manual', profile: 'Planejamento' },
+      { key: 'previsto-realizado', icon: 'chart', label: 'Previsto x Realizado', description: 'Margem, curva mensal e desvios por obra', profile: 'Diretoria' }
     ]
   },
   {
     title: 'Gestão',
-    icon: '◈',
+    icon: 'analytics',
     tone: 'Indicadores e governança',
     items: [
-      { key: 'dashboard-executivo', icon: '▣', label: 'Dashboard Executivo', shortLabel: 'Dashboard', description: 'Visão de diretoria, margem e alertas críticos', profile: 'Diretoria' },
-      { key: 'homologacao', icon: '✓', label: 'Homologação', description: 'Seed local e roteiros de validação por perfil', profile: 'Todos' },
-      { key: 'auditoria', icon: '◌', label: 'Auditoria e Logs', description: 'Consulta rastreável de eventos do ERP', profile: 'Admin' }
+      { key: 'dashboard-executivo', icon: 'dashboard', label: 'Dashboard Executivo', shortLabel: 'Dashboard', description: 'Visão de diretoria, margem e alertas críticos', profile: 'Diretoria' },
+      { key: 'homologacao', icon: 'check', label: 'Homologação', description: 'Seed local e roteiros de validação por perfil', profile: 'Todos' },
+      { key: 'auditoria', icon: 'shield', label: 'Auditoria e Logs', description: 'Consulta rastreável de eventos do ERP', profile: 'Admin' }
     ]
   },
   {
     title: 'Administração',
-    icon: '⚙',
+    icon: 'settings',
     tone: 'Acessos, perfis e alçadas',
     items: [
-      { key: 'administracao', icon: 'ID', label: 'Administração de Acessos', shortLabel: 'Acessos', description: 'Usuários, perfis, escopos e limites de alçada', profile: 'Admin' }
+      { key: 'administracao', icon: 'access', label: 'Administração de Acessos', shortLabel: 'Acessos', description: 'Usuários, perfis, escopos e limites de alçada', profile: 'Admin' }
     ]
   },
   {
     title: 'Base ERP',
-    icon: '▩',
+    icon: 'database',
     tone: 'Arquitetura e implantação',
     items: [
-      { key: 'estrutura', icon: 'API', label: 'Arquitetura', description: 'PostgreSQL, API, documentos e identidade', profile: 'Admin' },
-      { key: 'mvp', icon: 'MVP', label: 'MVP ERP', description: 'Escopo verticalizado do ERP ENAC', profile: 'Diretoria' },
-      { key: 'fluxos', icon: '→', label: 'Workflows', description: 'Fluxos-mãe e regras de operação', profile: 'Admin' },
-      { key: 'dados', icon: 'DB', label: 'Modelo de dados', description: 'Entidades e fronteiras transacionais', profile: 'Admin' },
-      { key: 'seguranca', icon: '⊗', label: 'Segurança', description: 'Papéis, RLS, auditoria e menor privilégio', profile: 'Admin' },
-      { key: 'implantacao', icon: '↗', label: 'Roadmap', description: 'Fases, integrações futuras e relatórios', profile: 'Diretoria' }
+      { key: 'estrutura', icon: 'architecture', label: 'Arquitetura', description: 'PostgreSQL, API, documentos e identidade', profile: 'Admin' },
+      { key: 'mvp', icon: 'layers', label: 'MVP ERP', description: 'Escopo verticalizado do ERP ENAC', profile: 'Diretoria' },
+      { key: 'fluxos', icon: 'workflow', label: 'Workflows', description: 'Fluxos-mãe e regras de operação', profile: 'Admin' },
+      { key: 'dados', icon: 'database', label: 'Modelo de dados', description: 'Entidades e fronteiras transacionais', profile: 'Admin' },
+      { key: 'seguranca', icon: 'shield', label: 'Segurança', description: 'Papéis, RLS, auditoria e menor privilégio', profile: 'Admin' },
+      { key: 'implantacao', icon: 'roadmap', label: 'Roadmap', description: 'Fases, integrações futuras e relatórios', profile: 'Diretoria' }
     ]
   }
 ];
@@ -431,6 +432,7 @@ function WebPortal(): JSX.Element {
   const [section, setSection] = React.useState<WebSection>('visao');
   const [operationalState, setOperationalState] = React.useState<IOperationalState>({ loading: false });
   const [activeProfileKey, setActiveProfileKey] = React.useState<UserProfileKey>('Campo');
+  const [navCollapsed, setNavCollapsed] = React.useState<boolean>(false);
   const currentSection = sectionByKey.get(section) || sections[0];
   const currentGroup = sectionGroups.find((group) => group.items.some((item) => item.key === section));
   const [openGroupTitles, setOpenGroupTitles] = React.useState<Set<string>>(() => new Set([currentGroup?.title || 'Operação']));
@@ -486,6 +488,15 @@ function WebPortal(): JSX.Element {
     });
   };
 
+  const navigateToSection = (target: WebSection): void => {
+    setSection(target);
+    if (window.innerWidth <= 840) {
+      window.requestAnimationFrame(() => {
+        document.querySelector('.enac-web-main')?.scrollIntoView({ block: 'start' });
+      });
+    }
+  };
+
   const abrirSistema = async (): Promise<void> => {
     setSection('sistema');
     if (operationalState.account || operationalState.loading) {
@@ -504,12 +515,22 @@ function WebPortal(): JSX.Element {
   };
 
   return (
-    <div className="enac-web-shell">
+    <div className={`enac-web-shell ${navCollapsed ? 'is-nav-collapsed' : ''}`}>
       <aside className="enac-web-nav" aria-label="Navegação do Sistema ENAC">
         <div className="enac-web-brand">
           <img src={enacLogoUrl} alt="ENAC" />
           <strong>Sistema ENAC</strong>
           <span>ERP operacional local</span>
+          <button
+            type="button"
+            className="enac-web-nav-collapse"
+            aria-label="Alternar menu lateral"
+            aria-pressed={navCollapsed}
+            title="Alternar menu lateral"
+            onClick={() => setNavCollapsed((current) => !current)}
+          >
+            <EnacIcon name={navCollapsed ? 'chevron-right' : 'chevron-left'} />
+          </button>
         </div>
         <nav className="enac-web-nav-groups">
           {sectionGroups.map((group) => {
@@ -521,14 +542,15 @@ function WebPortal(): JSX.Element {
                   type="button"
                   className="enac-web-nav-group-toggle"
                   aria-expanded={groupOpen}
+                  title={group.title}
                   onClick={() => toggleGroup(group.title)}
                 >
                   <span>
-                    <i aria-hidden="true">{group.icon}</i>
+                    <EnacIcon name={group.icon} />
                     <strong>{group.title}</strong>
                     <small>{group.tone}</small>
                   </span>
-                  <em aria-hidden="true">{groupOpen ? '⌃' : '⌄'}</em>
+                  <EnacIcon className="enac-web-nav-chevron" name={groupOpen ? 'chevron-up' : 'chevron-down'} />
                 </button>
                 {groupOpen && (
                   <div className="enac-web-nav-items">
@@ -539,9 +561,10 @@ function WebPortal(): JSX.Element {
                         data-section={item.key}
                         className={section === item.key ? 'is-active' : ''}
                         aria-current={section === item.key ? 'page' : undefined}
-                        onClick={() => setSection(item.key)}
+                        title={item.label}
+                        onClick={() => navigateToSection(item.key)}
                       >
-                        <i aria-hidden="true">{item.icon}</i>
+                        <EnacIcon name={item.icon} />
                         <span>{item.shortLabel || item.label}</span>
                         <small>{item.profile}</small>
                       </button>
@@ -555,10 +578,13 @@ function WebPortal(): JSX.Element {
       </aside>
       <main className="enac-web-main">
         <header className="enac-web-topbar">
-          <div>
+          <div className="enac-web-module-title">
             <span>{currentGroup?.title || 'ERP ENAC'}</span>
             <strong>{currentSection.label}</strong>
-            <small>{currentSection.description}</small>
+            <div className="enac-web-context-line">
+              <small>{currentSection.description}</small>
+              <small className="enac-web-environment">Homologação local</small>
+            </div>
           </div>
           <div className="enac-web-user-panel" aria-label="Usuário e perfil ativo">
             <div className="enac-web-user-summary">
@@ -577,7 +603,7 @@ function WebPortal(): JSX.Element {
             </label>
           </div>
         </header>
-        {section !== 'sistema' && <ContentSection section={section} onNavigate={setSection} />}
+        {section !== 'sistema' && <ContentSection section={section} onNavigate={navigateToSection} />}
         {section === 'sistema' && (
           <WebErrorBoundary>
             <OperationalSection state={operationalState} onOpenSystem={abrirSistema} />
@@ -816,15 +842,15 @@ function ContentSection({ section, onNavigate }: { section: WebSection; onNaviga
           <div>
             <p>
               O ERP ENAC local está organizado por perfis e módulos operacionais para compras,
-              obras, financeiro, gestão e administração. A V3.18E prioriza navegação direta,
-              telas por abas e leitura mais objetiva para homologação.
+              obras, financeiro, gestão e administração. A V3.18F consolida o padrão visual
+              de ERP, com menu compacto, ícones SVG, telas por abas e leitura objetiva para homologação.
             </p>
           </div>
           <dl>
             <div><dt>MVP</dt><dd>7 frentes</dd></div>
             <div><dt>Fonte de verdade alvo</dt><dd>PostgreSQL</dd></div>
             <div><dt>Documentos</dt><dd>SharePoint-ready local</dd></div>
-            <div><dt>UX V3.18E</dt><dd>Telas por abas</dd></div>
+            <div><dt>UX V3.18F</dt><dd>ERP visual</dd></div>
           </dl>
         </section>
 

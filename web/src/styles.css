@@ -10,26 +10,29 @@ body,
 }
 
 :root {
-  --enac-bg: #f3f5f7;
+  --enac-bg: #eef2f5;
   --enac-surface: #ffffff;
   --enac-surface-soft: #f8fafc;
   --enac-text: #17212f;
   --enac-muted: #607086;
   --enac-border: #d9e0e7;
   --enac-border-strong: #c8d2dc;
-  --enac-primary: #245a7f;
-  --enac-primary-strong: #194763;
+  --enac-primary: #0f5f5b;
+  --enac-primary-strong: #0a4743;
+  --enac-accent: #b7791f;
   --enac-success: #1f6b35;
   --enac-warning: #865200;
   --enac-danger: #97432b;
   --enac-focus: #0f6cbd;
   --enac-shadow: 0 10px 30px rgba(22, 34, 48, 0.08);
+  --enac-radius: 8px;
 }
 
 body {
   background: var(--enac-bg);
   color: var(--enac-text);
   font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
   line-height: 1.45;
 }
 
@@ -63,6 +66,11 @@ button {
   display: grid;
   grid-template-columns: 272px minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 0.18s ease;
+}
+
+.enac-web-shell.is-nav-collapsed {
+  grid-template-columns: 84px minmax(0, 1fr);
 }
 
 .enac-web-nav {
@@ -70,17 +78,19 @@ button {
   top: 0;
   align-self: start;
   box-sizing: border-box;
+  overflow-x: hidden;
   overflow-y: auto;
   min-height: 100vh;
   max-height: 100vh;
   padding: 20px 16px;
-  background: var(--enac-surface);
+  background: #fbfcfd;
   border-right: 1px solid var(--enac-border);
 }
 
 .enac-web-brand {
+  position: relative;
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-columns: 46px minmax(0, 1fr) 34px;
   gap: 4px 10px;
   align-items: center;
   padding: 0 6px 18px;
@@ -100,6 +110,30 @@ button {
 .enac-web-brand span {
   color: var(--enac-muted);
   font-size: 13px;
+}
+
+.enac-web-nav-collapse {
+  grid-row: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--enac-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--enac-primary);
+  cursor: pointer;
+}
+
+.enac-web-nav-collapse:hover {
+  border-color: #9eb4c8;
+  background: #f2f7f6;
+}
+
+.enac-web-nav-collapse svg {
+  width: 18px;
+  height: 18px;
 }
 
 .enac-web-nav-groups {
@@ -139,8 +173,8 @@ button {
   overflow-wrap: anywhere;
 }
 
-.enac-web-nav button i,
-.enac-web-nav-group-toggle i {
+.enac-web-nav-items button > svg,
+.enac-web-nav-group-toggle > span > svg {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -150,11 +184,8 @@ button {
   border: 1px solid #d6dfe8;
   border-radius: 6px;
   background: #ffffff;
-  color: #245a7f;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 900;
-  line-height: 1;
+  color: var(--enac-primary);
+  padding: 4px;
 }
 
 .enac-web-nav button small {
@@ -173,6 +204,12 @@ button {
   box-shadow: inset 3px 0 0 var(--enac-primary);
   color: #102a43;
   font-weight: 800;
+}
+
+.enac-web-nav button.is-active > svg {
+  border-color: rgba(15, 95, 91, 0.28);
+  background: #e6f2f1;
+  color: var(--enac-primary-strong);
 }
 
 .enac-web-nav button.is-active small {
@@ -218,20 +255,89 @@ button {
   white-space: normal !important;
 }
 
-.enac-web-nav-group-toggle em {
+.enac-web-nav-chevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   align-self: center;
+  width: 18px;
+  height: 18px;
   color: #6b7a8a;
-  font-size: 16px;
-  font-style: normal;
-  font-weight: 800;
 }
 
 .enac-web-nav-items {
   display: grid;
   gap: 5px;
+}
+
+.enac-web-nav .enac-web-nav-collapse {
+  display: inline-flex;
+  grid-template-columns: none;
+  gap: 0;
+  width: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  justify-self: end;
+  text-align: center;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-nav {
+  padding: 16px 10px;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-brand {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 8px;
+  padding-inline: 0;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-brand img {
+  grid-row: auto;
+  width: 38px;
+  height: 38px;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-brand strong,
+.enac-web-shell.is-nav-collapsed .enac-web-brand span,
+.enac-web-shell.is-nav-collapsed .enac-web-nav-group-toggle strong,
+.enac-web-shell.is-nav-collapsed .enac-web-nav-group-toggle small,
+.enac-web-shell.is-nav-collapsed .enac-web-nav-items button span,
+.enac-web-shell.is-nav-collapsed .enac-web-nav-items button small,
+.enac-web-shell.is-nav-collapsed .enac-web-nav-chevron {
+  display: none;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-nav-collapse {
+  grid-row: auto;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-nav-groups {
+  gap: 10px;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-nav-group {
+  justify-items: center;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-nav-group-toggle,
+.enac-web-shell.is-nav-collapsed .enac-web-nav-items button {
+  grid-template-columns: 1fr !important;
+  justify-items: center;
+  min-height: 38px !important;
+  width: 44px;
+  padding: 7px !important;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-nav-group-toggle > span {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.enac-web-shell.is-nav-collapsed .enac-web-nav-items {
+  justify-items: center;
 }
 
 .enac-web-main {
@@ -251,7 +357,7 @@ button {
   min-height: 72px;
   padding: 12px 32px;
   border-bottom: 1px solid var(--enac-border);
-  background: rgba(248, 250, 252, 0.96);
+  background: rgba(251, 252, 253, 0.96);
   backdrop-filter: blur(10px);
 }
 
@@ -279,6 +385,31 @@ button {
 .enac-web-topbar small {
   color: #53657a;
   overflow-wrap: anywhere;
+}
+
+.enac-web-module-title {
+  align-content: center;
+}
+
+.enac-web-context-line {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.enac-web-environment {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border: 1px solid #c9dfd8;
+  border-radius: 999px;
+  background: #eef8f4;
+  color: #17614d !important;
+  padding: 2px 8px;
+  font-size: 11px !important;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .enac-web-user-panel {
@@ -328,9 +459,9 @@ button {
 
 .enac-web-page {
   box-sizing: border-box;
-  width: min(1440px, 100%);
+  width: min(1500px, 100%);
   margin: 0 auto;
-  padding: 34px 32px 48px;
+  padding: 28px 28px 44px;
 }
 
 .enac-web-eyebrow {
@@ -344,7 +475,7 @@ button {
 
 .enac-web-page h1 {
   margin: 0 0 24px;
-  font-size: 34px;
+  font-size: 31px;
   line-height: 1.12;
 }
 
@@ -404,7 +535,7 @@ button {
 .enac-web-alert,
 .enac-web-steps {
   border: 1px solid var(--enac-border);
-  border-radius: 8px;
+  border-radius: var(--enac-radius);
   background: var(--enac-surface);
 }
 
@@ -478,7 +609,7 @@ button {
 
 .enac-web-flow-line {
   margin-bottom: 10px !important;
-  color: #245a7f !important;
+  color: var(--enac-primary) !important;
   font-weight: 800;
 }
 
@@ -517,8 +648,9 @@ button {
 
 .enac-web-table th,
 .enac-web-table td {
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--enac-border);
+  font-size: 13px;
   text-align: left;
   vertical-align: top;
 }
@@ -526,7 +658,7 @@ button {
 .enac-web-table th {
   background: #f8fafc;
   color: #34475d;
-  font-size: 13px;
+  font-size: 12px;
   text-transform: uppercase;
 }
 
@@ -546,15 +678,15 @@ button {
   min-width: 0;
   padding: 6px;
   border: 1px solid var(--enac-border);
-  border-radius: 8px;
-  background: #ffffff;
+  border-radius: var(--enac-radius);
+  background: #f8fafc;
 }
 
 .enac-ui-tabs button {
-  min-height: 36px;
+  min-height: 34px;
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 0 12px;
+  padding: 0 11px;
   background: transparent;
   color: #34475d;
   cursor: pointer;
@@ -563,8 +695,8 @@ button {
 
 .enac-ui-tabs button:hover,
 .enac-ui-tabs button.is-active {
-  border-color: #c8d2dc;
-  background: #e8edf3;
+  border-color: rgba(15, 95, 91, 0.22);
+  background: #e6f2f1;
   color: #102a43;
 }
 
@@ -616,7 +748,7 @@ button {
 
 .enac-web-profile-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 8px;
 }
 
@@ -647,7 +779,7 @@ button {
 
 .enac-web-roadmap article {
   border: 1px solid #d9e0e7;
-  border-top: 4px solid #245a7f;
+  border-top: 4px solid var(--enac-primary);
   border-radius: 8px;
   background: #ffffff;
   padding: 18px;
@@ -656,7 +788,7 @@ button {
 .enac-web-roadmap span {
   display: block;
   margin-bottom: 8px;
-  color: #245a7f;
+  color: var(--enac-primary);
   font-size: 13px;
   font-weight: 900;
   text-transform: uppercase;
@@ -782,7 +914,7 @@ button {
   border: 0;
   border-radius: 6px;
   padding: 0 12px;
-  background: #245a7f;
+  background: var(--enac-primary);
   color: #ffffff;
   cursor: pointer;
   font-weight: 800;
@@ -874,8 +1006,8 @@ button {
 }
 
 .enac-cadastros-tabs button.is-active {
-  background: #245a7f;
-  border-color: #245a7f;
+  background: var(--enac-primary);
+  border-color: var(--enac-primary);
   color: #ffffff;
 }
 
@@ -906,7 +1038,7 @@ button {
 .enac-cadastro-actions button {
   min-height: 40px;
   padding: 0 16px;
-  background: #245a7f;
+  background: var(--enac-primary);
   color: #ffffff;
 }
 
@@ -1123,7 +1255,7 @@ button {
 
 .enac-solicitacao-status--enviada {
   background: #e5f0fb;
-  color: #245a7f;
+  color: var(--enac-primary);
 }
 
 .enac-solicitacao-status--em-analise {
@@ -1263,7 +1395,7 @@ button {
   padding: 0 12px;
   border: 0;
   border-radius: 6px;
-  background: #245a7f;
+  background: var(--enac-primary);
   color: #ffffff;
   cursor: pointer;
   font-weight: 700;
@@ -1413,7 +1545,7 @@ button {
 
 .enac-cotacao-status--recebida {
   background: #e5f0fb;
-  color: #245a7f;
+  color: var(--enac-primary);
 }
 
 .enac-cotacao-status--enviada-fornecedores {
@@ -1423,7 +1555,7 @@ button {
 
 .enac-cotacao-status--respostas-recebidas {
   background: #e5f0fb;
-  color: #245a7f;
+  color: var(--enac-primary);
 }
 
 .enac-cotacao-status--mapa-gerado {
@@ -1607,7 +1739,7 @@ button {
 .enac-pedido-status--emitido,
 .enac-pedido-status--enviado-fornecedor {
   background: #e5f0fb;
-  color: #245a7f;
+  color: var(--enac-primary);
 }
 
 .enac-pedido-status--confirmado {
@@ -1770,7 +1902,7 @@ button {
 .enac-finance-status--provisionada,
 .enac-finance-status--aguardando-programacao {
   background: #e5f0fb;
-  color: #245a7f;
+  color: var(--enac-primary);
 }
 
 .enac-finance-status--aprovada-financeiro,
@@ -1862,8 +1994,12 @@ button {
 .enac-report-filters {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
   align-items: end;
+  padding: 14px;
+  border: 1px solid var(--enac-border);
+  border-radius: var(--enac-radius);
+  background: #ffffff;
 }
 
 .enac-report-filters label {
@@ -1881,7 +2017,7 @@ button {
 .enac-report-filters select {
   box-sizing: border-box;
   width: 100%;
-  min-height: 38px;
+  min-height: 36px;
   border: 1px solid #cfd8e3;
   border-radius: 6px;
   padding: 8px 10px;
@@ -1890,11 +2026,11 @@ button {
 }
 
 .enac-report-filters button {
-  min-height: 38px;
+  min-height: 36px;
   border: 0;
   border-radius: 6px;
   padding: 8px 14px;
-  background: #245a7f;
+  background: var(--enac-primary);
   color: #ffffff;
   cursor: pointer;
   font-weight: 800;
@@ -1908,16 +2044,17 @@ button {
 .enac-report-cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .enac-report-card {
   display: grid;
   gap: 6px;
   min-width: 0;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid #dce5ee;
-  border-radius: 8px;
+  border-left: 3px solid var(--enac-primary);
+  border-radius: var(--enac-radius);
   background: #ffffff;
 }
 
@@ -1929,7 +2066,7 @@ button {
 
 .enac-report-card strong {
   color: #17212f;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .enac-report-grid {
@@ -1940,6 +2077,11 @@ button {
 .enac-report-section {
   display: grid;
   gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--enac-border);
+  border-radius: var(--enac-radius);
+  background: #ffffff;
 }
 
 .enac-report-table th,
@@ -2018,7 +2160,7 @@ button {
 }
 
 .enac-pr-bar-fill--previsto {
-  background: #245a7f;
+  background: var(--enac-primary);
 }
 
 .enac-pr-bar-fill--realizado {
@@ -2051,7 +2193,7 @@ button {
 .enac-dashboard-secondary {
   border: 1px solid #cfd8e3 !important;
   background: #ffffff !important;
-  color: #245a7f !important;
+  color: var(--enac-primary) !important;
 }
 
 .enac-dashboard-cards {
@@ -2228,7 +2370,7 @@ button {
   min-height: 38px;
   border: 0;
   border-radius: 6px;
-  background: #245a7f;
+  background: var(--enac-primary);
   color: #ffffff;
   cursor: pointer;
   font-weight: 700;
@@ -2317,7 +2459,7 @@ button {
 .enac-conferencia-checklist input {
   width: 16px;
   height: 16px;
-  accent-color: #245a7f;
+  accent-color: var(--enac-primary);
 }
 
 .enac-conferencia-observacao {
@@ -3710,7 +3852,8 @@ code {
 }
 
 @media (max-width: 840px) {
-  .enac-web-shell {
+  .enac-web-shell,
+  .enac-web-shell.is-nav-collapsed {
     grid-template-columns: 1fr;
   }
 
@@ -3720,6 +3863,49 @@ code {
     max-height: none;
     border-right: 0;
     border-bottom: 1px solid #d9e0e7;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-nav {
+    padding: 16px 12px;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-brand {
+    grid-template-columns: 46px minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-brand img {
+    grid-row: span 2;
+    width: 42px;
+    height: 42px;
+  }
+
+  .enac-web-nav .enac-web-nav-collapse {
+    display: none;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-brand strong,
+  .enac-web-shell.is-nav-collapsed .enac-web-brand span,
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-group-toggle strong,
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-group-toggle small,
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-items button span,
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-items button small {
+    display: initial;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-chevron {
+    display: inline-flex;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-items button small {
+    display: block;
+  }
+
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-group-toggle,
+  .enac-web-shell.is-nav-collapsed .enac-web-nav-items button {
+    grid-template-columns: 28px minmax(0, 1fr) auto !important;
+    justify-items: stretch;
+    width: 100%;
   }
 
   .enac-web-nav-groups {

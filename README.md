@@ -137,6 +137,39 @@ Limites mantidos:
 - sem upload externo;
 - sem `DELETE` fisico.
 
+## V3.18F - Redesign Visual e Organizacao ERP
+
+A V3.18F consolida um padrao visual mais proximo de ERP de mercado, mantendo a aplicacao local, sem backend novo, migration, endpoint, regra de negocio ou integracao externa.
+
+Principais ajustes:
+
+- design system leve com tokens de cor, densidade, borda, raio e tabelas mais compactas;
+- menu lateral com logo ENAC, icones SVG internos, hierarquia por area e modo recolhido em desktop;
+- cabecalho principal com modulo ativo, descricao, usuario, perfil e ambiente de homologacao;
+- abas e paineis operacionais preservados para separar consulta, novo cadastro e detalhe;
+- Relatorios Financeiros e Dashboard Executivo preservados em abas por assunto, com cards/tabelas mais densos;
+- Planejamento Executivo mantido como item proprio em Obras, reutilizando o componente de Orcamentos sem duplicar dados;
+- nenhum asset externo, dependencia pesada ou copia visual de produto de mercado.
+
+Documentos:
+
+- `docs/v3.18f-redesign-visual-organizacao-erp.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18f-redesign-visual-organizacao-erp.md`
+
+Limites mantidos:
+
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo;
+- sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

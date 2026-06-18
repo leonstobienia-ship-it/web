@@ -87,7 +87,9 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 
 - Cabecalho da aplicacao mostra area e modulo ativo.
 - Cabecalho mostra usuario de homologacao e perfil ativo.
-- Menu lateral exibe logo ENAC, grupos por area e icones discretos para facilitar reconhecimento visual.
+- Cabecalho mostra o ambiente local de homologacao quando aplicavel.
+- Menu lateral exibe logo ENAC, grupos por area e icones SVG internos para facilitar reconhecimento visual.
+- Em desktop, o menu lateral pode ser alternado para modo compacto sem remover a navegacao por grupos.
 - Grupos do menu usam indicador visual de expansao sem texto auxiliar de abrir/recolher.
 - A topbar nao possui seletor redundante de modulo; a navegacao principal fica concentrada no menu lateral.
 - `Administracao de Acessos` concentra usuarios, perfis, escopos e alcadas.
@@ -95,8 +97,8 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - Modulos operacionais usam abas para separar consulta, novo registro e detalhes quando aplicavel.
 - Relatorios Financeiros e Dashboard Executivo usam abas por assunto para reduzir rolagem longa.
 - Riscos e Pendencias separa lista, cadastro manual, conversao de alerta e detalhe/historico.
-- Cards resumem indicadores principais.
-- Tabelas mantem rolagem horizontal quando o conteudo e largo.
+- Cards resumem indicadores principais com densidade de ERP, sem ocupar a tela como material promocional.
+- Tabelas usam fonte compacta, bordas leves, rolagem horizontal quando o conteudo e largo e quebra de texto controlada.
 - Botoes desabilitados indicam bloqueio visual sem remover o contexto da acao.
 - Chips e status usam cores consistentes por situacao.
 
@@ -105,6 +107,7 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 Desktop:
 
 - menu lateral fixo com rolagem propria;
+- opcao de menu compacto para ganhar largura util;
 - conteudo em largura util expandida;
 - detalhes podem permanecer em painel lateral.
 
@@ -145,13 +148,16 @@ Documentos e Anexos continuam apenas com metadados locais e campos mock preparad
 
 ## Validacao UX
 
-A validacao visual da V3.15 deve passar por:
+A validacao visual vigente deve passar por:
 
 - Browser interno desktop;
 - Browser interno mobile;
 - ausencia de erro de console;
 - ausencia de overlay de framework;
 - navegacao por areas principais;
+- ausencia de texto visual legado no menu;
+- ausencia do seletor `Navegar para tela`;
+- separacao de consulta, novo cadastro e detalhe nas telas operacionais;
 - build frontend;
 - TypeScript.
 
