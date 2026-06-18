@@ -206,6 +206,42 @@ Limites mantidos:
 - sem upload externo;
 - sem `DELETE` fisico.
 
+## V3.18H - Separacao Orcamentos x Planejamento
+
+A V3.18H separa definitivamente os modulos `Obras > Orcamentos` e `Obras > Planejamento Executivo` no frontend, sem alterar backend, migrations, endpoints ou regras de negocio.
+
+Principais ajustes:
+
+- `Orcamentos de Obra` passa a exibir apenas consulta, novo orcamento, pacotes, itens, cronograma fisico-financeiro, resumo e status orcamentario;
+- `Planejamento Executivo` passa a exibir apenas consulta, novo planejamento, etapas, responsaveis, datas, status, revisoes e acoes operacionais existentes;
+- removida a aba cruzada `Planejamento Executivo` de Orcamentos;
+- removida a aba cruzada `Orcamentos` de Planejamento Executivo;
+- menu `Obras` mantem os dois itens independentes;
+- consulta passa a ser a visao inicial dos dois modulos, com novo cadastro em aba propria;
+- detalhe fica em painel lateral no desktop e empilhado no mobile.
+
+Documentos:
+
+- `docs/v3.18h-separacao-orcamento-planejamento.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18h-separacao-orcamento-planejamento.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo;
+- sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

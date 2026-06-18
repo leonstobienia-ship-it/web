@@ -203,7 +203,7 @@ const sectionGroups: ISectionGroup[] = [
     items: [
       { key: 'contratos-obra', icon: 'contract', label: 'Contratos de Obra', shortLabel: 'Contratos', description: 'Contrato vendido, escopo e aditivos', profile: 'Planejamento' },
       { key: 'orcamentos-planejamento', icon: 'budget', label: 'Orçamentos', description: 'Orçamento base, pacotes e cronograma', profile: 'Planejamento' },
-      { key: 'planejamento-executivo', icon: 'timeline', label: 'Planejamento Executivo', shortLabel: 'Planejamento', description: 'Etapas, datas e responsáveis da execução', profile: 'Planejamento' },
+      { key: 'planejamento-executivo', icon: 'timeline', label: 'Planejamento Executivo', description: 'Etapas, datas e responsáveis da execução', profile: 'Planejamento' },
       { key: 'medicoes-faturamento', icon: 'ruler', label: 'Medições e Faturamento', shortLabel: 'Medições', description: 'Medições, pedidos e faturamento manual', profile: 'Planejamento' },
       { key: 'previsto-realizado', icon: 'chart', label: 'Previsto x Realizado', description: 'Margem, curva mensal e desvios por obra', profile: 'Diretoria' }
     ]
@@ -491,6 +491,7 @@ function WebPortal(): JSX.Element {
   const navigateToSection = (target: WebSection): void => {
     setSection(target);
     if (window.innerWidth <= 840) {
+      setNavCollapsed(true);
       window.requestAnimationFrame(() => {
         document.querySelector('.enac-web-main')?.scrollIntoView({ block: 'start' });
       });

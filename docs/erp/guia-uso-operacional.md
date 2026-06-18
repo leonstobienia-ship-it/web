@@ -102,6 +102,10 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - Central de Tarefas usa Consulta como aba inicial e deixa Nova tarefa manual em aba propria.
 - Relatorios Financeiros e Dashboard Executivo usam abas por assunto para reduzir rolagem longa.
 - Riscos e Pendencias separa lista, cadastro manual, conversao de alerta e detalhe/historico.
+- A V3.18H separa `Obras > Orcamentos` e `Obras > Planejamento Executivo` em telas independentes.
+- `Orcamentos` trata somente orcamento base, pacotes, itens, cronograma fisico-financeiro, resumo e status orcamentario.
+- `Planejamento Executivo` trata somente etapas, responsaveis, datas, status, revisoes e encerramento/cancelamento operacional ja existente.
+- Nao ha aba `Planejamento Executivo` dentro de Orcamentos nem aba `Orcamentos` dentro de Planejamento Executivo.
 - Cards resumem indicadores principais com densidade de ERP, sem ocupar a tela como material promocional.
 - Tabelas usam fonte compacta, bordas leves, rolagem horizontal quando o conteudo e largo e quebra de texto controlada.
 - Paineis laterais de detalhe usam destaque vermelho e ficam sticky em desktop quando a largura permite.

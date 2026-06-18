@@ -187,8 +187,11 @@ const formatDate = (value: string | null | undefined): string =>
 const statusClass = (status: string): string => status.toLowerCase().replace(/_/g, '-');
 
 type OrcamentosPlanejamentoView = 'orcamentos' | 'planejamento';
+type TelaTab = 'consulta' | 'novo';
 
 export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { initialView?: OrcamentosPlanejamentoView }): JSX.Element {
+  const moduleView = initialView;
+  const isPlanejamento = moduleView === 'planejamento';
   const [empresas, setEmpresas] = React.useState<EmpresaApi[]>([]);
   const [obras, setObras] = React.useState<ObraApi[]>([]);
   const [centrosCusto, setCentrosCusto] = React.useState<CentroCustoApi[]>([]);
@@ -205,16 +208,19 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
   const [cronogramaForm, setCronogramaForm] = React.useState<CronogramaForm>(emptyCronogramaForm());
   const [planejamentoForm, setPlanejamentoForm] = React.useState<PlanejamentoForm>(emptyPlanejamentoForm());
   const [statusFilter, setStatusFilter] = React.useState<OrcamentoObraStatus | ''>('');
+  const [planejamentoStatusFilter, setPlanejamentoStatusFilter] = React.useState<PlanejamentoExecutivoStatus | ''>('');
   const [obraFilter, setObraFilter] = React.useState<string>('');
   const [actionUserId, setActionUserId] = React.useState<string>('');
   const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
-  const [activeView, setActiveView] = React.useState<OrcamentosPlanejamentoView>(initialView);
+  const [activeTab, setActiveTab] = React.useState<TelaTab>('consulta');
 
   React.useEffect(() => {
-    setActiveView(initialView);
+    setActiveTab('consulta');
+    setError('');
+    setMessage('');
   }, [initialView]);
 
   const loadAll = React.useCallback(async (): Promise<void> => {
@@ -225,7 +231,7 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
       erpApi.usuarios.list(),
       erpApi.contratosObra.list({ status: 'ATIVO' }),
       erpApi.orcamentosObra.list({ status: statusFilter, obra_id: obraFilter || undefined }),
-      erpApi.planejamentoExecutivo.list({ obra_id: obraFilter || undefined })
+      erpApi.planejamentoExecutivo.list({ status: planejamentoStatusFilter, obra_id: obraFilter || undefined })
     ]);
     const companyId = empresasResponse.find((empresa) => empresa.cnpj === '00.000.000/0001-33')?.id || empresasResponse[0]?.id || '';
     const activeObras = obrasResponse.filter((obra) => obra.status !== 'inativo');
@@ -255,7 +261,7 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
       contrato_obra_id: current.contrato_obra_id || defaultContrato?.id || ''
     }));
     setActionUserId((current) => current || usuariosResponse.find((usuario) => usuario.email === 'gustavo.dev.v35b@enac.local')?.id || usuariosResponse[0]?.id || '');
-  }, [obraFilter, statusFilter]);
+  }, [obraFilter, planejamentoStatusFilter, statusFilter]);
 
   React.useEffect(() => {
     let active = true;
@@ -288,19 +294,11 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
   const selectOrcamento = async (id: string): Promise<void> => {
     const item = await erpApi.orcamentosObra.get(id);
     setSelectedOrcamento(item);
-    setActiveView('orcamentos');
     setResumo(await erpApi.orcamentosObra.resumo(id));
     const firstPacote = item.pacotes?.find((pacote) => pacote.status === 'ATIVO');
     setPacoteForm((current) => ({ ...current, centro_custo_id: item.centro_custo_id || current.centro_custo_id }));
     setItemForm((current) => ({ ...current, pacote_id: firstPacote?.id || '', centro_custo_id: item.centro_custo_id || current.centro_custo_id }));
     setCronogramaForm((current) => ({ ...current, pacote_id: firstPacote?.id || '' }));
-    setPlanejamentoForm((current) => ({
-      ...current,
-      obra_id: item.obra_id,
-      orcamento_id: item.id,
-      contrato_obra_id: item.contrato_obra_id || '',
-      centro_custo_id: item.centro_custo_id || ''
-    }));
   };
 
   const runOrcamentoAction = async (callback: () => Promise<OrcamentoObraApi>, successMessage: string): Promise<void> => {
@@ -436,7 +434,7 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
     const payload: PlanejamentoExecutivoPayload = {
       company_id: orcamentoForm.company_id || empresas[0]?.id || '',
       obra_id: planejamentoForm.obra_id,
-      orcamento_id: planejamentoForm.orcamento_id || null,
+      orcamento_id: null,
       contrato_obra_id: planejamentoForm.contrato_obra_id || null,
       centro_custo_id: planejamentoForm.centro_custo_id || null,
       etapa: planejamentoForm.etapa,
@@ -452,24 +450,46 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
   };
 
   if (loading) {
-    return <section className="enac-cadastros-page"><p>Carregando orçamentos e planejamento...</p></section>;
+    return <section className="enac-cadastros-page"><p>{isPlanejamento ? 'Carregando planejamento executivo...' : 'Carregando orçamentos de obra...'}</p></section>;
   }
 
   const activePacotes = selectedOrcamento?.pacotes?.filter((pacote) => pacote.status === 'ATIVO') || [];
   const selectedContratoValor = toNumber(selectedOrcamento?.contrato_obra_valor_total);
   const diferencaContrato = selectedContratoValor ? selectedContratoValor - toNumber(selectedOrcamento?.valor_previsto_total) : 0;
+  const totalOrcamentos = orcamentos.length;
+  const totalPrevisto = orcamentos.reduce((total, item) => total + toNumber(item.valor_previsto_total), 0);
+  const orcamentosAprovados = orcamentos.filter((item) => item.status === 'APROVADO').length;
+  const totalPlanejamentos = planejamentos.length;
+  const planejamentosAtivos = planejamentos.filter((item) => item.status === 'ATIVO').length;
+  const planejamentosAtrasados = planejamentos.filter((item) =>
+    ['RASCUNHO', 'ATIVO', 'REVISADO'].includes(item.status) && item.data_fim_prevista < today()
+  ).length;
+
+  const reload = (): void => {
+    setError('');
+    setMessage('');
+    void loadAll().catch((reloadError) => setError(getErrorMessage(reloadError)));
+  };
+
+  const clearFilters = (): void => {
+    setStatusFilter('');
+    setPlanejamentoStatusFilter('');
+    setObraFilter('');
+  };
 
   return (
-    <section className="enac-cadastros-page">
+    <section className={`enac-cadastros-page enac-work-module ${isPlanejamento ? 'enac-work-module--planning' : 'enac-work-module--budget'}`}>
       <div className="enac-cadastros-header">
         <div>
-          <p className="enac-web-eyebrow">V3.8 - Orçamento Base e Planejamento Executivo</p>
-          <h1>{activeView === 'planejamento' ? 'Planejamento Executivo' : 'Orçamentos de Obra'}</h1>
+          <p className="enac-web-eyebrow">{isPlanejamento ? 'V3.18H - Execução de obra' : 'V3.18H - Orçamento base'}</p>
+          <h1>{isPlanejamento ? 'Planejamento Executivo' : 'Orçamentos de Obra'}</h1>
           <p className="enac-web-lead">
-            Base executiva local para pacotes, itens, cronograma físico-financeiro e planejamento. Não há ação fiscal, boleto, banco, pagamento ou CNAB.
+            {isPlanejamento
+              ? 'Consulta e cadastro de etapas executivas, responsáveis, datas previstas, status, revisões e encerramento operacional.'
+              : 'Consulta e cadastro de orçamento base, pacotes, itens, cronograma físico-financeiro, resumo previsto e status orçamentário.'}
           </p>
         </div>
-        <button type="button" onClick={() => void refresh()} disabled={saving}>Atualizar</button>
+        <button type="button" onClick={reload} disabled={saving}>Pesquisar</button>
       </div>
 
       <div className="enac-cadastros-context">
@@ -482,10 +502,17 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
         </label>
         <label>
           Status
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as OrcamentoObraStatus | '')}>
-            <option value="">Todos</option>
-            {(Object.keys(statusLabels) as OrcamentoObraStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
-          </select>
+          {isPlanejamento ? (
+            <select value={planejamentoStatusFilter} onChange={(event) => setPlanejamentoStatusFilter(event.target.value as PlanejamentoExecutivoStatus | '')}>
+              <option value="">Todos</option>
+              {(Object.keys(planejamentoStatusLabels) as PlanejamentoExecutivoStatus[]).map((status) => <option key={status} value={status}>{planejamentoStatusLabels[status]}</option>)}
+            </select>
+          ) : (
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as OrcamentoObraStatus | '')}>
+              <option value="">Todos</option>
+              {(Object.keys(statusLabels) as OrcamentoObraStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
+            </select>
+          )}
         </label>
         <label>
           Obra
@@ -494,24 +521,26 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
             {obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.codigo} - {obra.nome}</option>)}
           </select>
         </label>
+        <div className="enac-filter-actions">
+          <button type="button" onClick={reload} disabled={saving}>Pesquisar</button>
+          <button type="button" className="secondary" onClick={clearFilters} disabled={saving}>Limpar filtros</button>
+        </div>
       </div>
 
       {error && <div className="enac-web-alert"><strong>Erro</strong><p>{error}</p></div>}
       {message && <div className="enac-web-alert enac-web-alert--success"><strong>{message}</strong></div>}
 
-      <div className="enac-ui-tabs" role="tablist" aria-label="Orçamento e planejamento executivo">
-        <button type="button" className={activeView === 'orcamentos' ? 'is-active' : ''} onClick={() => setActiveView('orcamentos')}>
-          Orçamentos
+      <div className="enac-ui-tabs" role="tablist" aria-label={isPlanejamento ? 'Planejamento executivo' : 'Orçamentos de obra'}>
+        <button type="button" className={activeTab === 'consulta' ? 'is-active' : ''} onClick={() => setActiveTab('consulta')}>
+          Consulta
         </button>
-        <button type="button" className={activeView === 'planejamento' ? 'is-active' : ''} onClick={() => setActiveView('planejamento')}>
-          Planejamento Executivo
+        <button type="button" className={activeTab === 'novo' ? 'is-active' : ''} onClick={() => setActiveTab('novo')}>
+          {isPlanejamento ? 'Novo planejamento' : 'Novo orçamento'}
         </button>
       </div>
 
-      {activeView === 'orcamentos' && (
-        <>
-      <div className="enac-cadastros-grid">
-        <form className="enac-cadastros-form" onSubmit={(event) => void createOrcamento(event)}>
+      {!isPlanejamento && activeTab === 'novo' && (
+        <form className="enac-cadastros-form enac-module-form" onSubmit={(event) => void createOrcamento(event)}>
           <h2>Novo orçamento</h2>
           <label>
             Empresa
@@ -551,248 +580,289 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
           <label className="enac-form-full">Observações<textarea value={orcamentoForm.observacoes} onChange={(event) => setOrcamentoForm({ ...orcamentoForm, observacoes: event.target.value })} /></label>
           <button type="submit" disabled={saving || !actionUserId}>Criar orçamento</button>
         </form>
-
-        <div className="enac-cadastros-list">
-          <h2>Orçamentos</h2>
-          <table>
-            <thead><tr><th>Código</th><th>Obra</th><th>Status</th><th>Total</th><th>Ações</th></tr></thead>
-            <tbody>
-              {orcamentos.map((orcamento) => (
-                <tr key={orcamento.id}>
-                  <td><strong>{orcamento.codigo}</strong><br /><small>{orcamento.versao}</small></td>
-                  <td>{orcamento.obra_codigo} - {orcamento.obra_nome}</td>
-                  <td><span className={`enac-status enac-status--${statusClass(orcamento.status)}`}>{statusLabels[orcamento.status]}</span></td>
-                  <td>{formatMoney(orcamento.valor_previsto_total)}</td>
-                  <td><button type="button" onClick={() => void selectOrcamento(orcamento.id)}>Detalhe</button></td>
-                </tr>
-              ))}
-              {orcamentos.length === 0 && <tr><td colSpan={5}>Nenhum orçamento encontrado.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {selectedOrcamento && (
-        <div className="enac-cadastros-detail">
-          <div className="enac-cadastros-detail-header">
-            <div>
-              <p className="enac-web-eyebrow">Detalhe do orçamento</p>
-              <h2>{selectedOrcamento.codigo} - {selectedOrcamento.versao}</h2>
-              <p>{selectedOrcamento.descricao}</p>
-            </div>
-            <div className="enac-actions">
-              {selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.enviarRevisao(selectedOrcamento.id, { usuario_id: actionUserId, observacoes: `${marker} - revisão` }), 'Orçamento enviado para revisão.')} disabled={saving || !actionUserId}>Enviar revisão</button>}
-              {selectedOrcamento.status === 'EM_REVISAO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.aprovar(selectedOrcamento.id, { usuario_id: actionUserId, observacoes: `${marker} - aprovado` }), 'Orçamento aprovado como vigente.')} disabled={saving || !actionUserId}>Aprovar</button>}
-              {selectedOrcamento.status !== 'CANCELADO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.bloquear(selectedOrcamento.id, { usuario_id: actionUserId, motivo: `${marker} - bloqueio lógico` }), 'Orçamento bloqueado.')} disabled={saving || !actionUserId}>Bloquear</button>}
-              {selectedOrcamento.status !== 'CANCELADO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.cancelar(selectedOrcamento.id, { usuario_id: actionUserId, motivo: `${marker} - cancelamento lógico` }), 'Orçamento cancelado.')} disabled={saving || !actionUserId}>Cancelar</button>}
-            </div>
-          </div>
-
-          <div className="enac-kpi-grid">
-            <article><span>Total previsto</span><strong>{formatMoney(selectedOrcamento.valor_previsto_total)}</strong></article>
-            <article><span>Contrato</span><strong>{selectedContratoValor ? formatMoney(selectedContratoValor) : '-'}</strong></article>
-            <article><span>Diferença</span><strong>{selectedContratoValor ? formatMoney(diferencaContrato) : '-'}</strong></article>
-            <article><span>Cronograma</span><strong>{resumo ? formatMoney(resumo.total_cronograma) : '-'}</strong></article>
-          </div>
-
-          <div className="enac-cadastros-grid">
-            <form className="enac-cadastros-form" onSubmit={(event) => void addPacote(event)}>
-              <h3>Pacotes</h3>
-              <label>Código<input value={pacoteForm.codigo} onChange={(event) => setPacoteForm({ ...pacoteForm, codigo: event.target.value })} required /></label>
-              <label>Nome<input value={pacoteForm.nome} onChange={(event) => setPacoteForm({ ...pacoteForm, nome: event.target.value })} required /></label>
-              <label>Etapa<input value={pacoteForm.etapa} onChange={(event) => setPacoteForm({ ...pacoteForm, etapa: event.target.value })} /></label>
-              <label>Ordem<input value={pacoteForm.ordem} onChange={(event) => setPacoteForm({ ...pacoteForm, ordem: event.target.value })} /></label>
-              <label className="enac-form-full">Descrição<textarea value={pacoteForm.descricao} onChange={(event) => setPacoteForm({ ...pacoteForm, descricao: event.target.value })} /></label>
-              <button type="submit" disabled={saving || selectedOrcamento.status !== 'RASCUNHO'}>Cadastrar pacote</button>
-            </form>
-            <div className="enac-cadastros-list">
-              <h3>Pacotes cadastrados</h3>
-              <table>
-                <thead><tr><th>Código</th><th>Nome</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
-                <tbody>
-                  {(selectedOrcamento.pacotes || []).map((pacote) => (
-                    <tr key={pacote.id}>
-                      <td>{pacote.codigo}</td>
-                      <td>{pacote.nome}</td>
-                      <td>{formatMoney(pacote.valor_total_previsto)}</td>
-                      <td>{pacote.status}</td>
-                      <td>{pacote.status === 'ATIVO' && selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.inativarPacote(selectedOrcamento.id, pacote.id, { usuario_id: actionUserId, motivo: `${marker} - inativar pacote` }), 'Pacote inativado.')} disabled={saving}>Inativar</button>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="enac-cadastros-grid">
-            <form className="enac-cadastros-form" onSubmit={(event) => void addItem(event)}>
-              <h3>Itens orçamentários</h3>
-              <label>
-                Pacote
-                <select value={itemForm.pacote_id} onChange={(event) => setItemForm({ ...itemForm, pacote_id: event.target.value })}>
-                  <option value="">Sem pacote</option>
-                  {activePacotes.map((pacote) => <option key={pacote.id} value={pacote.id}>{pacote.codigo} - {pacote.nome}</option>)}
-                </select>
-              </label>
-              <label>
-                Tipo
-                <select value={itemForm.tipo} onChange={(event) => setItemForm({ ...itemForm, tipo: event.target.value as OrcamentoItemTipo })}>
-                  {(Object.keys(tipoLabels) as OrcamentoItemTipo[]).map((tipo) => <option key={tipo} value={tipo}>{tipoLabels[tipo]}</option>)}
-                </select>
-              </label>
-              <label>Código<input value={itemForm.codigo} onChange={(event) => setItemForm({ ...itemForm, codigo: event.target.value })} /></label>
-              <label>Descrição<input value={itemForm.descricao} onChange={(event) => setItemForm({ ...itemForm, descricao: event.target.value })} required /></label>
-              <label>Unidade<input value={itemForm.unidade} onChange={(event) => setItemForm({ ...itemForm, unidade: event.target.value })} required /></label>
-              <label>Quantidade<input value={itemForm.quantidade} onChange={(event) => setItemForm({ ...itemForm, quantidade: event.target.value })} required /></label>
-              <label>Valor unitário<input value={itemForm.valor_unitario_previsto} onChange={(event) => setItemForm({ ...itemForm, valor_unitario_previsto: event.target.value })} required /></label>
-              <label className="enac-form-full">Insumo / mão de obra / equipamento<textarea value={itemForm.insumo_descricao} onChange={(event) => setItemForm({ ...itemForm, insumo_descricao: event.target.value })} /></label>
-              <button type="submit" disabled={saving || selectedOrcamento.status !== 'RASCUNHO'}>Cadastrar item</button>
-            </form>
-            <div className="enac-cadastros-list">
-              <h3>Itens</h3>
-              <table>
-                <thead><tr><th>Tipo</th><th>Descrição</th><th>Qtd.</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
-                <tbody>
-                  {(selectedOrcamento.itens || []).map((item) => (
-                    <tr key={item.id}>
-                      <td>{tipoLabels[item.tipo]}</td>
-                      <td>{item.descricao}<br /><small>{item.pacote_codigo || '-'}</small></td>
-                      <td>{item.quantidade}</td>
-                      <td>{formatMoney(item.valor_total_previsto)}</td>
-                      <td>{item.status}</td>
-                      <td>{item.status === 'ATIVO' && selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.inativarItem(selectedOrcamento.id, item.id, { usuario_id: actionUserId, motivo: `${marker} - inativar item` }), 'Item inativado.')} disabled={saving}>Inativar</button>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="enac-cadastros-grid">
-            <form className="enac-cadastros-form" onSubmit={(event) => void addCronograma(event)}>
-              <h3>Cronograma físico-financeiro</h3>
-              <label>
-                Pacote
-                <select value={cronogramaForm.pacote_id} onChange={(event) => setCronogramaForm({ ...cronogramaForm, pacote_id: event.target.value })}>
-                  <option value="">Sem pacote</option>
-                  {activePacotes.map((pacote) => <option key={pacote.id} value={pacote.id}>{pacote.codigo} - {pacote.nome}</option>)}
-                </select>
-              </label>
-              <label>Competência<input type="month" value={cronogramaForm.competencia} onChange={(event) => setCronogramaForm({ ...cronogramaForm, competencia: event.target.value })} required /></label>
-              <label>Valor previsto<input value={cronogramaForm.valor_previsto} onChange={(event) => setCronogramaForm({ ...cronogramaForm, valor_previsto: event.target.value })} required /></label>
-              <label>% físico<input value={cronogramaForm.percentual_fisico_previsto} onChange={(event) => setCronogramaForm({ ...cronogramaForm, percentual_fisico_previsto: event.target.value })} /></label>
-              <label className="enac-form-full">Observações<textarea value={cronogramaForm.observacoes} onChange={(event) => setCronogramaForm({ ...cronogramaForm, observacoes: event.target.value })} /></label>
-              <button type="submit" disabled={saving || selectedOrcamento.status !== 'RASCUNHO'}>Cadastrar cronograma</button>
-            </form>
-            <div className="enac-cadastros-list">
-              <h3>Cronograma</h3>
-              <table>
-                <thead><tr><th>Competência</th><th>Pacote</th><th>Valor</th><th>% físico</th><th>Status</th><th>Ações</th></tr></thead>
-                <tbody>
-                  {(selectedOrcamento.cronograma || []).map((linha) => (
-                    <tr key={linha.id}>
-                      <td>{linha.competencia}</td>
-                      <td>{linha.pacote_codigo || '-'}</td>
-                      <td>{formatMoney(linha.valor_previsto)}</td>
-                      <td>{linha.percentual_fisico_previsto || '-'}</td>
-                      <td>{linha.status}</td>
-                      <td>{linha.status === 'ATIVO' && selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.inativarCronograma(selectedOrcamento.id, linha.id, { usuario_id: actionUserId, motivo: `${marker} - inativar cronograma` }), 'Cronograma inativado.')} disabled={saving}>Inativar</button>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {resumo && (
-            <div className="enac-cadastros-list">
-              <h3>Resumo previsto x realizado</h3>
-              <table>
-                <thead><tr><th>Indicador</th><th>Valor</th></tr></thead>
-                <tbody>
-                  <tr><td>Compras realizadas da obra</td><td>{formatMoney(resumo.valor_compras_realizado)}</td></tr>
-                  <tr><td>Medições realizadas da obra</td><td>{formatMoney(resumo.valor_medido_realizado)}</td></tr>
-                  <tr><td>Faturamento solicitado da obra</td><td>{formatMoney(resumo.valor_faturado_realizado)}</td></tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
       )}
+
+      {!isPlanejamento && activeTab === 'consulta' && (
+        <>
+          <div className="enac-kpi-grid enac-module-summary">
+            <article><span>Orçamentos</span><strong>{totalOrcamentos}</strong></article>
+            <article><span>Aprovados</span><strong>{orcamentosAprovados}</strong></article>
+            <article><span>Total previsto</span><strong>{formatMoney(totalPrevisto)}</strong></article>
+            <article><span>Selecionado</span><strong>{selectedOrcamento ? selectedOrcamento.codigo : '-'}</strong></article>
+          </div>
+
+          <div className="enac-module-workspace">
+            <div className="enac-cadastros-list">
+              <h2>Consulta de orçamentos</h2>
+              <table>
+                <thead><tr><th>Código</th><th>Obra</th><th>Status</th><th>Total</th><th>Ações</th></tr></thead>
+                <tbody>
+                  {orcamentos.map((orcamento) => (
+                    <tr key={orcamento.id} className={selectedOrcamento?.id === orcamento.id ? 'is-selected' : ''}>
+                      <td><strong>{orcamento.codigo}</strong><br /><small>{orcamento.versao}</small></td>
+                      <td>{orcamento.obra_codigo} - {orcamento.obra_nome}</td>
+                      <td><span className={`enac-status enac-status--${statusClass(orcamento.status)}`}>{statusLabels[orcamento.status]}</span></td>
+                      <td>{formatMoney(orcamento.valor_previsto_total)}</td>
+                      <td><button type="button" onClick={() => void selectOrcamento(orcamento.id)}>Detalhe</button></td>
+                    </tr>
+                  ))}
+                  {orcamentos.length === 0 && <tr><td colSpan={5}>Nenhum orçamento encontrado.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            {selectedOrcamento ? (
+              <aside className="enac-cadastros-detail enac-module-detail">
+                <div className="enac-cadastros-detail-header">
+                  <div>
+                    <p className="enac-web-eyebrow">Detalhe do orçamento</p>
+                    <h2>{selectedOrcamento.codigo} - {selectedOrcamento.versao}</h2>
+                    <p>{selectedOrcamento.descricao}</p>
+                  </div>
+                  <div className="enac-actions">
+                    {selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.enviarRevisao(selectedOrcamento.id, { usuario_id: actionUserId, observacoes: `${marker} - revisão` }), 'Orçamento enviado para revisão.')} disabled={saving || !actionUserId}>Enviar revisão</button>}
+                    {selectedOrcamento.status === 'EM_REVISAO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.aprovar(selectedOrcamento.id, { usuario_id: actionUserId, observacoes: `${marker} - aprovado` }), 'Orçamento aprovado como vigente.')} disabled={saving || !actionUserId}>Aprovar</button>}
+                    {selectedOrcamento.status !== 'CANCELADO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.bloquear(selectedOrcamento.id, { usuario_id: actionUserId, motivo: `${marker} - bloqueio lógico` }), 'Orçamento bloqueado.')} disabled={saving || !actionUserId}>Bloquear</button>}
+                    {selectedOrcamento.status !== 'CANCELADO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.cancelar(selectedOrcamento.id, { usuario_id: actionUserId, motivo: `${marker} - cancelamento lógico` }), 'Orçamento cancelado.')} disabled={saving || !actionUserId}>Cancelar</button>}
+                  </div>
+                </div>
+
+                <div className="enac-kpi-grid">
+                  <article><span>Total previsto</span><strong>{formatMoney(selectedOrcamento.valor_previsto_total)}</strong></article>
+                  <article><span>Contrato</span><strong>{selectedContratoValor ? formatMoney(selectedContratoValor) : '-'}</strong></article>
+                  <article><span>Diferença</span><strong>{selectedContratoValor ? formatMoney(diferencaContrato) : '-'}</strong></article>
+                  <article><span>Cronograma</span><strong>{resumo ? formatMoney(resumo.total_cronograma) : '-'}</strong></article>
+                </div>
+
+                <div className="enac-cadastros-grid">
+                  <form className="enac-cadastros-form" onSubmit={(event) => void addPacote(event)}>
+                    <h3>Pacotes</h3>
+                    <label>Código<input value={pacoteForm.codigo} onChange={(event) => setPacoteForm({ ...pacoteForm, codigo: event.target.value })} required /></label>
+                    <label>Nome<input value={pacoteForm.nome} onChange={(event) => setPacoteForm({ ...pacoteForm, nome: event.target.value })} required /></label>
+                    <label>Etapa<input value={pacoteForm.etapa} onChange={(event) => setPacoteForm({ ...pacoteForm, etapa: event.target.value })} /></label>
+                    <label>Ordem<input value={pacoteForm.ordem} onChange={(event) => setPacoteForm({ ...pacoteForm, ordem: event.target.value })} /></label>
+                    <label className="enac-form-full">Descrição<textarea value={pacoteForm.descricao} onChange={(event) => setPacoteForm({ ...pacoteForm, descricao: event.target.value })} /></label>
+                    <button type="submit" disabled={saving || selectedOrcamento.status !== 'RASCUNHO'}>Cadastrar pacote</button>
+                  </form>
+                  <div className="enac-cadastros-list">
+                    <h3>Pacotes cadastrados</h3>
+                    <table>
+                      <thead><tr><th>Código</th><th>Nome</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
+                      <tbody>
+                        {(selectedOrcamento.pacotes || []).map((pacote) => (
+                          <tr key={pacote.id}>
+                            <td>{pacote.codigo}</td>
+                            <td>{pacote.nome}</td>
+                            <td>{formatMoney(pacote.valor_total_previsto)}</td>
+                            <td>{pacote.status}</td>
+                            <td>{pacote.status === 'ATIVO' && selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.inativarPacote(selectedOrcamento.id, pacote.id, { usuario_id: actionUserId, motivo: `${marker} - inativar pacote` }), 'Pacote inativado.')} disabled={saving}>Inativar</button>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="enac-cadastros-grid">
+                  <form className="enac-cadastros-form" onSubmit={(event) => void addItem(event)}>
+                    <h3>Itens orçamentários</h3>
+                    <label>
+                      Pacote
+                      <select value={itemForm.pacote_id} onChange={(event) => setItemForm({ ...itemForm, pacote_id: event.target.value })}>
+                        <option value="">Sem pacote</option>
+                        {activePacotes.map((pacote) => <option key={pacote.id} value={pacote.id}>{pacote.codigo} - {pacote.nome}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      Tipo
+                      <select value={itemForm.tipo} onChange={(event) => setItemForm({ ...itemForm, tipo: event.target.value as OrcamentoItemTipo })}>
+                        {(Object.keys(tipoLabels) as OrcamentoItemTipo[]).map((tipo) => <option key={tipo} value={tipo}>{tipoLabels[tipo]}</option>)}
+                      </select>
+                    </label>
+                    <label>Código<input value={itemForm.codigo} onChange={(event) => setItemForm({ ...itemForm, codigo: event.target.value })} /></label>
+                    <label>Descrição<input value={itemForm.descricao} onChange={(event) => setItemForm({ ...itemForm, descricao: event.target.value })} required /></label>
+                    <label>Unidade<input value={itemForm.unidade} onChange={(event) => setItemForm({ ...itemForm, unidade: event.target.value })} required /></label>
+                    <label>Quantidade<input value={itemForm.quantidade} onChange={(event) => setItemForm({ ...itemForm, quantidade: event.target.value })} required /></label>
+                    <label>Valor unitário<input value={itemForm.valor_unitario_previsto} onChange={(event) => setItemForm({ ...itemForm, valor_unitario_previsto: event.target.value })} required /></label>
+                    <label className="enac-form-full">Insumo / mão de obra / equipamento<textarea value={itemForm.insumo_descricao} onChange={(event) => setItemForm({ ...itemForm, insumo_descricao: event.target.value })} /></label>
+                    <button type="submit" disabled={saving || selectedOrcamento.status !== 'RASCUNHO'}>Cadastrar item</button>
+                  </form>
+                  <div className="enac-cadastros-list">
+                    <h3>Itens</h3>
+                    <table>
+                      <thead><tr><th>Tipo</th><th>Descrição</th><th>Qtd.</th><th>Total</th><th>Status</th><th>Ações</th></tr></thead>
+                      <tbody>
+                        {(selectedOrcamento.itens || []).map((item) => (
+                          <tr key={item.id}>
+                            <td>{tipoLabels[item.tipo]}</td>
+                            <td>{item.descricao}<br /><small>{item.pacote_codigo || '-'}</small></td>
+                            <td>{item.quantidade}</td>
+                            <td>{formatMoney(item.valor_total_previsto)}</td>
+                            <td>{item.status}</td>
+                            <td>{item.status === 'ATIVO' && selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.inativarItem(selectedOrcamento.id, item.id, { usuario_id: actionUserId, motivo: `${marker} - inativar item` }), 'Item inativado.')} disabled={saving}>Inativar</button>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="enac-cadastros-grid">
+                  <form className="enac-cadastros-form" onSubmit={(event) => void addCronograma(event)}>
+                    <h3>Cronograma físico-financeiro</h3>
+                    <label>
+                      Pacote
+                      <select value={cronogramaForm.pacote_id} onChange={(event) => setCronogramaForm({ ...cronogramaForm, pacote_id: event.target.value })}>
+                        <option value="">Sem pacote</option>
+                        {activePacotes.map((pacote) => <option key={pacote.id} value={pacote.id}>{pacote.codigo} - {pacote.nome}</option>)}
+                      </select>
+                    </label>
+                    <label>Competência<input type="month" value={cronogramaForm.competencia} onChange={(event) => setCronogramaForm({ ...cronogramaForm, competencia: event.target.value })} required /></label>
+                    <label>Valor previsto<input value={cronogramaForm.valor_previsto} onChange={(event) => setCronogramaForm({ ...cronogramaForm, valor_previsto: event.target.value })} required /></label>
+                    <label>% físico<input value={cronogramaForm.percentual_fisico_previsto} onChange={(event) => setCronogramaForm({ ...cronogramaForm, percentual_fisico_previsto: event.target.value })} /></label>
+                    <label className="enac-form-full">Observações<textarea value={cronogramaForm.observacoes} onChange={(event) => setCronogramaForm({ ...cronogramaForm, observacoes: event.target.value })} /></label>
+                    <button type="submit" disabled={saving || selectedOrcamento.status !== 'RASCUNHO'}>Cadastrar cronograma</button>
+                  </form>
+                  <div className="enac-cadastros-list">
+                    <h3>Cronograma</h3>
+                    <table>
+                      <thead><tr><th>Competência</th><th>Pacote</th><th>Valor</th><th>% físico</th><th>Status</th><th>Ações</th></tr></thead>
+                      <tbody>
+                        {(selectedOrcamento.cronograma || []).map((linha) => (
+                          <tr key={linha.id}>
+                            <td>{linha.competencia}</td>
+                            <td>{linha.pacote_codigo || '-'}</td>
+                            <td>{formatMoney(linha.valor_previsto)}</td>
+                            <td>{linha.percentual_fisico_previsto || '-'}</td>
+                            <td>{linha.status}</td>
+                            <td>{linha.status === 'ATIVO' && selectedOrcamento.status === 'RASCUNHO' && <button type="button" onClick={() => void runOrcamentoAction(() => erpApi.orcamentosObra.inativarCronograma(selectedOrcamento.id, linha.id, { usuario_id: actionUserId, motivo: `${marker} - inativar cronograma` }), 'Cronograma inativado.')} disabled={saving}>Inativar</button>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {resumo && (
+                  <div className="enac-cadastros-list">
+                    <h3>Resumo orçamentário</h3>
+                    <table>
+                      <thead><tr><th>Indicador</th><th>Valor</th></tr></thead>
+                      <tbody>
+                        <tr><td>Compras realizadas da obra</td><td>{formatMoney(resumo.valor_compras_realizado)}</td></tr>
+                        <tr><td>Medições realizadas da obra</td><td>{formatMoney(resumo.valor_medido_realizado)}</td></tr>
+                        <tr><td>Faturamento solicitado da obra</td><td>{formatMoney(resumo.valor_faturado_realizado)}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </aside>
+            ) : (
+              <aside className="enac-cadastros-detail enac-module-detail">
+                <div className="enac-cadastro-empty">Selecione um orçamento na consulta para visualizar pacotes, itens, cronograma e resumo.</div>
+              </aside>
+            )}
+          </div>
         </>
       )}
 
-      {activeView === 'planejamento' && (
-      <div className="enac-cadastros-detail">
-        <div className="enac-cadastros-detail-header">
-          <div>
-            <p className="enac-web-eyebrow">Planejamento Executivo</p>
-            <h2>Etapas e datas</h2>
+      {isPlanejamento && activeTab === 'novo' && (
+        <form className="enac-cadastros-form enac-module-form" onSubmit={(event) => void createPlanejamento(event)}>
+          <h2>Novo planejamento</h2>
+          <label>
+            Obra
+            <select value={planejamentoForm.obra_id} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, obra_id: event.target.value })} required>
+              <option value="">Selecione</option>
+              {obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.codigo} - {obra.nome}</option>)}
+            </select>
+          </label>
+          <label>
+            Responsável
+            <select value={planejamentoForm.responsavel_id} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, responsavel_id: event.target.value })}>
+              <option value="">Sem responsável</option>
+              {usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
+            </select>
+          </label>
+          <label>Etapa<input value={planejamentoForm.etapa} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, etapa: event.target.value })} required /></label>
+          <label>Início<input type="date" value={planejamentoForm.data_inicio_prevista} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, data_inicio_prevista: event.target.value })} required /></label>
+          <label>Fim<input type="date" value={planejamentoForm.data_fim_prevista} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, data_fim_prevista: event.target.value })} required /></label>
+          <label className="enac-form-full">Descrição<textarea value={planejamentoForm.descricao} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, descricao: event.target.value })} /></label>
+          <label className="enac-form-full">Observações<textarea value={planejamentoForm.observacoes} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, observacoes: event.target.value })} /></label>
+          <button type="submit" disabled={saving || !actionUserId}>Criar planejamento</button>
+        </form>
+      )}
+
+      {isPlanejamento && activeTab === 'consulta' && (
+        <>
+          <div className="enac-kpi-grid enac-module-summary">
+            <article><span>Planejamentos</span><strong>{totalPlanejamentos}</strong></article>
+            <article><span>Ativos</span><strong>{planejamentosAtivos}</strong></article>
+            <article><span>Atrasados</span><strong>{planejamentosAtrasados}</strong></article>
+            <article><span>Selecionado</span><strong>{selectedPlanejamento ? selectedPlanejamento.etapa : '-'}</strong></article>
           </div>
-        </div>
-        <div className="enac-cadastros-grid">
-          <form className="enac-cadastros-form" onSubmit={(event) => void createPlanejamento(event)}>
-            <h3>Novo planejamento</h3>
-            <label>
-              Obra
-              <select value={planejamentoForm.obra_id} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, obra_id: event.target.value })} required>
-                <option value="">Selecione</option>
-                {obras.map((obra) => <option key={obra.id} value={obra.id}>{obra.codigo} - {obra.nome}</option>)}
-              </select>
-            </label>
-            <label>
-              Orçamento
-              <select value={planejamentoForm.orcamento_id} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, orcamento_id: event.target.value })}>
-                <option value="">Sem orçamento</option>
-                {orcamentos.filter((orcamento) => !planejamentoForm.obra_id || orcamento.obra_id === planejamentoForm.obra_id).map((orcamento) => (
-                  <option key={orcamento.id} value={orcamento.id}>{orcamento.codigo} - {orcamento.status}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Responsável
-              <select value={planejamentoForm.responsavel_id} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, responsavel_id: event.target.value })}>
-                <option value="">Sem responsável</option>
-                {usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
-              </select>
-            </label>
-            <label>Etapa<input value={planejamentoForm.etapa} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, etapa: event.target.value })} required /></label>
-            <label>Início<input type="date" value={planejamentoForm.data_inicio_prevista} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, data_inicio_prevista: event.target.value })} required /></label>
-            <label>Fim<input type="date" value={planejamentoForm.data_fim_prevista} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, data_fim_prevista: event.target.value })} required /></label>
-            <label className="enac-form-full">Descrição<textarea value={planejamentoForm.descricao} onChange={(event) => setPlanejamentoForm({ ...planejamentoForm, descricao: event.target.value })} /></label>
-            <button type="submit" disabled={saving || !actionUserId}>Criar planejamento</button>
-          </form>
-          <div className="enac-cadastros-list">
-            <h3>Planejamentos</h3>
-            <table>
-              <thead><tr><th>Etapa</th><th>Obra</th><th>Datas</th><th>Status</th><th>Ações</th></tr></thead>
-              <tbody>
-                {planejamentos.map((planejamento) => (
-                  <tr key={planejamento.id}>
-                    <td><strong>{planejamento.etapa}</strong><br /><small>{planejamento.orcamento_codigo || '-'}</small></td>
-                    <td>{planejamento.obra_codigo} - {planejamento.obra_nome}</td>
-                    <td>{formatDate(planejamento.data_inicio_prevista)} a {formatDate(planejamento.data_fim_prevista)}</td>
-                    <td><span className={`enac-status enac-status--${statusClass(planejamento.status)}`}>{planejamentoStatusLabels[planejamento.status]}</span></td>
-                    <td>
-                      <button type="button" onClick={() => setSelectedPlanejamento(planejamento)}>Selecionar</button>
-                    </td>
-                  </tr>
-                ))}
-                {planejamentos.length === 0 && <tr><td colSpan={5}>Nenhum planejamento encontrado.</td></tr>}
-              </tbody>
-            </table>
-            {selectedPlanejamento && (
-              <div className="enac-inline-actions">
-                <strong>{selectedPlanejamento.etapa}</strong>
-                {['RASCUNHO', 'REVISADO'].includes(selectedPlanejamento.status) && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.ativar(selectedPlanejamento.id, { usuario_id: actionUserId, observacoes: `${marker} - ativar` }), 'Planejamento ativado.')} disabled={saving || !actionUserId}>Ativar</button>}
-                {selectedPlanejamento.status === 'ATIVO' && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.revisar(selectedPlanejamento.id, { usuario_id: actionUserId, motivo: `${marker} - revisar` }), 'Planejamento revisado.')} disabled={saving || !actionUserId}>Revisar</button>}
-                {['ATIVO', 'REVISADO'].includes(selectedPlanejamento.status) && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.encerrar(selectedPlanejamento.id, { usuario_id: actionUserId, motivo: `${marker} - encerrar` }), 'Planejamento encerrado.')} disabled={saving || !actionUserId}>Encerrar</button>}
-                {selectedPlanejamento.status !== 'ENCERRADO' && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.cancelar(selectedPlanejamento.id, { usuario_id: actionUserId, motivo: `${marker} - cancelar` }), 'Planejamento cancelado.')} disabled={saving || !actionUserId}>Cancelar</button>}
-              </div>
+
+          <div className="enac-module-workspace">
+            <div className="enac-cadastros-list">
+              <h2>Consulta de planejamentos</h2>
+              <table>
+                <thead><tr><th>Etapa</th><th>Obra</th><th>Responsável</th><th>Datas</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody>
+                  {planejamentos.map((planejamento) => (
+                    <tr key={planejamento.id} className={selectedPlanejamento?.id === planejamento.id ? 'is-selected' : ''}>
+                      <td><strong>{planejamento.etapa}</strong><br /><small>{planejamento.centro_custo_codigo || '-'}</small></td>
+                      <td>{planejamento.obra_codigo} - {planejamento.obra_nome}</td>
+                      <td>{planejamento.responsavel_nome || '-'}</td>
+                      <td>{formatDate(planejamento.data_inicio_prevista)} a {formatDate(planejamento.data_fim_prevista)}</td>
+                      <td><span className={`enac-status enac-status--${statusClass(planejamento.status)}`}>{planejamentoStatusLabels[planejamento.status]}</span></td>
+                      <td><button type="button" onClick={() => setSelectedPlanejamento(planejamento)}>Detalhe</button></td>
+                    </tr>
+                  ))}
+                  {planejamentos.length === 0 && <tr><td colSpan={6}>Nenhum planejamento encontrado.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            {selectedPlanejamento ? (
+              <aside className="enac-cadastros-detail enac-module-detail">
+                <div className="enac-cadastros-detail-header">
+                  <div>
+                    <p className="enac-web-eyebrow">Detalhe do planejamento</p>
+                    <h2>{selectedPlanejamento.etapa}</h2>
+                    <p>{selectedPlanejamento.descricao || 'Sem descrição operacional.'}</p>
+                  </div>
+                </div>
+                <div className="enac-kpi-grid">
+                  <article><span>Status</span><strong>{planejamentoStatusLabels[selectedPlanejamento.status]}</strong></article>
+                  <article><span>Responsável</span><strong>{selectedPlanejamento.responsavel_nome || '-'}</strong></article>
+                  <article><span>Início</span><strong>{formatDate(selectedPlanejamento.data_inicio_prevista)}</strong></article>
+                  <article><span>Fim</span><strong>{formatDate(selectedPlanejamento.data_fim_prevista)}</strong></article>
+                </div>
+                <div className="enac-cadastros-list">
+                  <h3>Histórico operacional</h3>
+                  <table>
+                    <tbody>
+                      <tr><td>Obra</td><td>{selectedPlanejamento.obra_codigo} - {selectedPlanejamento.obra_nome}</td></tr>
+                      <tr><td>Revisão</td><td>{selectedPlanejamento.revisao_motivo || '-'}</td></tr>
+                      <tr><td>Encerramento</td><td>{selectedPlanejamento.encerramento_motivo || '-'}</td></tr>
+                      <tr><td>Cancelamento</td><td>{selectedPlanejamento.cancelamento_motivo || '-'}</td></tr>
+                      <tr><td>Observações</td><td>{selectedPlanejamento.observacoes || '-'}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="enac-inline-actions">
+                  {['RASCUNHO', 'REVISADO'].includes(selectedPlanejamento.status) && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.ativar(selectedPlanejamento.id, { usuario_id: actionUserId, observacoes: `${marker} - ativar` }), 'Planejamento ativado.')} disabled={saving || !actionUserId}>Ativar</button>}
+                  {selectedPlanejamento.status === 'ATIVO' && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.revisar(selectedPlanejamento.id, { usuario_id: actionUserId, motivo: `${marker} - revisar` }), 'Planejamento revisado.')} disabled={saving || !actionUserId}>Revisar</button>}
+                  {['ATIVO', 'REVISADO'].includes(selectedPlanejamento.status) && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.encerrar(selectedPlanejamento.id, { usuario_id: actionUserId, motivo: `${marker} - encerrar` }), 'Planejamento encerrado.')} disabled={saving || !actionUserId}>Encerrar</button>}
+                  {selectedPlanejamento.status !== 'ENCERRADO' && <button type="button" onClick={() => void runPlanejamentoAction(() => erpApi.planejamentoExecutivo.cancelar(selectedPlanejamento.id, { usuario_id: actionUserId, motivo: `${marker} - cancelar` }), 'Planejamento cancelado.')} disabled={saving || !actionUserId}>Cancelar</button>}
+                </div>
+              </aside>
+            ) : (
+              <aside className="enac-cadastros-detail enac-module-detail">
+                <div className="enac-cadastro-empty">Selecione uma etapa na consulta para visualizar datas, responsáveis, status e ações operacionais.</div>
+              </aside>
             )}
           </div>
-        </div>
-      </div>
+        </>
       )}
     </section>
   );

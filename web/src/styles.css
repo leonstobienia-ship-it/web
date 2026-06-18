@@ -1013,6 +1013,96 @@ button {
   font-size: 18px;
 }
 
+.enac-work-module {
+  box-sizing: border-box;
+  width: min(1680px, 100%);
+  margin: 0 auto;
+  padding: 22px 26px 40px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.enac-work-module .enac-cadastros-header,
+.enac-work-module .enac-cadastros-context,
+.enac-work-module .enac-kpi-grid,
+.enac-work-module .enac-module-workspace,
+.enac-work-module .enac-module-form {
+  min-width: 0;
+}
+
+.enac-work-module .enac-cadastros-context {
+  align-items: end;
+}
+
+.enac-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.enac-filter-actions button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 14px;
+  background: var(--enac-primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.enac-filter-actions button.secondary {
+  border: 1px solid #d9e0e7;
+  background: #ffffff;
+  color: #8f1024;
+}
+
+.enac-module-summary {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.enac-module-summary article {
+  border-left: 3px solid var(--enac-primary);
+  background: #ffffff;
+}
+
+.enac-module-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.95fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.enac-module-workspace > .enac-cadastros-list {
+  min-width: 0;
+}
+
+.enac-module-form {
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+}
+
+.enac-module-detail {
+  position: sticky;
+  top: 96px;
+  max-height: calc(100vh - 112px);
+  overflow: auto;
+  border-top: 3px solid var(--enac-primary);
+}
+
+.enac-module-detail .enac-cadastros-grid {
+  grid-template-columns: 1fr;
+}
+
+.enac-module-detail .enac-kpi-grid {
+  grid-template-columns: repeat(2, minmax(130px, 1fr));
+}
+
+.enac-cadastros-list tr.is-selected td {
+  background: #fff1f3;
+  box-shadow: inset 3px 0 0 var(--enac-primary);
+}
+
 .enac-cadastros-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -4140,6 +4230,22 @@ code {
 
   .enac-cadastros-list table {
     min-width: 560px;
+  }
+
+  .enac-module-workspace,
+  .enac-module-form,
+  .enac-module-detail .enac-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-module-detail {
+    position: static;
+    max-height: none;
+  }
+
+  .enac-filter-actions,
+  .enac-filter-actions button {
+    width: 100%;
   }
 
   .enac-acessos-grid {
