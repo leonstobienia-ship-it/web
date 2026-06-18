@@ -278,6 +278,43 @@ Limites mantidos:
 - sem SharePoint/Graph/Entra/Power Automate reais;
 - sem `DELETE` fisico.
 
+## V3.18M - Polimento Final Mobile, Tipografia e Dashboard Executivo
+
+A V3.18M aplica o acabamento final de responsividade, tipografia e hierarquia executiva sobre a foundation V3.18K/L, sem alterar backend, migrations, endpoints ou regras de negocio.
+
+Principais ajustes:
+
+- menu mobile passa a abrir como drawer sobre o conteudo, com backdrop, fechamento ao navegar e conteudo usando 100% da largura quando fechado;
+- sidebar desktop fica mais densa, com logo equilibrado, labels auxiliares menos pesados e grupos mais compactos;
+- tipografia global reduz peso visual de titulos, labels e numeros de KPI;
+- Dashboard Executivo separa indicadores por grupos de visao executiva, operacao, financeiro, margem e alertas;
+- valores monetarios grandes do Dashboard usam formato compacto nos cards, mantendo o valor completo no `title`;
+- Relatorios Financeiros, filtros, tabelas e botoes de detalhe herdam densidade e hierarquia mais refinadas;
+- paineis laterais preservam scroll proprio, cabecalho compacto e aparencia mais leve.
+
+Documentos:
+
+- `docs/v3.18m-polimento-mobile-dashboard-tipografia.md`
+- `docs/erp/design-system-enac.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18m-polimento-mobile-dashboard-tipografia.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem upload externo real;
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem `DELETE` fisico.
+
 ## V3.18J - Modelo Visual e Arquitetura de Scroll
 
 A V3.18J corrige a arquitetura de scroll do shell web e aproxima as telas operacionais do modelo visual de referencia indicado na homologacao, sem alterar backend, migrations, endpoints ou regras de negocio.

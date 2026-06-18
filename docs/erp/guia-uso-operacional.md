@@ -121,6 +121,10 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - KPIs em Relatorios Financeiros, Dashboard, Previsto x Realizado, Documentos, Central, Riscos, Auditoria e Homologacao devem usar composicao vertical para evitar colisao entre label e valor.
 - Botoes `Detalhe` em tabelas devem aparecer como acao secundaria compacta, nao como botao HTML cru.
 - Paineis laterais de Contas, Programacoes, Medicoes, Documentos, Central e Riscos devem usar cabecalho compacto, metadados em cards e rolagem propria.
+- A V3.18M ajusta o mobile para menu em drawer com backdrop e fechamento automatico ao navegar.
+- A V3.18M reduz peso visual da tipografia, compacta KPIs e melhora a leitura do Dashboard Executivo por grupos.
+- No Dashboard Executivo, a aba Resumo deve separar indicadores principais, operacao, financeiro, margem e alertas.
+- Em mobile, o conteudo deve ocupar toda a largura quando o menu estiver fechado, sem ficar espremido ao lado da sidebar.
 - O painel documental de Nota Fiscal deve conter PDF/XML em area controlada, com preview local e sem upload externo real.
 - Filtros devem permanecer compactos e alinhados no topo da consulta; formularios extensos devem ficar em aba propria, modal ou painel dedicado.
 - Tabelas operacionais devem usar densidade de ERP, cabecalho solido, status em chips e rolagem controlada em vez de alongar a pagina inteira.

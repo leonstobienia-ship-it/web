@@ -31,6 +31,13 @@ interface DashboardState {
   operacional: DashboardExecutivoDetalheApi | null;
 }
 
+type DashboardKpiCard = {
+  label: string;
+  value: unknown;
+  type: 'money' | 'number' | 'percent';
+  tone?: 'primary' | 'warning' | 'danger';
+};
+
 const marker = 'DEV_LOCAL_V3_10';
 
 const emptyFilters = (): DashboardExecutivoFilters => ({
@@ -117,6 +124,27 @@ const toNumber = (value: unknown): number => {
 const formatMoney = (value: unknown): string =>
   toNumber(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+const formatCompactMoney = (value: unknown): string => {
+  const numericValue = toNumber(value);
+  const absoluteValue = Math.abs(numericValue);
+  const signal = numericValue < 0 ? '-' : '';
+
+  if (absoluteValue >= 1000000) {
+    return `${signal}R$ ${(absoluteValue / 1000000).toLocaleString('pt-BR', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    })} mi`;
+  }
+
+  if (absoluteValue >= 100000) {
+    return `${signal}R$ ${(absoluteValue / 1000).toLocaleString('pt-BR', {
+      maximumFractionDigits: 0
+    })} mil`;
+  }
+
+  return formatMoney(numericValue);
+};
+
 const formatNumber = (value: unknown): string =>
   toNumber(value).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 
@@ -148,6 +176,18 @@ const asRows = (value: unknown): Array<Record<string, unknown>> =>
 
 const sumValues = (rows: DashboardExecutivoObraApi[], key: keyof DashboardExecutivoObraApi): number =>
   rows.reduce((acc, row) => acc + toNumber(row[key]), 0);
+
+const formatDashboardValue = (card: DashboardKpiCard): string => {
+  if (card.type === 'money') {
+    return formatCompactMoney(card.value);
+  }
+
+  if (card.type === 'percent') {
+    return formatPercent(card.value);
+  }
+
+  return formatNumber(card.value);
+};
 
 export function DashboardExecutivoPage(): JSX.Element {
   const [clientes, setClientes] = React.useState<ClienteApi[]>([]);
@@ -228,19 +268,28 @@ export function DashboardExecutivoPage(): JSX.Element {
     ? (margemPortfolio / toNumber(kpis.receita_faturada_manual)) * 100
     : null;
 
-  const primaryCards: Array<[string, unknown, 'money' | 'number' | 'percent']> = [
-    ['Obras ativas', kpis.obras_ativas, 'number'],
-    ['Contratado total', kpis.valor_total_contratado, 'money'],
-    ['Orçamento previsto', kpis.orcamento_previsto, 'money'],
-    ['Custo realizado', kpis.custo_realizado, 'money'],
-    ['Receita faturada', kpis.receita_faturada_manual, 'money'],
-    ['Margem realizada', kpis.margem_realizada, 'money'],
-    ['Margem % faturada', margemPct, 'percent'],
-    ['Contas vencidas', kpis.contas_vencidas, 'number'],
-    ['Programações liberadas', kpis.programacoes_liberadas, 'number'],
-    ['Medições pendentes', kpis.medicoes_pendentes, 'number'],
-    ['Saldo a faturar', sumValues(dashboard.obras, 'saldo_a_faturar'), 'money'],
-    ['Desvio orçamento', sumValues(dashboard.obras, 'desvio_orcamento'), 'money']
+  const primaryCards: DashboardKpiCard[] = [
+    { label: 'Obras ativas', value: kpis.obras_ativas, type: 'number', tone: 'primary' },
+    { label: 'Contratado total', value: kpis.valor_total_contratado, type: 'money', tone: 'primary' },
+    { label: 'Custo realizado', value: kpis.custo_realizado, type: 'money' },
+    { label: 'Receita faturada', value: kpis.receita_faturada_manual, type: 'money' },
+    { label: 'Margem realizada', value: margemPortfolio, type: 'money', tone: margemPortfolio < 0 ? 'danger' : 'primary' }
+  ];
+
+  const operationCards: DashboardKpiCard[] = [
+    { label: 'Medições pendentes', value: kpis.medicoes_pendentes, type: 'number', tone: toNumber(kpis.medicoes_pendentes) > 0 ? 'warning' : undefined },
+    { label: 'Programações liberadas', value: kpis.programacoes_liberadas, type: 'number' }
+  ];
+
+  const financeCards: DashboardKpiCard[] = [
+    { label: 'Contas vencidas', value: kpis.contas_vencidas, type: 'number', tone: toNumber(kpis.contas_vencidas) > 0 ? 'danger' : undefined },
+    { label: 'Saldo a faturar', value: sumValues(dashboard.obras, 'saldo_a_faturar'), type: 'money' }
+  ];
+
+  const marginCards: DashboardKpiCard[] = [
+    { label: 'Orçamento previsto', value: kpis.orcamento_previsto, type: 'money' },
+    { label: 'Margem % faturada', value: margemPct, type: 'percent', tone: margemPct !== null && margemPct < 0 ? 'danger' : undefined },
+    { label: 'Desvio orçamento', value: sumValues(dashboard.obras, 'desvio_orcamento'), type: 'money', tone: toNumber(sumValues(dashboard.obras, 'desvio_orcamento')) > 0 ? 'warning' : undefined }
   ];
 
   const riskCards: Array<[string, unknown]> = [
@@ -330,23 +379,82 @@ export function DashboardExecutivoPage(): JSX.Element {
 
       {activeView === 'resumo' && (
       <>
-      <div className="enac-report-cards enac-dashboard-cards">
-        {primaryCards.map(([label, value, type]) => (
-          <article className="enac-report-card enac-dashboard-card" key={label}>
-            <span>{label}</span>
-            <strong>{type === 'money' ? formatMoney(value) : type === 'percent' ? formatPercent(value) : formatNumber(value)}</strong>
-          </article>
-        ))}
-      </div>
+      <div className="enac-dashboard-summary-stack">
+        <section className="enac-dashboard-kpi-group enac-dashboard-kpi-group--primary" aria-label="KPIs principais">
+          <div className="enac-dashboard-group-head">
+            <span>Visão executiva</span>
+            <h2>Indicadores principais</h2>
+          </div>
+          <div className="enac-report-cards enac-dashboard-cards enac-dashboard-cards--primary">
+            {primaryCards.map((card) => (
+              <article className={`enac-report-card enac-dashboard-card ${card.tone ? `is-${card.tone}` : ''}`} key={card.label}>
+                <span>{card.label}</span>
+                <strong title={card.type === 'money' ? formatMoney(card.value) : formatDashboardValue(card)}>{formatDashboardValue(card)}</strong>
+              </article>
+            ))}
+          </div>
+        </section>
 
-      <section className="enac-dashboard-risks" aria-label="Alertas consolidados">
-        {riskCards.map(([label, value]) => (
-          <article key={label}>
-            <span>{label}</span>
-            <strong>{formatNumber(value)}</strong>
-          </article>
-        ))}
-      </section>
+        <div className="enac-dashboard-kpi-groups">
+          <section className="enac-dashboard-kpi-group" aria-label="KPIs de operação">
+            <div className="enac-dashboard-group-head">
+              <span>Operação</span>
+              <h2>Rotina e obra</h2>
+            </div>
+            <div className="enac-report-cards enac-dashboard-cards enac-dashboard-cards--secondary">
+              {operationCards.map((card) => (
+                <article className={`enac-report-card enac-dashboard-card ${card.tone ? `is-${card.tone}` : ''}`} key={card.label}>
+                  <span>{card.label}</span>
+                  <strong>{formatDashboardValue(card)}</strong>
+                </article>
+              ))}
+            </div>
+          </section>
+          <section className="enac-dashboard-kpi-group" aria-label="KPIs financeiros">
+            <div className="enac-dashboard-group-head">
+              <span>Financeiro</span>
+              <h2>Vencimentos e saldo</h2>
+            </div>
+            <div className="enac-report-cards enac-dashboard-cards enac-dashboard-cards--secondary">
+              {financeCards.map((card) => (
+                <article className={`enac-report-card enac-dashboard-card ${card.tone ? `is-${card.tone}` : ''}`} key={card.label}>
+                  <span>{card.label}</span>
+                  <strong title={card.type === 'money' ? formatMoney(card.value) : formatDashboardValue(card)}>{formatDashboardValue(card)}</strong>
+                </article>
+              ))}
+            </div>
+          </section>
+          <section className="enac-dashboard-kpi-group enac-dashboard-kpi-group--margin" aria-label="KPIs de margem">
+            <div className="enac-dashboard-group-head">
+              <span>Margem</span>
+              <h2>Orçamento e desvio</h2>
+            </div>
+            <div className="enac-report-cards enac-dashboard-cards enac-dashboard-cards--secondary">
+              {marginCards.map((card) => (
+                <article className={`enac-report-card enac-dashboard-card ${card.tone ? `is-${card.tone}` : ''}`} key={card.label}>
+                  <span>{card.label}</span>
+                  <strong title={card.type === 'money' ? formatMoney(card.value) : formatDashboardValue(card)}>{formatDashboardValue(card)}</strong>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        <section className="enac-dashboard-kpi-group enac-dashboard-kpi-group--alerts" aria-label="Alertas consolidados">
+          <div className="enac-dashboard-group-head">
+            <span>Alertas</span>
+            <h2>Pontos de atenção</h2>
+          </div>
+          <div className="enac-dashboard-risks">
+            {riskCards.map(([label, value]) => (
+              <article className={toNumber(value) > 0 ? 'is-warning' : 'is-muted'} key={label}>
+                <span>{label}</span>
+                <strong>{formatNumber(value)}</strong>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
       </>
       )}
 

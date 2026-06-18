@@ -23,6 +23,7 @@ export type EnacIconName =
   | 'home'
   | 'invoice'
   | 'layers'
+  | 'menu'
   | 'operations'
   | 'payable'
   | 'projects'
@@ -226,6 +227,14 @@ function renderIcon(name: EnacIconName): React.ReactNode {
           <path d="M12 3l8 4-8 4-8-4z" />
           <path d="M4 12l8 4 8-4" />
           <path d="M4 17l8 4 8-4" />
+        </>
+      );
+    case 'menu':
+      return (
+        <>
+          <path d="M4 7h16" />
+          <path d="M4 12h16" />
+          <path d="M4 17h16" />
         </>
       );
     case 'operations':

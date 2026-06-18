@@ -433,6 +433,7 @@ function WebPortal(): JSX.Element {
   const [operationalState, setOperationalState] = React.useState<IOperationalState>({ loading: false });
   const [activeProfileKey, setActiveProfileKey] = React.useState<UserProfileKey>('Campo');
   const [navCollapsed, setNavCollapsed] = React.useState<boolean>(() => window.innerWidth <= 840);
+  const [mobileNavOpen, setMobileNavOpen] = React.useState<boolean>(false);
   const currentSection = sectionByKey.get(section) || sections[0];
   const currentGroup = sectionGroups.find((group) => group.items.some((item) => item.key === section));
   const [openGroupTitles, setOpenGroupTitles] = React.useState<Set<string>>(() => new Set([currentGroup?.title || 'Operação']));
@@ -476,6 +477,21 @@ function WebPortal(): JSX.Element {
     });
   }, [currentGroup?.title]);
 
+  React.useEffect(() => {
+    const handleResize = (): void => {
+      if (window.innerWidth > 840) {
+        setMobileNavOpen(false);
+        return;
+      }
+
+      setMobileNavOpen(false);
+      setNavCollapsed(true);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const toggleGroup = (title: string): void => {
     setOpenGroupTitles((previous) => {
       const next = new Set(previous);
@@ -494,6 +510,7 @@ function WebPortal(): JSX.Element {
       document.querySelector('.enac-web-main')?.scrollTo({ top: 0, behavior: 'smooth' });
     });
     if (window.innerWidth <= 840) {
+      setMobileNavOpen(false);
       setNavCollapsed(true);
     }
   };
@@ -516,7 +533,16 @@ function WebPortal(): JSX.Element {
   };
 
   return (
-    <div className={`enac-web-shell enac-foundation-app-shell ${navCollapsed ? 'is-nav-collapsed is-collapsed' : ''}`}>
+    <div className={`enac-web-shell enac-foundation-app-shell ${navCollapsed ? 'is-nav-collapsed is-collapsed' : ''} ${mobileNavOpen ? 'is-mobile-nav-open' : ''}`}>
+      <button
+        type="button"
+        className="enac-mobile-nav-backdrop"
+        aria-label="Fechar menu de navegação"
+        onClick={() => {
+          setMobileNavOpen(false);
+          setNavCollapsed(true);
+        }}
+      />
       <aside className="enac-web-nav enac-foundation-sidebar" aria-label="Navegação do Sistema ENAC">
         <div className="enac-web-brand">
           <img src={enacLogoUrl} alt="ENAC" />
@@ -528,9 +554,16 @@ function WebPortal(): JSX.Element {
             aria-label="Alternar menu lateral"
             aria-pressed={navCollapsed}
             title="Alternar menu lateral"
-            onClick={() => setNavCollapsed((current) => !current)}
+            onClick={() => {
+              if (window.innerWidth <= 840) {
+                setMobileNavOpen(false);
+                setNavCollapsed(true);
+                return;
+              }
+              setNavCollapsed((current) => !current);
+            }}
           >
-            <EnacIcon name={navCollapsed ? 'chevron-right' : 'chevron-left'} />
+            <EnacIcon name={mobileNavOpen ? 'chevron-left' : navCollapsed ? 'chevron-right' : 'chevron-left'} />
           </button>
         </div>
         <nav className="enac-web-nav-groups">
@@ -579,6 +612,18 @@ function WebPortal(): JSX.Element {
       </aside>
       <main className="enac-web-main enac-foundation-main">
         <header className="enac-web-topbar enac-foundation-topbar">
+          <button
+            type="button"
+            className="enac-mobile-menu-button"
+            aria-label="Abrir menu de navegação"
+            aria-expanded={mobileNavOpen}
+            onClick={() => {
+              setNavCollapsed(false);
+              setMobileNavOpen(true);
+            }}
+          >
+            <EnacIcon name="menu" />
+          </button>
           <div className="enac-web-module-title">
             <span>{currentGroup?.title || 'ERP ENAC'}</span>
             <strong>{currentSection.label}</strong>

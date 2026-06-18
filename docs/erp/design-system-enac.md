@@ -91,6 +91,18 @@ Padrao vigente:
 
 Esse padrao deve ser usado em Dashboard Executivo, Relatorios Financeiros, Previsto x Realizado, Documentos, Central, Riscos, Auditoria e Homologacao quando houver indicadores.
 
+## Polimento V3.18M
+
+A V3.18M define os ajustes finais de densidade e responsividade sobre a foundation:
+
+- em mobile, a sidebar deve abrir como drawer sobre o conteudo, com backdrop e fechamento ao navegar;
+- o conteudo mobile deve ocupar a largura total quando o menu estiver fechado;
+- o Dashboard Executivo deve agrupar KPIs por visao executiva, operacao, financeiro, margem e alertas;
+- cards executivos devem evitar massa unica de indicadores e usar valores compactos quando o numero financeiro for muito longo;
+- tipografia de titulos, labels, botoes, tabelas e KPIs deve manter peso corporativo, mas sem competir com o conteudo;
+- botoes diretos em tabela devem permanecer como acao secundaria compacta;
+- paineis laterais devem preservar cabecalho claro, scroll proprio e composicao leve.
+
 ## Documento da NF
 
 O painel documental de Notas Fiscais de Entrada deve:
