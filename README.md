@@ -315,6 +315,44 @@ Limites mantidos:
 - sem SharePoint/Graph/Entra/Power Automate reais;
 - sem `DELETE` fisico.
 
+## V3.19 - Consolidacao Operacional, Governanca e Feedback
+
+A V3.19 consolida fluxos operacionais criticos e padroniza o feedback de criacao no frontend, sem alterar backend, migrations, endpoints ou regras de negocio financeiras.
+
+Principais ajustes:
+
+- componente `EnacNotification` para sucesso, alerta, erro e informacao com `aria-live`;
+- criacoes em Solicitacoes, Pedidos, Notas, Contas, Programacoes, Central, Documentos e Administracao exibem sucesso, limpam formulario e atualizam listas;
+- edicoes nao limpam formulario indevidamente;
+- anexos temporarios de NF sao limpos apos criacao da referencia local;
+- componentes `EnacAuditTrail` e `EnacOperationalFlow` para rastreabilidade visual e fluxo `Solicitacao -> Aprovacao -> Pedido -> NF -> Conta -> Programacao mock -> Historico`;
+- governanca mock centralizada em `web/src/features/governanca/`, com perfis de referencia e regra de alçada local;
+- Central de Tarefas e Dashboard Executivo reforcam gargalos de pedidos, NFs, contas, programacoes e documentos;
+- Administracao exibe parametros mock e ressalva de nao retroatividade.
+
+Documentos:
+
+- `docs/v3.19-fluxos-governanca-feedback.md`
+- `docs/erp/design-system-enac.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.19-fluxos-governanca-feedback.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem pagamento real;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo real;
+- sem `DELETE` fisico.
+
 ## V3.18J - Modelo Visual e Arquitetura de Scroll
 
 A V3.18J corrige a arquitetura de scroll do shell web e aproxima as telas operacionais do modelo visual de referencia indicado na homologacao, sem alterar backend, migrations, endpoints ou regras de negocio.

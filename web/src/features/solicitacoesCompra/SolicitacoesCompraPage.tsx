@@ -11,6 +11,12 @@ import {
   type SolicitacaoCompraStatus,
   type UsuarioApi
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification, EnacOperationalFlow } from '../../components';
+import {
+  buildAuditTrailMock,
+  buildFluxoOperacionalMock,
+  resolveAprovadorMock
+} from '../governanca/mockGovernanca';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
@@ -386,7 +392,7 @@ export function SolicitacoesCompraPage(): JSX.Element {
         setSelected(created);
         setForm(emptyForm());
         setItems([emptyItem()]);
-        setMessage('Solicitação criada como rascunho.');
+        setMessage('Solicitação criada com sucesso. O formulário foi limpo e a lista foi atualizada.');
       }
 
       setMode('list');
@@ -459,8 +465,8 @@ export function SolicitacoesCompraPage(): JSX.Element {
       </p>
 
       {loadingRefs && <div className="enac-cadastro-empty">Carregando referências locais.</div>}
-      {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
+      <EnacNotification tone="success" message={message} onClose={() => setMessage('')} />
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
 
       {!loadingRefs && !empresa && (
         <div className="enac-web-alert enac-web-alert--compact">
@@ -763,6 +769,22 @@ function SolicitacaoDetail({
   const actions = getTransitionActions(solicitacao.status);
   const canEdit = solicitacao.status !== 'CANCELADA' && solicitacao.status !== 'APROVADA_PARA_COTACAO';
   const canApprove = ['ENVIADA', 'EM_ANALISE'].includes(solicitacao.status);
+  const approvalMock = resolveAprovadorMock(solicitacao.valor_estimado_total);
+  const flowKey = solicitacao.status === 'APROVADA_PARA_COTACAO'
+    ? 'compra'
+    : ['ENVIADA', 'EM_ANALISE'].includes(solicitacao.status)
+      ? 'aprovacao'
+      : 'solicitacao';
+  const auditEvents = buildAuditTrailMock({
+    module: 'Solicitações de Compra',
+    code: solicitacao.codigo,
+    createdAt: solicitacao.created_at,
+    status: statusLabels[solicitacao.status],
+    approvalStatus: solicitacao.aprovacao_status,
+    approvedBy: solicitacao.aprovado_por_nome,
+    approvedAt: solicitacao.aprovado_em,
+    value: solicitacao.valor_estimado_total
+  });
 
   return (
     <article className="enac-solicitacao-detail">
@@ -786,6 +808,23 @@ function SolicitacaoDetail({
         <div><dt>Aprovação</dt><dd>{solicitacao.aprovacao_status ? aprovacaoLabels[solicitacao.aprovacao_status] || solicitacao.aprovacao_status : '-'}</dd></div>
         <div><dt>Aprovador</dt><dd>{solicitacao.aprovado_por_nome || '-'}</dd></div>
       </dl>
+
+      <div className="enac-v319-stack">
+        <EnacOperationalFlow steps={buildFluxoOperacionalMock(flowKey)} />
+        <section className="enac-governance-card" aria-label="Governança mock da solicitação">
+          <div className="enac-governance-card__head">
+            <span className="enac-web-card-label">Alçada mock</span>
+            <h3>{approvalMock.badge}</h3>
+            <p>{approvalMock.motivo}</p>
+          </div>
+          <div className="enac-governance-card__grid">
+            <div><span>Origem</span><strong>Campo</strong></div>
+            <div><span>Aprovador</span><strong>{approvalMock.aprovador}</strong></div>
+            <div><span>Responsável compra</span><strong>Matheus</strong></div>
+            <div><span>Prioridade</span><strong>{prioridadeLabels[solicitacao.prioridade]}</strong></div>
+          </div>
+        </section>
+      </div>
 
       <section>
         <h3>Descrição</h3>
@@ -854,6 +893,7 @@ function SolicitacaoDetail({
           </button>
         ))}
       </footer>
+      <EnacAuditTrail events={auditEvents} />
     </article>
   );
 }

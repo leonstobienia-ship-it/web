@@ -11,6 +11,12 @@ import {
   type ObraApi,
   type UsuarioApi
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification, EnacOperationalFlow } from '../../components';
+import {
+  buildAuditTrailMock,
+  buildFluxoOperacionalMock,
+  resolveAprovadorMock
+} from '../governanca/mockGovernanca';
 
 interface ContaFilters {
   status: ContaPagarStatus | '';
@@ -332,7 +338,7 @@ export function ContasPagarPage(): JSX.Element {
       setSelectedConta(conta);
       setActiveView('detalhe');
       setForm(emptyContaForm());
-      setMessage('Conta a pagar provisionada.');
+      setMessage('Conta a pagar criada com sucesso. O formulário foi limpo e a lista foi atualizada.');
       await refresh(conta.id);
     } catch (generateError) {
       setError(getErrorMessage(generateError));
@@ -466,8 +472,8 @@ export function ContasPagarPage(): JSX.Element {
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando contas locais.</div>}
-      {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
+      <EnacNotification tone="success" message={message} onClose={() => setMessage('')} />
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
 
       {!loading && (
         <div className="enac-module-workspace">
@@ -720,6 +726,35 @@ function ContaDetail({
   const baixaStatus = conta.baixa_status || 'BAIXA_PENDENTE';
   const bloqueiosBaixa = getBaixaBloqueios(conta);
   const baixaElegivel = canBaixarManual(conta);
+  const approvalMock = resolveAprovadorMock(conta.valor_original);
+  const flowKey = conta.status === 'PROGRAMADA'
+    ? 'programacao'
+    : conta.status === 'BAIXADA_MANUAL'
+      ? 'auditoria'
+      : conta.status === 'APROVADA'
+        ? 'conta'
+        : 'aprovacao';
+  const auditEvents = buildAuditTrailMock({
+    module: 'Contas a Pagar',
+    code: conta.numero_documento,
+    createdAt: conta.created_at,
+    status: statusLabels[conta.status],
+    approvalStatus: conta.aprovacao_status,
+    approvedBy: conta.aprovado_por_nome,
+    approvedAt: conta.aprovado_em,
+    value: conta.valor_original,
+    extraEvents: baixas.slice(0, 3).map((baixa) => ({
+      id: baixa.id,
+      action: baixa.acao === 'ESTORNAR_BAIXA' ? 'Estorno local registrado' : 'Baixa manual local registrada',
+      module: 'Contas a Pagar',
+      user: baixa.usuario_nome || 'Financeiro',
+      timestamp: baixa.created_at,
+      statusFrom: baixa.status_anterior,
+      statusTo: baixa.status_novo,
+      note: baixa.observacoes || baixa.motivo || 'Registro administrativo local, sem execução bancária.',
+      tone: baixa.resultado === 'NEGADO' ? 'warning' : 'neutral'
+    }))
+  });
 
   return (
     <section className="enac-finance-detail">
@@ -747,6 +782,23 @@ function ContaDetail({
         <div><span>Conferência</span><strong>{conta.programacao_baixa_conferencia_status || '-'}</strong></div>
         <div><span>Responsável baixa</span><strong>{conta.baixado_manual_por_nome || '-'}</strong></div>
         <div><span>Valor baixado</span><strong>{conta.baixa_manual_valor ? formatMoney(conta.baixa_manual_valor) : '-'}</strong></div>
+      </div>
+
+      <div className="enac-v319-stack">
+        <EnacOperationalFlow steps={buildFluxoOperacionalMock(flowKey)} />
+        <section className="enac-governance-card" aria-label="Governança mock da conta a pagar">
+          <div className="enac-governance-card__head">
+            <span className="enac-web-card-label">Origem e aprovação</span>
+            <h3>{approvalMock.badge}</h3>
+            <p>{approvalMock.motivo} Conta sempre permanece sem pagamento bancário real nesta visão.</p>
+          </div>
+          <div className="enac-governance-card__grid">
+            <div><span>Origem</span><strong>{conta.nota_numero ? 'NF vinculada' : 'Manual/mock'}</strong></div>
+            <div><span>Fornecedor</span><strong>{conta.fornecedor_nome || '-'}</strong></div>
+            <div><span>Competência</span><strong>{formatDate(conta.data_emissao)}</strong></div>
+            <div><span>Programação</span><strong>{conta.programacao_baixa_codigo || 'Não programada'}</strong></div>
+          </div>
+        </section>
       </div>
 
       {conta.bloqueio_baixa_motivo && (
@@ -790,8 +842,8 @@ function ContaDetail({
         <div className="enac-cadastro-toolbar">
           <div>
             <span className="enac-web-card-label">V3.5G</span>
-            <h3>Baixa manual</h3>
-            <p>Registro administrativo local, condicionado a programação liberada e conferida.</p>
+            <h3>Baixa manual local</h3>
+            <p>Registro administrativo local, condicionado a programação liberada e conferida, sem banco real.</p>
           </div>
           <span className={`enac-finance-status enac-finance-status--${statusClass(baixaStatus)}`}>{baixaStatusLabels[baixaStatus]}</span>
         </div>
@@ -831,7 +883,7 @@ function ContaDetail({
             </div>
             <div className="enac-cadastro-actions">
               <button type="submit" disabled={saving || !approvalUserId || !baixaForm.data_baixa || !baixaForm.valor_baixado || !baixaForm.forma_pagamento_manual || !baixaForm.observacoes}>
-                {saving ? 'Registrando...' : 'Registrar baixa manual'}
+                {saving ? 'Registrando...' : 'Registrar baixa manual local'}
               </button>
             </div>
           </form>
@@ -847,7 +899,7 @@ function ContaDetail({
             </div>
             <div className="enac-cadastro-actions">
               <button type="submit" className="enac-cadastro-secondary" disabled={saving || !approvalUserId || !baixaForm.motivo_estorno}>
-                {saving ? 'Estornando...' : 'Estornar baixa'}
+                {saving ? 'Estornando...' : 'Estornar baixa manual local'}
               </button>
             </div>
           </form>
@@ -878,6 +930,7 @@ function ContaDetail({
           </div>
         </form>
       )}
+      <EnacAuditTrail events={auditEvents} />
     </section>
   );
 }

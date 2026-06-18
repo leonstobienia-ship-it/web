@@ -10,6 +10,13 @@ import {
   type PedidoCompraStatus,
   type UsuarioApi
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification, EnacOperationalFlow } from '../../components';
+import {
+  buildAuditTrailMock,
+  buildFluxoOperacionalMock,
+  regraAlcadaComprasMock,
+  resolveAprovadorMock
+} from '../governanca/mockGovernanca';
 
 interface PedidoFilters {
   status: PedidoCompraStatus | '';
@@ -251,7 +258,7 @@ export function PedidosCompraPage(): JSX.Element {
       setSelectedPedido(pedido);
       setActiveView('detalhe');
       setGenerateForm(emptyGenerateForm());
-      setMessage('Pedido de compra gerado em rascunho.');
+      setMessage('Pedido criado com sucesso. O formulário foi limpo e a lista foi atualizada.');
       await refresh(pedido.id);
     } catch (generateError) {
       setError(getErrorMessage(generateError));
@@ -337,8 +344,8 @@ export function PedidosCompraPage(): JSX.Element {
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando pedidos locais.</div>}
-      {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
+      <EnacNotification tone="success" message={message} onClose={() => setMessage('')} />
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
 
       {empresa && (
         <div className="enac-cadastros-context">
@@ -631,6 +638,37 @@ function PedidoDetail({
   onConfirmCancel: (pedido: PedidoCompraApi) => void;
   onDismissCancel: () => void;
 }): JSX.Element {
+  const approvalMock = resolveAprovadorMock(pedido.valor_total);
+  const flowKey = pedido.status === 'RASCUNHO'
+    ? 'aprovacao'
+    : pedido.status === 'CONFIRMADO'
+      ? 'nf'
+      : ['PARCIALMENTE_RECEBIDO', 'RECEBIDO'].includes(pedido.status)
+        ? 'conta'
+        : 'compra';
+  const auditEvents = buildAuditTrailMock({
+    module: 'Pedidos de Compra',
+    code: pedido.codigo,
+    createdAt: pedido.created_at,
+    status: statusLabels[pedido.status],
+    approvalStatus: pedido.aprovacao_status,
+    approvedBy: pedido.aprovado_por_nome,
+    approvedAt: pedido.aprovado_em,
+    value: pedido.valor_total,
+    extraEvents: [
+      {
+        id: `${pedido.codigo}-status`,
+        action: 'Estado operacional',
+        module: 'Pedidos de Compra',
+        user: 'Matheus',
+        timestamp: pedido.updated_at || pedido.created_at,
+        statusTo: statusLabels[pedido.status],
+        note: 'Acompanhamento visual V3.19: pedido segue sem pagamento, baixa ou integração bancária.',
+        tone: pedido.status === 'CANCELADO' ? 'warning' : 'neutral'
+      }
+    ]
+  });
+
   return (
     <section className="enac-pedido-detail">
       <div className="enac-cadastro-toolbar">
@@ -653,6 +691,11 @@ function PedidoDetail({
         <div><span>Entrega</span><strong>{formatDate(pedido.data_entrega_prevista)}</strong></div>
         <div><span>Aprovação</span><strong>{pedido.aprovacao_status ? aprovacaoLabels[pedido.aprovacao_status] || pedido.aprovacao_status : '-'}</strong></div>
         <div><span>Aprovador</span><strong>{pedido.aprovado_por_nome || '-'}</strong></div>
+      </div>
+
+      <div className="enac-v319-stack">
+        <EnacOperationalFlow steps={buildFluxoOperacionalMock(flowKey)} />
+        <PedidoGovernanceCard pedido={pedido} approvalMock={approvalMock} />
       </div>
 
       {pedido.status === 'RASCUNHO' && (
@@ -723,6 +766,35 @@ function PedidoDetail({
       )}
 
       <PedidoItemsTable pedido={pedido} />
+      <EnacAuditTrail events={auditEvents} />
+    </section>
+  );
+}
+
+function PedidoGovernanceCard({
+  pedido,
+  approvalMock
+}: {
+  pedido: PedidoCompraApi;
+  approvalMock: ReturnType<typeof resolveAprovadorMock>;
+}): JSX.Element {
+  const categoria = pedido.centro_custo_nome || pedido.centro_custo_codigo || 'Compras / Suprimentos';
+  const prioridade = Number(pedido.valor_total || 0) > regraAlcadaComprasMock.limite_tecnico ? 'Alta' : 'Normal';
+  return (
+    <section className="enac-governance-card" aria-label="Governança mock do pedido">
+      <div className="enac-governance-card__head">
+        <span className="enac-web-card-label">Governança mock</span>
+        <h3>{approvalMock.badge}</h3>
+        <p>{approvalMock.motivo}</p>
+      </div>
+      <div className="enac-governance-card__grid">
+        <div><span>Responsável</span><strong>Matheus</strong></div>
+        <div><span>Aprovador necessário</span><strong>{approvalMock.aprovador}</strong></div>
+        <div><span>Categoria</span><strong>{categoria}</strong></div>
+        <div><span>Prioridade</span><strong>{prioridade}</strong></div>
+        <div><span>Prazo</span><strong>{formatDate(pedido.data_entrega_prevista)}</strong></div>
+        <div><span>Valor estimado/final</span><strong>{formatMoney(pedido.valor_total)}</strong></div>
+      </div>
     </section>
   );
 }

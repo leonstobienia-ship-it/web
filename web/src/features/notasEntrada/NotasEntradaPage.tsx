@@ -12,6 +12,12 @@ import {
   type PedidoCompraApi,
   type UsuarioApi
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification, EnacOperationalFlow } from '../../components';
+import {
+  buildAuditTrailMock,
+  buildFluxoOperacionalMock,
+  resolveAprovadorMock
+} from '../governanca/mockGovernanca';
 
 interface NotaFilters {
   status: NotaEntradaStatus | '';
@@ -326,6 +332,9 @@ export function NotasEntradaPage(): JSX.Element {
   };
 
   const clearDocumentoDraft = (): void => {
+    if (documentoDraft?.preview_url) {
+      URL.revokeObjectURL(documentoDraft.preview_url);
+    }
     setDocumentoDraft(null);
   };
 
@@ -388,7 +397,11 @@ export function NotasEntradaPage(): JSX.Element {
 
       setSaving(true);
       await createDocumentoReferencia(nota, draft);
-      setMessage('Referência documental da NF registrada localmente.');
+      if (draft.preview_url) {
+        URL.revokeObjectURL(draft.preview_url);
+      }
+      setDocumentoDraft(null);
+      setMessage('Referência documental da NF criada com sucesso. A seleção temporária foi limpa.');
     } catch (documentoError) {
       setError(getErrorMessage(documentoError));
     } finally {
@@ -446,8 +459,11 @@ export function NotasEntradaPage(): JSX.Element {
       }
       setSelectedNota(nota);
       setActiveView('detalhe');
+      clearDocumentoDraft();
       setForm(emptyNotaForm());
-      setMessage(documentoSelecionado ? 'Nota criada em rascunho e referência documental da NF registrada.' : 'Nota de entrada criada em rascunho.');
+      setMessage(documentoSelecionado
+        ? 'Nota fiscal cadastrada com sucesso. O formulário foi limpo e a referência documental local foi registrada.'
+        : 'Nota fiscal cadastrada com sucesso. O formulário foi limpo e a lista foi atualizada.');
       await refresh(nota.id);
     } catch (createError) {
       setError(getErrorMessage(createError));
@@ -549,8 +565,8 @@ export function NotasEntradaPage(): JSX.Element {
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando notas locais.</div>}
-      {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
+      <EnacNotification tone="success" message={message} onClose={() => setMessage('')} />
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
 
       {empresa && (
         <div className="enac-cadastros-context">
@@ -879,6 +895,37 @@ function NotaDetail({
   onDocumentoFile: (event: React.ChangeEvent<HTMLInputElement>, nota: NotaEntradaApi) => void;
   onClearDocumentoDraft: () => void;
 }): JSX.Element {
+  const itensTotal = (nota.itens || []).reduce((total, item) => total + toNumber(item.valor_total), 0);
+  const hasDivergenciaValor = itensTotal > 0 && Math.abs(itensTotal - toNumber(nota.valor_total)) > 0.01;
+  const approvalMock = resolveAprovadorMock(nota.valor_total);
+  const flowKey = nota.status === 'PROVISIONADA'
+    ? 'conta'
+    : nota.status === 'APROVADA'
+      ? 'programacao'
+      : ['CONFERIDA', 'DIVERGENTE'].includes(nota.status)
+        ? 'aprovacao'
+        : 'nf';
+  const auditEvents = buildAuditTrailMock({
+    module: 'Notas Fiscais de Entrada',
+    code: `${nota.numero}${nota.serie ? `/${nota.serie}` : ''}`,
+    createdAt: nota.created_at,
+    status: statusLabels[nota.status],
+    approvalStatus: nota.aprovacao_status,
+    approvedBy: nota.aprovado_por_nome,
+    approvedAt: nota.aprovado_em,
+    value: nota.valor_total,
+    extraEvents: documentos.length > 0 ? [{
+      id: `${nota.id}-doc`,
+      action: 'Anexo incluído mock',
+      module: 'Documentos e Anexos',
+      user: 'Matheus',
+      timestamp: documentos[0]?.criado_em || nota.updated_at,
+      statusTo: 'Referência local',
+      note: 'Metadados PDF/XML registrados localmente, sem upload externo real.',
+      tone: 'neutral'
+    }] : []
+  });
+
   return (
     <section className="enac-finance-detail">
       <div className="enac-cadastro-toolbar">
@@ -900,6 +947,33 @@ function NotaDetail({
         <div><span>Aprovação</span><strong>{nota.aprovacao_status ? aprovacaoLabels[nota.aprovacao_status] || nota.aprovacao_status : '-'}</strong></div>
         <div><span>Aprovador</span><strong>{nota.aprovado_por_nome || '-'}</strong></div>
       </div>
+
+      <div className="enac-v319-stack">
+        <EnacOperationalFlow steps={buildFluxoOperacionalMock(flowKey)} />
+        <section className="enac-governance-card" aria-label="Governança documental da nota fiscal">
+          <div className="enac-governance-card__head">
+            <span className="enac-web-card-label">Vínculo NF x Pedido</span>
+            <h3>{nota.pedido_codigo ? 'Pedido vinculado' : 'NF sem pedido vinculado'}</h3>
+            <p>{nota.pedido_codigo ? `${nota.pedido_codigo} herdou obra, centro de custo e fornecedor.` : 'Acompanhar divergência documental antes de gerar conta.'}</p>
+          </div>
+          <div className="enac-governance-card__grid">
+            <div><span>Fornecedor</span><strong>{nota.fornecedor_nome || '-'}</strong></div>
+            <div><span>Obra</span><strong>{nota.obra_codigo || '-'}</strong></div>
+            <div><span>Centro de custo</span><strong>{nota.centro_custo_codigo || '-'}</strong></div>
+            <div><span>Aprovador mock</span><strong>{approvalMock.aprovador}</strong></div>
+          </div>
+        </section>
+      </div>
+
+      {!nota.pedido_codigo && (
+        <EnacNotification tone="warning" message="Nota fiscal sem pedido vinculado. A V3.19 mantém apenas alerta local de governança." />
+      )}
+      {hasDivergenciaValor && (
+        <EnacNotification
+          tone="warning"
+          message={`Valor da NF diverge dos itens herdados: NF ${formatMoney(nota.valor_total)} x itens ${formatMoney(itensTotal)}.`}
+        />
+      )}
 
       {nota.status === 'CONFERIDA' && (
         <div className="enac-cadastro-row-actions enac-finance-actions">
@@ -969,6 +1043,7 @@ function NotaDetail({
       </NotaDocumentoPanel>
 
       <NotaItemsTable nota={nota} />
+      <EnacAuditTrail events={auditEvents} />
     </section>
   );
 }

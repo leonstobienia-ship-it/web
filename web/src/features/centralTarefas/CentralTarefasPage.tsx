@@ -11,6 +11,7 @@ import {
   type PerfilApi,
   type UsuarioApi
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification, type EnacAuditTrailEvent } from '../../components';
 
 type CentralTab = 'minhas' | 'nova' | 'aprovacoes' | 'atrasadas' | 'criticas' | 'modulos';
 
@@ -128,6 +129,7 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
   const [loading, setLoading] = React.useState<boolean>(true);
   const [saving, setSaving] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
+  const [message, setMessage] = React.useState<string>('');
 
   const loadCatalogs = React.useCallback(async (): Promise<CentralTarefasFilters> => {
     const [usuariosData, perfisData, obrasData] = await Promise.all([
@@ -200,8 +202,12 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
   };
 
   const createManual = async (): Promise<void> => {
+    if (saving) {
+      return;
+    }
     setSaving(true);
     setError('');
+    setMessage('');
     try {
       const selectedObra = obras.find((obra) => obra.id === form.obra_id);
       const created = await erpApi.centralTarefas.criarManual({
@@ -228,6 +234,7 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
         perfil_id: current.perfil_id
       }));
       await loadCentral(filters);
+      setMessage('Tarefa criada com sucesso. O formulário foi limpo e a lista foi atualizada.');
     } catch (createError) {
       setError(getErrorMessage(createError));
     } finally {
@@ -291,13 +298,24 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
         : state.minhas;
   const selectedIsManual = Boolean(selected?.manual_id);
   const selectedIsFinal = selected ? finalManualStatuses.has(String(selected.status)) : true;
+  const moduloResumo = (modulo: string): CentralTarefasModuloApi | undefined =>
+    state.modulos.find((item) => item.modulo === modulo);
+  const flowBottlenecks = [
+    { label: 'Pedidos aguardando aprovação', value: moduloResumo('pedidos-compra')?.aprovacoes || 0, detail: 'Compras' },
+    { label: 'Pedidos aguardando cotação', value: moduloResumo('cotacoes')?.abertas || 0, detail: 'Cotação' },
+    { label: 'NFs com pendência', value: moduloResumo('notas-entrada')?.abertas || 0, detail: 'Vínculo/divergência' },
+    { label: 'Contas vencidas', value: moduloResumo('contas-pagar')?.atrasadas || 0, detail: 'Financeiro' },
+    { label: 'Programações da semana', value: moduloResumo('programacoes-pagamento')?.abertas || 0, detail: 'Mock' },
+    { label: 'Documentos pendentes', value: moduloResumo('documentos')?.abertas || 0, detail: 'Referências locais' }
+  ];
 
   return (
     <section className="enac-web-page enac-central-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Central de Tarefas e Aprovações</h1>
 
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
+      <EnacNotification tone="success" message={message} onClose={() => setMessage('')} />
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
 
       <section className="enac-report-filters enac-central-filters" aria-label="Filtros da central de tarefas">
         <label>
@@ -367,6 +385,16 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
         <CentralCard label="Críticas" value={state.resumo?.criticas || 0} />
         <CentralCard label="Por módulo" value={state.resumo?.modulos_com_tarefas || 0} />
       </div>
+
+      <section className="enac-v319-bottlenecks" aria-label="Gargalos operacionais V3.19">
+        {flowBottlenecks.map((item) => (
+          <article className="enac-v319-bottleneck" key={item.label}>
+            <span>{item.label}</span>
+            <strong>{Number(item.value || 0).toLocaleString('pt-BR')}</strong>
+            <small>{item.detail}</small>
+          </article>
+        ))}
+      </section>
 
       <div className="enac-central-tabs" role="tablist" aria-label="Visões da central">
         {(Object.keys(tabLabels) as CentralTab[]).map((tab) => (
@@ -639,6 +667,28 @@ function TaskDetail({
       </section>
     );
   }
+  const auditEvents: EnacAuditTrailEvent[] = (selected.historico || []).length > 0
+    ? (selected.historico || []).slice(0, 8).map((item, index) => ({
+      id: String(item.id || `${selected.id}-${index}`),
+      action: String(item.acao || 'Evento registrado'),
+      module: labelize(selected.modulo),
+      user: String(item.usuario_nome || selected.responsavel_nome || 'Sistema local'),
+      timestamp: String(item.created_at || selected.created_at),
+      statusFrom: item.status_anterior ? String(item.status_anterior) : undefined,
+      statusTo: item.status_novo ? String(item.status_novo) : String(selected.status),
+      note: item.comentario ? String(item.comentario) : 'Histórico local da central de tarefas.',
+      tone: String(item.status_novo || '').includes('CONCLUIDA') ? 'success' : 'neutral'
+    }))
+    : [{
+      id: `${selected.id}-created`,
+      action: 'Criada ou importada para a central',
+      module: labelize(selected.modulo),
+      user: selected.responsavel_nome || selected.perfil_nome || 'Sistema local',
+      timestamp: selected.created_at,
+      statusTo: selected.status,
+      note: 'Tarefa rastreada localmente para destacar gargalo operacional.',
+      tone: selected.atrasada ? 'warning' : 'neutral'
+    }];
 
   return (
     <section className="enac-report-section enac-central-detail">
@@ -696,6 +746,7 @@ function TaskDetail({
           )}
         </div>
       )}
+      <EnacAuditTrail title="Trilha da tarefa" events={auditEvents} />
     </section>
   );
 }

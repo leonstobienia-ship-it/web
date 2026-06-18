@@ -6326,3 +6326,276 @@ code {
     grid-template-columns: 1fr;
   }
 }
+
+/* V3.19 - feedback, governanca mock e rastreabilidade visual */
+.enac-notification {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--enac-border, #d8e0dc);
+  border-radius: 8px;
+  padding: 0.72rem 0.82rem;
+  background: #f8fbfa;
+  color: #24332e;
+  box-shadow: 0 12px 26px rgba(10, 42, 32, 0.08);
+}
+
+.enac-notification--success {
+  border-color: #b7ddca;
+  background: #edf9f3;
+  color: #145437;
+}
+
+.enac-notification--warning {
+  border-color: #ead59a;
+  background: #fff8e6;
+  color: #765500;
+}
+
+.enac-notification--error {
+  border-color: #efb5ad;
+  background: #fff1ef;
+  color: #8c2418;
+}
+
+.enac-notification--info {
+  border-color: #bdd2ee;
+  background: #f1f6fd;
+  color: #194875;
+}
+
+.enac-notification__body {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.enac-notification__body strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.enac-notification__body span {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.enac-notification__close {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  opacity: 0.76;
+}
+
+.enac-audit-trail,
+.enac-operational-flow,
+.enac-governance-card,
+.enac-v319-panel {
+  border: 1px solid rgba(23, 64, 51, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  padding: 1rem;
+  box-shadow: 0 12px 30px rgba(18, 32, 28, 0.06);
+}
+
+.enac-audit-trail__head,
+.enac-operational-flow__head,
+.enac-governance-card__head {
+  display: grid;
+  gap: 0.18rem;
+  margin-bottom: 0.8rem;
+}
+
+.enac-audit-trail__head h3,
+.enac-operational-flow__head h3,
+.enac-governance-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.enac-audit-trail__head p,
+.enac-governance-card__head p {
+  margin: 0;
+  color: var(--enac-muted, #66736f);
+  font-size: 0.84rem;
+}
+
+.enac-audit-trail__list,
+.enac-operational-flow__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.enac-audit-trail__list {
+  display: grid;
+  gap: 0.62rem;
+}
+
+.enac-audit-trail__event {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.28rem 0.7rem;
+  padding: 0.72rem;
+  border-left: 3px solid #c9d5cf;
+  border-radius: 6px;
+  background: #f8faf9;
+}
+
+.enac-audit-trail__event.is-success {
+  border-left-color: #2f8f63;
+}
+
+.enac-audit-trail__event.is-warning {
+  border-left-color: #c28b16;
+}
+
+.enac-audit-trail__event.is-danger {
+  border-left-color: #bc3c2f;
+}
+
+.enac-audit-trail__event strong {
+  display: block;
+  font-size: 0.88rem;
+}
+
+.enac-audit-trail__event span,
+.enac-audit-trail__event time,
+.enac-audit-trail__event small,
+.enac-audit-trail__event p {
+  min-width: 0;
+  color: var(--enac-muted, #66736f);
+  font-size: 0.78rem;
+}
+
+.enac-audit-trail__event p {
+  grid-column: 1 / -1;
+  margin: 0.1rem 0 0;
+}
+
+.enac-operational-flow__steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+  gap: 0.55rem;
+}
+
+.enac-operational-flow__step {
+  display: grid;
+  gap: 0.18rem;
+  min-height: 4.1rem;
+  padding: 0.72rem;
+  border: 1px solid #dce4df;
+  border-radius: 7px;
+  background: #f8faf9;
+}
+
+.enac-operational-flow__step span {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.enac-operational-flow__step small {
+  color: var(--enac-muted, #66736f);
+  font-size: 0.74rem;
+}
+
+.enac-operational-flow__step.is-done {
+  border-color: #b7ddca;
+  background: #f0faf5;
+}
+
+.enac-operational-flow__step.is-active {
+  border-color: #0f5a3d;
+  background: #eaf6f0;
+}
+
+.enac-operational-flow__step.is-blocked {
+  border-color: #efb5ad;
+  background: #fff1ef;
+}
+
+.enac-v319-stack {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0.9rem 0;
+}
+
+.enac-governance-card__grid,
+.enac-v319-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.65rem;
+}
+
+.enac-governance-card__grid div,
+.enac-v319-metrics div {
+  display: grid;
+  gap: 0.16rem;
+  padding: 0.72rem;
+  border-radius: 7px;
+  background: #f7faf8;
+}
+
+.enac-governance-card__grid span,
+.enac-v319-metrics span {
+  color: var(--enac-muted, #66736f);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.enac-governance-card__grid strong,
+.enac-v319-metrics strong {
+  color: #1f302a;
+  font-size: 0.9rem;
+}
+
+.enac-v319-bottlenecks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.7rem;
+  margin: 0.9rem 0;
+}
+
+.enac-v319-bottleneck {
+  border: 1px solid rgba(23, 64, 51, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.82rem;
+}
+
+.enac-v319-bottleneck span {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--enac-muted, #66736f);
+  font-size: 0.76rem;
+}
+
+.enac-v319-bottleneck strong {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.enac-v319-bottleneck small {
+  color: var(--enac-muted, #66736f);
+  font-size: 0.74rem;
+}
+
+@media (max-width: 840px) {
+  .enac-audit-trail__event,
+  .enac-operational-flow__steps,
+  .enac-governance-card__grid,
+  .enac-v319-metrics,
+  .enac-v319-bottlenecks {
+    grid-template-columns: 1fr;
+  }
+}

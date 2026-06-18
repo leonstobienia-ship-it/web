@@ -103,6 +103,24 @@ A V3.18M define os ajustes finais de densidade e responsividade sobre a foundati
 - botoes diretos em tabela devem permanecer como acao secundaria compacta;
 - paineis laterais devem preservar cabecalho claro, scroll proprio e composicao leve.
 
+## Padrao V3.19 - Feedback e rastreabilidade
+
+A V3.19 adiciona componentes leves para governanca operacional:
+
+- `EnacNotification`: aviso padronizado com `aria-live`, tons `success`, `warning`, `error` e `info`, opcao de fechar e comportamento responsivo.
+- `EnacAuditTrail`: linha do tempo visual para eventos mock de criacao, aprovacao, programacao, anexo, cancelamento logico e parametros.
+- `EnacOperationalFlow`: sequencia visual do fluxo `Solicitacao -> Aprovacao -> Pedido -> NF -> Conta -> Programacao mock -> Historico`.
+
+Regras de uso:
+
+- toda criacao bem-sucedida deve exibir `EnacNotification` de sucesso;
+- formulario de criacao deve ser limpo apos sucesso;
+- erro de validacao nao deve limpar formulario;
+- modo edicao nao deve limpar formulario automaticamente;
+- botao de submit deve ficar desabilitado durante `saving`;
+- anexos temporarios devem ser limpos apos a referencia local ser salva;
+- trilhas V3.19 sao visuais/mock quando nao houver auditoria persistida.
+
 ## Documento da NF
 
 O painel documental de Notas Fiscais de Entrada deve:

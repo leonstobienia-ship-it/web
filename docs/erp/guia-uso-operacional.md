@@ -136,6 +136,13 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - Paineis laterais de detalhe usam destaque vermelho e ficam sticky em desktop quando a largura permite.
 - Botoes desabilitados indicam bloqueio visual sem remover o contexto da acao.
 - Chips e status usam cores consistentes por situacao.
+- A V3.19 padroniza avisos de criacao: sempre que um registro for criado com sucesso, a tela deve mostrar aviso claro, limpar o formulario de criacao e atualizar a lista.
+- Em caso de erro de validacao, o formulario nao deve ser limpo.
+- Em modo edicao, salvar alteracoes nao deve limpar indevidamente o formulario.
+- Os botoes de salvar/criar ficam desabilitados durante processamento para evitar duplo clique e duplicidade.
+- Pedidos, Solicitacoes, Notas, Contas, Programacoes, Central, Documentos e Administracao exibem trilhas visuais de auditoria mock quando o modulo nao possui historico persistido suficiente.
+- A governanca V3.19 usa parametros mock centralizados para indicar alçada, aprovador esperado e nao retroatividade de parametros.
+- Programacoes continuam sendo planejamento interno; aprovar ou liberar programacao nao executa pagamento, nao baixa conta e nao integra banco.
 
 ## Responsividade
 

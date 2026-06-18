@@ -261,6 +261,8 @@ export function DashboardExecutivoPage(): JSX.Element {
 
   const kpis = dashboard.resumo?.kpis || {};
   const alertSummary = dashboard.resumo?.alertas_resumo || {};
+  const operacionalTotais = (dashboard.operacional?.totais || {}) as Record<string, unknown>;
+  const financeiroTotais = (dashboard.financeiro?.totais || {}) as Record<string, unknown>;
   const margemPortfolio = toNumber(kpis.receita_faturada_manual) > 0
     ? toNumber(kpis.receita_faturada_manual) - toNumber(kpis.custo_realizado)
     : toNumber(kpis.margem_realizada);
@@ -277,12 +279,18 @@ export function DashboardExecutivoPage(): JSX.Element {
   ];
 
   const operationCards: DashboardKpiCard[] = [
+    { label: 'Pedidos em aberto', value: operacionalTotais.pedidos_em_aberto ?? operacionalTotais.pedidos_abertos ?? 0, type: 'number' },
+    { label: 'Pedidos aguardando aprovação', value: operacionalTotais.pedidos_aguardando_aprovacao ?? operacionalTotais.pedidos_pendentes_aprovacao ?? 0, type: 'number', tone: toNumber(operacionalTotais.pedidos_aguardando_aprovacao) > 0 ? 'warning' : undefined },
+    { label: 'Compras em aprovação', value: operacionalTotais.valor_compras_em_aprovacao ?? 0, type: 'money' },
+    { label: 'NFs pendentes de vínculo', value: operacionalTotais.notas_sem_pedido ?? operacionalTotais.notas_pendentes_vinculo ?? 0, type: 'number', tone: toNumber(operacionalTotais.notas_sem_pedido) > 0 ? 'warning' : undefined },
     { label: 'Medições pendentes', value: kpis.medicoes_pendentes, type: 'number', tone: toNumber(kpis.medicoes_pendentes) > 0 ? 'warning' : undefined },
     { label: 'Programações liberadas', value: kpis.programacoes_liberadas, type: 'number' }
   ];
 
   const financeCards: DashboardKpiCard[] = [
     { label: 'Contas vencidas', value: kpis.contas_vencidas, type: 'number', tone: toNumber(kpis.contas_vencidas) > 0 ? 'danger' : undefined },
+    { label: 'Contas próximos 7 dias', value: financeiroTotais.contas_a_vencer_7_dias ?? financeiroTotais.contas_a_vencer ?? kpis.contas_a_vencer, type: 'number' },
+    { label: 'Programações mock', value: financeiroTotais.programacoes_pendentes ?? kpis.programacoes_pendentes ?? 0, type: 'number' },
     { label: 'Saldo a faturar', value: sumValues(dashboard.obras, 'saldo_a_faturar'), type: 'money' }
   ];
 

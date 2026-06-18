@@ -8,6 +8,7 @@ import {
   type ObraApi,
   type UsuarioApi
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification } from '../../components';
 
 type DocumentoAction = 'create' | 'update' | 'replace';
 
@@ -274,14 +275,18 @@ export function DocumentosAnexosPage(): JSX.Element {
   };
 
   const saveCreate = async (): Promise<void> => {
+    if (saving) {
+      return;
+    }
     setSaving(true);
     setError('');
     setSuccess('');
     try {
       const created = await erpApi.documentos.create(toPayload(form, 'create'));
-      setSelected(created);
-      setSuccess('Referência documental criada.');
       await loadDocumentos(filters);
+      setSelected(null);
+      setForm({ ...emptyForm(), usuario_id: defaultUsuarioId });
+      setSuccess(`Referência documental criada com sucesso: ${created.nome_arquivo}. O formulário foi limpo e a lista foi atualizada.`);
     } catch (saveError) {
       setError(getErrorMessage(saveError));
     } finally {
@@ -364,8 +369,8 @@ export function DocumentosAnexosPage(): JSX.Element {
         Esta versão não faz upload real para SharePoint. Apenas registra metadados e referência para integração futura.
       </div>
 
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
-      {success && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{success}</div>}
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
+      <EnacNotification tone="success" message={success} onClose={() => setSuccess('')} />
 
       <section className="enac-report-filters enac-doc-filters" aria-label="Filtros de documentos">
         <label>
@@ -434,6 +439,7 @@ export function DocumentosAnexosPage(): JSX.Element {
           </div>
 
           {selected && <DocumentSummary documento={selected} />}
+          {selected && <DocumentAuditTrail documento={selected} />}
 
           <DocumentForm
             form={form}
@@ -532,6 +538,37 @@ function DocumentSummary({ documento }: { documento: DocumentoApi }): JSX.Elemen
       <div><span>Criado em</span><strong>{formatDateTime(documento.criado_em)}</strong></div>
       <div><span>Mock futuro</span><strong>{documento.sharepoint_item_id_mock || documento.referencia_local_mock || '-'}</strong></div>
     </div>
+  );
+}
+
+function DocumentAuditTrail({ documento }: { documento: DocumentoApi }): JSX.Element {
+  return (
+    <EnacAuditTrail
+      title="Histórico documental mock"
+      events={[
+        {
+          id: `${documento.id}-created`,
+          action: 'Anexo incluído mock',
+          module: 'Documentos e Anexos',
+          user: documento.criado_por_nome || 'Documentos',
+          timestamp: documento.criado_em,
+          statusTo: String(documento.status),
+          note: 'Metadados e referência local registrados. Não houve upload externo real.',
+          tone: 'neutral'
+        },
+        {
+          id: `${documento.id}-updated`,
+          action: 'Metadados revisados',
+          module: 'Documentos e Anexos',
+          user: documento.atualizado_por_nome || documento.criado_por_nome || 'Documentos',
+          timestamp: documento.atualizado_em || documento.criado_em,
+          statusFrom: String(documento.status),
+          statusTo: String(documento.status),
+          note: documento.observacao || 'Registro preparado para integração futura com SharePoint, sem ativação real.',
+          tone: documento.status === 'ATIVO' ? 'success' : 'warning'
+        }
+      ]}
+    />
   );
 }
 

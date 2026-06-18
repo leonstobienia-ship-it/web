@@ -9,6 +9,12 @@ import {
   type ProgramacaoPagamentoStatus,
   type UsuarioApi
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification, EnacOperationalFlow, type EnacAuditTrailEvent } from '../../components';
+import {
+  buildAuditTrailMock,
+  buildFluxoOperacionalMock,
+  resolveAprovadorMock
+} from '../governanca/mockGovernanca';
 
 interface ProgramacaoForm {
   data_prevista: string;
@@ -104,6 +110,21 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
   const [error, setError] = React.useState<string>('');
   const [message, setMessage] = React.useState<string>('');
   const [activeView, setActiveView] = React.useState<ProgramacaoView>('consulta');
+  const resumoProgramacao = React.useMemo(() => {
+    const hoje = new Date().toISOString().slice(0, 10);
+    const seteDias = addDays(7);
+    const contasVencidas = contas.filter((conta) => conta.data_vencimento < hoje && conta.status !== 'PROGRAMADA');
+    const contasSemana = contas.filter((conta) => conta.data_vencimento >= hoje && conta.data_vencimento <= seteDias);
+    const total = (items: Array<{ valor_aberto?: string | number; valor_total?: string | number }>): number =>
+      items.reduce((acc, item) => acc + toNumber(item.valor_aberto ?? item.valor_total), 0);
+    return {
+      dia: total(contas.filter((conta) => conta.data_vencimento === hoje)),
+      semana: total(contasSemana),
+      vencido: total(contasVencidas),
+      aguardandoAprovacao: programacoes.filter((programacao) => programacao.status === 'SUBMETIDA').length,
+      programadoMock: total(programacoes.filter((programacao) => ['RASCUNHO', 'SUBMETIDA', 'APROVADA', 'LIBERADA'].includes(programacao.status)))
+    };
+  }, [contas, programacoes]);
 
   const loadAll = React.useCallback(async (nextStatus = statusFilter): Promise<void> => {
     const [empresasResponse, fornecedoresResponse, obrasResponse, usuariosResponse] = await Promise.all([
@@ -190,7 +211,7 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
       observacoes: form.observacoes || null,
       justificativa: form.justificativa || null,
       usuario_id: actionUserId || null
-    }), 'Programação criada em rascunho.');
+    }), 'Programação criada com sucesso. O formulário foi limpo e a lista foi atualizada.');
     setActiveView('detalhe');
     setForm(emptyForm());
   };
@@ -242,8 +263,8 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando programações locais.</div>}
-      {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
+      <EnacNotification tone="success" message={message} onClose={() => setMessage('')} />
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
 
       {!loading && (
         <div className="enac-module-workspace">
@@ -258,6 +279,21 @@ export function ProgramacoesPagamentoPage(): JSX.Element {
               Detalhes
             </button>
           </div>
+
+          <section className="enac-v319-panel" aria-label="Resumo da programação de pagamento V3.19">
+            <div className="enac-governance-card__head">
+              <span className="enac-web-card-label">Planejamento financeiro interno</span>
+              <h3>Totais sem execução bancária</h3>
+              <p>Valores agrupados por vencimento e status para priorização; nenhuma ação paga ou baixa contas.</p>
+            </div>
+            <div className="enac-v319-metrics">
+              <div><span>Total do dia</span><strong>{formatMoney(resumoProgramacao.dia)}</strong></div>
+              <div><span>Próximos 7 dias</span><strong>{formatMoney(resumoProgramacao.semana)}</strong></div>
+              <div><span>Vencido</span><strong>{formatMoney(resumoProgramacao.vencido)}</strong></div>
+              <div><span>Aguardando aprovação</span><strong>{resumoProgramacao.aguardandoAprovacao}</strong></div>
+              <div><span>Programado mock</span><strong>{formatMoney(resumoProgramacao.programadoMock)}</strong></div>
+            </div>
+          </section>
 
           {activeView !== 'novo' && (
           <section className="enac-finance-main enac-module-panel" aria-label="Lista e detalhe de programações de pagamento">
@@ -493,6 +529,55 @@ function ProgramacaoDetail({
   const updateChecklist = (key: keyof ProgramacaoPagamentoConferenciaChecklist, value: boolean): void => {
     setConferenciaChecklist((current) => ({ ...current, [key]: value }));
   };
+  const approvalMock = resolveAprovadorMock(programacao.valor_total);
+  const flowKey = programacao.status === 'RASCUNHO'
+    ? 'conta'
+    : programacao.status === 'SUBMETIDA'
+      ? 'aprovacao'
+      : 'programacao';
+  const extraAuditEvents = [
+    programacao.submetido_em ? {
+      id: `${programacao.id}-submetida`,
+      action: 'Enviada para aprovação',
+      module: 'Programações de Pagamento',
+      user: programacao.submetido_por_nome || 'Financeiro',
+      timestamp: programacao.submetido_em,
+      statusTo: 'SUBMETIDA',
+      note: 'Submissão local para alçada, sem banco real.',
+      tone: 'neutral' as const
+    } : null,
+    programacao.liberado_em ? {
+      id: `${programacao.id}-liberada`,
+      action: 'Liberação interna registrada',
+      module: 'Programações de Pagamento',
+      user: programacao.liberado_por_nome || 'Diretoria',
+      timestamp: programacao.liberado_em,
+      statusTo: programacao.liberacao_status || 'LIBERADA',
+      note: programacao.liberacao_justificativa || 'Liberação local sem execução de pagamento.',
+      tone: 'success' as const
+    } : null,
+    programacao.conferido_em ? {
+      id: `${programacao.id}-conferida`,
+      action: 'Conferência financeira registrada',
+      module: 'Programações de Pagamento',
+      user: programacao.conferido_por_nome || 'Financeiro',
+      timestamp: programacao.conferido_em,
+      statusTo: programacao.conferencia_status || 'CONFERIDA',
+      note: programacao.conferencia_observacoes || 'Conferência local pré-baixa manual.',
+      tone: 'success' as const
+    } : null
+  ].filter(Boolean) as EnacAuditTrailEvent[];
+  const auditEvents = buildAuditTrailMock({
+    module: 'Programações de Pagamento',
+    code: programacao.codigo,
+    createdAt: programacao.created_at,
+    status: statusLabels[programacao.status],
+    approvalStatus: programacao.aprovacao_status,
+    approvedBy: programacao.aprovado_por_nome,
+    approvedAt: programacao.aprovado_em,
+    value: programacao.valor_total,
+    extraEvents: extraAuditEvents
+  });
 
   return (
     <section className="enac-finance-detail">
@@ -520,6 +605,23 @@ function ProgramacaoDetail({
         <div><span>Conferente</span><strong>{programacao.conferido_por_nome || '-'}</strong></div>
         <div><span>Conferido em</span><strong>{formatDateTime(programacao.conferido_em)}</strong></div>
         <div><span>Valor conferido</span><strong>{programacao.conferencia_valor_total ? formatMoney(programacao.conferencia_valor_total) : '-'}</strong></div>
+      </div>
+
+      <div className="enac-v319-stack">
+        <EnacOperationalFlow steps={buildFluxoOperacionalMock(flowKey)} />
+        <section className="enac-governance-card" aria-label="Alçada da programação">
+          <div className="enac-governance-card__head">
+            <span className="enac-web-card-label">Alçada da programação</span>
+            <h3>{approvalMock.badge}</h3>
+            <p>{approvalMock.motivo} Aprovar programação não paga e não baixa conta.</p>
+          </div>
+          <div className="enac-governance-card__grid">
+            <div><span>Contas vinculadas</span><strong>{programacao.quantidade_contas || contas.length}</strong></div>
+            <div><span>Fornecedor</span><strong>{programacao.fornecedor_nome || 'Agrupado'}</strong></div>
+            <div><span>Obra</span><strong>{programacao.obra_codigo || '-'}</strong></div>
+            <div><span>Forma prevista</span><strong>{programacao.forma_pagamento_prevista || '-'}</strong></div>
+          </div>
+        </section>
       </div>
 
       {programacao.bloqueio_alcada_motivo && (
@@ -629,6 +731,7 @@ function ProgramacaoDetail({
           </tbody>
         </table>
       </div>
+      <EnacAuditTrail events={auditEvents} />
     </section>
   );
 }

@@ -16,6 +16,8 @@ import {
   type ValidarAlcadaPayload,
   type ValidarAlcadaResponse
 } from '../../services/erpApi';
+import { EnacAuditTrail, EnacNotification } from '../../components';
+import { perfisGovernancaMock, regraAlcadaComprasMock } from '../governanca/mockGovernanca';
 
 type AdminTab = 'usuarios' | 'perfis' | 'escopos' | 'alcadas';
 
@@ -261,23 +263,25 @@ export function AcessosPage(): JSX.Element {
 
   const savePerfil = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
+    const editing = Boolean(perfilForm.id);
     await runAction(async () => {
       const payload: PerfilPayload = {
         company_id: companyId,
         nome: perfilForm.nome,
         descricao: perfilForm.descricao || null
       };
-      if (perfilForm.id) {
+      if (editing) {
         await erpApi.perfis.update(perfilForm.id, payload);
       } else {
         await erpApi.perfis.create(payload);
+        setPerfilForm(emptyPerfilForm());
       }
-      setPerfilForm(emptyPerfilForm());
-    }, perfilForm.id ? 'Perfil atualizado.' : 'Perfil criado.');
+    }, editing ? 'Perfil atualizado.' : 'Perfil criado com sucesso. O formulário foi limpo e a lista foi atualizada.');
   };
 
   const saveEscopo = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
+    const editing = Boolean(escopoForm.id);
     await runAction(async () => {
       const payload: EscopoPayload = {
         company_id: companyId,
@@ -285,13 +289,13 @@ export function AcessosPage(): JSX.Element {
         acao: escopoForm.acao,
         descricao: escopoForm.descricao || null
       };
-      if (escopoForm.id) {
+      if (editing) {
         await erpApi.escopos.update(escopoForm.id, payload);
       } else {
         await erpApi.escopos.create(payload);
+        setEscopoForm(emptyEscopoForm());
       }
-      setEscopoForm(emptyEscopoForm());
-    }, escopoForm.id ? 'Escopo atualizado.' : 'Escopo criado.');
+    }, editing ? 'Escopo atualizado.' : 'Escopo criado com sucesso. O formulário foi limpo e a lista foi atualizada.');
   };
 
   const saveUsuarioPerfil = async (event: React.FormEvent): Promise<void> => {
@@ -299,7 +303,7 @@ export function AcessosPage(): JSX.Element {
     await runAction(async () => {
       await erpApi.usuariosPerfis.create(usuarioPerfilForm);
       setUsuarioPerfilForm(emptyUsuarioPerfilForm());
-    }, 'Vinculo usuario-perfil salvo.');
+    }, 'Vínculo usuário-perfil criado com sucesso. O formulário foi limpo e a lista foi atualizada.');
   };
 
   const savePerfilEscopo = async (event: React.FormEvent): Promise<void> => {
@@ -307,11 +311,12 @@ export function AcessosPage(): JSX.Element {
     await runAction(async () => {
       await erpApi.perfisEscopos.create(perfilEscopoForm);
       setPerfilEscopoForm(emptyPerfilEscopoForm());
-    }, 'Vinculo perfil-escopo salvo.');
+    }, 'Vínculo perfil-escopo criado com sucesso. O formulário foi limpo e a lista foi atualizada.');
   };
 
   const saveAlcada = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
+    const editing = Boolean(alcadaForm.id);
     await runAction(async () => {
       const payload: AlcadaPayload = {
         company_id: companyId,
@@ -327,13 +332,13 @@ export function AcessosPage(): JSX.Element {
         efeito: 'PERMITIR',
         observacoes: alcadaForm.observacoes || null
       };
-      if (alcadaForm.id) {
+      if (editing) {
         await erpApi.alcadas.update(alcadaForm.id, payload);
       } else {
         await erpApi.alcadas.create(payload);
+        setAlcadaForm(emptyAlcadaForm());
       }
-      setAlcadaForm(emptyAlcadaForm());
-    }, alcadaForm.id ? 'Alcada atualizada.' : 'Alcada criada.');
+    }, editing ? 'Alçada atualizada.' : 'Alçada criada com sucesso. O formulário foi limpo e a lista foi atualizada.');
   };
 
   const validarAlcada = async (event: React.FormEvent): Promise<void> => {
@@ -362,8 +367,8 @@ export function AcessosPage(): JSX.Element {
       </p>
 
       {loading && <div className="enac-cadastro-empty">Carregando matriz de acesso.</div>}
-      {message && <div className="enac-web-alert enac-web-alert--compact enac-web-alert--success">{message}</div>}
-      {error && <div className="enac-web-alert enac-web-alert--compact">{error}</div>}
+      <EnacNotification tone="success" message={message} onClose={() => setMessage('')} />
+      <EnacNotification tone="error" message={error} onClose={() => setError('')} />
 
       {!loading && !companyId && (
         <div className="enac-web-alert enac-web-alert--compact">Nenhuma empresa local encontrada. Rode as migrations e seeds locais.</div>
@@ -380,6 +385,8 @@ export function AcessosPage(): JSX.Element {
               </article>
             ))}
           </div>
+
+          <AdminGovernancePanel />
 
           <div className="enac-cadastros-tabs" role="tablist" aria-label="Administracao de acessos">
             {adminTabs.map((tab) => (
@@ -465,6 +472,42 @@ export function AcessosPage(): JSX.Element {
           )}
         </>
       )}
+    </section>
+  );
+}
+
+function AdminGovernancePanel(): JSX.Element {
+  return (
+    <section className="enac-v319-stack" aria-label="Parâmetros operacionais mock">
+      <div className="enac-governance-card">
+        <div className="enac-governance-card__head">
+          <span className="enac-web-card-label">Parâmetros V3.19</span>
+          <h3>Perfis e alçadas de referência</h3>
+          <p>Estrutura mock local preparada para dados reais futuros. Alterações não retroagem processos já submetidos.</p>
+        </div>
+        <div className="enac-governance-card__grid">
+          <div><span>Limite técnico</span><strong>{regraAlcadaComprasMock.limite_tecnico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></div>
+          <div><span>Aprovador técnico</span><strong>{regraAlcadaComprasMock.aprovador_tecnico}</strong></div>
+          <div><span>Aprovador diretoria</span><strong>{regraAlcadaComprasMock.aprovador_diretoria}</strong></div>
+          <div><span>Perfis mapeados</span><strong>{perfisGovernancaMock.length}</strong></div>
+        </div>
+      </div>
+      <EnacAuditTrail
+        title="Auditoria mock de parâmetros"
+        events={[
+          {
+            id: 'parametros-v319',
+            action: 'Parâmetro alterado mock',
+            module: 'Administração / Acessos',
+            user: 'Diretoria/Admin',
+            timestamp: new Date().toISOString(),
+            statusFrom: 'V3.18M',
+            statusTo: 'V3.19',
+            note: regraAlcadaComprasMock.observacao,
+            tone: 'neutral'
+          }
+        ]}
+      />
     </section>
   );
 }
