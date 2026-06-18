@@ -253,7 +253,7 @@ export function DashboardExecutivoPage(): JSX.Element {
   ];
 
   return (
-    <section className="enac-web-page enac-report-page enac-dashboard-page">
+    <section className="enac-web-page enac-report-page enac-dashboard-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Dashboard Executivo da Diretoria</h1>
       <p className="enac-web-lead">

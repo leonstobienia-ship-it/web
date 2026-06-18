@@ -422,7 +422,7 @@ export function CotacoesMapaPage(): JSX.Element {
   const lowerTotalSupplier = mapa?.resumo.fornecedor_menor_total;
 
   return (
-    <section className="enac-web-page enac-cotacoes-page">
+    <section className="enac-web-page enac-cotacoes-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Cotações e mapa comparativo</h1>
       <p className="enac-web-lead">

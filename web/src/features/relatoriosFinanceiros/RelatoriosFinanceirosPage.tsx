@@ -212,7 +212,7 @@ export function RelatoriosFinanceirosPage(): JSX.Element {
   ];
 
   return (
-    <section className="enac-web-page enac-report-page">
+    <section className="enac-web-page enac-report-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Relatórios Financeiros</h1>
       <p className="enac-web-lead">

@@ -450,7 +450,7 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
   };
 
   if (loading) {
-    return <section className="enac-cadastros-page"><p>{isPlanejamento ? 'Carregando planejamento executivo...' : 'Carregando orçamentos de obra...'}</p></section>;
+    return <section className="enac-cadastros-page enac-foundation-page"><p>{isPlanejamento ? 'Carregando planejamento executivo...' : 'Carregando orçamentos de obra...'}</p></section>;
   }
 
   const activePacotes = selectedOrcamento?.pacotes?.filter((pacote) => pacote.status === 'ATIVO') || [];
@@ -478,7 +478,7 @@ export function OrcamentosPlanejamentoPage({ initialView = 'orcamentos' }: { ini
   };
 
   return (
-    <section className={`enac-cadastros-page enac-work-module ${isPlanejamento ? 'enac-work-module--planning' : 'enac-work-module--budget'}`}>
+    <section className={`enac-cadastros-page enac-work-module enac-foundation-page ${isPlanejamento ? 'enac-work-module--planning' : 'enac-work-module--budget'}`}>
       <div className="enac-cadastros-header">
         <div>
           <p className="enac-web-eyebrow">{isPlanejamento ? 'V3.18H - Execução de obra' : 'V3.18H - Orçamento base'}</p>

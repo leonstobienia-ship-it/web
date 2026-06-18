@@ -296,11 +296,11 @@ export function ContratosObraPage(): JSX.Element {
   const activeUsers = usuarios.filter((usuario) => usuario.ativo !== false);
 
   if (loading) {
-    return <section className="enac-cadastros-page"><p>Carregando contratos de obra.</p></section>;
+    return <section className="enac-cadastros-page enac-foundation-page"><p>Carregando contratos de obra.</p></section>;
   }
 
   return (
-    <section className="enac-cadastros-page">
+    <section className="enac-cadastros-page enac-foundation-page">
       <p className="enac-web-eyebrow">POSTGRESQL LOCAL · {marker}</p>
       <h1>Contratos de Obra</h1>
       <p className="enac-web-lead">

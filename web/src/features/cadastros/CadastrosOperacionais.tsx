@@ -35,7 +35,7 @@ export function CadastrosOperacionais(): JSX.Element {
   const empresa = empresas[0];
 
   return (
-    <section className="enac-web-page enac-cadastros-page">
+    <section className="enac-web-page enac-cadastros-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Cadastros mestres operacionais</h1>
       <p className="enac-web-lead">

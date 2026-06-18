@@ -325,7 +325,7 @@ export function MedicoesFaturamentoPage(): JSX.Element {
     ?.aditivos?.filter((aditivo) => aditivo.status === 'APROVADO') || [];
 
   return (
-    <section className="enac-web-page enac-medicoes-page">
+    <section className="enac-web-page enac-medicoes-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Medições e Faturamento</h1>
       <p className="enac-web-lead">

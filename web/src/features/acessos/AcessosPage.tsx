@@ -353,7 +353,7 @@ export function AcessosPage(): JSX.Element {
   };
 
   return (
-    <section className="enac-web-page enac-acessos-page">
+    <section className="enac-web-page enac-acessos-page enac-foundation-page">
       <p className="enac-web-eyebrow">Administração de Acessos</p>
       <h1>Usuários, Perfis, Escopos e Alçadas</h1>
       <p className="enac-web-lead">

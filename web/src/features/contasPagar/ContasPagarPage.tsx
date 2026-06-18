@@ -458,7 +458,7 @@ export function ContasPagarPage(): JSX.Element {
   };
 
   return (
-    <section className="enac-web-page enac-finance-page">
+    <section className="enac-web-page enac-finance-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Contas a Pagar</h1>
       <p className="enac-web-lead">

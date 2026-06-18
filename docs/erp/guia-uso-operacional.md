@@ -114,6 +114,13 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - A V3.18J define a arquitetura de scroll atual: sidebar com rolagem propria, conteudo principal com scroll controlado no desktop e fluxo natural no mobile.
 - A V3.18J consolida o padrao list/detail: lista principal em painel proprio, detalhe/acoes em painel lateral no desktop e empilhamento no mobile.
 - Tabelas longas usam container de rolagem proprio e cabecalho solido/sticky para evitar que linhas passem por tras de filtros, cards ou paineis.
+- A V3.18K consolida a foundation visual do ERP ENAC com tokens de design, componentes reutilizaveis e classes base para shell, paginas, KPIs, filtros, tabelas, status, paineis laterais, formularios e modais.
+- A foundation V3.18K deve ser usada como contrato visual antes de criar estilos especificos de modulo.
+- Novas telas devem iniciar com `enac-foundation-page`, cabecalho compacto, area de consulta/lista e painel de detalhe quando houver selecao.
+- Filtros devem permanecer compactos e alinhados no topo da consulta; formularios extensos devem ficar em aba propria, modal ou painel dedicado.
+- Tabelas operacionais devem usar densidade de ERP, cabecalho solido, status em chips e rolagem controlada em vez de alongar a pagina inteira.
+- Paineis de detalhe devem ficar a direita em desktop e abaixo da lista no mobile, preservando a leitura operacional.
+- Tokens de cor, sombra, borda, raio e espacamento ficam centralizados em `web/src/styles.css`; nao criar paletas isoladas por tela sem justificativa.
 - `Programacoes de Pagamento` usa contas elegiveis no painel esquerdo e detalhe/acoes da programacao no painel lateral direito.
 - Cards resumem indicadores principais com densidade de ERP, sem ocupar a tela como material promocional.
 - Tabelas usam fonte compacta, bordas leves, rolagem horizontal quando o conteudo e largo e quebra de texto controlada.

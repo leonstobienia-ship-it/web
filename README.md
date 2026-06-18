@@ -316,6 +316,43 @@ Limites mantidos:
 - sem SharePoint/Graph/Entra/Power Automate reais;
 - sem `DELETE` fisico.
 
+## V3.18K - Foundation Visual ERP ENAC
+
+A V3.18K consolida uma fundacao visual reutilizavel para o ERP ENAC, baseada no pacote de benchmark local `pacote_design_erp_enac_v3_18k`, sem alterar backend, migrations, endpoints ou regras de negocio.
+
+Principais ajustes:
+
+- tokens de cor, spacing, radius, sombras e z-index alinhados ao design system ENAC;
+- shell principal passou a usar classes de foundation para sidebar, topbar, area principal e scroll;
+- componentes reutilizaveis criados em `web/src/components/` para page header, KPI, filter bar, data table, status chip, detail pane, empty state, split view, form grid e modal;
+- tabelas, filtros, cards, tabs e paineis laterais existentes foram compatibilizados com os tokens V3.18K;
+- telas criticas receberam classe `enac-foundation-page` para padrao comum de pagina, spacing e densidade;
+- Programacoes, Notas, Contas, Documentos, Central, Riscos, Relatorios, Dashboard, Pedidos, Medicoes, Orcamentos, Planejamento, Acessos e Homologacao seguem a base visual compartilhada;
+- a arquitetura de scroll da V3.18J foi preservada e documentada como regra da foundation.
+
+Documentos:
+
+- `docs/v3.18k-foundation-visual-erp-enac.md`
+- `docs/erp/design-system-enac.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18k-foundation-visual-erp-enac.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem upload externo real;
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

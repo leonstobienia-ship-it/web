@@ -213,7 +213,7 @@ export function AuditoriaLogsPage(): JSX.Element {
   const highlighted = state.eventos.filter(isHighlightAction).slice(0, 6);
 
   return (
-    <section className="enac-web-page enac-audit-page">
+    <section className="enac-web-page enac-audit-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Auditoria e Logs</h1>
 

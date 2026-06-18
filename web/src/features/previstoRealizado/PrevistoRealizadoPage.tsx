@@ -231,7 +231,7 @@ export function PrevistoRealizadoPage(): JSX.Element {
   ].filter(Boolean) : [];
 
   return (
-    <section className="enac-web-page enac-report-page enac-pr-page">
+    <section className="enac-web-page enac-report-page enac-pr-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Previsto x Realizado e Margem por Obra</h1>
       <p className="enac-web-lead">

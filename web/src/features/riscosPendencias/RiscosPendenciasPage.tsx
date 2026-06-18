@@ -302,7 +302,7 @@ export function RiscosPendenciasPage(): JSX.Element {
   const selectedIsFinal = selected ? finalStatuses.has(selected.status) : true;
 
   return (
-    <section className="enac-web-page enac-risk-page">
+    <section className="enac-web-page enac-risk-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Riscos e Pendências</h1>
       <p className="enac-web-lead">

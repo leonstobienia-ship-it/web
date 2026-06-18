@@ -451,7 +451,7 @@ export function SolicitacoesCompraPage(): JSX.Element {
   const referenciasCarregadas = !loadingRefs && Boolean(empresa) && obras.length > 0 && centrosCusto.length > 0 && usuarios.length > 0;
 
   return (
-    <section className="enac-web-page enac-solicitacoes-page">
+    <section className="enac-web-page enac-solicitacoes-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local</p>
       <h1>Solicitações de Compra</h1>
       <p className="enac-web-lead">

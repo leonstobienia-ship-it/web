@@ -226,7 +226,7 @@ export function HomologacaoPage({ onNavigate }: HomologacaoPageProps): JSX.Eleme
   ];
 
   return (
-    <section className="enac-web-page enac-homologacao-page">
+    <section className="enac-web-page enac-homologacao-page enac-foundation-page">
       <p className="enac-web-eyebrow">Homologação local · {marker}</p>
       <h1>Homologação por Perfil</h1>
 

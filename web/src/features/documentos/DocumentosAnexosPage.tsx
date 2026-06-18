@@ -356,7 +356,7 @@ export function DocumentosAnexosPage(): JSX.Element {
   const inativos = state.documentos.filter((documento) => documento.status === 'INATIVO').length;
 
   return (
-    <section className="enac-web-page enac-doc-page">
+    <section className="enac-web-page enac-doc-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Documentos e Anexos</h1>
 

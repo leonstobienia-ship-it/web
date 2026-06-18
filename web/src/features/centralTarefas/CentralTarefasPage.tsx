@@ -293,7 +293,7 @@ export function CentralTarefasPage({ onNavigate }: CentralTarefasPageProps): JSX
   const selectedIsFinal = selected ? finalManualStatuses.has(String(selected.status)) : true;
 
   return (
-    <section className="enac-web-page enac-central-page">
+    <section className="enac-web-page enac-central-page enac-foundation-page">
       <p className="enac-web-eyebrow">PostgreSQL local · {marker}</p>
       <h1>Central de Tarefas e Aprovações</h1>
 

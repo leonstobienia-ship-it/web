@@ -516,8 +516,8 @@ function WebPortal(): JSX.Element {
   };
 
   return (
-    <div className={`enac-web-shell ${navCollapsed ? 'is-nav-collapsed' : ''}`}>
-      <aside className="enac-web-nav" aria-label="Navegação do Sistema ENAC">
+    <div className={`enac-web-shell enac-foundation-app-shell ${navCollapsed ? 'is-nav-collapsed is-collapsed' : ''}`}>
+      <aside className="enac-web-nav enac-foundation-sidebar" aria-label="Navegação do Sistema ENAC">
         <div className="enac-web-brand">
           <img src={enacLogoUrl} alt="ENAC" />
           <strong>Sistema ENAC</strong>
@@ -577,8 +577,8 @@ function WebPortal(): JSX.Element {
           })}
         </nav>
       </aside>
-      <main className="enac-web-main">
-        <header className="enac-web-topbar">
+      <main className="enac-web-main enac-foundation-main">
+        <header className="enac-web-topbar enac-foundation-topbar">
           <div className="enac-web-module-title">
             <span>{currentGroup?.title || 'ERP ENAC'}</span>
             <strong>{currentSection.label}</strong>
@@ -843,15 +843,15 @@ function ContentSection({ section, onNavigate }: { section: WebSection; onNaviga
           <div>
             <p>
               O ERP ENAC local está organizado por perfis e módulos operacionais para compras,
-              obras, financeiro, gestão e administração. A V3.18F consolida o padrão visual
-              de ERP, com menu compacto, ícones SVG, telas por abas e leitura objetiva para homologação.
+              obras, financeiro, gestão e administração. A V3.18K consolida a foundation visual
+              de ERP, com shell fixo, tokens, listas densas, paineis laterais e leitura objetiva para homologação.
             </p>
           </div>
           <dl>
             <div><dt>MVP</dt><dd>7 frentes</dd></div>
             <div><dt>Fonte de verdade alvo</dt><dd>PostgreSQL</dd></div>
             <div><dt>Documentos</dt><dd>SharePoint-ready local</dd></div>
-            <div><dt>UX V3.18F</dt><dd>ERP visual</dd></div>
+            <div><dt>UX V3.18K</dt><dd>Foundation ERP</dd></div>
           </dl>
         </section>
 
@@ -882,7 +882,7 @@ function ContentSection({ section, onNavigate }: { section: WebSection; onNaviga
 
 function Page({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }): JSX.Element {
   return (
-    <section className="enac-web-page">
+    <section className="enac-web-page enac-foundation-page">
       <p className="enac-web-eyebrow">{eyebrow}</p>
       <h1>{title}</h1>
       {children}
