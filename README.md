@@ -353,6 +353,42 @@ Limites mantidos:
 - sem SharePoint/Graph/Entra/Power Automate reais;
 - sem `DELETE` fisico.
 
+## V3.18L - Aplicacao Profunda da Foundation nas Telas Criticas
+
+A V3.18L aprofunda a aplicacao da foundation visual V3.18K nas telas criticas observadas na homologacao, sem alterar backend, migrations, endpoints ou regras de negocio.
+
+Principais ajustes:
+
+- cards KPI passaram a usar composicao vertical, largura minima maior e quebra controlada para impedir colisao entre label e valor;
+- Relatorios Financeiros e Dashboard Executivo receberam grids responsivos mais largos, filtros compactos e abas mais densas;
+- botoes de acao em tabelas, especialmente `Detalhe`, foram padronizados como acao secundaria compacta;
+- tabelas operacionais mantem densidade de ERP com cabecalho solido, hover discreto, selecao destacada e numeros tabulares;
+- paineis laterais de Contas, Programacoes, Medicoes, Documentos, Central e Riscos receberam composicao mais corporativa;
+- preview PDF/XML de Nota Fiscal de Entrada ficou contido em painel documental local, com altura controlada e rolagem interna.
+
+Documentos:
+
+- `docs/v3.18l-aplicacao-foundation-telas-criticas.md`
+- `docs/erp/design-system-enac.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.18l-aplicacao-foundation-telas-criticas.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem upload externo real;
+- sem pagamento funcional;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem `DELETE` fisico.
+
 ## Arquitetura prevista
 
 - SPFx com React.

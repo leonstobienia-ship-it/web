@@ -4967,6 +4967,363 @@ button:disabled {
   box-shadow: var(--shadow-sm);
 }
 
+/* V3.18L deep foundation: critical screens, dense ERP cards, tables and detail panes. */
+.enac-report-page,
+.enac-dashboard-page,
+.enac-doc-page,
+.enac-central-page,
+.enac-risk-page {
+  gap: var(--space-5);
+  padding-top: var(--space-7);
+}
+
+.enac-report-page > .enac-web-lead,
+.enac-dashboard-page > .enac-web-lead,
+.enac-doc-page > .enac-web-lead,
+.enac-central-page > .enac-web-lead,
+.enac-risk-page > .enac-web-lead {
+  margin-bottom: var(--space-3);
+}
+
+.enac-ui-tabs,
+.enac-central-tabs {
+  gap: var(--space-1);
+  padding: 3px;
+}
+
+.enac-ui-tabs button,
+.enac-central-tabs button {
+  min-height: 30px;
+  padding: 0 var(--space-5);
+  line-height: 1;
+}
+
+.enac-report-filters,
+.enac-solicitacoes-filters,
+.enac-dashboard-filters,
+.enac-doc-filters,
+.enac-risk-filters,
+.enac-central-filters {
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.enac-report-filters label,
+.enac-doc-filters label,
+.enac-risk-filters label,
+.enac-central-filters label,
+.enac-dashboard-filters label {
+  gap: 3px;
+}
+
+.enac-report-filters input,
+.enac-report-filters select,
+.enac-report-filters button,
+.enac-doc-filter-actions button,
+.enac-risk-filter-actions button,
+.enac-central-filter-actions button,
+.enac-dashboard-filter-actions button,
+.enac-filter-actions button {
+  min-height: 32px;
+}
+
+.enac-report-cards,
+.enac-dashboard-cards,
+.enac-doc-cards,
+.enac-central-cards,
+.enac-risk-cards,
+.enac-homologacao-cards,
+.enac-audit-cards,
+.enac-module-detail .enac-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+.enac-dashboard-cards,
+.enac-report-page > .enac-report-cards {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.enac-foundation-kpi-card,
+.enac-report-card,
+.enac-dashboard-card,
+.enac-doc-card,
+.enac-central-card,
+.enac-kpi-grid article {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 108px;
+  overflow: hidden;
+  padding: var(--space-6);
+}
+
+.enac-foundation-kpi-card span,
+.enac-report-card span,
+.enac-dashboard-card span,
+.enac-doc-card span,
+.enac-central-card span,
+.enac-kpi-grid span {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--enac-gray-600);
+  font-size: 11.5px;
+  line-height: 15px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.enac-foundation-kpi-card strong,
+.enac-report-card strong,
+.enac-dashboard-card strong,
+.enac-doc-card strong,
+.enac-central-card strong,
+.enac-kpi-grid strong {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--enac-gray-900);
+  font-size: 25px;
+  line-height: 28px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.enac-foundation-kpi-card small,
+.enac-report-card small,
+.enac-dashboard-card small,
+.enac-doc-card small,
+.enac-central-card small {
+  display: block;
+  width: 100%;
+  margin-top: auto;
+  color: var(--enac-gray-500);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.enac-dashboard-risks {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-5);
+}
+
+.enac-dashboard-risks article {
+  min-height: 92px;
+  padding: var(--space-6);
+  border-color: #f0dca4;
+  border-left-width: 3px;
+  box-shadow: var(--shadow-sm);
+}
+
+.enac-dashboard-risks strong {
+  font-size: 22px;
+  line-height: 26px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.enac-cadastro-table-wrap,
+.enac-doc-table-section,
+.enac-risk-table-section,
+.enac-central-table-section {
+  max-height: min(68vh, 760px);
+}
+
+.enac-web-table {
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.enac-web-table th,
+.enac-web-table td {
+  padding: 8px 10px;
+  font-size: 12.5px;
+  line-height: 17px;
+}
+
+.enac-web-table th {
+  color: var(--enac-gray-700);
+  letter-spacing: 0;
+}
+
+.enac-web-table td:has(> button) {
+  width: 92px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.enac-web-table td > button {
+  min-height: 28px;
+  border: 1px solid rgba(175, 15, 30, 0.28);
+  border-radius: 999px;
+  padding: 4px 11px;
+  background: var(--enac-white);
+  color: var(--enac-red-700);
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.06);
+}
+
+.enac-web-table td > button:hover {
+  border-color: var(--enac-red-600);
+  background: var(--enac-red-050);
+  color: var(--enac-red-700);
+}
+
+.enac-web-table td > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.enac-web-table tbody tr.is-selected,
+.enac-web-table tbody tr.enac-finance-row-selected,
+.enac-doc-table tr.is-selected,
+.enac-central-table tbody tr.is-selected,
+.enac-risk-table tbody tr.is-selected {
+  background: var(--enac-red-050);
+  box-shadow: inset 3px 0 0 var(--enac-red-600);
+}
+
+.enac-finance-detail,
+.enac-doc-detail,
+.enac-central-detail,
+.enac-risk-detail,
+.enac-audit-detail,
+.enac-detail-pane,
+.enac-pedido-detail,
+.enac-medicao-detail {
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.enac-finance-detail .enac-cadastro-toolbar,
+.enac-doc-detail .enac-cadastro-toolbar,
+.enac-central-detail .enac-cadastro-toolbar,
+.enac-risk-detail .enac-cadastro-toolbar,
+.enac-medicao-detail .enac-cadastro-toolbar {
+  align-items: flex-start;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--enac-border);
+}
+
+.enac-finance-meta,
+.enac-doc-summary,
+.enac-central-detail-grid,
+.enac-risk-detail-grid,
+.enac-audit-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.enac-finance-meta div,
+.enac-finance-preview,
+.enac-doc-summary div,
+.enac-central-detail-grid div,
+.enac-risk-detail-grid div,
+.enac-audit-detail-grid div {
+  min-width: 0;
+  border-color: var(--enac-border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, var(--enac-white), var(--enac-gray-050));
+  padding: var(--space-5);
+}
+
+.enac-finance-meta strong,
+.enac-doc-summary strong,
+.enac-central-detail-grid strong,
+.enac-risk-detail-grid strong,
+.enac-audit-detail-grid strong {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.enac-finance-preview {
+  gap: var(--space-3);
+  line-height: 1.45;
+}
+
+.enac-finance-baixa-panel,
+.enac-conferencia-panel {
+  border-top: 3px solid var(--enac-red-600);
+  border-radius: var(--radius-lg);
+  background: var(--enac-gray-050);
+}
+
+.enac-nf-document-panel {
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-top-width: 4px;
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98)),
+    var(--enac-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.enac-nf-upload-strip {
+  border-color: rgba(175, 15, 30, 0.28);
+  border-radius: var(--radius-lg);
+  background: var(--enac-red-050);
+}
+
+.enac-nf-document-preview {
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.enac-nf-document-meta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.enac-nf-document-meta div,
+.enac-nf-document-card {
+  border-color: var(--enac-border);
+  border-radius: var(--radius-md);
+  background: var(--enac-white);
+  box-shadow: 0 1px 2px rgba(25, 29, 35, 0.04);
+}
+
+.enac-nf-pdf-preview {
+  height: min(52vh, 520px);
+  min-height: 320px;
+  border: 1px solid var(--enac-border);
+  border-radius: var(--radius-lg);
+  background: var(--enac-gray-100);
+}
+
+.enac-nf-xml-preview {
+  max-height: min(46vh, 460px);
+  border-radius: var(--radius-lg);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.enac-report-grid,
+.enac-dashboard-two-columns {
+  gap: var(--space-5);
+}
+
+.enac-report-section {
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
 code {
   padding: 2px 5px;
   border-radius: 4px;
@@ -5309,6 +5666,23 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .enac-report-filters,
+  .enac-dashboard-filters,
+  .enac-doc-filters,
+  .enac-risk-filters,
+  .enac-central-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .enac-doc-filter-actions,
+  .enac-risk-filter-actions,
+  .enac-central-filter-actions,
+  .enac-dashboard-filter-actions,
+  .enac-filter-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .enac-risk-detail,
   .enac-audit-detail,
   .enac-detail-pane,
@@ -5321,6 +5695,43 @@ code {
   .enac-central-detail {
     position: static;
     max-height: none;
+  }
+
+  .enac-report-page,
+  .enac-dashboard-page,
+  .enac-doc-page,
+  .enac-central-page,
+  .enac-risk-page {
+    padding-top: 20px;
+  }
+
+  .enac-foundation-kpi-card,
+  .enac-report-card,
+  .enac-dashboard-card,
+  .enac-doc-card,
+  .enac-central-card,
+  .enac-kpi-grid article {
+    min-height: 96px;
+    padding: var(--space-5);
+  }
+
+  .enac-foundation-kpi-card strong,
+  .enac-report-card strong,
+  .enac-dashboard-card strong,
+  .enac-doc-card strong,
+  .enac-central-card strong,
+  .enac-kpi-grid strong {
+    font-size: 22px;
+    line-height: 25px;
+  }
+
+  .enac-web-table td:has(> button) {
+    width: auto;
+    text-align: left;
+  }
+
+  .enac-web-table td > button {
+    min-height: 30px;
   }
 
   .enac-risk-span-2,
@@ -5379,6 +5790,10 @@ code {
   }
 
   .enac-finance-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .enac-nf-document-meta {
     grid-template-columns: 1fr;
   }
 
