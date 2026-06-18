@@ -24,7 +24,7 @@ import { RelatoriosFinanceirosPage } from './features/relatoriosFinanceiros/Rela
 import { RiscosPendenciasPage } from './features/riscosPendencias/RiscosPendenciasPage';
 import { SolicitacoesCompraPage } from './features/solicitacoesCompra/SolicitacoesCompraPage';
 import { EnacIcon, type EnacIconName } from './components/EnacIcon';
-import enacLogoUrl from '../../src/webparts/enacSistema/assets/enac-logo.png';
+import enacLogoUrl from './assets/enac-logo-oficial.png';
 import './styles.css';
 
 const readonlyInventoryClientId = '0dab19b3-8e48-4f89-ad94-1446b08d3781';

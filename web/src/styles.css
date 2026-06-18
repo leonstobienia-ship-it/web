@@ -90,30 +90,35 @@ button {
 .enac-web-brand {
   position: relative;
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) 34px;
-  gap: 4px 10px;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 6px 10px;
   align-items: center;
   padding: 0 6px 18px;
 }
 
 .enac-web-brand img {
-  grid-row: span 2;
-  width: 42px;
-  height: 42px;
+  grid-column: 1;
+  width: min(172px, 100%);
+  height: auto;
+  max-height: 62px;
   object-fit: contain;
+  object-position: left center;
 }
 
 .enac-web-brand strong {
+  grid-column: 1;
   font-size: 18px;
 }
 
 .enac-web-brand span {
+  grid-column: 1;
   color: var(--enac-muted);
   font-size: 13px;
 }
 
 .enac-web-nav-collapse {
-  grid-row: span 2;
+  grid-column: 2;
+  grid-row: 1 / span 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -296,8 +301,10 @@ button {
 
 .enac-web-shell.is-nav-collapsed .enac-web-brand img {
   grid-row: auto;
-  width: 38px;
-  height: 38px;
+  width: 52px;
+  height: auto;
+  max-height: 22px;
+  object-position: center;
 }
 
 .enac-web-shell.is-nav-collapsed .enac-web-brand strong,
@@ -3870,14 +3877,16 @@ code {
   }
 
   .enac-web-shell.is-nav-collapsed .enac-web-brand {
-    grid-template-columns: 46px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     justify-items: start;
   }
 
   .enac-web-shell.is-nav-collapsed .enac-web-brand img {
-    grid-row: span 2;
-    width: 42px;
-    height: 42px;
+    grid-row: auto;
+    width: min(172px, 100%);
+    height: auto;
+    max-height: 62px;
+    object-position: left center;
   }
 
   .enac-web-nav .enac-web-nav-collapse {
