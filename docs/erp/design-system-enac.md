@@ -121,6 +121,19 @@ Regras de uso:
 - anexos temporarios devem ser limpos apos a referencia local ser salva;
 - trilhas V3.19 sao visuais/mock quando nao houver auditoria persistida.
 
+## Polimento V3.19.1 - Sidebar e alinhamento de cards
+
+A V3.19.1 define o acabamento final para homologacao pratica:
+
+- o cabeçalho da sidebar exibe somente o logo oficial ENAC e o subtitulo `ERP operacional local`;
+- o texto `Sistema ENAC` nao deve aparecer abaixo do logo no menu lateral;
+- o subtitulo deve ficar alinhado ao eixo visual do logo, sem card branco e sem distorcer a imagem;
+- grupos da sidebar usam grafite escuro, icone, titulo, subtitulo curto e seta discreta;
+- item ativo usa destaque vermelho ENAC com contraste claro;
+- grids de cards devem usar `align-items: stretch`;
+- cards dentro de grids devem usar `height: 100%`, composicao vertical e `justify-content: space-between` quando houver valor/rodape;
+- em mobile os cards empilham e voltam a altura automatica, sem overflow horizontal.
+
 ## Documento da NF
 
 O painel documental de Notas Fiscais de Entrada deve:

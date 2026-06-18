@@ -353,6 +353,41 @@ Limites mantidos:
 - sem upload externo real;
 - sem `DELETE` fisico.
 
+## V3.19.1 - Ajustes Finais de Layout para Homologacao
+
+A V3.19.1 aplica polimento visual curto para deixar o ERP pronto para homologacao pratica, sem funcionalidade nova e sem alterar regra de negocio.
+
+Principais ajustes:
+
+- remocao do texto `Sistema ENAC` abaixo do logo no menu lateral;
+- preservacao do logo oficial e do subtitulo `ERP operacional local`, agora alinhado ao bloco superior da sidebar;
+- refinamento do menu grafite com grupos mais limpos, icones, seta discreta e item ativo em vermelho ENAC;
+- alinhamento global da base de cards e quadros lado a lado por `align-items: stretch`, `height: 100%` e composicao vertical dos cards;
+- preservacao do drawer mobile fechado por padrao, com abertura/fechamento e sem overflow horizontal.
+
+Documentos:
+
+- `docs/v3.19.1-ajustes-finais-layout-homologacao.md`
+- `docs/erp/design-system-enac.md`
+- `docs/erp/guia-uso-operacional.md`
+- `tests/checklist-v3.19.1-ajustes-finais-layout-homologacao.md`
+
+Limites mantidos:
+
+- sem backend novo;
+- sem migration;
+- sem endpoint novo;
+- sem pagamento real;
+- sem baixa nova;
+- sem CNAB;
+- sem banco real;
+- sem NFS-e real;
+- sem prefeitura;
+- sem boleto real;
+- sem SharePoint/Graph/Entra/Power Automate reais;
+- sem upload externo real;
+- sem `DELETE` fisico.
+
 ## V3.18J - Modelo Visual e Arquitetura de Scroll
 
 A V3.18J corrige a arquitetura de scroll do shell web e aproxima as telas operacionais do modelo visual de referencia indicado na homologacao, sem alterar backend, migrations, endpoints ou regras de negocio.

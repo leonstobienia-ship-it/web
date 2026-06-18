@@ -143,6 +143,9 @@ Objetivo: manter usuarios, perfis, escopos, alcadas e rastreabilidade.
 - Pedidos, Solicitacoes, Notas, Contas, Programacoes, Central, Documentos e Administracao exibem trilhas visuais de auditoria mock quando o modulo nao possui historico persistido suficiente.
 - A governanca V3.19 usa parametros mock centralizados para indicar alçada, aprovador esperado e nao retroatividade de parametros.
 - Programacoes continuam sendo planejamento interno; aprovar ou liberar programacao nao executa pagamento, nao baixa conta e nao integra banco.
+- A V3.19.1 remove o texto `Sistema ENAC` abaixo do logo no menu lateral e mantem apenas o logo oficial com `ERP operacional local` alinhado ao bloco institucional.
+- A V3.19.1 padroniza cards lado a lado para alinhar a base dos quadros em desktop, preservando empilhamento natural no mobile.
+- Com esses ajustes, o shell web fica pronto para iniciar homologacao pratica com a equipe.
 
 ## Responsividade
 

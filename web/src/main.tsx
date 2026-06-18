@@ -546,7 +546,6 @@ function WebPortal(): JSX.Element {
       <aside className="enac-web-nav enac-foundation-sidebar" aria-label="Navegação do Sistema ENAC">
         <div className="enac-web-brand">
           <img src={enacLogoUrl} alt="ENAC" />
-          <strong>Sistema ENAC</strong>
           <span>ERP operacional local</span>
           <button
             type="button"
