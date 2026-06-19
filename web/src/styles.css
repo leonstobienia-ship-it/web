@@ -908,6 +908,7 @@ button {
   gap: var(--space-7);
   align-items: flex-end;
   justify-content: space-between;
+  flex-wrap: wrap;
   margin-bottom: var(--space-7);
 }
 
@@ -1253,10 +1254,12 @@ button {
   border-radius: var(--radius-lg);
   background: var(--enac-white);
   color: var(--enac-gray-600);
+  text-align: left;
 }
 
 .enac-foundation-empty-state strong {
   color: var(--enac-gray-900);
+  font-size: 15px;
 }
 
 .enac-foundation-form-grid,
@@ -6379,37 +6382,34 @@ code {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  border: 1px solid var(--enac-border, #d8e0dc);
-  border-radius: 8px;
-  padding: 0.72rem 0.82rem;
-  background: #f8fbfa;
-  color: #24332e;
-  box-shadow: 0 12px 26px rgba(10, 42, 32, 0.08);
+  gap: var(--space-6);
+  border: 1px solid var(--enac-border);
+  border-left: 4px solid var(--enac-gray-500);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--enac-white);
+  color: var(--enac-text);
+  box-shadow: var(--shadow-sm);
 }
 
 .enac-notification--success {
-  border-color: #b7ddca;
-  background: #edf9f3;
-  color: #145437;
+  border-left-color: var(--enac-success-600);
+  background: var(--enac-success-050);
 }
 
 .enac-notification--warning {
-  border-color: #ead59a;
-  background: #fff8e6;
-  color: #765500;
+  border-left-color: var(--enac-warning-600);
+  background: var(--enac-warning-050);
 }
 
 .enac-notification--error {
-  border-color: #efb5ad;
-  background: #fff1ef;
-  color: #8c2418;
+  border-left-color: var(--enac-danger-600);
+  background: var(--enac-danger-050);
 }
 
 .enac-notification--info {
-  border-color: #bdd2ee;
-  background: #f1f6fd;
-  color: #194875;
+  border-left-color: #1f5fa6;
+  background: #e5f0fb;
 }
 
 .enac-notification__body {
