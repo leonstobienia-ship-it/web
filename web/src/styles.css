@@ -510,7 +510,7 @@ button {
   min-height: 22px;
   border: 1px solid #f0ccd1;
   border-radius: 999px;
-  background: #fff1f3;
+  background: #fcedef;
   color: var(--enac-red-dark) !important;
   padding: 2px 8px;
   font-size: 11px !important;
@@ -806,7 +806,7 @@ button {
 .enac-ui-tabs button {
   min-height: 32px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 0 10px;
   background: transparent;
   color: #465263;
@@ -818,7 +818,7 @@ button {
 .enac-ui-tabs button:hover,
 .enac-ui-tabs button.is-active {
   border-color: rgba(178, 31, 45, 0.25);
-  background: #fff1f3;
+  background: #fcedef;
   color: var(--enac-red-dark);
 }
 
@@ -1600,7 +1600,7 @@ button {
 .enac-filter-actions button.secondary {
   border: 1px solid #d9e0e7;
   background: #ffffff;
-  color: #8f1024;
+  color: #960d1a;
 }
 
 .enac-module-summary {
@@ -1644,7 +1644,7 @@ button {
 }
 
 .enac-cadastros-list tr.is-selected td {
-  background: #fff1f3;
+  background: #fcedef;
   box-shadow: inset 3px 0 0 var(--enac-primary);
 }
 
@@ -1843,8 +1843,8 @@ button {
 }
 
 .enac-cadastro-status--ativo {
-  background: #e7f4ea;
-  color: #1f6b35;
+  background: #eaf7ef;
+  color: #1e7a43;
 }
 
 .enac-cadastro-status--inativo {
@@ -1935,13 +1935,13 @@ button {
 }
 
 .enac-solicitacao-status--aprovada-para-cotacao {
-  background: #e7f4ea;
-  color: #1f6b35;
+  background: #eaf7ef;
+  color: #1e7a43;
 }
 
 .enac-solicitacao-status--devolvida {
-  background: #fdece8;
-  color: #97432b;
+  background: #feecec;
+  color: #b42318;
 }
 
 .enac-solicitacao-status--cancelada {
@@ -2235,18 +2235,18 @@ button {
 }
 
 .enac-cotacao-status--fornecedor-escolhido {
-  background: #e7f4ea;
-  color: #1f6b35;
+  background: #eaf7ef;
+  color: #1e7a43;
 }
 
 .enac-cotacao-status--desclassificada {
-  background: #fdece8;
-  color: #97432b;
+  background: #feecec;
+  color: #b42318;
 }
 
 .enac-cotacao-status--selecionada {
-  background: #e7f4ea;
-  color: #1f6b35;
+  background: #eaf7ef;
+  color: #1e7a43;
 }
 
 .enac-cotacao-status--cancelada {
@@ -2256,7 +2256,7 @@ button {
 
 .enac-cotacao-best {
   background: #f3fbf4;
-  color: #1f6b35;
+  color: #1e7a43;
 }
 
 .enac-cotacao-row-selected {
@@ -2414,8 +2414,8 @@ button {
 }
 
 .enac-pedido-status--confirmado {
-  background: #e7f4ea;
-  color: #1f6b35;
+  background: #eaf7ef;
+  color: #1e7a43;
 }
 
 .enac-pedido-status--parcialmente-recebido,
@@ -2744,8 +2744,8 @@ button {
 .enac-finance-status--rascunho,
 .enac-finance-status--aberta,
 .enac-finance-status--divergente {
-  background: #fff3d8;
-  color: #7a4a00;
+  background: #fff6e1;
+  color: #a66a00;
 }
 
 .enac-finance-status--lancada,
@@ -2758,8 +2758,8 @@ button {
 
 .enac-finance-status--aprovada-financeiro,
 .enac-finance-status--aprovada {
-  background: #e7f4ea;
-  color: #1f6b35;
+  background: #eaf7ef;
+  color: #1e7a43;
 }
 
 .enac-finance-status--programada,
@@ -2770,15 +2770,15 @@ button {
 }
 
 .enac-finance-status--submetida {
-  background: #fff3d8;
-  color: #7a4a00;
+  background: #fff6e1;
+  color: #a66a00;
 }
 
 .enac-finance-status--bloqueada-conferencia,
 .enac-finance-status--bloqueada-baixa,
 .enac-finance-status--reprovada {
-  background: #fdece8;
-  color: #97432b;
+  background: #feecec;
+  color: #b42318;
 }
 
 .enac-finance-status--devolvida,
@@ -2791,8 +2791,8 @@ button {
 }
 
 .enac-finance-status--baixa-pendente {
-  background: #fff3d8;
-  color: #7a4a00;
+  background: #fff6e1;
+  color: #a66a00;
 }
 
 .enac-finance-meta {
@@ -2960,7 +2960,7 @@ button {
   padding: 8px 10px;
   border: 1px solid #f0c978;
   border-radius: 999px;
-  background: #fff8e8;
+  background: #fff6e1;
   color: #5c4213;
   font-size: 12px;
   font-weight: 800;
@@ -3079,7 +3079,7 @@ button {
   border: 1px solid #e9d4a4;
   border-left: 3px solid var(--enac-warning);
   border-radius: 8px;
-  background: #fff8e8;
+  background: #fff6e1;
 }
 
 .enac-dashboard-risks span {
@@ -3144,7 +3144,7 @@ button {
 }
 
 .enac-dashboard-alert small {
-  color: #7a4a00;
+  color: #a66a00;
   font-weight: 800;
 }
 
@@ -3264,13 +3264,13 @@ button {
 }
 
 .enac-programacao-ok {
-  background: #e7f4ea;
-  color: #1f6b35 !important;
+  background: #eaf7ef;
+  color: #1e7a43 !important;
 }
 
 .enac-programacao-block {
-  background: #fff3d8;
-  color: #7a4a00 !important;
+  background: #fff6e1;
+  color: #a66a00 !important;
 }
 
 .enac-programacao-user {
@@ -3379,7 +3379,7 @@ button {
 
 .enac-medicoes-warning {
   border-color: #f1c77b;
-  background: #fff8e8;
+  background: #fff6e1;
 }
 
 .enac-medicoes-warning p {
@@ -3553,7 +3553,7 @@ button {
 }
 
 .enac-risk-table tbody tr.is-selected {
-  background: #fff1f3;
+  background: #fcedef;
   box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
@@ -3581,22 +3581,22 @@ button {
 }
 
 .enac-risk-chip {
-  color: #1f3b57;
-  background: #e7eef7;
+  color: #1f5fa6;
+  background: #e5f0fb;
 }
 
 .enac-risk-chip--em_andamento {
-  color: #0f5132;
-  background: #dff5ea;
+  color: #1e7a43;
+  background: #eaf7ef;
 }
 
 .enac-risk-chip--aguardando_terceiro {
   color: #6b4a00;
-  background: #fff1c7;
+  background: #fff6e1;
 }
 
 .enac-risk-chip--bloqueada {
-  color: #8f3000;
+  color: #b42318;
   background: #ffe2ce;
 }
 
@@ -3616,18 +3616,18 @@ button {
 }
 
 .enac-risk-priority--alta {
-  color: #8f3000;
+  color: #b42318;
   background: #ffe7d6;
 }
 
 .enac-risk-priority--critica {
-  color: #8a1222;
-  background: #ffe1e8;
+  color: #b42318;
+  background: #feecec;
 }
 
 .enac-risk-priority--baixa {
   color: #24604a;
-  background: #dff5ea;
+  background: #eaf7ef;
 }
 
 .enac-risk-detail {
@@ -3806,7 +3806,7 @@ button {
 .enac-central-tabs button.is-active {
   border-color: rgba(178, 31, 45, 0.25);
   color: var(--enac-red-dark);
-  background: #fff1f3;
+  background: #fcedef;
 }
 
 .enac-central-layout {
@@ -3829,7 +3829,7 @@ button {
 }
 
 .enac-central-table tbody tr.is-selected {
-  background: #fff1f3;
+  background: #fcedef;
   box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
@@ -3857,30 +3857,30 @@ button {
 }
 
 .enac-central-chip {
-  color: #1f3b57;
-  background: #e7eef7;
+  color: #1f5fa6;
+  background: #e5f0fb;
 }
 
 .enac-central-chip--em_andamento,
 .enac-central-chip--aprovado_tecnico,
 .enac-central-chip--aprovado_diretoria {
-  color: #0f5132;
-  background: #dff5ea;
+  color: #1e7a43;
+  background: #eaf7ef;
 }
 
 .enac-central-chip--pendente_aprovacao,
 .enac-central-chip--pendente_liberacao,
 .enac-central-chip--pendente_conferencia {
   color: #6b4a00;
-  background: #fff1c7;
+  background: #fff6e1;
 }
 
 .enac-central-chip--bloqueado_alcada,
 .enac-central-chip--bloqueada_baixa,
 .enac-central-chip--bloqueada_liberacao,
 .enac-central-chip--bloqueada_conferencia {
-  color: #8a1222;
-  background: #ffe1e8;
+  color: #b42318;
+  background: #feecec;
 }
 
 .enac-central-chip--concluida {
@@ -3899,18 +3899,18 @@ button {
 }
 
 .enac-central-priority--alta {
-  color: #8f3000;
+  color: #b42318;
   background: #ffe7d6;
 }
 
 .enac-central-priority--critica {
-  color: #8a1222;
-  background: #ffe1e8;
+  color: #b42318;
+  background: #feecec;
 }
 
 .enac-central-priority--baixa {
   color: #24604a;
-  background: #dff5ea;
+  background: #eaf7ef;
 }
 
 .enac-central-detail {
@@ -4075,7 +4075,7 @@ button {
 
 .enac-audit-tabs button.is-active {
   border-color: rgba(178, 31, 45, 0.25);
-  background: #fff1f3;
+  background: #fcedef;
   color: var(--enac-red-dark);
 }
 
@@ -4097,7 +4097,7 @@ button {
 }
 
 .enac-audit-table tr.is-selected {
-  background: #fff1f3;
+  background: #fcedef;
   box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
@@ -4173,7 +4173,7 @@ button {
 
 .enac-audit-timeline button.is-selected {
   border-color: rgba(178, 31, 45, 0.28);
-  background: #fff1f3;
+  background: #fcedef;
 }
 
 .enac-audit-timeline span,
@@ -4403,7 +4403,7 @@ button {
 }
 
 .enac-homologacao-links button {
-  background: #fff1f3;
+  background: #fcedef;
   color: var(--enac-red-dark);
   min-height: 34px;
   padding: 8px 10px;
@@ -4490,7 +4490,7 @@ button {
 }
 
 .enac-doc-table tr.is-selected {
-  background: #fff1f3;
+  background: #fcedef;
   box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
@@ -4721,7 +4721,7 @@ button:disabled {
 
 .enac-cadastro-table tr.is-selected,
 .enac-web-table tr.is-selected {
-  background: #fff1f3;
+  background: #fcedef;
   box-shadow: inset 3px 0 0 var(--enac-red);
 }
 
