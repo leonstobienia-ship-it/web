@@ -915,17 +915,9 @@ const ensureProgramacaoItem = async (client: PoolClient, programacaoId: string, 
       [programacaoId, contaId, companyId, marker, financeiroId]
     );
   }
-  await client.query(
-    `
-    update contas_pagar
-    set programado_por = $1, programado_em = coalesce(programado_em, now()),
-        data_programada_pagamento = $2, forma_pagamento_programada = 'TED mock local',
-        referencia_programacao = 'PG-HOMO-V316-001', valor_programado = 48000,
-        programacao_observacoes = $3, updated_at = now()
-    where id = $4
-    `,
-    [financeiroId, addDays(16), marker, contaId]
-  );
+  // A programacao da conta vive em programacoes_pagamento_itens (acima); contas_pagar nao
+  // carrega mais colunas de programacao desde a migration 011 (sem baixa). Espelha a producao,
+  // que nao atualiza contas_pagar ao programar.
 };
 
 const ensureProgramacaoHistoricos = async (
