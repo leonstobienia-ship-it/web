@@ -2230,8 +2230,8 @@ button {
 }
 
 .enac-cotacao-status--mapa-gerado {
-  background: #eeeafd;
-  color: #563c8f;
+  background: #e5f0fb;
+  color: #1f5fa6;
 }
 
 .enac-cotacao-status--fornecedor-escolhido {
@@ -2420,8 +2420,8 @@ button {
 
 .enac-pedido-status--parcialmente-recebido,
 .enac-pedido-status--recebido {
-  background: #eeeafd;
-  color: #563c8f;
+  background: #e5f0fb;
+  color: #1f5fa6;
 }
 
 .enac-pedido-status--cancelado {
@@ -2765,8 +2765,8 @@ button {
 .enac-finance-status--programada,
 .enac-finance-status--liberada,
 .enac-finance-status--baixada-manual {
-  background: #eeeafd;
-  color: #563c8f;
+  background: #e5f0fb;
+  color: #1f5fa6;
 }
 
 .enac-finance-status--submetida {
@@ -4538,8 +4538,8 @@ button {
 }
 
 .enac-doc-chip--substituido {
-  background: #e0e7ff;
-  color: #3730a3;
+  background: #e5f0fb;
+  color: #1f5fa6;
 }
 
 .enac-doc-chip--inativo {
