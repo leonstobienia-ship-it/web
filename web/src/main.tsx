@@ -12,6 +12,7 @@ import { ContasPagarPage } from './features/contasPagar/ContasPagarPage';
 import { ContratosObraPage } from './features/contratosObra/ContratosObraPage';
 import { CotacoesMapaPage } from './features/cotacoes/CotacoesMapaPage';
 import { DashboardExecutivoPage } from './features/dashboardExecutivo/DashboardExecutivoPage';
+import { DesignSystemPage } from './features/designSystem/DesignSystemPage';
 import { DocumentosAnexosPage } from './features/documentos/DocumentosAnexosPage';
 import { HomologacaoPage } from './features/homologacao/HomologacaoPage';
 import { MedicoesFaturamentoPage } from './features/medicoesFaturamento/MedicoesFaturamentoPage';
@@ -86,6 +87,7 @@ type WebSection =
   | 'dados'
   | 'seguranca'
   | 'implantacao'
+  | 'design-system'
   | 'sistema';
 
 interface IOperationalState {
@@ -231,6 +233,7 @@ const sectionGroups: ISectionGroup[] = [
     icon: 'database',
     tone: 'Arquitetura e implantação',
     items: [
+      { key: 'design-system', icon: 'layers', label: 'Design System', description: 'Tokens, tipografia, ícones e componentes da fundação V3.18K', profile: 'Todos' },
       { key: 'estrutura', icon: 'architecture', label: 'Arquitetura', description: 'PostgreSQL, API, documentos e identidade', profile: 'Admin' },
       { key: 'mvp', icon: 'layers', label: 'MVP ERP', description: 'Escopo verticalizado do ERP ENAC', profile: 'Diretoria' },
       { key: 'fluxos', icon: 'workflow', label: 'Workflows', description: 'Fluxos-mãe e regras de operação', profile: 'Admin' },
@@ -660,6 +663,10 @@ function WebPortal(): JSX.Element {
 }
 
 function ContentSection({ section, onNavigate }: { section: WebSection; onNavigate: (section: WebSection) => void }): JSX.Element {
+  if (section === 'design-system') {
+    return <DesignSystemPage />;
+  }
+
   if (section === 'cadastros') {
     return <CadastrosOperacionais />;
   }

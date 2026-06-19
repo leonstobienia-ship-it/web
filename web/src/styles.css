@@ -71,6 +71,28 @@ body,
   --radius-xl: 12px;
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.1);
+  --enac-shadow-card: 0 1px 2px rgba(25, 29, 35, 0.04);
+  --radius-pill: 999px;
+  --enac-font-sans: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  --enac-font-numeric: var(--enac-font-sans);
+  --enac-text-base: 14px;
+  --enac-line-base: 1.42;
+  --enac-fs-eyebrow: 12px;
+  --enac-fs-micro: 11px;
+  --enac-fs-small: 12px;
+  --enac-fs-body: 14px;
+  --enac-fs-body-lg: 15px;
+  --enac-fs-h3: 16px;
+  --enac-fs-h2: 20px;
+  --enac-fs-h1: 24px;
+  --enac-fs-display: 28px;
+  --enac-fs-kpi: 24px;
+  --enac-fs-metric: 28px;
+  --enac-fw-regular: 400;
+  --enac-fw-medium: 500;
+  --enac-fw-semibold: 700;
+  --enac-fw-bold: 800;
+  --enac-fw-heavy: 900;
   --z-base: 0;
   --z-sticky-local: 5;
   --z-page-header: 20;
@@ -1039,6 +1061,14 @@ button {
   color: var(--enac-red-700);
 }
 
+/* Modificadores de tom da KPI card (alinhamento ao handoff: borda-esquerda + tint do ícone). */
+.enac-foundation-kpi-card.is-success { border-left-color: var(--enac-success-600); }
+.enac-foundation-kpi-card.is-warning { border-left-color: var(--enac-warning-600); }
+.enac-foundation-kpi-card.is-danger { border-left-color: var(--enac-danger-600); }
+.enac-foundation-kpi-card.is-success .enac-foundation-kpi-icon { background: var(--enac-success-050); color: var(--enac-success-600); }
+.enac-foundation-kpi-card.is-warning .enac-foundation-kpi-icon { background: var(--enac-warning-050); color: var(--enac-warning-600); }
+.enac-foundation-kpi-card.is-danger .enac-foundation-kpi-icon { background: var(--enac-danger-050); color: var(--enac-danger-600); }
+
 .enac-foundation-filter-bar,
 .enac-report-filters,
 .enac-solicitacoes-filters {
@@ -1202,6 +1232,16 @@ button {
 .enac-finance-status.status-divergente {
   background: var(--enac-danger-050);
   color: var(--enac-danger-600);
+}
+
+.enac-foundation-status-chip.is-info {
+  background: #e5f0fb;
+  color: #1f5fa6;
+}
+
+.enac-foundation-status-chip.is-brand {
+  background: var(--enac-red-050);
+  color: var(--enac-red-dark);
 }
 
 .enac-foundation-empty-state,
@@ -6088,6 +6128,13 @@ code {
   line-height: 27px;
 }
 
+.enac-dashboard-spark {
+  display: block;
+  width: 100%;
+  height: 30px;
+  margin-top: var(--space-4);
+}
+
 .enac-dashboard-card.is-primary {
   border-left-color: var(--enac-red-600);
 }
@@ -6801,3 +6848,161 @@ code {
     height: auto;
   }
 }
+
+/* ===================================================================
+ * Primitivos do ENAC Design System (fundação V3.18K)
+ * Classes .enac-* dos componentes Button/Field/Card/Badge/Tabs/Avatar.
+ * Portado de tokens/base.css do handoff "ENAC Design System".
+ * =================================================================== */
+
+/* ---- Ícone (helper de dimensionamento por contexto) ---- */
+.enac-icon { display: inline-flex; width: 1.25em; height: 1.25em; vertical-align: -0.18em; }
+.enac-icon svg { width: 100%; height: 100%; }
+
+/* ---- Botões ---- */
+.enac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  min-height: 38px;
+  border: 1px solid var(--enac-primary);
+  border-radius: var(--radius-md);
+  padding: 0 16px;
+  background: var(--enac-primary);
+  color: #fff;
+  font-family: var(--enac-font-sans);
+  font-weight: var(--enac-fw-semibold);
+  font-size: 13.5px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  white-space: nowrap;
+}
+.enac-btn:hover { background: var(--enac-primary-strong); border-color: var(--enac-primary-strong); }
+.enac-btn:active { background: var(--enac-red-700); }
+.enac-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.enac-btn--secondary {
+  background: #fff;
+  color: var(--enac-red-dark);
+  border-color: var(--enac-border-strong);
+}
+.enac-btn--secondary:hover { background: var(--enac-red-050); border-color: var(--enac-red-500); color: var(--enac-red-dark); }
+.enac-btn--ghost {
+  background: transparent;
+  color: var(--enac-gray-700);
+  border-color: transparent;
+}
+.enac-btn--ghost:hover { background: var(--enac-gray-100); color: var(--enac-gray-900); }
+.enac-btn--subtle {
+  background: var(--enac-gray-100);
+  color: var(--enac-gray-700);
+  border-color: transparent;
+}
+.enac-btn--subtle:hover { background: var(--enac-gray-200); color: var(--enac-gray-900); }
+.enac-btn--danger { background: var(--enac-danger-600); border-color: var(--enac-danger-600); }
+.enac-btn--danger:hover { background: #91230f; border-color: #91230f; }
+.enac-btn--sm { min-height: 32px; padding: 0 11px; font-size: 12.5px; }
+.enac-btn--lg { min-height: 44px; padding: 0 20px; font-size: 15px; }
+.enac-btn--block { width: 100%; }
+.enac-btn--icon { padding: 0; width: 38px; min-height: 38px; }
+.enac-btn--icon.enac-btn--sm { width: 32px; min-height: 32px; }
+.enac-btn svg { width: 18px; height: 18px; flex: none; }
+.enac-btn--sm svg { width: 16px; height: 16px; }
+
+/* ---- Controles de formulário ---- */
+.enac-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  color: var(--enac-gray-700);
+  font-size: var(--enac-fs-micro);
+  font-weight: var(--enac-fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+.enac-input,
+.enac-select,
+.enac-textarea {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--enac-border-strong);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--enac-text);
+  padding: 8px 10px;
+  font-family: var(--enac-font-sans);
+  font-size: 13.5px;
+}
+.enac-input:focus, .enac-select:focus, .enac-textarea:focus {
+  border-color: var(--enac-red-500);
+  outline: 3px solid rgba(178, 31, 45, 0.18);
+  outline-offset: 0;
+}
+.enac-input::placeholder, .enac-textarea::placeholder { color: var(--enac-gray-500); }
+.enac-textarea { min-height: 84px; resize: vertical; }
+.enac-input:disabled, .enac-select:disabled, .enac-textarea:disabled,
+.enac-input[readonly] { background: var(--enac-gray-050); color: var(--enac-gray-600); cursor: not-allowed; }
+.enac-field { display: grid; gap: var(--space-2); }
+.enac-field-hint { color: var(--enac-muted); font-size: var(--enac-fs-small); }
+.enac-field-required { color: var(--enac-red-500); margin-left: 2px; }
+
+/* ---- Cards ---- */
+.enac-card {
+  border: 1px solid var(--enac-border);
+  border-radius: var(--enac-radius);
+  background: var(--enac-surface);
+  box-shadow: var(--enac-shadow-card);
+  padding: var(--space-7);
+}
+.enac-card--soft { background: var(--enac-gray-050); }
+.enac-card--flush { padding: 0; }
+.enac-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-6); margin-bottom: var(--space-4); }
+.enac-card-header--flush { padding: var(--space-7) var(--space-7) 0; margin-bottom: var(--space-6); }
+.enac-card-heading { min-width: 0; }
+.enac-card-title { margin: 0; font-size: var(--enac-fs-h3); font-weight: 700; }
+.enac-card-label {
+  display: block; margin-bottom: var(--space-3);
+  color: var(--enac-red-dark); font-size: var(--enac-fs-small);
+  font-weight: var(--enac-fw-bold); text-transform: uppercase;
+}
+.enac-card-actions { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; flex: none; }
+
+/* ---- Badge (contagem) ---- */
+.enac-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--enac-red-500); color: #fff;
+  font-size: 11px; font-weight: 800; line-height: 1;
+}
+.enac-badge--muted { background: var(--enac-gray-200); color: var(--enac-gray-700); }
+
+/* ---- Abas ---- */
+.enac-tabs {
+  display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+  padding: 4px; border: 1px solid var(--enac-border); border-radius: var(--enac-radius); background: #fff;
+}
+.enac-tabs button {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 32px; border: 1px solid transparent; border-radius: var(--radius-md);
+  padding: 0 12px; background: transparent; color: #465263; cursor: pointer;
+  font-family: var(--enac-font-sans); font-weight: 800; font-size: 12.5px;
+}
+.enac-tabs button:hover, .enac-tabs button.is-active {
+  border-color: rgba(178, 31, 45, 0.25); background: var(--enac-red-050); color: var(--enac-red-dark);
+}
+.enac-tabs .enac-badge { height: 18px; min-width: 18px; }
+
+/* ---- Avatar ---- */
+.enac-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--enac-graphite-800); color: #fff;
+  font-size: 13px; font-weight: 800; flex: none; overflow: hidden;
+}
+.enac-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.enac-avatar--sm { width: 28px; height: 28px; font-size: 11px; }
+.enac-avatar--lg { width: 44px; height: 44px; font-size: 15px; }
+
+/* ---- Utilitários de numeração tabular ---- */
+.enac-num { font-variant-numeric: tabular-nums; }

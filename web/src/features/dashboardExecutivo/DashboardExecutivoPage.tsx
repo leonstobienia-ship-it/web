@@ -36,7 +36,51 @@ type DashboardKpiCard = {
   value: unknown;
   type: 'money' | 'number' | 'percent';
   tone?: 'primary' | 'warning' | 'danger';
+  trend?: number[];
 };
+
+type SparkTone = 'brand' | 'success' | 'warning' | 'danger';
+
+let sparkSeq = 0;
+
+/** Tendência inline para os KPIs do dashboard (curva da série mensal real). */
+function Sparkline({ data, tone = 'brand', width = 132, height = 30 }: { data: number[]; tone?: SparkTone; width?: number; height?: number }): JSX.Element | null {
+  const gradientId = React.useMemo(() => `enac-spark-${sparkSeq++}`, []);
+  if (!data || data.length < 2) {
+    return null;
+  }
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const span = max - min || 1;
+  const points = data.map((value, index): [number, number] => [
+    (index / (data.length - 1)) * width,
+    height - ((value - min) / span) * (height - 6) - 3
+  ]);
+  const line = points.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const area = `M0 ${height} ${points.map((p) => `L${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')} L${width} ${height} Z`;
+  const stroke =
+    tone === 'success'
+      ? 'var(--enac-success-600)'
+      : tone === 'danger'
+      ? 'var(--enac-danger-600)'
+      : tone === 'warning'
+      ? 'var(--enac-warning-600)'
+      : 'var(--enac-red-500)';
+  const last = points[points.length - 1];
+  return (
+    <svg className="enac-dashboard-spark" width={width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={stroke} stopOpacity="0.16" />
+          <stop offset="1" stopColor={stroke} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gradientId})`} />
+      <path d={line} fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last[0].toFixed(1)} cy={last[1].toFixed(1)} r="2.4" fill={stroke} />
+    </svg>
+  );
+}
 
 const marker = 'DEV_LOCAL_V3_10';
 
@@ -270,12 +314,14 @@ export function DashboardExecutivoPage(): JSX.Element {
     ? (margemPortfolio / toNumber(kpis.receita_faturada_manual)) * 100
     : null;
 
+  const trendOf = (key: string): number[] => dashboard.tendencia.map((row) => toNumber(row[key]));
+
   const primaryCards: DashboardKpiCard[] = [
     { label: 'Obras ativas', value: kpis.obras_ativas, type: 'number', tone: 'primary' },
-    { label: 'Contratado total', value: kpis.valor_total_contratado, type: 'money', tone: 'primary' },
-    { label: 'Custo realizado', value: kpis.custo_realizado, type: 'money' },
-    { label: 'Receita faturada', value: kpis.receita_faturada_manual, type: 'money' },
-    { label: 'Margem realizada', value: margemPortfolio, type: 'money', tone: margemPortfolio < 0 ? 'danger' : 'primary' }
+    { label: 'Contratado total', value: kpis.valor_total_contratado, type: 'money', tone: 'primary', trend: trendOf('acumulado_previsto') },
+    { label: 'Custo realizado', value: kpis.custo_realizado, type: 'money', trend: trendOf('custo_realizado') },
+    { label: 'Receita faturada', value: kpis.receita_faturada_manual, type: 'money', trend: trendOf('receita_faturada_manual') },
+    { label: 'Margem realizada', value: margemPortfolio, type: 'money', tone: margemPortfolio < 0 ? 'danger' : 'primary', trend: trendOf('margem_mensal') }
   ];
 
   const operationCards: DashboardKpiCard[] = [
@@ -398,6 +444,9 @@ export function DashboardExecutivoPage(): JSX.Element {
               <article className={`enac-report-card enac-dashboard-card ${card.tone ? `is-${card.tone}` : ''}`} key={card.label}>
                 <span>{card.label}</span>
                 <strong title={card.type === 'money' ? formatMoney(card.value) : formatDashboardValue(card)}>{formatDashboardValue(card)}</strong>
+                {card.trend && card.trend.length > 1 && (
+                  <Sparkline data={card.trend} tone={card.tone === 'danger' ? 'danger' : 'brand'} />
+                )}
               </article>
             ))}
           </div>
